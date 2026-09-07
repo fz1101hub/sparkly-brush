@@ -90,7 +90,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     element: "Energia",
     accent: "#B98A00",
     soft: "#FFF8D9",
-    unlockAtCompletedSessions: 3,
+    unlockAtCompletedSessions: 5,
     tagline: "Si carica con le sessioni complete e le serie positive.",
     evolutions: [
       { name: "Voltuff", unlockLevel: 1, title: "Batuffolo elettrico" },
@@ -102,7 +102,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     element: "Notte",
     accent: "#7357C7",
     soft: "#F0ECFF",
-    unlockAtCompletedSessions: 7,
+    unlockAtCompletedSessions: 10,
     tagline: "Il compagno delle spazzolate della buonanotte.",
     evolutions: [
       { name: "Moonbit", unlockLevel: 1, title: "Sognatore lunare" },
