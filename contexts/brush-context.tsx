@@ -32,6 +32,7 @@ type BrushContextValue = {
   device: ToothbrushDevice | null;
   live: BrushLiveData;
   history: BrushSession[];
+  historyReady: boolean;
   logs: DiagnosticLog[];
   isActive: boolean;
   activeElapsed: number;
@@ -57,6 +58,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
   const [device, setDevice] = useState<ToothbrushDevice | null>(null);
   const [live, setLive] = useState<BrushLiveData>(DEFAULT_LIVE_DATA);
   const [history, setHistory] = useState<BrushSession[]>([]);
+  const [historyReady, setHistoryReady] = useState(false);
   const [logs, setLogs] = useState<DiagnosticLog[]>([]);
   const [manualActive, setManualActive] = useState(false);
   const [manualElapsed, setManualElapsed] = useState(0);
@@ -88,7 +90,9 @@ export function BrushProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    void loadHistory().then(setHistory);
+    void loadHistory()
+      .then(setHistory)
+      .finally(() => setHistoryReady(true));
 
     const client = createSonicareClient({
       onAdapterState: setAdapterState,
@@ -239,6 +243,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
     device,
     live,
     history,
+    historyReady,
     logs,
     isActive,
     activeElapsed,
@@ -261,6 +266,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
     device,
     disconnect,
     history,
+    historyReady,
     isActive,
     live,
     logs,
