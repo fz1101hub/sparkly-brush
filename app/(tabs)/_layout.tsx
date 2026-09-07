@@ -57,6 +57,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="habitat"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: "Storico",
