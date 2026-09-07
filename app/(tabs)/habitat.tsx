@@ -55,15 +55,15 @@ export default function HabitatScreen() {
 
     if (customization.ownedIds.includes(item.id)) {
       const equipped = await equipCustomization(item.id);
-      setMessage(equipped ? \`\${item.name} equipaggiato!\` : "Non riesco a equipaggiare questo oggetto.");
+      setMessage(equipped ? `${item.name} equipaggiato!` : "Non riesco a equipaggiare questo oggetto.");
       return;
     }
 
     const result = await buyCustomization(item.id);
     if (result === "insufficient") {
-      setMessage(\`Servono \${item.cost - walletCoins} monete sorriso in più.\`);
+      setMessage(`Servono ${item.cost - walletCoins} monete sorriso in più.`);
     } else if (result === "purchased") {
-      setMessage(\`\${item.name} acquistato ed equipaggiato!\`);
+      setMessage(`${item.name} acquistato ed equipaggiato!`);
     }
   };
 
@@ -223,10 +223,10 @@ export default function HabitatScreen() {
             <Text style={[styles.currentText, { color: colors.muted }]}>
               {getCustomizationItem(customization.equippedHabitatId)?.name}
               {customization.equippedAccessoryId
-                ? \` · \${getCustomizationItem(customization.equippedAccessoryId)?.name}\`
+                ? ` · ${getCustomizationItem(customization.equippedAccessoryId)?.name}`
                 : ""}
               {customization.equippedDecorId
-                ? \` · \${getCustomizationItem(customization.equippedDecorId)?.name}\`
+                ? ` · ${getCustomizationItem(customization.equippedDecorId)?.name}`
                 : ""}
             </Text>
           </View>
