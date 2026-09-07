@@ -51,6 +51,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="rewards"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: "Storico",
