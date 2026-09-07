@@ -17,6 +17,7 @@ import {
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { BrushProvider } from "@/contexts/brush-context";
+import { BrushlingProvider } from "@/contexts/brushling-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 
@@ -82,18 +83,20 @@ export default function RootLayout() {
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BrushProvider>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-            {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-            {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="oauth/callback" />
-            </Stack>
-            <StatusBar style="dark" />
-          </QueryClientProvider>
-        </trpc.Provider>
+        <BrushlingProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
+              {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
+              {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="oauth/callback" />
+              </Stack>
+              <StatusBar style="dark" />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </BrushlingProvider>
       </BrushProvider>
     </GestureHandlerRootView>
   );
