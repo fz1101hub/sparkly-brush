@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -16,7 +17,8 @@ import {
 
 export default function CollectionScreen() {
   const colors = useColors();
-  const { selectedId, stats, selectBrushling } = useBrushling();
+  const router = useRouter();
+  const { selectedId, selected, stats, walletCoins, customization, selectBrushling } = useBrushling();
   const starters = BRUSHLINGS.filter((creature) => STARTER_IDS.includes(creature.id));
 
   return (
@@ -32,8 +34,8 @@ export default function CollectionScreen() {
           </View>
           <View style={styles.summaryItem}>
             <MaterialIcons name="stars" size={22} color="#B98A00" />
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>{stats.coins}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>monete sorriso</Text>
+            <Text style={[styles.summaryValue, { color: colors.foreground }]}>{walletCoins}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>monete disponibili</Text>
           </View>
           <View style={styles.summaryItem}>
             <MaterialIcons name="local-fire-department" size={22} color="#E76A2C" />
@@ -41,6 +43,28 @@ export default function CollectionScreen() {
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>giorni di serie</Text>
           </View>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/habitat")}
+          style={({ pressed }) => [
+            styles.habitatCard,
+            { backgroundColor: selected.soft, borderColor: selected.accent },
+            pressed && styles.pressed,
+          ]}
+        >
+          <View style={[styles.habitatIcon, { backgroundColor: "#FFFFFFAA" }]}>
+            <MaterialIcons name="home" size={28} color={selected.accent} />
+          </View>
+          <View style={styles.habitatCopy}>
+            <Text style={[styles.habitatEyebrow, { color: selected.accent }]}>LA TANA</Text>
+            <Text style={[styles.habitatTitle, { color: colors.foreground }]}>Personalizza la casa</Text>
+            <Text style={[styles.habitatText, { color: colors.muted }]}>
+              {customization.ownedIds.length} oggetti posseduti · {walletCoins} monete da spendere
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={25} color={colors.muted} />
+        </Pressable>
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Le tre famiglie starter</Text>
@@ -189,6 +213,19 @@ const styles = StyleSheet.create({
   summaryItem: { flex: 1, alignItems: "center", gap: 3 },
   summaryValue: { fontSize: 19, lineHeight: 24, fontWeight: "900" },
   summaryLabel: { fontSize: 10, lineHeight: 14, textAlign: "center", fontWeight: "700" },
+  habitatCard: {
+    borderWidth: 2,
+    borderRadius: 23,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+  habitatIcon: { width: 52, height: 52, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  habitatCopy: { flex: 1 },
+  habitatEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  habitatTitle: { fontSize: 16, lineHeight: 21, fontWeight: "900" },
+  habitatText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: "900" },
   sectionCopy: { fontSize: 13, lineHeight: 19, marginTop: 4 },
   familyStack: { gap: 12 },
