@@ -12,7 +12,7 @@ Il timer manuale rimane disponibile quando lo spazzolino non è collegato. Le se
 
 Il branch `feature/brushlings-game` aggiunge un primo layer di gioco con creature originali chiamate **Brushlings**. Il bambino può scegliere un compagno iniziale, ottenere XP e “monete sorriso” dalle sessioni di spazzolamento, aumentare di livello e sbloccare nuove creature dopo un certo numero di sessioni complete.
 
-La progressione deriva direttamente dallo storico locale già usato dall’app: non modifica il protocollo BLE e non richiede un backend. La schermata **Creature** permette di cambiare il compagno attivo, mentre la home mostra livello, XP, serie di giorni e progressi durante la sessione guidata.
+La progressione deriva direttamente dallo storico locale già usato dall’app: non modifica il protocollo BLE e non richiede un backend. La schermata **Creature** permette di cambiare il compagno attivo, mentre la home mostra livello, XP, serie di giorni e progressi durante la sessione guidata. I tre starter hanno ora famiglie evolutive originali: **Bloopi → Bubblio → Ondalux**, **Spriggo → Germillo → Floraviva** e **Flarello → Braciolo → Solfiamma**. La seconda forma si sblocca al livello 3 e la forma finale al livello 6.
 
 I Brushlings sono personaggi originali e temporanei: il concept può richiamare i giochi di creature collezionabili, ma non usa personaggi, nomi, loghi o asset di Pokémon o di altre proprietà intellettuali.
 
