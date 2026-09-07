@@ -3,7 +3,9 @@ import { useKeepAwake } from "expo-keep-awake";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
-import { BrushlingAvatar } from "@/components/brushling-avatar";\nimport { SessionRewardModal } from "@/components/session-reward-modal";\nimport { StarterChooser } from "@/components/starter-chooser";
+import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { SessionRewardModal } from "@/components/session-reward-modal";
+import { StarterChooser } from "@/components/starter-chooser";
 import { MouthZones } from "@/components/mouth-zones";
 import { ScreenContainer } from "@/components/screen-container";
 import { TimerRing } from "@/components/timer-ring";
