@@ -10,6 +10,7 @@ import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useColors } from "@/hooks/use-colors";
+import { getEvolution, getNextEvolution } from "@/lib/brushlings";
 
 function ActiveWakeLock({ active }: { active: boolean }) {
   if (active) return <KeepAwake />;
@@ -32,6 +33,9 @@ function sameDay(timestamp: number) {
 export default function TodayScreen() {
   const colors = useColors();
   const { selected, stats } = useBrushling();
+  const currentEvolution = getEvolution(selected, stats.level);
+  const nextEvolution = getNextEvolution(selected, stats.level);
+
   const {
     status,
     statusMessage,
@@ -58,7 +62,11 @@ export default function TodayScreen() {
     <ScreenContainer>
       <ActiveWakeLock active={isActive} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader eyebrow="Brushlings" title={`Ciao, ${selected.name} è pronto!`} connected={status === "connected"} />
+        <AppHeader
+          eyebrow="Brushlings"
+          title={`Ciao, ${currentEvolution.name} è pronto!`}
+          connected={status === "connected"}
+        />
 
         <View
           style={[
@@ -66,12 +74,15 @@ export default function TodayScreen() {
             { backgroundColor: selected.soft, borderColor: selected.accent },
           ]}
         >
-          <BrushlingAvatar creature={selected} size={112} level={stats.level} />
+          <BrushlingAvatar creature={selected} size={118} level={stats.level} />
           <View style={styles.companionCopy}>
             <Text style={[styles.companionEyebrow, { color: selected.accent }]}>IL TUO COMPAGNO</Text>
-            <Text style={[styles.companionName, { color: colors.foreground }]}>{selected.name}</Text>
+            <Text style={[styles.companionName, { color: colors.foreground }]}>{currentEvolution.name}</Text>
+            <Text style={[styles.companionTitle, { color: selected.accent }]}>{currentEvolution.title}</Text>
             <Text style={[styles.companionTagline, { color: colors.muted }]} numberOfLines={2}>
-              {selected.tagline}
+              {nextEvolution
+                ? `A livello ${nextEvolution.unlockLevel} può evolvere in ${nextEvolution.name}.`
+                : selected.tagline}
             </Text>
             <View style={[styles.xpTrack, { backgroundColor: "#FFFFFFAA" }]}>
               <View style={[styles.xpFill, { width: levelProgress, backgroundColor: selected.accent }]} />
@@ -119,7 +130,7 @@ export default function TodayScreen() {
             <View style={styles.timerHeadingCopy}>
               <Text style={[styles.sectionEyebrow, { color: colors.primary }]}>SESSIONE GUIDATA</Text>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                {isActive ? `${selected.name} fa il tifo per te!` : "Pronto a spazzolare?"}
+                {isActive ? `${currentEvolution.name} fa il tifo per te!` : "Pronto a spazzolare?"}
               </Text>
             </View>
             <View style={[styles.modeBadge, { backgroundColor: "#FFF0E4" }]}>
@@ -213,6 +224,7 @@ const styles = StyleSheet.create({
   companionCopy: { flex: 1 },
   companionEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.1 },
   companionName: { fontSize: 25, lineHeight: 30, fontWeight: "900", marginTop: 2 },
+  companionTitle: { fontSize: 10, lineHeight: 14, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.7 },
   companionTagline: { fontSize: 12, lineHeight: 17, marginTop: 3, fontWeight: "600" },
   xpTrack: { height: 8, borderRadius: 99, overflow: "hidden", marginTop: 10 },
   xpFill: { height: "100%", borderRadius: 99 },
