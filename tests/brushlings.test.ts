@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  computeBrushlingStats,
+  computeBrushlingStats,\n  computeSessionReward,
   getBrushling,
   getEvolution,
   getEvolutionIndex,
@@ -51,6 +51,26 @@ describe("Brushlings progression", () => {
     expect(stats.completedSessions).toBe(0);
     expect(stats.xp).toBe(10);
     expect(stats.level).toBe(1);
+  });
+
+  it("creates a session reward and detects an evolution", () => {
+    const now = Date.now();
+    const history = [
+      completeSession("new", now),
+      completeSession("c", now - 1000),
+      completeSession("b", now - 2000),
+      completeSession("a", now - 3000),
+    ];
+
+    const reward = computeSessionReward(history, "new", "bloopi");
+
+    expect(reward).not.toBeNull();
+    expect(reward?.xpEarned).toBe(60);
+    expect(reward?.coinsEarned).toBe(14);
+    expect(reward?.previousLevel).toBe(2);
+    expect(reward?.level).toBe(3);
+    expect(reward?.evolvedFrom).toBe("Bloopi");
+    expect(reward?.evolvedTo).toBe("Bubblio");
   });
 
   it("evolves each starter at levels 3 and 6", () => {
