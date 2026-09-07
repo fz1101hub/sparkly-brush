@@ -37,6 +37,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="collection"
+        options={{
+          title: "Creature",
+          tabBarIcon: ({ color }) => <IconSymbol size={25} name="pawprint.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: "Storico",
