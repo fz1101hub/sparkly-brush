@@ -18,11 +18,11 @@ import {
 import { getEvolution } from "@/lib/brushlings";
 
 const ZONE_ICONS: Record<AdventureZoneId, ComponentProps<typeof MaterialIcons>["name"]> = {
-  "bubble-bay": "water",
-  "fresh-forest": "park",
-  "spark-mountain": "landscape",
-  "crystal-lake": "diamond",
-  "smile-valley": "sentiment-satisfied-alt",
+  "bubble-bay": "opacity",
+  "fresh-forest": "nature",
+  "spark-mountain": "terrain",
+  "crystal-lake": "ac-unit",
+  "smile-valley": "sentiment-very-satisfied",
 };
 
 export default function ExploreScreen() {
@@ -146,7 +146,7 @@ export default function ExploreScreen() {
         </View>
 
         <View style={[styles.futureCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
-          <MaterialIcons name="egg-alt" size={25} color="#B98A00" />
+          <MaterialIcons name="card-giftcard" size={25} color="#B98A00" />
           <View style={styles.futureCopy}>
             <Text style={[styles.futureTitle, { color: colors.foreground }]}>Prossimo passo: uova e incontri</Text>
             <Text style={[styles.futureText, { color: colors.muted }]}>
