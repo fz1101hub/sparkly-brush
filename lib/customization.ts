@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import type MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export type CustomizationCategory = "habitat" | "accessory" | "decor";
 export type CustomizationItemId =
