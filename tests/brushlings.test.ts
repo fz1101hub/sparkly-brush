@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  computeBrushlingStats,\n  computeSessionReward,
+  computeBrushlingStats,
+  computeSessionReward,
   getBrushling,
   getEvolution,
   getEvolutionIndex,
