@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { computeBrushlingStats } from "@/lib/brushlings";
+import {
+  computeBrushlingStats,
+  getBrushling,
+  getEvolution,
+  getEvolutionIndex,
+  getNextEvolution,
+} from "@/lib/brushlings";
 import type { BrushSession } from "@/lib/brush-types";
 
 const completeSession = (id: string, startedAt: number): BrushSession => ({
@@ -45,5 +51,16 @@ describe("Brushlings progression", () => {
     expect(stats.completedSessions).toBe(0);
     expect(stats.xp).toBe(10);
     expect(stats.level).toBe(1);
+  });
+
+  it("evolves each starter at levels 3 and 6", () => {
+    const bloopi = getBrushling("bloopi");
+
+    expect(getEvolutionIndex(bloopi, 1)).toBe(0);
+    expect(getEvolution(bloopi, 1).name).toBe("Bloopi");
+    expect(getEvolution(bloopi, 3).name).toBe("Bubblio");
+    expect(getEvolution(bloopi, 6).name).toBe("Ondalux");
+    expect(getNextEvolution(bloopi, 3)?.name).toBe("Ondalux");
+    expect(getNextEvolution(bloopi, 6)).toBeNull();
   });
 });
