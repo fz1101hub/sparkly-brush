@@ -27,7 +27,7 @@ export function StarterChooser() {
     <View style={[styles.panel, { backgroundColor: "#0B4F9C" }]}>
       <View style={styles.sparkleRow}>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
-        <Text style={styles.eyebrow}>INIZIA L'AVVENTURA</Text>
+        <Text style={styles.eyebrow}>INIZIA L’AVVENTURA</Text>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
       </View>
 
