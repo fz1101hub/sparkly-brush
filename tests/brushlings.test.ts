@@ -20,7 +20,7 @@ const completeSession = (id: string, startedAt: number): BrushSession => ({
 });
 
 describe("Brushlings progression", () => {
-  it("awards XP and unlocks Voltuff after three complete sessions", () => {
+  it("awards XP but keeps Voltuff locked before its egg hatches", () => {
     const now = Date.now();
     const history = [
       completeSession("a", now),
@@ -33,8 +33,22 @@ describe("Brushlings progression", () => {
     expect(stats.completedSessions).toBe(3);
     expect(stats.xp).toBe(180);
     expect(stats.level).toBe(2);
-    expect(stats.unlockedIds).toContain("voltuff");
+    expect(stats.unlockedIds).not.toContain("voltuff");
     expect(stats.unlockedIds).not.toContain("moonbit");
+  });
+
+  it("unlocks Voltuff on the fifth complete session and Moonbit on the tenth", () => {
+    const now = Date.now();
+    const fiveSessions = Array.from({ length: 5 }, (_, index) =>
+      completeSession(`v-${index}`, now + index * 1000),
+    );
+    const tenSessions = Array.from({ length: 10 }, (_, index) =>
+      completeSession(`m-${index}`, now + index * 1000),
+    );
+
+    expect(computeBrushlingStats(fiveSessions).unlockedIds).toContain("voltuff");
+    expect(computeBrushlingStats(fiveSessions).unlockedIds).not.toContain("moonbit");
+    expect(computeBrushlingStats(tenSessions).unlockedIds).toContain("moonbit");
   });
 
   it("gives partial XP without counting an interrupted session as complete", () => {
