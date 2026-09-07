@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ComponentProps } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -15,7 +16,8 @@ import {
   sessionsUntilZone,
   type AdventureZoneId,
 } from "@/lib/adventure";
-import { getEvolution } from "@/lib/brushlings";
+import { EGG_DEFINITIONS } from "@/lib/game-inventory";
+import { getBrushling, getEvolution } from "@/lib/brushlings";
 
 const ZONE_ICONS: Record<AdventureZoneId, ComponentProps<typeof MaterialIcons>["name"]> = {
   "bubble-bay": "opacity",
@@ -27,7 +29,8 @@ const ZONE_ICONS: Record<AdventureZoneId, ComponentProps<typeof MaterialIcons>["
 
 export default function ExploreScreen() {
   const colors = useColors();
-  const { selected, stats, hasChosenStarter } = useBrushling();
+  const router = useRouter();
+  const { selected, stats, inventory, hasChosenStarter } = useBrushling();
   const currentZone = getCurrentAdventureZone(stats.completedSessions);
   const nextZone = getNextAdventureZone(stats.completedSessions);
   const evolution = getEvolution(selected, stats.level);
@@ -67,6 +70,28 @@ export default function ExploreScreen() {
           </View>
           <Text style={[styles.progressCopy, { color: colors.muted }]}>{currentZone.subtitle}</Text>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/rewards")}
+          style={({ pressed }) => [
+            styles.inventoryCard,
+            { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
+            pressed && styles.pressed,
+          ]}
+        >
+          <View style={styles.inventoryIcon}>
+            <MaterialIcons name="card-giftcard" size={28} color="#B98A00" />
+          </View>
+          <View style={styles.inventoryCopy}>
+            <Text style={[styles.inventoryEyebrow, { color: "#B98A00" }]}>IL TUO ZAINO</Text>
+            <Text style={[styles.inventoryTitle, { color: colors.foreground }]}>Premi e uova</Text>
+            <Text style={[styles.inventoryText, { color: colors.muted }]}>
+              {inventory.eggs.filter((egg) => egg.found).length} uova trovate · {inventory.hatchedBrushlingIds.length} nuovi Brushlings nati
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={25} color={colors.muted} />
+        </Pressable>
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mappa dell'isola</Text>
@@ -145,6 +170,60 @@ export default function ExploreScreen() {
           })}
         </View>
 
+        <View>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Incontri sull'isola</Text>
+          <Text style={[styles.sectionCopy, { color: colors.muted }]}>
+            Alcuni Brushlings arrivano da uova speciali trovate durante l'esplorazione.
+          </Text>
+        </View>
+
+        <View style={styles.encounterStack}>
+          {EGG_DEFINITIONS.map((eggDefinition) => {
+            const egg = inventory.eggs.find((candidate) => candidate.id === eggDefinition.id)!;
+            const creature = getBrushling(eggDefinition.brushlingId);
+            const evolution = getEvolution(creature, 1);
+
+            return (
+              <View
+                key={eggDefinition.id}
+                style={[
+                  styles.encounterCard,
+                  {
+                    backgroundColor: egg.found ? egg.soft : colors.surface,
+                    borderColor: egg.hatched ? creature.accent : egg.found ? egg.accent : colors.border,
+                    opacity: egg.found ? 1 : 0.6,
+                  },
+                ]}
+              >
+                <View style={styles.encounterVisual}>
+                  {egg.hatched ? (
+                    <BrushlingAvatar creature={creature} size={88} level={1} />
+                  ) : (
+                    <View style={[styles.eggBubble, { backgroundColor: egg.found ? "#FFFFFFAA" : "#E8EAF0" }]}>
+                      <MaterialIcons name={egg.found ? "radio-button-unchecked" : "lock"} size={45} color={egg.found ? egg.accent : "#858C9B"} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.encounterCopy}>
+                  <Text style={[styles.encounterEyebrow, { color: egg.hatched ? creature.accent : egg.accent }]}>
+                    {egg.hatched ? "NUOVO BRUSHLING" : egg.found ? "UOVO TROVATO" : "INCONTRO SEGRETO"}
+                  </Text>
+                  <Text style={[styles.encounterTitle, { color: colors.foreground }]}>
+                    {egg.hatched ? evolution.name : egg.found ? egg.name : "???"}
+                  </Text>
+                  <Text style={[styles.encounterText, { color: colors.muted }]}>
+                    {egg.hatched
+                      ? `${evolution.name} è ora disponibile nella tua squadra.`
+                      : egg.found
+                        ? `Ancora ${egg.sessionsRemaining} session${egg.sessionsRemaining === 1 ? "e" : "i"} per la schiusa.`
+                        : `Continua fino alla sessione ${egg.foundAtCompletedSessions} per trovare questo uovo.`}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
         <View style={[styles.futureCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
           <MaterialIcons name="card-giftcard" size={25} color="#B98A00" />
           <View style={styles.futureCopy}>
@@ -174,6 +253,26 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 22, lineHeight: 27, fontWeight: "900", marginTop: 4 },
   heroText: { fontSize: 12, lineHeight: 18, fontWeight: "600", marginTop: 5 },
   progressCard: { borderWidth: 1, borderRadius: 22, padding: 15 },
+  inventoryCard: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+  inventoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFFAA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inventoryCopy: { flex: 1 },
+  inventoryEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  inventoryTitle: { fontSize: 16, lineHeight: 21, fontWeight: "900" },
+  inventoryText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   progressTop: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
   progressEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 1 },
   progressTitle: { fontSize: 19, lineHeight: 24, fontWeight: "900", marginTop: 2 },
@@ -216,6 +315,22 @@ const styles = StyleSheet.create({
   hereText: { color: "#FFFFFF", fontSize: 8, lineHeight: 10, fontWeight: "900", letterSpacing: 0.4 },
   zoneSubtitle: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   zoneStatus: { fontSize: 10, lineHeight: 15, fontWeight: "900", marginTop: 4 },
+  encounterStack: { gap: 10 },
+  encounterCard: {
+    borderWidth: 2,
+    borderRadius: 22,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  encounterVisual: { width: 92, alignItems: "center" },
+  eggBubble: { width: 82, height: 82, borderRadius: 27, alignItems: "center", justifyContent: "center" },
+  encounterCopy: { flex: 1 },
+  encounterEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  encounterTitle: { fontSize: 17, lineHeight: 22, fontWeight: "900", marginTop: 2 },
+  encounterText: { fontSize: 10, lineHeight: 15, marginTop: 3 },
+  pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
   futureCard: {
     borderWidth: 1,
     borderRadius: 20,
