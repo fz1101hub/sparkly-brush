@@ -34,7 +34,7 @@ function sameDay(timestamp: number) {
 
 export default function TodayScreen() {
   const colors = useColors();
-  const { selected, stats, profileReady, hasChosenStarter } = useBrushling();
+  const { selected, stats, walletCoins, profileReady, hasChosenStarter } = useBrushling();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
 
@@ -125,7 +125,7 @@ export default function TodayScreen() {
               <View style={[styles.xpFill, { width: levelProgress, backgroundColor: selected.accent }]} />
             </View>
             <Text style={[styles.xpText, { color: colors.muted }]}>
-              Livello {stats.level} · {stats.xp} XP · {stats.coins} monete sorriso
+              Livello {stats.level} · {stats.xp} XP · {walletCoins} monete sorriso
             </Text>
           </View>
         </View>
