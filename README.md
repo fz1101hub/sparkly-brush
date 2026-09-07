@@ -16,6 +16,8 @@ La progressione deriva direttamente dallo storico locale già usato dall’app: 
 
 L'esplorazione ora include anche **oggetti collezionabili e uova**. Ogni sessione completa assegna un oggetto coerente con la zona corrente. L'**Uovo Scintilla** viene trovato alla 3ª sessione e si schiude alla 5ª, sbloccando Voltuff; l'**Uovo Lunare** viene trovato all'8ª sessione e si schiude alla 10ª, sbloccando Moonbit. La schermata **Premi e uova** mostra inventario, quantità, incubazione e Brushlings nati, mentre il popup di fine sessione segnala subito oggetti, uova trovate e schiuse.
 
+Le **monete sorriso** sono ora una vera valuta locale. La schermata **La tana** permette di acquistare ed equipaggiare habitat, accessori e decorazioni; il saldo mostra le monete guadagnate meno quelle già spese. Gli acquisti restano salvati in AsyncStorage e ogni Brushling può essere mostrato nel proprio habitat personalizzato.
+
 I Brushlings sono personaggi originali e temporanei: il concept può richiamare i giochi di creature collezionabili, ma non usa personaggi, nomi, loghi o asset di Pokémon o di altre proprietà intellettuali.
 
 ## Compatibilità studiata
