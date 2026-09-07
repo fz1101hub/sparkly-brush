@@ -2,6 +2,12 @@ import type { BrushSession } from "@/lib/brush-types";
 
 export type BrushlingId = "bloopi" | "spriggo" | "flarello" | "voltuff" | "moonbit";
 
+export type BrushlingEvolution = {
+  name: string;
+  unlockLevel: number;
+  title: string;
+};
+
 export type BrushlingDefinition = {
   id: BrushlingId;
   name: string;
@@ -10,6 +16,7 @@ export type BrushlingDefinition = {
   soft: string;
   unlockAtCompletedSessions: number;
   tagline: string;
+  evolutions: BrushlingEvolution[];
 };
 
 export type BrushlingGameStats = {
@@ -32,6 +39,11 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     soft: "#E7F1FF",
     unlockAtCompletedSessions: 0,
     tagline: "Trasforma ogni zona in una cascata di bolle pulite.",
+    evolutions: [
+      { name: "Bloopi", unlockLevel: 1, title: "Goccia curiosa" },
+      { name: "Bubblio", unlockLevel: 3, title: "Guardiano delle bolle" },
+      { name: "Ondalux", unlockLevel: 6, title: "Maestro delle maree" },
+    ],
   },
   {
     id: "spriggo",
@@ -41,6 +53,11 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     soft: "#E6F7EE",
     unlockAtCompletedSessions: 0,
     tagline: "Cresce insieme alle tue buone abitudini.",
+    evolutions: [
+      { name: "Spriggo", unlockLevel: 1, title: "Germoglio allegro" },
+      { name: "Germillo", unlockLevel: 3, title: "Custode del giardino" },
+      { name: "Floraviva", unlockLevel: 6, title: "Spirito della foresta" },
+    ],
   },
   {
     id: "flarello",
@@ -50,6 +67,11 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     soft: "#FFF0E7",
     unlockAtCompletedSessions: 0,
     tagline: "Accende l'energia quando mancano pochi secondi.",
+    evolutions: [
+      { name: "Flarello", unlockLevel: 1, title: "Scintilla coraggiosa" },
+      { name: "Braciolo", unlockLevel: 3, title: "Campione della brace" },
+      { name: "Solfiamma", unlockLevel: 6, title: "Cuore del sole" },
+    ],
   },
   {
     id: "voltuff",
@@ -59,6 +81,9 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     soft: "#FFF8D9",
     unlockAtCompletedSessions: 3,
     tagline: "Si carica con le sessioni complete e le serie positive.",
+    evolutions: [
+      { name: "Voltuff", unlockLevel: 1, title: "Batuffolo elettrico" },
+    ],
   },
   {
     id: "moonbit",
@@ -68,9 +93,13 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     soft: "#F0ECFF",
     unlockAtCompletedSessions: 7,
     tagline: "Il compagno delle spazzolate della buonanotte.",
+    evolutions: [
+      { name: "Moonbit", unlockLevel: 1, title: "Sognatore lunare" },
+    ],
   },
 ];
 
+export const STARTER_IDS: BrushlingId[] = ["bloopi", "spriggo", "flarello"];
 export const DEFAULT_BRUSHLING_ID: BrushlingId = "bloopi";
 export const XP_PER_LEVEL = 120;
 
@@ -80,6 +109,22 @@ export function getBrushling(id: BrushlingId): BrushlingDefinition {
 
 export function isBrushlingId(value: string): value is BrushlingId {
   return BRUSHLINGS.some((item) => item.id === value);
+}
+
+export function getEvolutionIndex(creature: BrushlingDefinition, level: number): number {
+  let current = 0;
+  creature.evolutions.forEach((evolution, index) => {
+    if (level >= evolution.unlockLevel) current = index;
+  });
+  return current;
+}
+
+export function getEvolution(creature: BrushlingDefinition, level: number): BrushlingEvolution {
+  return creature.evolutions[getEvolutionIndex(creature, level)];
+}
+
+export function getNextEvolution(creature: BrushlingDefinition, level: number): BrushlingEvolution | null {
+  return creature.evolutions.find((evolution) => evolution.unlockLevel > level) ?? null;
 }
 
 function startOfLocalDay(timestamp: number): Date {
