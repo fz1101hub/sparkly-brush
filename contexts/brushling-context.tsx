@@ -143,9 +143,10 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const buyCustomization = useCallback(async (id: CustomizationItemId): Promise<PurchaseResult> => {
     if (customization.ownedIds.includes(id)) return "owned";
 
-    const next = purchaseCustomizationState(customization, id, stats.coins);
-    if (!next) return "insufficient";
+    const purchased = purchaseCustomizationState(customization, id, stats.coins);
+    if (!purchased) return "insufficient";
 
+    const next = equipCustomizationState(purchased, id) ?? purchased;
     setCustomization(next);
     await saveCustomizationState(next);
     return "purchased";
