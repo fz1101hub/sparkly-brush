@@ -49,7 +49,7 @@ export default function ExploreScreen() {
             <Text style={[styles.heroText, { color: colors.muted }]}>
               {nextZone
                 ? `Mancano ${sessionsUntilZone(nextZone, stats.completedSessions)} sessioni complete per raggiungere ${nextZone.name}.`
-                : "Hai aperto tutte le zone disponibili in questa prima versione dell'isola!"}
+                : "Hai aperto tutte le zone disponibili in questa prima versione dell’isola!"}
             </Text>
           </View>
           <BrushlingAvatar creature={selected} size={104} level={stats.level} />
@@ -94,7 +94,7 @@ export default function ExploreScreen() {
         </Pressable>
 
         <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mappa dell'isola</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mappa dell’isola</Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
             Completa le sessioni da due minuti per aprire nuovi luoghi e preparare futuri incontri, uova e premi.
           </Text>
@@ -171,9 +171,9 @@ export default function ExploreScreen() {
         </View>
 
         <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Incontri sull'isola</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Incontri sull’isola</Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Alcuni Brushlings arrivano da uova speciali trovate durante l'esplorazione.
+            Alcuni Brushlings arrivano da uova speciali trovate durante l’esplorazione.
           </Text>
         </View>
 
