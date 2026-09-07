@@ -30,6 +30,17 @@ export type BrushlingGameStats = {
   unlockedIds: BrushlingId[];
 };
 
+export type BrushlingReward = {
+  sessionId: string;
+  completed: boolean;
+  xpEarned: number;
+  coinsEarned: number;
+  previousLevel: number;
+  level: number;
+  evolvedFrom?: string;
+  evolvedTo?: string;
+};
+
 export const BRUSHLINGS: BrushlingDefinition[] = [
   {
     id: "bloopi",
@@ -186,5 +197,33 @@ export function computeBrushlingStats(history: BrushSession[]): BrushlingGameSta
     todayCompletedSessions,
     streakDays: computeStreak(history),
     unlockedIds,
+  };
+}
+
+export function computeSessionReward(
+  history: BrushSession[],
+  sessionId: string,
+  selectedId: BrushlingId,
+): BrushlingReward | null {
+  const session = history.find((item) => item.id === sessionId);
+  if (!session) return null;
+
+  const beforeHistory = history.filter((item) => item.id !== sessionId);
+  const before = computeBrushlingStats(beforeHistory);
+  const after = computeBrushlingStats(history);
+  const creature = getBrushling(selectedId);
+  const beforeEvolution = getEvolution(creature, before.level);
+  const afterEvolution = getEvolution(creature, after.level);
+  const evolved = beforeEvolution.name !== afterEvolution.name;
+
+  return {
+    sessionId,
+    completed: session.completed,
+    xpEarned: Math.max(0, after.xp - before.xp),
+    coinsEarned: Math.max(0, after.coins - before.coins),
+    previousLevel: before.level,
+    level: after.level,
+    evolvedFrom: evolved ? beforeEvolution.name : undefined,
+    evolvedTo: evolved ? afterEvolution.name : undefined,
   };
 }
