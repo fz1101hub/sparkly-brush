@@ -16,7 +16,7 @@ import { getBrushling, getEvolution } from "@/lib/brushlings";
 export default function RewardsScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { inventory, stats } = useBrushling();
+  const { inventory, walletCoins } = useBrushling();
 
   return (
     <ScreenContainer>
@@ -153,12 +153,24 @@ export default function RewardsScreen() {
           })}
         </View>
 
-        <View style={[styles.footerCard, { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" }]}>
-          <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
-          <Text style={[styles.footerText, { color: colors.foreground }]}>
-            Hai {stats.coins} monete sorriso. Nel prossimo incremento potremo usarle per decorazioni, accessori e habitat dei Brushlings.
-          </Text>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/habitat")}
+          style={({ pressed }) => [
+            styles.footerCard,
+            { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" },
+            pressed && styles.pressed,
+          ]}
+        >
+          <MaterialIcons name="home" size={22} color={colors.primary} />
+          <View style={styles.footerCopy}>
+            <Text style={[styles.footerTitle, { color: colors.foreground }]}>Vai alla tana</Text>
+            <Text style={[styles.footerText, { color: colors.muted }]}>
+              Hai {walletCoins} monete sorriso da spendere in habitat, accessori e decorazioni.
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+        </Pressable>
       </ScrollView>
     </ScreenContainer>
   );
@@ -212,6 +224,8 @@ const styles = StyleSheet.create({
   progressFill: { height: "100%", borderRadius: 99 },
   progressText: { fontSize: 9, lineHeight: 13, fontWeight: "800", marginTop: 4 },
   footerCard: { borderWidth: 1, borderRadius: 20, padding: 14, flexDirection: "row", alignItems: "flex-start", gap: 9 },
-  footerText: { flex: 1, fontSize: 11, lineHeight: 17, fontWeight: "600" },
+  footerCopy: { flex: 1 },
+  footerTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  footerText: { fontSize: 10, lineHeight: 15, fontWeight: "600", marginTop: 2 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
 });
