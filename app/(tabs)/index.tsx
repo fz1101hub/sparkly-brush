@@ -3,7 +3,7 @@ import { useKeepAwake } from "expo-keep-awake";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
-import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { BrushlingAvatar } from "@/components/brushling-avatar";\nimport { SessionRewardModal } from "@/components/session-reward-modal";\nimport { StarterChooser } from "@/components/starter-chooser";
 import { MouthZones } from "@/components/mouth-zones";
 import { ScreenContainer } from "@/components/screen-container";
 import { TimerRing } from "@/components/timer-ring";
@@ -32,7 +32,7 @@ function sameDay(timestamp: number) {
 
 export default function TodayScreen() {
   const colors = useColors();
-  const { selected, stats } = useBrushling();
+  const { selected, stats, profileReady, hasChosenStarter } = useBrushling();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
 
@@ -58,9 +58,44 @@ export default function TodayScreen() {
   const connecting = status === "scanning" || status === "connecting";
   const levelProgress = `${Math.round(stats.levelProgress * 100)}%` as `${number}%`;
 
+  if (!profileReady) {
+    return (
+      <ScreenContainer>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <AppHeader eyebrow="Brushlings" title="Preparo l'avventura..." connected={status === "connected"} />
+          <View style={[styles.loadingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <MaterialIcons name="auto-awesome" size={30} color={colors.primary} />
+            <Text style={[styles.loadingTitle, { color: colors.foreground }]}>Carico il tuo mondo</Text>
+            <Text style={[styles.loadingCopy, { color: colors.muted }]}>
+              Un attimo: sto preparando creature e progressi salvati su questo telefono.
+            </Text>
+          </View>
+        </ScrollView>
+      </ScreenContainer>
+    );
+  }
+
+  if (!hasChosenStarter) {
+    return (
+      <ScreenContainer>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <AppHeader eyebrow="Brushlings" title="La tua avventura inizia qui" connected={status === "connected"} />
+          <StarterChooser />
+          <View style={styles.privacyNote}>
+            <MaterialIcons name="lock-outline" size={18} color={colors.muted} />
+            <Text style={[styles.privacyText, { color: colors.muted }]}>
+              La scelta del compagno resta salvata solo su questo telefono.
+            </Text>
+          </View>
+        </ScrollView>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
       <ActiveWakeLock active={isActive} />
+      <SessionRewardModal />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader
           eyebrow="Brushlings"
@@ -213,6 +248,16 @@ function liveMode(model: string) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 120, gap: 18 },
+  loadingCard: {
+    borderWidth: 1,
+    borderRadius: 28,
+    minHeight: 210,
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingTitle: { fontSize: 20, lineHeight: 26, fontWeight: "900", marginTop: 10 },
+  loadingCopy: { fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 4, maxWidth: 280 },
   companionCard: {
     borderRadius: 28,
     borderWidth: 2,
