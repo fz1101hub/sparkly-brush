@@ -12,11 +12,13 @@ import {
 
 type ParentRewardsContextValue = {
   rewards: ParentRewardProgress[];
+  definitions: ParentReward[];
   nextReward: ParentRewardProgress | null;
   ready: boolean;
   addReward: (title: string, requirement: ParentRewardRequirement, target: number) => Promise<void>;
   removeReward: (id: string) => Promise<void>;
   markDelivered: (id: string) => Promise<void>;
+  restoreRewards: (rewards: ParentReward[]) => Promise<void>;
 };
 
 const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(null);
@@ -75,12 +77,19 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
     await saveParentRewards(next);
   }, [definitions, demoMode]);
 
-  const value = useMemo(() => ({ rewards, nextReward, ready, addReward, removeReward, markDelivered }), [
+  const restoreRewards = useCallback(async (restored: ParentReward[]) => {
+    setDefinitions(restored);
+    await saveParentRewards(restored);
+  }, []);
+
+  const value = useMemo(() => ({ rewards, definitions, nextReward, ready, addReward, removeReward, markDelivered, restoreRewards }), [
     addReward,
+    definitions,
     markDelivered,
     nextReward,
     ready,
     removeReward,
+    restoreRewards,
     rewards,
   ]);
 
