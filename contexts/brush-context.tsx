@@ -22,8 +22,22 @@ import {
   type StoredDeviceSession,
   type ToothbrushDevice,
 } from "@/lib/brush-types";
-import { clearHistory, loadHistory, replaceHistory, saveLastDevice, saveSession } from "@/lib/brush-storage";
+import {
+  clearDemoHistory,
+  clearHistory,
+  loadDemoHistory,
+  loadDemoMode,
+  loadHistory,
+  replaceDemoHistory,
+  replaceHistory,
+  saveDemoMode,
+  saveDemoSession,
+  saveLastDevice,
+  saveSession,
+} from "@/lib/brush-storage";
 import { createSonicareClient } from "@/lib/sonicare-client";
+
+export type DemoSessionPeriod = "morning" | "evening" | "now";
 
 type BrushContextValue = {
   status: ConnectionStatus;
@@ -32,6 +46,7 @@ type BrushContextValue = {
   device: ToothbrushDevice | null;
   live: BrushLiveData;
   history: BrushSession[];
+  realHistory: BrushSession[];
   historyReady: boolean;
   logs: DiagnosticLog[];
   isActive: boolean;
@@ -39,11 +54,17 @@ type BrushContextValue = {
   activeTarget: number;
   activeZone: number;
   manualActive: boolean;
+  demoMode: boolean;
+  demoSessionCount: number;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   syncLatest: () => Promise<void>;
   startManual: () => void;
   stopManual: () => Promise<void>;
+  setDemoMode: (enabled: boolean) => Promise<void>;
+  addDemoSession: (period: DemoSessionPeriod) => Promise<void>;
+  generateDemoWeek: () => Promise<void>;
+  clearDemoData: () => Promise<void>;
   restoreRealHistory: (history: BrushSession[]) => Promise<void>;
   clearAllHistory: () => Promise<void>;
 };
@@ -52,13 +73,31 @@ const BrushContext = createContext<BrushContextValue | null>(null);
 
 const nowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+function localDayId(timestamp: number): string {
+  const date = new Date(timestamp);
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("");
+}
+
+function demoTimestamp(period: DemoSessionPeriod, base: Date = new Date()): number {
+  if (period === "now") return base.getTime();
+  const date = new Date(base);
+  date.setHours(period === "morning" ? 8 : 20, 0, 0, 0);
+  return date.getTime();
+}
+
+function makeDemoSession(id: string, startedAt: number): BrushSession {
+  return { id, startedAt, durationSeconds: 120, targetSeconds: 120, completed: true, source: "demo" };
+}
+
 export function BrushProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("Pronto per cercare lo spazzolino");
   const [adapterState, setAdapterState] = useState("Unknown");
   const [device, setDevice] = useState<ToothbrushDevice | null>(null);
   const [live, setLive] = useState<BrushLiveData>(DEFAULT_LIVE_DATA);
-  const [history, setHistory] = useState<BrushSession[]>([]);
+  const [realHistory, setRealHistory] = useState<BrushSession[]>([]);
+  const [demoHistory, setDemoHistory] = useState<BrushSession[]>([]);
+  const [demoMode, setDemoModeState] = useState(false);
   const [historyReady, setHistoryReady] = useState(false);
   const [logs, setLogs] = useState<DiagnosticLog[]>([]);
   const [manualActive, setManualActive] = useState(false);
@@ -68,6 +107,8 @@ export function BrushProvider({ children }: PropsWithChildren) {
   const liveRef = useRef<BrushLiveData>(DEFAULT_LIVE_DATA);
   const manualStartRef = useRef<number>(Date.now());
   const manualSavedRef = useRef(false);
+
+  const history = demoMode ? demoHistory : realHistory;
 
   const appendLog = useCallback((level: LogLevel, message: string) => {
     setLogs((current) => [
@@ -87,12 +128,16 @@ export function BrushProvider({ children }: PropsWithChildren) {
       source: "device",
     };
     const next = await saveSession(session);
-    setHistory(next);
+    setRealHistory(next);
   }, []);
 
   useEffect(() => {
-    void loadHistory()
-      .then(setHistory)
+    void Promise.all([loadHistory(), loadDemoHistory(), loadDemoMode()])
+      .then(([savedHistory, savedDemoHistory, savedDemoMode]) => {
+        setRealHistory(savedHistory);
+        setDemoHistory(savedDemoHistory);
+        setDemoModeState(savedDemoMode);
+      })
       .finally(() => setHistoryReady(true));
 
     const client = createSonicareClient({
@@ -130,7 +175,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
                   targetSeconds: previous.routineSeconds,
                   completed: previous.elapsedSeconds >= Math.min(previous.routineSeconds, 120) * 0.9,
                   source: "device",
-                }).then(setHistory);
+                }).then(setRealHistory);
               })
               .catch(() => undefined);
           }, 450);
