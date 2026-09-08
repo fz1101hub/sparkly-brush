@@ -12,8 +12,10 @@ import { ScreenContainer } from "@/components/screen-container";
 import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
+import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
 
 function ActiveWakeLock({ active }: { active: boolean }) {
   if (active) return <KeepAwake />;
@@ -37,6 +39,7 @@ export default function TodayScreen() {
   const colors = useColors();
   const router = useRouter();
   const { selected, stats, walletCoins, missionCenter, profileReady, hasChosenStarter } = useBrushling();
+  const { nextReward: familyReward } = useParentRewards();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
 
@@ -63,6 +66,15 @@ export default function TodayScreen() {
     .reduce((total, session) => total + session.durationSeconds, 0);
   const connecting = status === "scanning" || status === "connecting";
   const levelProgress = `${Math.round(stats.levelProgress * 100)}%` as `${number}%`;
+  const dialogue = getBrushlingDialogue(
+    selected.id,
+    inferDialogueContext(isActive),
+    stats.completedSessions,
+    stats.level,
+  );
+  const familyRewardProgress = familyReward
+    ? `${Math.min(100, Math.round((familyReward.progress / familyReward.target) * 100))}%` as `${number}%`
+    : "0%" as `${number}%`;
 
   if (!profileReady) {
     return (
@@ -154,6 +166,62 @@ export default function TodayScreen() {
             </Text>
           </View>
         </View>
+
+        <View style={[styles.speechCard, { backgroundColor: "#FFFFFF", borderColor: selected.accent }]}>
+          <View style={[styles.speechIcon, { backgroundColor: selected.soft }]}>
+            <MaterialIcons name="chat-bubble-outline" size={21} color={selected.accent} />
+          </View>
+          <View style={styles.speechCopy}>
+            <Text style={[styles.speechName, { color: selected.accent }]}>{currentEvolution.name} dice:</Text>
+            <Text style={[styles.speechText, { color: colors.foreground }]}>{dialogue}</Text>
+          </View>
+        </View>
+
+        {familyReward && !familyReward.deliveredAt ? (
+          <View
+            style={[
+              styles.familyRewardCard,
+              {
+                backgroundColor: familyReward.unlocked ? "#E8F8EF" : "#FFF8E8",
+                borderColor: familyReward.unlocked ? "#55B987" : "#F2D588",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.familyRewardIcon,
+                { backgroundColor: familyReward.unlocked ? "#55B987" : "#E8BE38" },
+              ]}
+            >
+              <MaterialIcons name={familyReward.unlocked ? "redeem" : "family-restroom"} size={23} color="#FFFFFF" />
+            </View>
+            <View style={styles.familyRewardCopy}>
+              <Text style={[styles.familyRewardEyebrow, { color: familyReward.unlocked ? "#2E8A60" : "#8A6900" }]}>
+                PREMIO DI FAMIGLIA
+              </Text>
+              <Text style={[styles.familyRewardTitle, { color: colors.foreground }]}>{familyReward.title}</Text>
+              <View style={styles.familyRewardProgressRow}>
+                <View style={styles.familyRewardTrack}>
+                  <View
+                    style={[
+                      styles.familyRewardFill,
+                      {
+                        width: familyRewardProgress,
+                        backgroundColor: familyReward.unlocked ? "#55B987" : "#E8BE38",
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.familyRewardCount, { color: colors.muted }]}>
+                  {familyReward.progress}/{familyReward.target}
+                </Text>
+              </View>
+              <Text style={[styles.familyRewardText, { color: colors.muted }]}>
+                {familyReward.unlocked ? "Obiettivo raggiunto! Parlane con un genitore." : "Continua la routine per sbloccarlo."}
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.statusIcon, { backgroundColor: demoMode ? "#FFF4C9" : status === "connected" ? "#E1F7EF" : "#EEF2FF" }]}>
@@ -349,6 +417,35 @@ const styles = StyleSheet.create({
   xpTrack: { height: 8, borderRadius: 99, overflow: "hidden", marginTop: 10 },
   xpFill: { height: "100%", borderRadius: 99 },
   xpText: { fontSize: 10, lineHeight: 15, fontWeight: "800", marginTop: 5 },
+  speechCard: {
+    borderWidth: 1.5,
+    borderRadius: 20,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 9,
+  },
+  speechIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  speechCopy: { flex: 1 },
+  speechName: { fontSize: 9, lineHeight: 13, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.6 },
+  speechText: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 2 },
+  familyRewardCard: {
+    borderWidth: 1.5,
+    borderRadius: 21,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  familyRewardIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  familyRewardCopy: { flex: 1 },
+  familyRewardEyebrow: { fontSize: 8, lineHeight: 12, fontWeight: "900", letterSpacing: 0.8 },
+  familyRewardTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
+  familyRewardProgressRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 6 },
+  familyRewardTrack: { flex: 1, height: 7, borderRadius: 99, backgroundColor: "#FFFFFFAA", overflow: "hidden" },
+  familyRewardFill: { height: "100%", borderRadius: 99 },
+  familyRewardCount: { fontSize: 9, lineHeight: 13, fontWeight: "900" },
+  familyRewardText: { fontSize: 9, lineHeight: 14, marginTop: 4 },
   statusCard: { borderRadius: 22, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", gap: 12 },
   statusIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   statusCopy: { flex: 1 },
