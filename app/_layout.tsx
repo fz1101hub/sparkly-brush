@@ -18,6 +18,9 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
+import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
+import { PreferencesProvider } from "@/contexts/preferences-context";
+import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 
@@ -83,7 +86,9 @@ export default function RootLayout() {
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BrushProvider>
-        <BrushlingProvider>
+        <PreferencesProvider>
+          <BrushlingProvider>
+            <ParentRewardsProvider>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
               {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
@@ -93,10 +98,13 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="oauth/callback" />
               </Stack>
+              <OnboardingOverlay />
               <StatusBar style="dark" />
             </QueryClientProvider>
           </trpc.Provider>
-        </BrushlingProvider>
+            </ParentRewardsProvider>
+          </BrushlingProvider>
+        </PreferencesProvider>
       </BrushProvider>
     </GestureHandlerRootView>
   );
