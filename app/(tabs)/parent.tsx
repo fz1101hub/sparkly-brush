@@ -1,13 +1,16 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
 import { computeParentDashboard } from "@/lib/parent-dashboard";
+import { rewardRequirementLabel, type ParentRewardRequirement } from "@/lib/parent-rewards";
 
 function percentage(value: number): string {
   return String(Math.round(value * 100)) + "%";
@@ -22,9 +25,20 @@ function duration(seconds: number): string {
 export default function ParentDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { history } = useBrush();
+  const { history, demoMode } = useBrush();
   const { stats, missionCenter } = useBrushling();
+  const { rewards, addReward, removeReward, markDelivered } = useParentRewards();
+  const [rewardTitle, setRewardTitle] = useState("");
+  const [requirement, setRequirement] = useState<ParentRewardRequirement>("perfect-days");
+  const [target, setTarget] = useState("3");
   const dashboard = computeParentDashboard(history);
+
+  const createReward = async () => {
+    const parsedTarget = Math.max(1, Math.min(30, Number.parseInt(target, 10) || 1));
+    if (!rewardTitle.trim()) return;
+    await addReward(rewardTitle, requirement, parsedTarget);
+    setRewardTitle("");
+  };
 
   return (
     <ScreenContainer>
@@ -143,6 +157,199 @@ export default function ParentDashboardScreen() {
           </View>
         </View>
 
+        <View>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Premi di famiglia</Text>
+          <Text style={[styles.sectionCopy, { color: colors.muted }]}>
+            Crea ricompense reali scelte dal genitore. L’app tiene solo il progresso; la promessa resta una cosa di famiglia.
+          </Text>
+        </View>
+
+        <View style={[styles.rewardBuilder, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.builderEyebrow, { color: colors.primary }]}>NUOVO PREMIO</Text>
+          <TextInput
+            value={rewardTitle}
+            onChangeText={setRewardTitle}
+            placeholder="Es. scegli il film di stasera"
+            placeholderTextColor={colors.muted}
+            style={[styles.rewardInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: "#F8F9FC" }]}
+          />
+
+          <View style={styles.requirementRow}>
+            {([
+              ["completed-sessions", "Sessioni", "check-circle"],
+              ["perfect-days", "Giorni perfetti", "wb-sunny"],
+              ["streak", "Streak", "local-fire-department"],
+            ] as const).map(([value, label, icon]) => (
+              <Pressable
+                key={value}
+                onPress={() => {
+                  setRequirement(value);
+                  setTarget(value === "completed-sessions" ? "5" : value === "perfect-days" ? "3" : "7");
+                }}
+                style={({ pressed }) => [
+                  styles.requirementButton,
+                  {
+                    backgroundColor: requirement === value ? "#EEF4FF" : "#FFFFFF",
+                    borderColor: requirement === value ? colors.primary : colors.border,
+                  },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <MaterialIcons name={icon} size={18} color={requirement === value ? colors.primary : colors.muted} />
+                <Text style={[styles.requirementText, { color: requirement === value ? colors.primary : colors.foreground }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.targetRow}>
+            <View style={styles.targetCopy}>
+              <Text style={[styles.targetLabel, { color: colors.foreground }]}>Obiettivo</Text>
+              <Text style={[styles.targetHelp, { color: colors.muted }]}>
+                {rewardRequirementLabel(requirement, Number.parseInt(target, 10) || 1)}
+              </Text>
+            </View>
+            <TextInput
+              value={target}
+              onChangeText={(value) => setTarget(value.replace(/[^0-9]/g, "").slice(0, 2))}
+              keyboardType="number-pad"
+              style={[styles.targetInput, { color: colors.foreground, borderColor: colors.border }]}
+            />
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            disabled={!rewardTitle.trim()}
+            onPress={() => void createReward()}
+            style={({ pressed }) => [
+              styles.addRewardButton,
+              !rewardTitle.trim() && styles.disabled,
+              pressed && styles.pressed,
+            ]}
+          >
+            <MaterialIcons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.addRewardText}>Aggiungi premio</Text>
+          </Pressable>
+        </View>
+
+        {rewards.length ? (
+          <View style={styles.rewardStack}>
+            {rewards.map((reward) => (
+              <View
+                key={reward.id}
+                style={[
+                  styles.rewardCard,
+                  {
+                    backgroundColor: reward.deliveredAt
+                      ? "#F5F6F8"
+                      : reward.unlocked
+                        ? "#E8F8EF"
+                        : "#FFF8E8",
+                    borderColor: reward.deliveredAt
+                      ? colors.border
+                      : reward.unlocked
+                        ? "#55B987"
+                        : "#F2D588",
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.rewardIcon,
+                    {
+                      backgroundColor: reward.deliveredAt
+                        ? "#B8BDC8"
+                        : reward.unlocked
+                          ? "#55B987"
+                          : "#E8BE38",
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name={reward.deliveredAt ? "done-all" : reward.unlocked ? "redeem" : "lock-clock"}
+                    size={23}
+                    color="#FFFFFF"
+                  />
+                </View>
+                <View style={styles.rewardCopy}>
+                  <Text style={[styles.rewardTitle, { color: colors.foreground }]}>{reward.title}</Text>
+                  <Text style={[styles.rewardMeta, { color: colors.muted }]}>
+                    {rewardRequirementLabel(reward.requirement, reward.target)} · {reward.progress}/{reward.target}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rewardState,
+                      {
+                        color: reward.deliveredAt
+                          ? colors.muted
+                          : reward.unlocked
+                            ? "#2E8A60"
+                            : "#8A6900",
+                      },
+                    ]}
+                  >
+                    {reward.deliveredAt
+                      ? "Consegnato"
+                      : reward.unlocked
+                        ? demoMode
+                          ? "Sbloccato nella demo · non consegnabile"
+                          : "Sbloccato · pronto da consegnare"
+                        : "In corso"}
+                  </Text>
+                </View>
+                <View style={styles.rewardActions}>
+                  {reward.unlocked && !reward.deliveredAt ? (
+                    <Pressable
+                      disabled={demoMode}
+                      onPress={() => void markDelivered(reward.id)}
+                      style={({ pressed }) => [
+                        styles.deliverButton,
+                        demoMode && styles.disabled,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <MaterialIcons name="check" size={18} color="#FFFFFF" />
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    onPress={() => void removeReward(reward.id)}
+                    style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
+                  >
+                    <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.emptyRewards, { borderColor: colors.border }]}>
+            <MaterialIcons name="redeem" size={25} color={colors.muted} />
+            <Text style={[styles.emptyRewardText, { color: colors.muted }]}>
+              Nessun premio di famiglia ancora configurato.
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/settings")}
+          style={({ pressed }) => [
+            styles.settingsCard,
+            { backgroundColor: "#F0ECFF", borderColor: "#D4C9F5" },
+            pressed && styles.pressed,
+          ]}
+        >
+          <MaterialIcons name="tune" size={24} color="#7357C7" />
+          <View style={styles.settingsCopy}>
+            <Text style={[styles.settingsTitle, { color: colors.foreground }]}>Suoni, musica e vibrazione</Text>
+            <Text style={[styles.settingsText, { color: colors.muted }]}>
+              Regola il feedback dell’app senza cambiare progressi o storico.
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+        </Pressable>
+
         <View style={[styles.noteCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
           <MaterialIcons name="info-outline" size={20} color={colors.muted} />
           <Text style={[styles.noteText, { color: colors.muted }]}>
@@ -190,6 +397,36 @@ const styles = StyleSheet.create({
   progressCopy: { flex: 1 },
   progressTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
   progressText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
+  rewardBuilder: { borderWidth: 1, borderRadius: 22, padding: 14, gap: 11 },
+  builderEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  rewardInput: { minHeight: 48, borderWidth: 1, borderRadius: 15, paddingHorizontal: 12, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  requirementRow: { flexDirection: "row", gap: 7 },
+  requirementButton: { flex: 1, minHeight: 62, borderWidth: 1.5, borderRadius: 15, alignItems: "center", justifyContent: "center", gap: 4, paddingHorizontal: 5 },
+  requirementText: { fontSize: 9, lineHeight: 13, fontWeight: "900", textAlign: "center" },
+  targetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  targetCopy: { flex: 1 },
+  targetLabel: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  targetHelp: { fontSize: 9, lineHeight: 14, marginTop: 1 },
+  targetInput: { width: 62, height: 44, borderWidth: 1, borderRadius: 14, textAlign: "center", fontSize: 16, fontWeight: "900" },
+  addRewardButton: { minHeight: 48, borderRadius: 16, backgroundColor: "#2457D6", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+  addRewardText: { color: "#FFFFFF", fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  rewardStack: { gap: 9 },
+  rewardCard: { borderWidth: 1.5, borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
+  rewardIcon: { width: 45, height: 45, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  rewardCopy: { flex: 1 },
+  rewardTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  rewardMeta: { fontSize: 9, lineHeight: 14, marginTop: 2 },
+  rewardState: { fontSize: 9, lineHeight: 14, fontWeight: "900", marginTop: 3 },
+  rewardActions: { flexDirection: "row", alignItems: "center", gap: 5 },
+  deliverButton: { width: 36, height: 36, borderRadius: 12, backgroundColor: "#2E9B67", alignItems: "center", justifyContent: "center" },
+  removeButton: { width: 36, height: 36, borderRadius: 12, backgroundColor: "#FFF0F2", alignItems: "center", justifyContent: "center" },
+  emptyRewards: { minHeight: 80, borderWidth: 1, borderStyle: "dashed", borderRadius: 19, alignItems: "center", justifyContent: "center", gap: 5, padding: 12 },
+  emptyRewardText: { fontSize: 10, lineHeight: 15, textAlign: "center" },
+  settingsCard: { borderWidth: 1, borderRadius: 20, padding: 13, flexDirection: "row", alignItems: "center", gap: 9 },
+  settingsCopy: { flex: 1 },
+  settingsTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  settingsText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
+  disabled: { opacity: 0.45 },
   noteCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 },
   noteText: { flex: 1, fontSize: 10, lineHeight: 15 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
