@@ -19,7 +19,7 @@ import {
 export default function BackupScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { history, restoreRealHistory } = useBrush();
+  const { realHistory, demoMode, setDemoMode, restoreRealHistory } = useBrush();
   const {
     selectedId,
     hasChosenStarter,
@@ -34,14 +34,15 @@ export default function BackupScreen() {
 
   const currentBackup = useMemo(
     () => createBackup(
-      history,
+      realHistory,
       { selectedId, hasChosenStarter },
       customization,
     ),
-    [customization, hasChosenStarter, history, selectedId],
+    [customization, hasChosenStarter, realHistory, selectedId],
   );
 
   const generate = () => {
+    if (demoMode) return;
     const code = serializeBackup(currentBackup);
     setBackupCode(code);
     setMessage("Backup aggiornato e pronto da salvare.");
@@ -49,6 +50,7 @@ export default function BackupScreen() {
   };
 
   const shareBackup = async () => {
+    if (demoMode) return;
     const code = backupCode || serializeBackup(currentBackup);
     if (!backupCode) setBackupCode(code);
     await Share.share({
@@ -70,7 +72,7 @@ export default function BackupScreen() {
   };
 
   const restore = async () => {
-    if (!preview) return;
+    if (!preview || demoMode) return;
     await restoreFromBackup(preview.profile, preview.customization);
     await restoreRealHistory(preview.history);
     setImportCode("");
@@ -109,6 +111,20 @@ export default function BackupScreen() {
           </View>
         </View>
 
+        {demoMode ? (
+          <View style={[styles.demoWarning, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
+            <MaterialIcons name="science" size={22} color="#9A7200" />
+            <View style={styles.demoWarningCopy}>
+              <Text style={[styles.demoWarningTitle, { color: colors.foreground }]}>Modalità demo attiva</Text>
+              <Text style={[styles.demoWarningText, { color: colors.muted }]}>
+                I backup usano solo i dati reali. Esci dalla demo prima di esportare o ripristinare.
+              </Text>
+            </View>
+            <Pressable onPress={() => void setDemoMode(false)} style={({ pressed }) => [styles.demoWarningButton, pressed && styles.pressed]}>
+              <Text style={styles.demoWarningButtonText}>Esci demo</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {message ? (
           <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
@@ -134,7 +150,8 @@ export default function BackupScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={generate}
-              style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}
+              disabled={demoMode}
+              style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, demoMode && styles.disabled, pressed && styles.pressed]}
             >
               <MaterialIcons name="refresh" size={20} color={colors.primary} />
               <Text style={[styles.secondaryText, { color: colors.primary }]}>Genera codice</Text>
@@ -142,7 +159,8 @@ export default function BackupScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => void shareBackup()}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+              disabled={demoMode}
+              style={({ pressed }) => [styles.primaryButton, demoMode && styles.disabled, pressed && styles.pressed]}
             >
               <MaterialIcons name="ios-share" size={20} color="#FFFFFF" />
               <Text style={styles.primaryText}>Condividi backup</Text>
@@ -260,6 +278,12 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   heroTitle: { fontSize: 16, lineHeight: 21, fontWeight: "900" },
   heroText: { fontSize: 10, lineHeight: 15, marginTop: 3 },
+  demoWarning: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 9 },
+  demoWarningCopy: { flex: 1 },
+  demoWarningTitle: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  demoWarningText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
+  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
+  demoWarningButtonText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   messageCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
   messageText: { flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
   section: { gap: 12 },
