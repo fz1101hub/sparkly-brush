@@ -2,7 +2,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { AnimatedBrushling } from "@/components/animated-brushling";
 import { usePreferences } from "@/contexts/preferences-context";
 import { getBrushling } from "@/lib/brushlings";
 
@@ -55,7 +55,7 @@ export function OnboardingOverlay() {
         <View style={styles.orbTwo} />
         <Animated.View style={[styles.card, { opacity: fade }]}>
           <View style={styles.avatarHalo}>
-            <BrushlingAvatar creature={bloopi} size={132} level={1} />
+            <AnimatedBrushling creature={bloopi} size={132} level={1} active />
           </View>
           <View style={styles.iconBadge}>
             <MaterialIcons name={slide.icon} size={24} color="#2457D6" />
