@@ -1,5 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useKeepAwake } from "expo-keep-awake";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -34,7 +35,8 @@ function sameDay(timestamp: number) {
 
 export default function TodayScreen() {
   const colors = useColors();
-  const { selected, stats, walletCoins, profileReady, hasChosenStarter } = useBrushling();
+  const router = useRouter();
+  const { selected, stats, walletCoins, missionCenter, profileReady, hasChosenStarter } = useBrushling();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
 
@@ -215,6 +217,46 @@ export default function TodayScreen() {
           </View>
         </View>
 
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/missions")}
+          style={({ pressed }) => [
+            styles.missionCard,
+            {
+              backgroundColor: missionCenter.today.allCompleted ? "#FFF4C9" : "#EEF4FF",
+              borderColor: missionCenter.today.allCompleted ? "#E8BE38" : "#C8D9FF",
+            },
+            pressed && styles.pressed,
+          ]}
+        >
+          <View
+            style={[
+              styles.missionIcon,
+              { backgroundColor: missionCenter.today.allCompleted ? "#E8BE38" : "#2457D6" },
+            ]}
+          >
+            <MaterialIcons
+              name={missionCenter.today.allCompleted ? "card-giftcard" : "flag"}
+              size={26}
+              color="#FFFFFF"
+            />
+          </View>
+          <View style={styles.missionCopy}>
+            <Text style={[styles.missionEyebrow, { color: missionCenter.today.allCompleted ? "#9A7200" : colors.primary }]}>
+              MISSIONI DI OGGI
+            </Text>
+            <Text style={[styles.missionTitle, { color: colors.foreground }]}>
+              {missionCenter.today.completedCount}/3 completate
+            </Text>
+            <Text style={[styles.missionText, { color: colors.muted }]}>
+              {missionCenter.today.allCompleted
+                ? "Scrigno del Sorriso aperto!"
+                : "Mattina, sera e doppio sorriso: completa la routine per il bonus."}
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+        </Pressable>
+
         <View style={[styles.rewardStrip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rewardItem}>
             <MaterialIcons name="local-fire-department" size={21} color="#E76A2C" />
@@ -303,6 +345,19 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, minHeight: 128, borderRadius: 22, padding: 16, justifyContent: "space-between" },
   statValue: { fontSize: 24, lineHeight: 30, fontWeight: "900", marginTop: 8 },
   statLabel: { fontSize: 12, lineHeight: 17, fontWeight: "600" },
+  missionCard: {
+    borderWidth: 1.5,
+    borderRadius: 22,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+  missionIcon: { width: 50, height: 50, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  missionCopy: { flex: 1 },
+  missionEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  missionTitle: { fontSize: 16, lineHeight: 21, fontWeight: "900" },
+  missionText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   rewardStrip: {
     borderWidth: 1,
     borderRadius: 20,
