@@ -79,16 +79,16 @@ export default function DeviceScreen() {
             <View style={styles.actions}>
               <Pressable
                 onPress={connected ? () => void disconnect() : () => void connect()}
-                disabled={busy}
-                style={({ pressed }) => [styles.primaryButton, connected && styles.disconnectButton, busy && styles.disabled, pressed && styles.pressed]}
+                disabled={busy || demoMode}
+                style={({ pressed }) => [styles.primaryButton, connected && styles.disconnectButton, (busy || demoMode) && styles.disabled, pressed && styles.pressed]}
               >
                 <MaterialIcons name={connected ? "link-off" : "bluetooth-searching"} size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>{connected ? "Disconnetti" : busy ? "Ricerca…" : "Cerca e collega"}</Text>
+                <Text style={styles.primaryText}>{demoMode ? "Demo attiva" : connected ? "Disconnetti" : busy ? "Ricerca…" : "Cerca e collega"}</Text>
               </Pressable>
               <Pressable
                 onPress={() => void syncLatest()}
-                disabled={!connected}
-                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, !connected && styles.disabled, pressed && styles.pressed]}
+                disabled={!connected || demoMode}
+                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode) && styles.disabled, pressed && styles.pressed]}
               >
                 <MaterialIcons name="sync" size={22} color={colors.primary} />
                 <Text style={[styles.secondaryText, { color: colors.primary }]}>Sincronizza ultima</Text>
