@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -10,6 +11,7 @@ import { HANDLE_STATE_LABELS } from "@/lib/sonicare-uuids";
 
 export default function DeviceScreen() {
   const colors = useColors();
+  const router = useRouter();
   const {
     status,
     statusMessage,
@@ -97,6 +99,26 @@ export default function DeviceScreen() {
               <InfoRow icon="memory" label="Firmware" value={device?.firmware ?? "da leggere"} />
             </View>
 
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/(tabs)/backup")}
+              style={({ pressed }) => [
+                styles.backupCard,
+                { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.backupIcon}>
+                <MaterialIcons name="settings-backup-restore" size={26} color="#2457D6" />
+              </View>
+              <View style={styles.backupCopy}>
+                <Text style={[styles.backupEyebrow, { color: "#2457D6" }]}>DATI & TRASFERIMENTO</Text>
+                <Text style={[styles.backupTitle, { color: colors.foreground }]}>Proteggi il Brushling</Text>
+                <Text style={[styles.backupText, { color: colors.muted }]}>Backup portatile per ritrovare progressi e compagno su un nuovo telefono.</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+            </Pressable>
+
             <View style={styles.diagnosticHeading}>
               <View>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Diagnostica BLE</Text>
@@ -164,6 +186,12 @@ const styles = StyleSheet.create({
   infoLabel: { flex: 1, fontSize: 13, lineHeight: 18 },
   infoValue: { fontSize: 13, lineHeight: 18, fontWeight: "800", textTransform: "capitalize" },
   infoDivider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
+  backupCard: { borderWidth: 1, borderRadius: 21, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 },
+  backupIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: "#FFFFFFAA", alignItems: "center", justifyContent: "center" },
+  backupCopy: { flex: 1 },
+  backupEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  backupTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
+  backupText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   diagnosticHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   sectionTitle: { fontSize: 19, lineHeight: 25, fontWeight: "900" },
   sectionSubtitle: { fontSize: 11, lineHeight: 16, marginTop: 1 },
