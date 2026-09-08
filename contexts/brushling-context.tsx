@@ -28,6 +28,12 @@ import {
   type SessionDiscovery,
 } from "@/lib/game-inventory";
 import {
+  computeMissionCenter,
+  computeProgressRewardDelta,
+  type MissionCenter,
+  type ProgressRewardDelta,
+} from "@/lib/missions";
+import {
   DEFAULT_CUSTOMIZATION_STATE,
   availableCoins,
   equipCustomization as equipCustomizationState,
@@ -50,12 +56,15 @@ type BrushlingContextValue = {
   selected: BrushlingDefinition;
   stats: BrushlingGameStats;
   inventory: GameInventory;
+  missionCenter: MissionCenter;
   customization: CustomizationState;
+  totalEarnedCoins: number;
   walletCoins: number;
   profileReady: boolean;
   hasChosenStarter: boolean;
   reward: BrushlingReward | null;
   discovery: SessionDiscovery | null;
+  progressReward: ProgressRewardDelta | null;
   chooseStarter: (id: BrushlingId) => Promise<boolean>;
   selectBrushling: (id: BrushlingId) => Promise<boolean>;
   buyCustomization: (id: CustomizationItemId) => Promise<PurchaseResult>;
@@ -73,6 +82,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const [hasChosenStarter, setHasChosenStarter] = useState(false);
   const [reward, setReward] = useState<BrushlingReward | null>(null);
   const [discovery, setDiscovery] = useState<SessionDiscovery | null>(null);
+  const [progressReward, setProgressReward] = useState<ProgressRewardDelta | null>(null);
 
   const rewardTrackerReadyRef = useRef(false);
   const knownSessionIdsRef = useRef<Set<string>>(new Set());
@@ -89,9 +99,11 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
   const stats = useMemo(() => computeBrushlingStats(history), [history]);
   const inventory = useMemo(() => computeGameInventory(history), [history]);
+  const missionCenter = useMemo(() => computeMissionCenter(history), [history]);
+  const totalEarnedCoins = stats.coins + missionCenter.totalBonusCoins;
   const walletCoins = useMemo(
-    () => availableCoins(stats.coins, customization),
-    [customization, stats.coins],
+    () => availableCoins(totalEarnedCoins, customization),
+    [customization, totalEarnedCoins],
   );
 
   useEffect(() => {
@@ -118,10 +130,12 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     const nextReward = computeSessionReward(history, newSession.id, selectedId);
     const nextDiscovery = computeSessionDiscovery(history, newSession.id);
+    const nextProgressReward = computeProgressRewardDelta(history, newSession.id);
 
     if (nextReward && (nextReward.xpEarned > 0 || nextReward.coinsEarned > 0)) {
       setReward(nextReward);
       setDiscovery(nextDiscovery);
+      setProgressReward(nextProgressReward);
     }
   }, [hasChosenStarter, history, historyReady, selectedId]);
 
@@ -143,14 +157,14 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const buyCustomization = useCallback(async (id: CustomizationItemId): Promise<PurchaseResult> => {
     if (customization.ownedIds.includes(id)) return "owned";
 
-    const purchased = purchaseCustomizationState(customization, id, stats.coins);
+    const purchased = purchaseCustomizationState(customization, id, totalEarnedCoins);
     if (!purchased) return "insufficient";
 
     const next = equipCustomizationState(purchased, id) ?? purchased;
     setCustomization(next);
     await saveCustomizationState(next);
     return "purchased";
-  }, [customization, stats.coins]);
+  }, [customization, totalEarnedCoins]);
 
   const equipCustomization = useCallback(async (id: CustomizationItemId) => {
     const next = equipCustomizationState(customization, id);
@@ -164,6 +178,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const dismissReward = useCallback(() => {
     setReward(null);
     setDiscovery(null);
+    setProgressReward(null);
   }, []);
 
   const value = useMemo<BrushlingContextValue>(() => ({
@@ -171,12 +186,15 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     selected: getBrushling(selectedId),
     stats,
     inventory,
+    missionCenter,
     customization,
+    totalEarnedCoins,
     walletCoins,
     profileReady,
     hasChosenStarter,
     reward,
     discovery,
+    progressReward,
     chooseStarter,
     selectBrushling,
     buyCustomization,
@@ -191,11 +209,14 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     equipCustomization,
     hasChosenStarter,
     inventory,
+    missionCenter,
     profileReady,
+    progressReward,
     reward,
     selectBrushling,
     selectedId,
     stats,
+    totalEarnedCoins,
     walletCoins,
   ]);
 
