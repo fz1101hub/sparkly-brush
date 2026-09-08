@@ -92,3 +92,14 @@ export async function loadCustomizationState(): Promise<CustomizationState> {
 export async function saveCustomizationState(state: CustomizationState): Promise<void> {
   await AsyncStorage.setItem(CUSTOMIZATION_KEY, JSON.stringify(state));
 }
+
+export async function restoreBrushlingState(
+  profile: BrushlingProfile,
+  customization: CustomizationState,
+): Promise<void> {
+  await AsyncStorage.multiSet([
+    [SELECTED_BRUSHLING_KEY, profile.selectedId],
+    [STARTER_CHOSEN_KEY, profile.hasChosenStarter ? "true" : "false"],
+    [CUSTOMIZATION_KEY, JSON.stringify(customization)],
+  ]);
+}
