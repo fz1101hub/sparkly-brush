@@ -16,6 +16,7 @@ import {
 } from "react-native-safe-area-context";
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
+import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
@@ -87,6 +88,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BrushProvider>
         <PreferencesProvider>
+          <AudioFeedbackProvider>
           <BrushlingProvider>
             <ParentRewardsProvider>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
@@ -104,6 +106,7 @@ export default function RootLayout() {
           </trpc.Provider>
             </ParentRewardsProvider>
           </BrushlingProvider>
+          </AudioFeedbackProvider>
         </PreferencesProvider>
       </BrushProvider>
     </GestureHandlerRootView>
