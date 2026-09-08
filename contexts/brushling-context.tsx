@@ -44,9 +44,11 @@ import {
 import {
   loadBrushlingProfile,
   loadCustomizationState,
+  restoreBrushlingState,
   saveCustomizationState,
   saveSelectedBrushling,
   saveStarterSelection,
+  type BrushlingProfile,
 } from "@/lib/brushling-storage";
 
 export type PurchaseResult = "purchased" | "owned" | "insufficient";
@@ -69,6 +71,7 @@ type BrushlingContextValue = {
   selectBrushling: (id: BrushlingId) => Promise<boolean>;
   buyCustomization: (id: CustomizationItemId) => Promise<PurchaseResult>;
   equipCustomization: (id: CustomizationItemId) => Promise<boolean>;
+  restoreFromBackup: (profile: BrushlingProfile, customization: CustomizationState) => Promise<void>;
   dismissReward: () => void;
 };
 
@@ -175,6 +178,20 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     return true;
   }, [customization]);
 
+  const restoreFromBackup = useCallback(async (
+    profile: BrushlingProfile,
+    restoredCustomization: CustomizationState,
+  ) => {
+    rewardTrackerReadyRef.current = false;
+    setSelectedId(profile.selectedId);
+    setHasChosenStarter(profile.hasChosenStarter);
+    setCustomization(restoredCustomization);
+    setReward(null);
+    setDiscovery(null);
+    setProgressReward(null);
+    await restoreBrushlingState(profile, restoredCustomization);
+  }, []);
+
   const dismissReward = useCallback(() => {
     setReward(null);
     setDiscovery(null);
@@ -199,6 +216,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     selectBrushling,
     buyCustomization,
     equipCustomization,
+    restoreFromBackup,
     dismissReward,
   }), [
     buyCustomization,
@@ -212,6 +230,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     missionCenter,
     profileReady,
     progressReward,
+    restoreFromBackup,
     reward,
     selectBrushling,
     selectedId,
