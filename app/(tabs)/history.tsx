@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -23,6 +24,7 @@ function formatDate(timestamp: number) {
 
 export default function HistoryScreen() {
   const colors = useColors();
+  const router = useRouter();
   const { history, clearAllHistory } = useBrush();
   const completed = history.filter((session) => session.completed).length;
   const average = history.length
@@ -66,6 +68,28 @@ export default function HistoryScreen() {
         ListHeaderComponent={
           <View style={styles.headerContent}>
             <AppHeader eyebrow="I tuoi progressi" title="Storico" />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/(tabs)/parent")}
+              style={({ pressed }) => [
+                styles.parentCard,
+                { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.parentIcon}>
+                <MaterialIcons name="family-restroom" size={25} color={colors.primary} />
+              </View>
+              <View style={styles.parentCopy}>
+                <Text style={[styles.parentEyebrow, { color: colors.primary }]}>AREA GENITORI</Text>
+                <Text style={[styles.parentTitle, { color: colors.foreground }]}>Riepilogo settimanale</Text>
+                <Text style={[styles.parentText, { color: colors.muted }]}>
+                  Mattina/sera, durata, tentativi e sessioni sincronizzate.
+                </Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+            </Pressable>
+
             <View style={styles.statsRow}>
               <View style={[styles.summaryCard, { backgroundColor: "#E7EEFF" }]}>
                 <Text style={[styles.summaryValue, { color: colors.primary }]}>{history.length}</Text>
@@ -109,6 +133,19 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 120 },
   headerContent: { gap: 20, marginBottom: 14 },
+  parentCard: {
+    borderWidth: 1,
+    borderRadius: 21,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  parentIcon: { width: 47, height: 47, borderRadius: 16, backgroundColor: "#FFFFFFAA", alignItems: "center", justifyContent: "center" },
+  parentCopy: { flex: 1 },
+  parentEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  parentTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
+  parentText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   statsRow: { flexDirection: "row", gap: 9 },
   summaryCard: { flex: 1, borderRadius: 20, paddingVertical: 14, alignItems: "center" },
   summaryValue: { fontSize: 24, lineHeight: 30, fontWeight: "900" },
