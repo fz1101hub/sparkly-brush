@@ -22,6 +22,12 @@ export default function DeviceScreen() {
     connect,
     disconnect,
     syncLatest,
+    demoMode,
+    demoSessionCount,
+    setDemoMode,
+    addDemoSession,
+    generateDemoWeek,
+    clearDemoData,
   } = useBrush();
   const connected = status === "connected";
   const busy = status === "scanning" || status === "connecting";
@@ -99,6 +105,57 @@ export default function DeviceScreen() {
               <InfoRow icon="memory" label="Firmware" value={device?.firmware ?? "da leggere"} />
             </View>
 
+            <View style={[styles.demoCard, { backgroundColor: demoMode ? "#FFF4C9" : "#F4F6FF", borderColor: demoMode ? "#E8BE38" : "#DCE3FF" }]}>
+              <View style={styles.demoTop}>
+                <View style={styles.demoHeading}>
+                  <View style={[styles.demoIcon, { backgroundColor: demoMode ? "#E8BE38" : "#2457D6" }]}>
+                    <MaterialIcons name="science" size={25} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.demoCopy}>
+                    <Text style={[styles.demoEyebrow, { color: demoMode ? "#9A7200" : colors.primary }]}>LABORATORIO SENZA SPAZZOLINO</Text>
+                    <Text style={[styles.demoTitle, { color: colors.foreground }]}>Modalità demo</Text>
+                    <Text style={[styles.demoText, { color: colors.muted }]}>
+                      {demoMode
+                        ? `${demoSessionCount} sessioni simulate · i dati reali restano intatti`
+                        : "Prova evoluzioni, uova, missioni e dashboard senza toccare lo storico reale."}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: demoMode }}
+                  onPress={() => void setDemoMode(!demoMode)}
+                  style={({ pressed }) => [
+                    styles.demoToggle,
+                    { backgroundColor: demoMode ? "#2E9B67" : "#C8CDD8" },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <View style={[styles.demoToggleKnob, { alignSelf: demoMode ? "flex-end" : "flex-start" }]} />
+                </Pressable>
+              </View>
+
+              {demoMode ? (
+                <View style={styles.demoActions}>
+                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                    <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
+                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                    <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
+                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                    <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
+                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                    <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
+                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/(tabs)/backup")}
@@ -186,6 +243,19 @@ const styles = StyleSheet.create({
   infoLabel: { flex: 1, fontSize: 13, lineHeight: 18 },
   infoValue: { fontSize: 13, lineHeight: 18, fontWeight: "800", textTransform: "capitalize" },
   infoDivider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
+  demoCard: { borderWidth: 1.5, borderRadius: 22, padding: 13, gap: 12 },
+  demoTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+  demoHeading: { flex: 1, flexDirection: "row", alignItems: "center", gap: 9 },
+  demoIcon: { width: 45, height: 45, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  demoCopy: { flex: 1 },
+  demoEyebrow: { fontSize: 8, lineHeight: 12, fontWeight: "900", letterSpacing: 0.7 },
+  demoTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900" },
+  demoText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
+  demoToggle: { width: 48, height: 28, borderRadius: 99, padding: 3, justifyContent: "center" },
+  demoToggleKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF" },
+  demoActions: { flexDirection: "row", gap: 7 },
+  demoAction: { flex: 1, minHeight: 54, borderRadius: 15, backgroundColor: "#FFFFFFAA", alignItems: "center", justifyContent: "center", gap: 3, paddingHorizontal: 4 },
+  demoActionText: { fontSize: 9, lineHeight: 13, fontWeight: "900", textAlign: "center" },
   backupCard: { borderWidth: 1, borderRadius: 21, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 },
   backupIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: "#FFFFFFAA", alignItems: "center", justifyContent: "center" },
   backupCopy: { flex: 1 },
