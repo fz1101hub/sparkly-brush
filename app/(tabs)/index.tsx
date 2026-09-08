@@ -267,7 +267,7 @@ export default function TodayScreen() {
           <View style={styles.rewardItem}>
             <MaterialIcons name="stars" size={21} color="#B98A00" />
             <Text style={[styles.rewardValue, { color: colors.foreground }]}>{stats.todayCompletedSessions}</Text>
-            <Text style={[styles.rewardLabel, { color: colors.muted }]}>missioni complete oggi</Text>
+            <Text style={[styles.rewardLabel, { color: colors.muted }]}>sessioni complete oggi</Text>
           </View>
         </View>
 
