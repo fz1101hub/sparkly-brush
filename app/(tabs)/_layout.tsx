@@ -63,6 +63,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="missions"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="parent"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: "Storico",
