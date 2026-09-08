@@ -43,6 +43,12 @@ export async function saveSession(session: BrushSession): Promise<BrushSession[]
   return saveSessionToKey(HISTORY_KEY, session);
 }
 
+export async function replaceHistory(history: BrushSession[]): Promise<BrushSession[]> {
+  const next = normalizeHistory(history);
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  return next;
+}
+
 export async function clearHistory(): Promise<void> {
   await AsyncStorage.removeItem(HISTORY_KEY);
 }
