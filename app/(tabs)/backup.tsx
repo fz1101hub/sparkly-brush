@@ -7,6 +7,8 @@ import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useParentRewards } from "@/contexts/parent-rewards-context";
+import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   backupFingerprint,
@@ -26,6 +28,8 @@ export default function BackupScreen() {
     customization,
     restoreFromBackup,
   } = useBrushling();
+  const { preferences, restorePreferences } = usePreferences();
+  const { definitions: parentRewards, restoreRewards } = useParentRewards();
   const [backupCode, setBackupCode] = useState("");
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
@@ -37,8 +41,10 @@ export default function BackupScreen() {
       realHistory,
       { selectedId, hasChosenStarter },
       customization,
+      Date.now(),
+      { preferences, parentRewards },
     ),
-    [customization, hasChosenStarter, realHistory, selectedId],
+    [customization, hasChosenStarter, parentRewards, preferences, realHistory, selectedId],
   );
 
   const generate = () => {
@@ -75,6 +81,8 @@ export default function BackupScreen() {
     if (!preview || demoMode) return;
     await restoreFromBackup(preview.profile, preview.customization);
     await restoreRealHistory(preview.history);
+    await restorePreferences(preview.preferences);
+    await restoreRewards(preview.parentRewards);
     setImportCode("");
     setPreview(null);
     setBackupCode("");
@@ -144,6 +152,7 @@ export default function BackupScreen() {
             <Summary icon="pets" label="Brushling" value={selectedId} />
             <Summary icon="history" label="Sessioni" value={String(currentBackup.history.length)} />
             <Summary icon="home" label="Oggetti tana" value={String(customization.ownedIds.length)} />
+            <Summary icon="redeem" label="Premi famiglia" value={String(parentRewards.length)} />
           </View>
 
           <View style={styles.actionRow}>
@@ -289,8 +298,8 @@ const styles = StyleSheet.create({
   section: { gap: 12 },
   sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: "900" },
   sectionCopy: { fontSize: 12, lineHeight: 18, marginTop: 2 },
-  summaryCard: { borderWidth: 1, borderRadius: 20, padding: 13, flexDirection: "row" },
-  summaryItem: { flex: 1, alignItems: "center", gap: 3 },
+  summaryCard: { borderWidth: 1, borderRadius: 20, padding: 13, flexDirection: "row", flexWrap: "wrap", rowGap: 10 },
+  summaryItem: { width: "50%", alignItems: "center", gap: 3 },
   summaryValue: { fontSize: 13, lineHeight: 18, fontWeight: "900", textTransform: "capitalize" },
   summaryLabel: { fontSize: 9, lineHeight: 13, textAlign: "center" },
   actionRow: { flexDirection: "row", gap: 9 },
