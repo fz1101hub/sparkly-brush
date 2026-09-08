@@ -12,6 +12,7 @@ type PreferencesContextValue = {
   ready: boolean;
   setPreference: <K extends keyof AppPreferences>(key: K, value: AppPreferences[K]) => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  restorePreferences: (preferences: AppPreferences) => Promise<void>;
 };
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
@@ -30,27 +31,27 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     key: K,
     value: AppPreferences[K],
   ) => {
-    let next = preferences;
-    setPreferences((current) => {
-      next = { ...current, [key]: value };
-      return next;
-    });
+    const next = { ...preferences, [key]: value };
+    setPreferences(next);
     await saveAppPreferences(next);
   }, [preferences]);
 
   const completeOnboarding = useCallback(async () => {
-    let next = preferences;
-    setPreferences((current) => {
-      next = { ...current, onboardingCompleted: true };
-      return next;
-    });
+    const next = { ...preferences, onboardingCompleted: true };
+    setPreferences(next);
     await saveAppPreferences(next);
   }, [preferences]);
 
-  const value = useMemo(() => ({ preferences, ready, setPreference, completeOnboarding }), [
+  const restorePreferences = useCallback(async (restored: AppPreferences) => {
+    setPreferences(restored);
+    await saveAppPreferences(restored);
+  }, []);
+
+  const value = useMemo(() => ({ preferences, ready, setPreference, completeOnboarding, restorePreferences }), [
     completeOnboarding,
     preferences,
     ready,
+    restorePreferences,
     setPreference,
   ]);
 
