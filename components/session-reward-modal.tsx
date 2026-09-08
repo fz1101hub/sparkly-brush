@@ -8,14 +8,15 @@ import { getBrushling, getEvolution } from "@/lib/brushlings";
 
 export function SessionRewardModal() {
   const colors = useColors();
-  const { reward, discovery, dismissReward, selected } = useBrushling();
+  const { reward, discovery, progressReward, dismissReward, selected } = useBrushling();
 
   if (!reward) return null;
 
   const evolved = Boolean(reward.evolvedTo);
   const hatchDefinition = discovery?.eggHatched;
   const hatchedCreature = hatchDefinition ? getBrushling(hatchDefinition.brushlingId) : null;
-  const celebration = evolved || Boolean(hatchedCreature);
+  const specialProgress = Boolean(progressReward && progressReward.totalBonusCoins > 0);
+  const celebration = evolved || Boolean(hatchedCreature) || Boolean(progressReward?.chestUnlocked) || Boolean(progressReward?.achievementTitles.length);
   const displayCreature = hatchedCreature ?? selected;
   const displayLevel = hatchedCreature ? 1 : reward.level;
   const displayEvolution = getEvolution(displayCreature, displayLevel);
@@ -116,6 +117,33 @@ export function SessionRewardModal() {
             </View>
           ) : null}
 
+          {progressReward && specialProgress ? (
+            <View style={[styles.progressRewardCard, { backgroundColor: celebration ? "#FFFFFF16" : "#FFF8E8" }]}>
+              <View style={[styles.progressRewardIcon, { backgroundColor: progressReward.chestUnlocked ? "#E8BE38" : "#7357C7" }]}>
+                <MaterialIcons
+                  name={progressReward.chestUnlocked ? "card-giftcard" : progressReward.achievementTitles.length ? "emoji-events" : "flag"}
+                  size={22}
+                  color="#FFFFFF"
+                />
+              </View>
+              <View style={styles.progressRewardCopy}>
+                <Text style={[styles.progressRewardEyebrow, { color: celebration ? "#FFE68A" : "#8A6900" }]}>
+                  BONUS AVVENTURA +{progressReward.totalBonusCoins}
+                </Text>
+                <Text style={[styles.progressRewardTitle, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
+                  {progressReward.chestUnlocked
+                    ? "Scrigno del Sorriso aperto!"
+                    : progressReward.achievementTitles.length
+                      ? "Nuovo badge sbloccato!"
+                      : "Missione completata!"}
+                </Text>
+                <Text style={[styles.progressRewardText, { color: celebration ? "#E9F5FF" : colors.muted }]} numberOfLines={2}>
+                  {[...progressReward.missionTitles, ...progressReward.achievementTitles].join(" · ")}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {reward.level > reward.previousLevel ? (
             <View style={[styles.levelBanner, { backgroundColor: celebration ? "#FFFFFF18" : "#EEF4FF" }]}>
               <MaterialIcons name="arrow-upward" size={18} color={celebration ? "#BFE3FF" : "#2457D6"} />
@@ -206,6 +234,20 @@ const styles = StyleSheet.create({
   discoveryEyebrow: { fontSize: 8, lineHeight: 11, fontWeight: "900", letterSpacing: 0.8 },
   discoveryTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   discoveryExtra: { fontSize: 9, lineHeight: 14, fontWeight: "800", marginTop: 2 },
+  progressRewardCard: {
+    width: "100%",
+    borderRadius: 18,
+    padding: 10,
+    marginTop: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  progressRewardIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  progressRewardCopy: { flex: 1 },
+  progressRewardEyebrow: { fontSize: 8, lineHeight: 11, fontWeight: "900", letterSpacing: 0.7 },
+  progressRewardTitle: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  progressRewardText: { fontSize: 9, lineHeight: 13, marginTop: 1 },
   levelBanner: {
     marginTop: 9,
     minHeight: 36,
