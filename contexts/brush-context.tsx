@@ -203,32 +203,43 @@ export function BrushProvider({ children }: PropsWithChildren) {
     manualSavedRef.current = true;
     setManualActive(false);
     const session: BrushSession = {
-      id: `manual-${manualStartRef.current}`,
+      id: `${demoMode ? "demo-manual" : "manual"}-${manualStartRef.current}`,
       startedAt: manualStartRef.current,
       durationSeconds: manualElapsed,
       targetSeconds: 120,
       completed: true,
-      source: "manual",
+      source: demoMode ? "demo" : "manual",
     };
-    void saveSession(session).then(setHistory);
+    const persist = demoMode
+      ? saveDemoSession(session).then(setDemoHistory)
+      : saveSession(session).then(setRealHistory);
+    void persist;
     if (Platform.OS !== "web") {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    appendLog("success", "Sessione guidata completata");
-  }, [appendLog, manualActive, manualElapsed]);
+    appendLog("success", demoMode ? "Sessione demo completata" : "Sessione guidata completata");
+  }, [appendLog, demoMode, manualActive, manualElapsed]);
 
   const connect = useCallback(async () => {
+    if (demoMode) {
+      appendLog("warning", "Disattiva la modalità demo per collegare lo spazzolino reale");
+      return;
+    }
     if (Platform.OS !== "web") {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     await clientRef.current?.scanAndConnect().catch(() => undefined);
-  }, []);
+  }, [appendLog, demoMode]);
 
   const disconnect = useCallback(async () => {
     await clientRef.current?.disconnect();
   }, []);
 
   const syncLatest = useCallback(async () => {
+    if (demoMode) {
+      appendLog("warning", "La sincronizzazione BLE è disattivata in modalità demo");
+      return;
+    }
     try {
       const stored = await clientRef.current?.syncLatestSession();
       if (stored) {
@@ -239,18 +250,18 @@ export function BrushProvider({ children }: PropsWithChildren) {
     } catch (error) {
       appendLog("error", error instanceof Error ? error.message : "Sincronizzazione non riuscita");
     }
-  }, [appendLog, persistDeviceSession]);
+  }, [appendLog, demoMode, persistDeviceSession]);
 
   const startManual = useCallback(() => {
     manualStartRef.current = Date.now();
     manualSavedRef.current = false;
     setManualElapsed(0);
     setManualActive(true);
-    appendLog("info", "Timer guidato avviato");
+    appendLog("info", demoMode ? "Timer demo avviato" : "Timer guidato avviato");
     if (Platform.OS !== "web") {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [appendLog]);
+  }, [appendLog, demoMode]);
 
   const stopManual = useCallback(async () => {
     setManualActive(false);
