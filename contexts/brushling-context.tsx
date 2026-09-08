@@ -185,18 +185,18 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     const next = equipCustomizationState(purchased, id) ?? purchased;
     setCustomization(next);
-    await saveCustomizationState(next);
+    if (!demoMode) await saveCustomizationState(next);
     return "purchased";
-  }, [customization, totalEarnedCoins]);
+  }, [customization, demoMode, totalEarnedCoins]);
 
   const equipCustomization = useCallback(async (id: CustomizationItemId) => {
     const next = equipCustomizationState(customization, id);
     if (!next) return false;
 
     setCustomization(next);
-    await saveCustomizationState(next);
+    if (!demoMode) await saveCustomizationState(next);
     return true;
-  }, [customization]);
+  }, [customization, demoMode]);
 
   const restoreFromBackup = useCallback(async (
     profile: BrushlingProfile,
