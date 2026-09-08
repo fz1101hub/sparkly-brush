@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
-import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { AnimatedBrushling } from "@/components/animated-brushling";
 import { SessionRewardModal } from "@/components/session-reward-modal";
 import { StarterChooser } from "@/components/starter-chooser";
 import { MouthZones } from "@/components/mouth-zones";
@@ -113,7 +113,7 @@ export default function TodayScreen() {
             { backgroundColor: selected.soft, borderColor: selected.accent },
           ]}
         >
-          <BrushlingAvatar creature={selected} size={118} level={stats.level} />
+          <AnimatedBrushling creature={selected} size={118} level={stats.level} active={isActive} />
           <View style={styles.companionCopy}>
             <Text style={[styles.companionEyebrow, { color: selected.accent }]}>IL TUO COMPAGNO</Text>
             <Text style={[styles.companionName, { color: colors.foreground }]}>{currentEvolution.name}</Text>
