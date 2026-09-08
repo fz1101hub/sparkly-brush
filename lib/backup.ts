@@ -1,4 +1,6 @@
 import type { BrushSession } from "@/lib/brush-types";
+import { DEFAULT_APP_PREFERENCES, type AppPreferences } from "@/lib/preferences";
+import type { ParentReward } from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
   DEFAULT_CUSTOMIZATION_STATE,
@@ -20,6 +22,8 @@ export type BrushlingsBackup = {
   createdAt: number;
   profile: PortableBrushlingProfile;
   customization: CustomizationState;
+  preferences: AppPreferences;
+  parentRewards: ParentReward[];
   history: BrushSession[];
 };
 
@@ -68,11 +72,37 @@ function normalizeHistory(value: unknown): BrushSession[] {
   }).sort((a, b) => b.startedAt - a.startedAt).slice(0, 120);
 }
 
+function normalizePreferences(value: unknown): AppPreferences {
+  if (!value || typeof value !== "object") return DEFAULT_APP_PREFERENCES;
+  const raw = value as Partial<AppPreferences>;
+  return {
+    onboardingCompleted: raw.onboardingCompleted === true,
+    soundsEnabled: raw.soundsEnabled !== false,
+    musicEnabled: raw.musicEnabled === true,
+    hapticsEnabled: raw.hapticsEnabled !== false,
+  };
+}
+
+function normalizeParentRewards(value: unknown): ParentReward[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is ParentReward => {
+    if (!item || typeof item !== "object") return false;
+    const raw = item as Partial<ParentReward>;
+    return typeof raw.id === "string"
+      && typeof raw.title === "string"
+      && (raw.requirement === "completed-sessions" || raw.requirement === "perfect-days" || raw.requirement === "streak")
+      && typeof raw.target === "number"
+      && raw.target >= 1
+      && typeof raw.createdAt === "number"
+      && (raw.deliveredAt === null || typeof raw.deliveredAt === "number");
+  }).slice(0, 40);
+}
 export function createBackup(
   history: BrushSession[],
   profile: PortableBrushlingProfile,
   customization: CustomizationState,
   createdAt: number = Date.now(),
+  extras?: { preferences?: AppPreferences; parentRewards?: ParentReward[] },
 ): BrushlingsBackup {
   return {
     format: "brushlings-backup",
@@ -80,6 +110,8 @@ export function createBackup(
     createdAt,
     profile,
     customization,
+    preferences: extras?.preferences ?? DEFAULT_APP_PREFERENCES,
+    parentRewards: extras?.parentRewards ?? [],
     history: history.filter((session) => session.source !== "demo"),
   };
 }
@@ -131,6 +163,8 @@ export function parseBackup(code: string): BrushlingsBackup {
       equippedAccessoryId: normalizeEquipped(rawCustomization?.equippedAccessoryId, ownedIds),
       equippedDecorId: normalizeEquipped(rawCustomization?.equippedDecorId, ownedIds),
     },
+    preferences: normalizePreferences(raw.preferences),
+    parentRewards: normalizeParentRewards(raw.parentRewards),
     history: normalizeHistory(raw.history),
   };
 }
