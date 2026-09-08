@@ -268,31 +268,76 @@ export function BrushProvider({ children }: PropsWithChildren) {
     const duration = manualElapsed;
     if (duration >= 5 && !manualSavedRef.current) {
       manualSavedRef.current = true;
-      const next = await saveSession({
-        id: `manual-${manualStartRef.current}`,
+      const session: BrushSession = {
+        id: `${demoMode ? "demo-manual" : "manual"}-${manualStartRef.current}`,
         startedAt: manualStartRef.current,
         durationSeconds: duration,
         targetSeconds: 120,
         completed: duration >= 108,
-        source: "manual",
-      });
-      setHistory(next);
-      appendLog("info", `Sessione manuale salvata (${duration}s)`);
+        source: demoMode ? "demo" : "manual",
+      };
+      const next = demoMode ? await saveDemoSession(session) : await saveSession(session);
+      if (demoMode) setDemoHistory(next);
+      else setRealHistory(next);
+      appendLog("info", `${demoMode ? "Sessione demo" : "Sessione manuale"} salvata (${duration}s)`);
     }
     setManualElapsed(0);
-  }, [appendLog, manualElapsed]);
+  }, [appendLog, demoMode, manualElapsed]);
+
+  const setDemoMode = useCallback(async (enabled: boolean) => {
+    if (enabled && status === "connected") await clientRef.current?.disconnect();
+    setDemoModeState(enabled);
+    await saveDemoMode(enabled);
+    appendLog("info", enabled ? "Modalità demo attivata" : "Modalità demo disattivata");
+  }, [appendLog, status]);
+
+  const addDemoSession = useCallback(async (period: DemoSessionPeriod) => {
+    const startedAt = demoTimestamp(period);
+    const id = `demo-${localDayId(startedAt)}-${period}`;
+    const next = await saveDemoSession(makeDemoSession(id, startedAt));
+    setDemoHistory(next);
+    appendLog("success", `Sessione demo ${period === "morning" ? "mattina" : period === "evening" ? "sera" : "completa"} aggiunta`);
+  }, [appendLog]);
+
+  const generateDemoWeek = useCallback(async () => {
+    const sessions: BrushSession[] = [];
+    const today = new Date();
+    for (let offset = 6; offset >= 0; offset -= 1) {
+      const day = new Date(today);
+      day.setDate(today.getDate() - offset);
+      const morning = demoTimestamp("morning", day);
+      const evening = demoTimestamp("evening", day);
+      sessions.push(makeDemoSession(`demo-${localDayId(morning)}-morning`, morning));
+      sessions.push(makeDemoSession(`demo-${localDayId(evening)}-evening`, evening));
+    }
+    const next = await replaceDemoHistory(sessions);
+    setDemoHistory(next);
+    appendLog("success", "Settimana demo completa generata");
+  }, [appendLog]);
+
+  const clearDemoData = useCallback(async () => {
+    await clearDemoHistory();
+    setDemoHistory([]);
+    appendLog("info", "Dati demo eliminati");
+  }, [appendLog]);
 
   const restoreRealHistory = useCallback(async (restoredHistory: BrushSession[]) => {
     const next = await replaceHistory(restoredHistory);
-    setHistory(next);
+    setRealHistory(next);
     appendLog("success", "Storico ripristinato dal backup");
   }, [appendLog]);
 
   const clearAllHistory = useCallback(async () => {
+    if (demoMode) {
+      await clearDemoHistory();
+      setDemoHistory([]);
+      appendLog("info", "Storico demo eliminato");
+      return;
+    }
     await clearHistory();
-    setHistory([]);
+    setRealHistory([]);
     appendLog("info", "Storico locale eliminato");
-  }, [appendLog]);
+  }, [appendLog, demoMode]);
 
   const isActive = live.isBrushing || manualActive;
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
@@ -306,6 +351,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
     device,
     live,
     history,
+    realHistory,
     historyReady,
     logs,
     isActive,
@@ -313,11 +359,17 @@ export function BrushProvider({ children }: PropsWithChildren) {
     activeTarget,
     activeZone,
     manualActive,
+    demoMode,
+    demoSessionCount: demoHistory.length,
     connect,
     disconnect,
     syncLatest,
     startManual,
     stopManual,
+    setDemoMode,
+    addDemoSession,
+    generateDemoWeek,
+    clearDemoData,
     restoreRealHistory,
     clearAllHistory,
   }), [
@@ -325,17 +377,24 @@ export function BrushProvider({ children }: PropsWithChildren) {
     activeTarget,
     activeZone,
     adapterState,
+    addDemoSession,
     clearAllHistory,
+    clearDemoData,
     connect,
+    demoHistory.length,
+    demoMode,
     device,
     disconnect,
     history,
     historyReady,
+    generateDemoWeek,
     isActive,
     live,
     logs,
     manualActive,
+    realHistory,
     restoreRealHistory,
+    setDemoMode,
     startManual,
     status,
     statusMessage,
