@@ -114,7 +114,7 @@ export default function BackupScreen() {
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>Il Brushling non resta intrappolato nel vecchio telefono</Text>
             <Text style={[styles.heroText, { color: colors.muted }]}>
-              Il backup contiene progressi, storico, starter, creatura attiva e personalizzazioni della tana.
+              Il backup contiene storico, compagno, tana, premi di famiglia e preferenze di suoni, musica e vibrazione.
             </Text>
           </View>
         </View>
