@@ -38,7 +38,7 @@ export interface BrushSession {
   durationSeconds: number;
   targetSeconds: number;
   completed: boolean;
-  source: "manual" | "device";
+  source: "manual" | "device" | "demo";
   deviceSessionId?: number;
 }
 
