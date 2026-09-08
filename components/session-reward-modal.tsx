@@ -5,6 +5,7 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { CelebrationBurst } from "@/components/celebration-burst";
+import { useAudioFeedback } from "@/contexts/audio-feedback-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
@@ -12,17 +13,20 @@ import { getBrushling, getEvolution } from "@/lib/brushlings";
 
 export function SessionRewardModal() {
   const colors = useColors();
+  const { playSuccess } = useAudioFeedback();
   const { preferences } = usePreferences();
   const { reward, discovery, progressReward, dismissReward, selected } = useBrushling();
 
   useEffect(() => {
-    if (!reward || !preferences.hapticsEnabled || Platform.OS === "web") return;
+    if (!reward) return;
+    if (reward.completed) playSuccess();
+    if (!preferences.hapticsEnabled || Platform.OS === "web") return;
     void Haptics.notificationAsync(
       reward.completed
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Warning,
     );
-  }, [preferences.hapticsEnabled, reward]);
+  }, [playSuccess, preferences.hapticsEnabled, reward]);
 
   if (!reward) return null;
 
