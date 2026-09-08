@@ -50,6 +50,8 @@ export default function TodayScreen() {
     activeTarget,
     activeZone,
     manualActive,
+    demoMode,
+    setDemoMode,
     connect,
     startManual,
     stopManual,
@@ -104,8 +106,29 @@ export default function TodayScreen() {
         <AppHeader
           eyebrow="Brushlings"
           title={`Ciao, ${currentEvolution.name} è pronto!`}
-          connected={status === "connected"}
+          connected={!demoMode && status === "connected"}
         />
+
+        {demoMode ? (
+          <View style={styles.demoBanner}>
+            <View style={styles.demoBannerIcon}>
+              <MaterialIcons name="science" size={22} color="#FFFFFF" />
+            </View>
+            <View style={styles.demoBannerCopy}>
+              <Text style={styles.demoBannerEyebrow}>LABORATORIO DEMO</Text>
+              <Text style={[styles.demoBannerTitle, { color: colors.foreground }]}>Dati simulati attivi</Text>
+              <Text style={[styles.demoBannerText, { color: colors.muted }]}>
+                Storico reale e backup restano separati e intatti.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => void setDemoMode(false)}
+              style={({ pressed }) => [styles.demoExit, pressed && styles.pressed]}
+            >
+              <Text style={styles.demoExitText}>Esci</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View
           style={[
@@ -133,20 +156,20 @@ export default function TodayScreen() {
         </View>
 
         <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.statusIcon, { backgroundColor: status === "connected" ? "#E1F7EF" : "#EEF2FF" }]}>
+          <View style={[styles.statusIcon, { backgroundColor: demoMode ? "#FFF4C9" : status === "connected" ? "#E1F7EF" : "#EEF2FF" }]}>
             <MaterialIcons
-              name={status === "connected" ? "bluetooth-connected" : "bluetooth-searching"}
+              name={demoMode ? "science" : status === "connected" ? "bluetooth-connected" : "bluetooth-searching"}
               size={23}
-              color={status === "connected" ? colors.success : colors.primary}
+              color={demoMode ? "#9A7200" : status === "connected" ? colors.success : colors.primary}
             />
           </View>
           <View style={styles.statusCopy}>
             <Text style={[styles.statusTitle, { color: colors.foreground }]}>
-              {device?.name ?? (connecting ? "Cerco Sonicare…" : "HX6322/04")}
+              {demoMode ? "Modalità demo" : device?.name ?? (connecting ? "Cerco Sonicare…" : "HX6322/04")}
             </Text>
-            <Text style={[styles.statusText, { color: colors.muted }]}>{statusMessage}</Text>
+            <Text style={[styles.statusText, { color: colors.muted }]}>{demoMode ? "Le sessioni simulate non modificano lo storico reale." : statusMessage}</Text>
           </View>
-          {status !== "connected" ? (
+          {demoMode ? null : status !== "connected" ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Collega lo spazzolino"
@@ -302,6 +325,14 @@ const styles = StyleSheet.create({
   },
   loadingTitle: { fontSize: 20, lineHeight: 26, fontWeight: "900", marginTop: 10 },
   loadingCopy: { fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 4, maxWidth: 280 },
+  demoBanner: { borderWidth: 1, borderColor: "#E8BE38", backgroundColor: "#FFF4C9", borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 9 },
+  demoBannerIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
+  demoBannerCopy: { flex: 1 },
+  demoBannerEyebrow: { color: "#8A6400", fontSize: 8, lineHeight: 12, fontWeight: "900", letterSpacing: 0.8 },
+  demoBannerTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  demoBannerText: { fontSize: 9, lineHeight: 14, marginTop: 1 },
+  demoExit: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
+  demoExitText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   companionCard: {
     borderRadius: 28,
     borderWidth: 2,
