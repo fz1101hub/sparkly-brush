@@ -78,7 +78,7 @@ type BrushlingContextValue = {
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
-  const { history, historyReady } = useBrush();
+  const { history, historyReady, demoMode } = useBrush();
   const [selectedId, setSelectedId] = useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
   const [customization, setCustomization] = useState<CustomizationState>(DEFAULT_CUSTOMIZATION_STATE);
   const [profileReady, setProfileReady] = useState(false);
@@ -89,6 +89,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
   const rewardTrackerReadyRef = useRef(false);
   const knownSessionIdsRef = useRef<Set<string>>(new Set());
+  const previousDemoModeRef = useRef(demoMode);
 
   useEffect(() => {
     void Promise.all([loadBrushlingProfile(), loadCustomizationState()])
@@ -99,6 +100,25 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
       })
       .finally(() => setProfileReady(true));
   }, []);
+
+  useEffect(() => {
+    const wasDemo = previousDemoModeRef.current;
+    previousDemoModeRef.current = demoMode;
+    rewardTrackerReadyRef.current = false;
+
+    if (!wasDemo || demoMode) return;
+
+    void Promise.all([loadBrushlingProfile(), loadCustomizationState()]).then(
+      ([profile, savedCustomization]) => {
+        setSelectedId(profile.selectedId);
+        setHasChosenStarter(profile.hasChosenStarter);
+        setCustomization(savedCustomization);
+        setReward(null);
+        setDiscovery(null);
+        setProgressReward(null);
+      },
+    );
+  }, [demoMode]);
 
   const stats = useMemo(() => computeBrushlingStats(history), [history]);
   const inventory = useMemo(() => computeGameInventory(history), [history]);
@@ -113,8 +133,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     if (!profileReady) return;
     if (stats.unlockedIds.includes(selectedId)) return;
     setSelectedId(DEFAULT_BRUSHLING_ID);
-    void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
-  }, [profileReady, selectedId, stats.unlockedIds]);
+    if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
+  }, [demoMode, profileReady, selectedId, stats.unlockedIds]);
 
   useEffect(() => {
     if (!historyReady) return;
@@ -146,16 +166,16 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     if (!STARTER_IDS.includes(id)) return false;
     setSelectedId(id);
     setHasChosenStarter(true);
-    await saveStarterSelection(id);
+    if (!demoMode) await saveStarterSelection(id);
     return true;
-  }, []);
+  }, [demoMode]);
 
   const selectBrushling = useCallback(async (id: BrushlingId) => {
     if (!stats.unlockedIds.includes(id)) return false;
     setSelectedId(id);
-    await saveSelectedBrushling(id);
+    if (!demoMode) await saveSelectedBrushling(id);
     return true;
-  }, [stats.unlockedIds]);
+  }, [demoMode, stats.unlockedIds]);
 
   const buyCustomization = useCallback(async (id: CustomizationItemId): Promise<PurchaseResult> => {
     if (customization.ownedIds.includes(id)) return "owned";
