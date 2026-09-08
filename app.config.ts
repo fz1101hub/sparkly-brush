@@ -93,6 +93,13 @@ const config: ExpoConfig = {
     "expo-font",
     "expo-web-browser",
     [
+      "expo-audio",
+      {
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
+    ],
+    [
       "react-native-ble-plx",
       {
         "isBackgroundEnabled": false,
