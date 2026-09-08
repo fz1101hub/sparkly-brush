@@ -22,7 +22,7 @@ import {
   type StoredDeviceSession,
   type ToothbrushDevice,
 } from "@/lib/brush-types";
-import { clearHistory, loadHistory, saveLastDevice, saveSession } from "@/lib/brush-storage";
+import { clearHistory, loadHistory, replaceHistory, saveLastDevice, saveSession } from "@/lib/brush-storage";
 import { createSonicareClient } from "@/lib/sonicare-client";
 
 type BrushContextValue = {
@@ -44,6 +44,7 @@ type BrushContextValue = {
   syncLatest: () => Promise<void>;
   startManual: () => void;
   stopManual: () => Promise<void>;
+  restoreRealHistory: (history: BrushSession[]) => Promise<void>;
   clearAllHistory: () => Promise<void>;
 };
 
@@ -225,6 +226,12 @@ export function BrushProvider({ children }: PropsWithChildren) {
     setManualElapsed(0);
   }, [appendLog, manualElapsed]);
 
+  const restoreRealHistory = useCallback(async (restoredHistory: BrushSession[]) => {
+    const next = await replaceHistory(restoredHistory);
+    setHistory(next);
+    appendLog("success", "Storico ripristinato dal backup");
+  }, [appendLog]);
+
   const clearAllHistory = useCallback(async () => {
     await clearHistory();
     setHistory([]);
@@ -255,6 +262,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
     syncLatest,
     startManual,
     stopManual,
+    restoreRealHistory,
     clearAllHistory,
   }), [
     activeElapsed,
@@ -271,6 +279,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
     live,
     logs,
     manualActive,
+    restoreRealHistory,
     startManual,
     status,
     statusMessage,
