@@ -13,7 +13,7 @@ Aggiornato il 23 settembre 2026. Il parental gate resta deliberatamente fuori sc
 | 7 | Test d’integrazione e prova hardware | Automazione completata; hardware aperto | Client e provider testati end-to-end con periferica finta. Matrice fisica tracciata nell’issue GitHub #3 e in `docs/hardware-test-plan.md`. |
 | 8 | Pulizie repository | Completato | Backend/OAuth rimossi dal ramo attivo e conservati nell’archivio Git; dipendenze e file template eliminati. |
 | 9 | Audit finale | Completato | Audit parallelo, riproduzioni e re-review conclusive: **APPROVED senza blocker**. |
-| 10 | Merge | In corso | Pubblicazione del branch, CI GitHub e integrazione nella PR #1. |
+| 10 | Merge | Completato | PR #4 integrata nella PR #1; PR #1 unita in `main` con CI GitHub verde. |
 
 ## Gate già superati
 

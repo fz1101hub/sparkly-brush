@@ -25,7 +25,7 @@ L’audit ha verificato i punti 1, 2, 3 e 5–10 del piano concordato. Il punto 
 | 7 | Test d’integrazione e hardware | Automazione completata. La matrice fisica HX6322/04 resta tracciata nell’issue GitHub #3. |
 | 8 | Pulizia repository | Completata. Backend, OAuth, template e dipendenze inutilizzate rimossi dal ramo attivo. |
 | 9 | Audit finale | Completato con re-review indipendenti APPROVED. |
-| 10 | Merge | Autorizzato dal presente verdetto. |
+| 10 | Merge | Completato: PR #4 integrata nella PR #1 e PR #1 unita in `main`. |
 
 ## Correzioni di integrità verificate
 
@@ -57,4 +57,4 @@ Il parental gate non è stato sviluppato. Se l’app verrà proposta nella categ
 
 ## Decisione
 
-Il candidato è **approvato per il merge**. Non restano blocker software noti nei punti inclusi nello scope. La prova fisica e il parental gate restano attività esplicitamente separate e tracciate.
+Il candidato è stato **approvato e unito in `main`**. Non restano blocker software noti nei punti inclusi nello scope. La prova fisica e il parental gate restano attività esplicitamente separate e tracciate.
