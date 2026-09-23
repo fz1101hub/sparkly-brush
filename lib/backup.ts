@@ -3,13 +3,19 @@ import { DEFAULT_APP_PREFERENCES, type AppPreferences } from "@/lib/preferences"
 import type { ParentReward } from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
+  createLifetimeProgress,
+  normalizeLifetimeProgress,
+  type LifetimeProgress,
+} from "@/lib/lifetime-progress";
+import {
   DEFAULT_CUSTOMIZATION_STATE,
   isCustomizationItemId,
   type CustomizationItemId,
   type CustomizationState,
 } from "@/lib/customization";
 
-export const BACKUP_PREFIX = "BRUSHLINGS-BACKUP-1:";
+export const BACKUP_PREFIX = "BRUSHLINGS-BACKUP-2:";
+const LEGACY_BACKUP_PREFIX = "BRUSHLINGS-BACKUP-1:";
 
 export type PortableBrushlingProfile = {
   selectedId: BrushlingId;
@@ -18,13 +24,27 @@ export type PortableBrushlingProfile = {
 
 export type BrushlingsBackup = {
   format: "brushlings-backup";
-  version: 1;
+  version: 2;
   createdAt: number;
   profile: PortableBrushlingProfile;
   customization: CustomizationState;
   preferences: AppPreferences;
   parentRewards: ParentReward[];
   history: BrushSession[];
+  lifetimeProgress: LifetimeProgress;
+};
+
+export type BrushlingsBackupManifest = {
+  format: "brushlings-backup";
+  version: 3;
+  createdAt: number;
+  historyComplete: boolean;
+  archivedSessionCount: number;
+  profile: PortableBrushlingProfile;
+  customization: CustomizationState;
+  preferences: AppPreferences;
+  parentRewards: ParentReward[];
+  lifetimeProgress: LifetimeProgress;
 };
 
 function normalizeOwnedIds(value: unknown): CustomizationItemId[] {
@@ -47,7 +67,7 @@ function normalizeEquipped(
 
 function normalizeHistory(value: unknown): BrushSession[] {
   if (!Array.isArray(value)) throw new Error("Storico backup non valido");
-  return value.map((item, index) => {
+  const sessions = value.map((item, index) => {
     if (!item || typeof item !== "object") throw new Error("Sessione backup non valida");
     const candidate = item as Partial<BrushSession>;
     if (
@@ -69,7 +89,9 @@ function normalizeHistory(value: unknown): BrushSession[] {
       source: candidate.source,
       deviceSessionId: typeof candidate.deviceSessionId === "number" ? candidate.deviceSessionId : undefined,
     };
-  }).sort((a, b) => b.startedAt - a.startedAt).slice(0, 120);
+  });
+  const byId = new Map(sessions.map((session) => [session.id, session]));
+  return [...byId.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, 120);
 }
 
 function normalizePreferences(value: unknown): AppPreferences {
@@ -97,22 +119,30 @@ function normalizeParentRewards(value: unknown): ParentReward[] {
       && (raw.deliveredAt === null || typeof raw.deliveredAt === "number");
   }).slice(0, 40);
 }
+
 export function createBackup(
   history: BrushSession[],
   profile: PortableBrushlingProfile,
   customization: CustomizationState,
   createdAt: number = Date.now(),
-  extras?: { preferences?: AppPreferences; parentRewards?: ParentReward[] },
+  extras?: {
+    preferences?: AppPreferences;
+    parentRewards?: ParentReward[];
+    lifetimeProgress?: LifetimeProgress;
+  },
 ): BrushlingsBackup {
+  const realHistory = history.filter((session) => session.source !== "demo");
+  const recentHistory = realHistory.slice(0, 120);
   return {
     format: "brushlings-backup",
-    version: 1,
+    version: 2,
     createdAt,
     profile,
     customization,
     preferences: extras?.preferences ?? DEFAULT_APP_PREFERENCES,
     parentRewards: extras?.parentRewards ?? [],
-    history: history.filter((session) => session.source !== "demo"),
+    history: recentHistory,
+    lifetimeProgress: extras?.lifetimeProgress ?? createLifetimeProgress(realHistory),
   };
 }
 
@@ -120,22 +150,97 @@ export function serializeBackup(backup: BrushlingsBackup): string {
   return BACKUP_PREFIX + JSON.stringify(backup);
 }
 
+export function createBackupManifest(
+  profile: PortableBrushlingProfile,
+  customization: CustomizationState,
+  lifetimeProgress: LifetimeProgress,
+  createdAt: number = Date.now(),
+  extras?: {
+    preferences?: AppPreferences;
+    parentRewards?: ParentReward[];
+  },
+): BrushlingsBackupManifest {
+  return {
+    format: "brushlings-backup",
+    version: 3,
+    createdAt,
+    historyComplete: true,
+    archivedSessionCount: lifetimeProgress.attemptedSessions,
+    profile,
+    customization,
+    preferences: extras?.preferences ?? DEFAULT_APP_PREFERENCES,
+    parentRewards: extras?.parentRewards ?? [],
+    lifetimeProgress,
+  };
+}
+
+export function parseBackupManifest(json: string): BrushlingsBackupManifest {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error("Manifest del backup danneggiato");
+  }
+  if (!parsed || typeof parsed !== "object") throw new Error("Manifest del backup non valido");
+  const raw = parsed as Record<string, unknown>;
+  if (raw.format !== "brushlings-backup" || raw.version !== 3) {
+    throw new Error("Versione file backup non supportata");
+  }
+
+  const rawProfile = raw.profile as Record<string, unknown> | undefined;
+  const selectedId = rawProfile?.selectedId;
+  if (typeof selectedId !== "string" || !isBrushlingId(selectedId)) {
+    throw new Error("Creatura selezionata non valida");
+  }
+  const rawCustomization = raw.customization as Partial<CustomizationState> | undefined;
+  const ownedIds = normalizeOwnedIds(rawCustomization?.ownedIds);
+  const lifetimeProgress = normalizeLifetimeProgress(raw.lifetimeProgress);
+  if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
+
+  return {
+    format: "brushlings-backup",
+    version: 3,
+    createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
+    historyComplete: raw.historyComplete !== false,
+    archivedSessionCount: typeof raw.archivedSessionCount === "number"
+      ? Math.max(0, Math.floor(raw.archivedSessionCount))
+      : lifetimeProgress.attemptedSessions,
+    profile: {
+      selectedId,
+      hasChosenStarter: rawProfile?.hasChosenStarter === true,
+    },
+    customization: {
+      ownedIds,
+      equippedHabitatId: normalizeEquipped(rawCustomization?.equippedHabitatId, ownedIds) ?? "bubble-room",
+      equippedAccessoryId: normalizeEquipped(rawCustomization?.equippedAccessoryId, ownedIds),
+      equippedDecorId: normalizeEquipped(rawCustomization?.equippedDecorId, ownedIds),
+    },
+    preferences: normalizePreferences(raw.preferences),
+    parentRewards: normalizeParentRewards(raw.parentRewards),
+    lifetimeProgress,
+  };
+}
+
 export function parseBackup(code: string): BrushlingsBackup {
   const trimmed = code.trim();
-  if (!trimmed.startsWith(BACKUP_PREFIX)) {
-    throw new Error("Questo non sembra un backup Brushlings valido");
-  }
+  const prefix = trimmed.startsWith(BACKUP_PREFIX)
+    ? BACKUP_PREFIX
+    : trimmed.startsWith(LEGACY_BACKUP_PREFIX)
+      ? LEGACY_BACKUP_PREFIX
+      : null;
+  if (!prefix) throw new Error("Questo non sembra un backup Brushlings valido");
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(trimmed.slice(BACKUP_PREFIX.length));
+    parsed = JSON.parse(trimmed.slice(prefix.length));
   } catch {
     throw new Error("Il backup è danneggiato o incompleto");
   }
 
   if (!parsed || typeof parsed !== "object") throw new Error("Backup non valido");
   const raw = parsed as Record<string, unknown>;
-  if (raw.format !== "brushlings-backup" || raw.version !== 1) {
+  const expectedVersion = prefix === BACKUP_PREFIX ? 2 : 1;
+  if (raw.format !== "brushlings-backup" || raw.version !== expectedVersion) {
     throw new Error("Versione backup non supportata");
   }
 
@@ -148,10 +253,15 @@ export function parseBackup(code: string): BrushlingsBackup {
   const rawCustomization = raw.customization as Partial<CustomizationState> | undefined;
   const ownedIds = normalizeOwnedIds(rawCustomization?.ownedIds);
   const equippedHabitatId = normalizeEquipped(rawCustomization?.equippedHabitatId, ownedIds) ?? "bubble-room";
+  const history = normalizeHistory(raw.history);
+  const lifetimeProgress = raw.version === 2
+    ? normalizeLifetimeProgress(raw.lifetimeProgress)
+    : createLifetimeProgress(history);
+  if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
 
   return {
     format: "brushlings-backup",
-    version: 1,
+    version: 2,
     createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
     profile: {
       selectedId,
@@ -165,17 +275,20 @@ export function parseBackup(code: string): BrushlingsBackup {
     },
     preferences: normalizePreferences(raw.preferences),
     parentRewards: normalizeParentRewards(raw.parentRewards),
-    history: normalizeHistory(raw.history),
+    history,
+    lifetimeProgress,
   };
 }
 
-export function backupFingerprint(backup: BrushlingsBackup): string {
+export function backupFingerprint(
+  backup: Pick<BrushlingsBackup | BrushlingsBackupManifest, "createdAt" | "lifetimeProgress" | "profile">,
+): string {
   const date = new Date(backup.createdAt);
   return [
     String(date.getFullYear()),
     String(date.getMonth() + 1).padStart(2, "0"),
     String(date.getDate()).padStart(2, "0"),
-    String(backup.history.length).padStart(3, "0"),
+    String(backup.lifetimeProgress.completedSessions).padStart(3, "0"),
     backup.profile.selectedId.toUpperCase(),
   ].join("-");
 }

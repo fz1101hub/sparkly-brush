@@ -1,0 +1,469 @@
+import type { BrushSession } from "./brush-types";
+import {
+  BRUSHLINGS,
+  XP_PER_LEVEL,
+  getBrushling,
+  getEvolution,
+  type BrushlingGameStats,
+  type BrushlingId,
+  type BrushlingReward,
+} from "./brushlings";
+import {
+  COLLECTIBLE_ITEMS,
+  EGG_DEFINITIONS,
+  getItemForCompletedSessionNumber,
+  type CollectibleItemId,
+  type GameInventory,
+  type SessionDiscovery,
+} from "./game-inventory";
+import {
+  computeAchievementsFromMetrics,
+  computeDailyMissionSummaryFromCounts,
+  type MissionCenter,
+  type ProgressRewardDelta,
+} from "./missions";
+
+export const LIFETIME_PROGRESS_VERSION = 1;
+
+export type DeviceSessionCursor = {
+  lastSessionId: number;
+  epoch: number;
+  recentIdentities: string[];
+  updatedAt: number;
+};
+
+export type LifetimeProgress = {
+  version: typeof LIFETIME_PROGRESS_VERSION;
+  attemptedSessions: number;
+  completedSessions: number;
+  totalBrushingSeconds: number;
+  xp: number;
+  dailyBonusCoins: number;
+  perfectDays: number;
+  lastCompletedDateKey: string | null;
+  currentStreakDays: number;
+  longestStreakDays: number;
+  itemCounts: Record<CollectibleItemId, number>;
+  activeDateKey: string | null;
+  /** completedCount * 4 + morningBit + eveningBit for activeDateKey */
+  activeDay: number;
+  deviceCursors: Record<string, DeviceSessionCursor>;
+};
+
+export type LifetimeProgressEvent = {
+  session: BrushSession;
+  before: LifetimeProgress;
+  after: LifetimeProgress;
+};
+
+type DayProgress = {
+  completedSessions: number;
+  morningCompleted: boolean;
+  eveningCompleted: boolean;
+};
+
+function emptyItemCounts(): Record<CollectibleItemId, number> {
+  return {
+    "bubble-pearl": 0,
+    "fresh-leaf": 0,
+    "spark-crystal": 0,
+    "moon-shard": 0,
+    "smile-star": 0,
+  };
+}
+
+export function createEmptyLifetimeProgress(): LifetimeProgress {
+  return {
+    version: LIFETIME_PROGRESS_VERSION,
+    attemptedSessions: 0,
+    completedSessions: 0,
+    totalBrushingSeconds: 0,
+    xp: 0,
+    dailyBonusCoins: 0,
+    perfectDays: 0,
+    lastCompletedDateKey: null,
+    currentStreakDays: 0,
+    longestStreakDays: 0,
+    itemCounts: emptyItemCounts(),
+    activeDateKey: null,
+    activeDay: 0,
+    deviceCursors: {},
+  };
+}
+
+export function localDateKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function parseLocalDateKey(key: string): Date {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function dayDifference(firstKey: string, secondKey: string): number {
+  return Math.round(
+    (parseLocalDateKey(secondKey).getTime() - parseLocalDateKey(firstKey).getTime()) / 86_400_000,
+  );
+}
+
+function decodeDay(encoded: number | undefined): DayProgress {
+  const safe = Number.isFinite(encoded) ? Math.max(0, Math.floor(encoded ?? 0)) : 0;
+  return {
+    completedSessions: Math.floor(safe / 4),
+    morningCompleted: (safe & 1) === 1,
+    eveningCompleted: (safe & 2) === 2,
+  };
+}
+
+function encodeDay(day: DayProgress): number {
+  return Math.max(0, Math.floor(day.completedSessions)) * 4
+    + Number(day.morningCompleted)
+    + Number(day.eveningCompleted) * 2;
+}
+
+function isMorning(timestamp: number): boolean {
+  const hour = new Date(timestamp).getHours();
+  return hour >= 5 && hour < 12;
+}
+
+function isEvening(timestamp: number): boolean {
+  return new Date(timestamp).getHours() >= 18;
+}
+
+function currentStreak(progress: LifetimeProgress, timestamp: number): number {
+  if (!progress.lastCompletedDateKey) return 0;
+  const todayKey = localDateKey(timestamp);
+  const daysSinceLastCompletion = dayDifference(progress.lastCompletedDateKey, todayKey);
+  return daysSinceLastCompletion === 0 || daysSinceLastCompletion === 1
+    ? progress.currentStreakDays
+    : 0;
+}
+
+function daySummary(progress: LifetimeProgress, dateKey: string) {
+  const day = progress.activeDateKey === dateKey
+    ? decodeDay(progress.activeDay)
+    : decodeDay(undefined);
+  return computeDailyMissionSummaryFromCounts(
+    dateKey,
+    day.completedSessions,
+    day.morningCompleted,
+    day.eveningCompleted,
+  );
+}
+
+function achievementMetrics(progress: LifetimeProgress) {
+  return {
+    completedSessions: progress.completedSessions,
+    perfectDays: progress.perfectDays,
+    longestStreakDays: progress.longestStreakDays,
+  };
+}
+
+function cloneProgress(progress: LifetimeProgress): LifetimeProgress {
+  return {
+    ...progress,
+    itemCounts: { ...progress.itemCounts },
+    deviceCursors: Object.fromEntries(
+      Object.entries(progress.deviceCursors).map(([key, cursor]) => [key, { ...cursor }]),
+    ),
+  };
+}
+
+export function applySessionToLifetime(
+  progress: LifetimeProgress,
+  session: BrushSession,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  next.attemptedSessions += 1;
+  next.totalBrushingSeconds += Math.max(0, session.durationSeconds);
+  next.xp += session.completed
+    ? 60
+    : session.durationSeconds >= 5
+      ? Math.min(20, Math.floor(session.durationSeconds / 6))
+      : 0;
+
+  if (!session.completed) return next;
+
+  const dateKey = localDateKey(session.startedAt);
+  const previousDay = next.activeDateKey === dateKey
+    ? decodeDay(next.activeDay)
+    : decodeDay(undefined);
+  const previousSummary = daySummary(next, dateKey);
+  const wasPerfect = previousDay.morningCompleted && previousDay.eveningCompleted;
+  const firstCompletionForDay = previousDay.completedSessions === 0;
+
+  next.completedSessions += 1;
+  next.itemCounts[getItemForCompletedSessionNumber(next.completedSessions).id] += 1;
+  const updatedDay: DayProgress = {
+    completedSessions: previousDay.completedSessions + 1,
+    morningCompleted: previousDay.morningCompleted || isMorning(session.startedAt),
+    eveningCompleted: previousDay.eveningCompleted || isEvening(session.startedAt),
+  };
+  next.activeDateKey = dateKey;
+  next.activeDay = encodeDay(updatedDay);
+
+  const updatedSummary = daySummary(next, dateKey);
+  next.dailyBonusCoins += Math.max(0, updatedSummary.earnedCoins - previousSummary.earnedCoins);
+  if (!wasPerfect && updatedDay.morningCompleted && updatedDay.eveningCompleted) {
+    next.perfectDays += 1;
+  }
+  if (firstCompletionForDay) {
+    if (!next.lastCompletedDateKey) {
+      next.currentStreakDays = 1;
+      next.lastCompletedDateKey = dateKey;
+    } else {
+      const difference = dayDifference(next.lastCompletedDateKey, dateKey);
+      if (difference === 1) next.currentStreakDays += 1;
+      else if (difference > 1) next.currentStreakDays = 1;
+      if (difference > 0) next.lastCompletedDateKey = dateKey;
+    }
+    next.longestStreakDays = Math.max(next.longestStreakDays, next.currentStreakDays);
+  }
+  return next;
+}
+
+export function createLifetimeProgress(history: BrushSession[]): LifetimeProgress {
+  return [...history]
+    .sort((a, b) => a.startedAt - b.startedAt)
+    .reduce(applySessionToLifetime, createEmptyLifetimeProgress());
+}
+
+function nonNegativeInteger(value: unknown, fallback: number = 0): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.floor(value))
+    : fallback;
+}
+
+export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Partial<LifetimeProgress>;
+  if (raw.version !== LIFETIME_PROGRESS_VERSION) return null;
+
+  const itemCounts = emptyItemCounts();
+  COLLECTIBLE_ITEMS.forEach((item) => {
+    itemCounts[item.id] = nonNegativeInteger(raw.itemCounts?.[item.id]);
+  });
+
+  const deviceCursors: Record<string, DeviceSessionCursor> = {};
+  if (raw.deviceCursors && typeof raw.deviceCursors === "object") {
+    Object.entries(raw.deviceCursors).forEach(([key, cursor]) => {
+      if (!cursor || typeof cursor !== "object") return;
+      const candidate = cursor as Partial<DeviceSessionCursor>;
+      deviceCursors[key] = {
+        lastSessionId: Math.min(65_535, nonNegativeInteger(candidate.lastSessionId)),
+        epoch: nonNegativeInteger(candidate.epoch),
+        recentIdentities: Array.isArray(candidate.recentIdentities)
+          ? candidate.recentIdentities.filter((value): value is string => typeof value === "string").slice(-32)
+          : [],
+        updatedAt: nonNegativeInteger(candidate.updatedAt),
+      };
+    });
+  }
+
+  return {
+    version: LIFETIME_PROGRESS_VERSION,
+    attemptedSessions: nonNegativeInteger(raw.attemptedSessions),
+    completedSessions: nonNegativeInteger(raw.completedSessions),
+    totalBrushingSeconds: nonNegativeInteger(raw.totalBrushingSeconds),
+    xp: nonNegativeInteger(raw.xp),
+    dailyBonusCoins: nonNegativeInteger(raw.dailyBonusCoins),
+    perfectDays: nonNegativeInteger(raw.perfectDays),
+    lastCompletedDateKey: typeof raw.lastCompletedDateKey === "string"
+      && /^\d{4}-\d{2}-\d{2}$/.test(raw.lastCompletedDateKey)
+      ? raw.lastCompletedDateKey
+      : null,
+    currentStreakDays: nonNegativeInteger(raw.currentStreakDays),
+    longestStreakDays: nonNegativeInteger(raw.longestStreakDays),
+    itemCounts,
+    activeDateKey: typeof raw.activeDateKey === "string"
+      && /^\d{4}-\d{2}-\d{2}$/.test(raw.activeDateKey)
+      ? raw.activeDateKey
+      : null,
+    activeDay: nonNegativeInteger(raw.activeDay),
+    deviceCursors,
+  };
+}
+
+export function allocateDeviceSessionIdentity(
+  progress: LifetimeProgress,
+  deviceId: string,
+  sessionId: number,
+): { progress: LifetimeProgress; id: string; duplicate: boolean } {
+  const next = cloneProgress(progress);
+  const key = encodeURIComponent(deviceId);
+  const previous = next.deviceCursors[key];
+  const rollover = Boolean(previous && previous.lastSessionId >= 65_000 && sessionId <= 1_024);
+  const staleRegression = Boolean(previous && sessionId < previous.lastSessionId && !rollover);
+  const epoch = rollover ? (previous?.epoch ?? 0) + 1 : previous?.epoch ?? 0;
+  const identity = `${epoch}:${sessionId}`;
+  const stalePreviousEpoch = Boolean(
+    previous
+      && previous.epoch > 0
+      && previous.lastSessionId <= 1_024
+      && sessionId >= 65_000
+      && previous.recentIdentities.includes(`${previous.epoch - 1}:${sessionId}`),
+  );
+  const duplicate = previous?.lastSessionId === sessionId
+    || staleRegression
+    || stalePreviousEpoch
+    || previous?.recentIdentities.includes(identity) === true;
+
+  if (!duplicate) {
+    next.deviceCursors[key] = {
+      lastSessionId: sessionId,
+      epoch,
+      recentIdentities: [...(previous?.recentIdentities ?? []), identity].slice(-32),
+      updatedAt: Date.now(),
+    };
+    const activeKeys = Object.keys(next.deviceCursors);
+    if (activeKeys.length > 32) {
+      activeKeys
+        .sort((first, second) => next.deviceCursors[first].updatedAt - next.deviceCursors[second].updatedAt)
+        .slice(0, activeKeys.length - 32)
+        .forEach((cursorKey) => delete next.deviceCursors[cursorKey]);
+    }
+  }
+  return { progress: next, id: `ble-${key}-${epoch}-${sessionId}`, duplicate };
+}
+
+export function computeLifetimeBrushlingStats(
+  progress: LifetimeProgress,
+  timestamp: number = Date.now(),
+): BrushlingGameStats {
+  const level = 1 + Math.floor(progress.xp / XP_PER_LEVEL);
+  return {
+    xp: progress.xp,
+    level,
+    levelProgress: (progress.xp % XP_PER_LEVEL) / XP_PER_LEVEL,
+    coins: progress.completedSessions * 12 + Math.floor(progress.totalBrushingSeconds / 60),
+    completedSessions: progress.completedSessions,
+    todayCompletedSessions: progress.activeDateKey === localDateKey(timestamp)
+      ? decodeDay(progress.activeDay).completedSessions
+      : 0,
+    streakDays: currentStreak(progress, timestamp),
+    unlockedIds: BRUSHLINGS
+      .filter((brushling) => progress.completedSessions >= brushling.unlockAtCompletedSessions)
+      .map((brushling) => brushling.id),
+  };
+}
+
+export function computeLifetimeMissionCenter(
+  progress: LifetimeProgress,
+  timestamp: number = Date.now(),
+): MissionCenter {
+  const achievements = computeAchievementsFromMetrics(achievementMetrics(progress));
+  const achievementBonusCoins = achievements
+    .filter((achievement) => achievement.unlocked)
+    .reduce((total, achievement) => total + achievement.rewardCoins, 0);
+  return {
+    today: daySummary(progress, localDateKey(timestamp)),
+    achievements,
+    dailyBonusCoins: progress.dailyBonusCoins,
+    achievementBonusCoins,
+    totalBonusCoins: progress.dailyBonusCoins + achievementBonusCoins,
+  };
+}
+
+export function computeLifetimeInventory(progress: LifetimeProgress): GameInventory {
+  const eggs = EGG_DEFINITIONS.map((egg) => {
+    const found = progress.completedSessions >= egg.foundAtCompletedSessions;
+    const hatched = progress.completedSessions >= egg.hatchAtCompletedSessions;
+    const denominator = Math.max(1, egg.hatchAtCompletedSessions - egg.foundAtCompletedSessions);
+    const numerator = Math.max(
+      0,
+      Math.min(denominator, progress.completedSessions - egg.foundAtCompletedSessions),
+    );
+    return {
+      ...egg,
+      found,
+      hatched,
+      progress: found ? numerator / denominator : 0,
+      sessionsRemaining: Math.max(0, egg.hatchAtCompletedSessions - progress.completedSessions),
+    };
+  });
+
+  return {
+    completedSessions: progress.completedSessions,
+    itemCounts: { ...progress.itemCounts },
+    eggs,
+    hatchedBrushlingIds: eggs.filter((egg) => egg.hatched).map((egg) => egg.brushlingId),
+  };
+}
+
+export function computeLifetimeSessionReward(
+  event: LifetimeProgressEvent,
+  selectedId: BrushlingId,
+): BrushlingReward {
+  const beforeStats = computeLifetimeBrushlingStats(event.before, event.session.startedAt);
+  const afterStats = computeLifetimeBrushlingStats(event.after, event.session.startedAt);
+  const creature = getBrushling(selectedId);
+  const beforeEvolution = getEvolution(creature, beforeStats.level);
+  const afterEvolution = getEvolution(creature, afterStats.level);
+  const evolved = beforeEvolution.name !== afterEvolution.name;
+  return {
+    sessionId: event.session.id,
+    completed: event.session.completed,
+    xpEarned: Math.max(0, event.after.xp - event.before.xp),
+    coinsEarned: Math.max(0, afterStats.coins - beforeStats.coins),
+    previousLevel: beforeStats.level,
+    level: afterStats.level,
+    evolvedFrom: evolved ? beforeEvolution.name : undefined,
+    evolvedTo: evolved ? afterEvolution.name : undefined,
+  };
+}
+
+export function computeLifetimeDiscovery(event: LifetimeProgressEvent): SessionDiscovery | null {
+  if (!event.session.completed || event.after.completedSessions !== event.before.completedSessions + 1) return null;
+  const completedSessionNumber = event.after.completedSessions;
+  const item = getItemForCompletedSessionNumber(completedSessionNumber);
+  return {
+    sessionId: event.session.id,
+    completedSessionNumber,
+    zoneId: item.zoneId,
+    item,
+    eggFound: EGG_DEFINITIONS.find((egg) => egg.foundAtCompletedSessions === completedSessionNumber),
+    eggHatched: EGG_DEFINITIONS.find((egg) => egg.hatchAtCompletedSessions === completedSessionNumber),
+  };
+}
+
+export function computeLifetimeProgressRewardDelta(
+  event: LifetimeProgressEvent,
+): ProgressRewardDelta | null {
+  if (!event.session.completed) return null;
+  const dateKey = localDateKey(event.session.startedAt);
+  const beforeDay = daySummary(event.before, dateKey);
+  const afterDay = daySummary(event.after, dateKey);
+  const beforeAchievements = computeAchievementsFromMetrics(achievementMetrics(event.before));
+  const afterAchievements = computeAchievementsFromMetrics(achievementMetrics(event.after));
+
+  const missionTitles = afterDay.missions
+    .filter((mission) => mission.completed)
+    .filter((mission) => !beforeDay.missions.find((item) => item.id === mission.id)?.completed)
+    .map((mission) => mission.title);
+  const achievementTitles = afterAchievements
+    .filter((achievement) => achievement.unlocked)
+    .filter((achievement) => !beforeAchievements.find((item) => item.id === achievement.id)?.unlocked)
+    .map((achievement) => achievement.title);
+  const beforeAchievementCoins = beforeAchievements
+    .filter((achievement) => achievement.unlocked)
+    .reduce((total, achievement) => total + achievement.rewardCoins, 0);
+  const afterAchievementCoins = afterAchievements
+    .filter((achievement) => achievement.unlocked)
+    .reduce((total, achievement) => total + achievement.rewardCoins, 0);
+
+  const dailyBonusCoins = Math.max(0, event.after.dailyBonusCoins - event.before.dailyBonusCoins);
+  const achievementBonusCoins = Math.max(0, afterAchievementCoins - beforeAchievementCoins);
+  return {
+    missionTitles,
+    achievementTitles,
+    dailyBonusCoins,
+    achievementBonusCoins,
+    chestUnlocked: afterDay.allCompleted && !beforeDay.allCompleted,
+    totalBonusCoins: dailyBonusCoins + achievementBonusCoins,
+  };
+}

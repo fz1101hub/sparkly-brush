@@ -5,7 +5,9 @@ on:
     branches: [main]
   push:
     branches:
+      - main
       - "feature/**"
+      - "fix/**"
 
 jobs:
   verify:
@@ -29,13 +31,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Capture refreshed lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: refreshed-pnpm-lock
-          path: pnpm-lock.yaml
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript
         run: pnpm check

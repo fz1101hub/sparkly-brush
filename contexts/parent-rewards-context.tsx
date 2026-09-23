@@ -4,6 +4,7 @@ import { useBrush } from "@/contexts/brush-context";
 import {
   loadParentRewards,
   parentRewardProgress,
+  parentRewardProgressFromMetrics,
   saveParentRewards,
   type ParentReward,
   type ParentRewardProgress,
@@ -24,7 +25,7 @@ type ParentRewardsContextValue = {
 const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(null);
 
 export function ParentRewardsProvider({ children }: PropsWithChildren) {
-  const { history, demoMode } = useBrush();
+  const { history, lifetimeProgress, demoMode } = useBrush();
   const [definitions, setDefinitions] = useState<ParentReward[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -33,8 +34,14 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
   }, []);
 
   const rewards = useMemo(
-    () => definitions.map((reward) => parentRewardProgress(reward, history)),
-    [definitions, history],
+    () => definitions.map((reward) => demoMode
+      ? parentRewardProgress(reward, history)
+      : parentRewardProgressFromMetrics(reward, {
+        completedSessions: lifetimeProgress.completedSessions,
+        perfectDays: lifetimeProgress.perfectDays,
+        longestStreakDays: lifetimeProgress.longestStreakDays,
+      })),
+    [definitions, demoMode, history, lifetimeProgress],
   );
 
   const nextReward = useMemo(

@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -12,63 +12,122 @@ import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   backupFingerprint,
-  createBackup,
+  createBackupManifest,
   parseBackup,
-  serializeBackup,
   type BrushlingsBackup,
 } from "@/lib/backup";
+import {
+  discardCompleteBackupPreview,
+  exportAndShareCompleteBackup,
+  pickAndInspectCompleteBackup,
+  restoreCompleteBackup,
+  type CompleteBackupPreview,
+} from "@/lib/complete-backup";
+import { runRestoreOperation } from "@/lib/history-operation";
+import {
+  beginApplicationRestore,
+  completeApplicationRestore,
+  type RestoreSnapshot,
+} from "@/lib/restore-journal";
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1_024) return `${bytes} B`;
+  if (bytes < 1_048_576) return `${(bytes / 1_024).toFixed(1)} KB`;
+  return `${(bytes / 1_048_576).toFixed(1)} MB`;
+}
 
 export default function BackupScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { realHistory, demoMode, setDemoMode, restoreRealHistory } = useBrush();
+  const {
+    lifetimeProgress,
+    historyReady,
+    demoMode,
+    setDemoMode,
+    restoreRealHistory,
+    adoptRestoredHistory,
+  } = useBrush();
   const {
     selectedId,
     hasChosenStarter,
     customization,
+    profileReady,
+    restoreInProgress,
     restoreFromBackup,
+    setRestoreInProgress,
   } = useBrushling();
-  const { preferences, restorePreferences } = usePreferences();
-  const { definitions: parentRewards, restoreRewards } = useParentRewards();
-  const [backupCode, setBackupCode] = useState("");
+  const { preferences, ready: preferencesReady, restorePreferences } = usePreferences();
+  const { definitions: parentRewards, ready: rewardsReady, restoreRewards } = useParentRewards();
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
+  const [filePreview, setFilePreview] = useState<CompleteBackupPreview | null>(null);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
+  const backupReady = historyReady && profileReady && preferencesReady && rewardsReady && !restoreInProgress;
+  const nativeBackupAvailable = Platform.OS !== "web";
 
-  const currentBackup = useMemo(
-    () => createBackup(
-      realHistory,
+  useEffect(() => {
+    filePreviewRef.current = filePreview;
+  }, [filePreview]);
+
+  useEffect(() => () => {
+    if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+  }, []);
+
+  const currentManifest = useMemo(
+    () => createBackupManifest(
       { selectedId, hasChosenStarter },
       customization,
+      lifetimeProgress,
       Date.now(),
       { preferences, parentRewards },
     ),
-    [customization, hasChosenStarter, parentRewards, preferences, realHistory, selectedId],
+    [customization, hasChosenStarter, lifetimeProgress, parentRewards, preferences, selectedId],
   );
 
-  const generate = () => {
-    if (demoMode) return;
-    const code = serializeBackup(currentBackup);
-    setBackupCode(code);
-    setMessage("Backup aggiornato e pronto da salvare.");
+  const shareBackup = async () => {
+    if (demoMode || !backupReady) return;
+    setBusy(true);
     setError(null);
+    try {
+      const result = await exportAndShareCompleteBackup(currentManifest);
+      setMessage(`Backup completo: ${result.sessionCount} sessioni, ${formatBytes(result.size)}.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Backup non riuscito");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const shareBackup = async () => {
-    if (demoMode) return;
-    const code = backupCode || serializeBackup(currentBackup);
-    if (!backupCode) setBackupCode(code);
-    await Share.share({
-      title: "Backup Brushlings",
-      message: "Backup Brushlings — conservalo in un posto sicuro.\n\n" + code,
-    });
+  const pickBackupFile = async () => {
+    if (demoMode || !backupReady) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const inspected = await pickAndInspectCompleteBackup();
+      if (inspected) {
+        if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+        setFilePreview(inspected);
+        setPreview(null);
+        setMessage(null);
+      }
+    } catch (caught) {
+      if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+      setFilePreview(null);
+      setError(caught instanceof Error ? caught.message : "File backup non valido");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const inspectImport = () => {
     try {
       const parsed = parseBackup(importCode);
       setPreview(parsed);
+      if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+      setFilePreview(null);
       setError(null);
       setMessage(null);
     } catch (caught) {
@@ -77,17 +136,117 @@ export default function BackupScreen() {
     }
   };
 
-  const restore = async () => {
-    if (!preview || demoMode) return;
-    await restoreFromBackup(preview.profile, preview.customization);
-    await restoreRealHistory(preview.history);
-    await restorePreferences(preview.preferences);
-    await restoreRewards(preview.parentRewards);
-    setImportCode("");
-    setPreview(null);
-    setBackupCode("");
+  const restoreLegacy = async () => {
+    if (!preview || demoMode || !backupReady) return;
+    const previous: RestoreSnapshot = {
+      profile: { selectedId, hasChosenStarter },
+      customization,
+      preferences,
+      parentRewards,
+    };
+    const next: RestoreSnapshot = {
+      profile: preview.profile,
+      customization: preview.customization,
+      preferences: preview.preferences,
+      parentRewards: preview.parentRewards,
+    };
+    setBusy(true);
     setError(null);
-    setMessage("Ripristino completato: il Brushling e i suoi progressi sono tornati.");
+    try {
+      await runRestoreOperation(async () => {
+        setRestoreInProgress(true);
+        const restoreId = await beginApplicationRestore(previous, next);
+        let databaseCommitted = false;
+        try {
+          await restoreFromBackup(next.profile, next.customization);
+          await restorePreferences(next.preferences);
+          await restoreRewards(next.parentRewards);
+          await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
+          databaseCommitted = true;
+          await completeApplicationRestore(restoreId);
+        } catch (caught) {
+          if (!databaseCommitted) {
+            const rollback = await Promise.allSettled([
+              restoreFromBackup(previous.profile, previous.customization),
+              restorePreferences(previous.preferences),
+              restoreRewards(previous.parentRewards),
+            ]);
+            if (rollback.every((result) => result.status === "fulfilled")) {
+              await completeApplicationRestore(restoreId);
+            }
+          }
+          throw caught;
+        } finally {
+          setRestoreInProgress(false);
+        }
+      });
+      setImportCode("");
+      setPreview(null);
+      setMessage("Vecchio backup ripristinato. Progressi lifetime e sessioni disponibili sono stati importati.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Ripristino non riuscito");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const restoreFile = async () => {
+    if (!filePreview || demoMode || !backupReady) return;
+    const selectedPreview = filePreview;
+    const previous: RestoreSnapshot = {
+      profile: { selectedId, hasChosenStarter },
+      customization,
+      preferences,
+      parentRewards,
+    };
+    const next: RestoreSnapshot = {
+      profile: selectedPreview.manifest.profile,
+      customization: selectedPreview.manifest.customization,
+      preferences: selectedPreview.manifest.preferences,
+      parentRewards: selectedPreview.manifest.parentRewards,
+    };
+    setBusy(true);
+    setError(null);
+    try {
+      await runRestoreOperation(async () => {
+        setRestoreInProgress(true);
+        const restoreId = await beginApplicationRestore(previous, next);
+        let databaseCommitted = false;
+        try {
+          await restoreFromBackup(next.profile, next.customization);
+          await restorePreferences(next.preferences);
+          await restoreRewards(next.parentRewards);
+          const restored = await restoreCompleteBackup(selectedPreview, restoreId);
+          databaseCommitted = true;
+          adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
+          await completeApplicationRestore(restoreId);
+        } catch (caught) {
+          if (!databaseCommitted) {
+            const rollback = await Promise.allSettled([
+              restoreFromBackup(previous.profile, previous.customization),
+              restorePreferences(previous.preferences),
+              restoreRewards(previous.parentRewards),
+            ]);
+            if (rollback.every((result) => result.status === "fulfilled")) {
+              await completeApplicationRestore(restoreId);
+            }
+          }
+          throw caught;
+        } finally {
+          setRestoreInProgress(false);
+        }
+      });
+      setFilePreview(null);
+      setPreview(null);
+      setImportCode("");
+      setMessage("Ripristino completo: tutte le sessioni e i progressi sono tornati.");
+    } catch (caught) {
+      discardCompleteBackupPreview(selectedPreview);
+      setFilePreview(null);
+      setError(caught instanceof Error ? caught.message : "Ripristino non riuscito");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -112,9 +271,9 @@ export default function BackupScreen() {
             <MaterialIcons name="cloud-done" size={31} color="#2E8A60" />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroTitle, { color: colors.foreground }]}>Il Brushling non resta intrappolato nel vecchio telefono</Text>
+            <Text style={[styles.heroTitle, { color: colors.foreground }]}>Ogni progresso segue il Brushling</Text>
             <Text style={[styles.heroText, { color: colors.muted }]}>
-              Il backup contiene storico, compagno, tana, premi di famiglia e preferenze di suoni, musica e vibrazione.
+              Un solo file contiene tutte le sessioni, senza tagli, più compagno, tana, premi e preferenze.
             </Text>
           </View>
         </View>
@@ -131,6 +290,12 @@ export default function BackupScreen() {
             <Pressable onPress={() => void setDemoMode(false)} style={({ pressed }) => [styles.demoWarningButton, pressed && styles.pressed]}>
               <Text style={styles.demoWarningButtonText}>Esci demo</Text>
             </Pressable>
+          </View>
+        ) : null}
+        {!demoMode && !backupReady ? (
+          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+            <MaterialIcons name="hourglass-top" size={20} color="#2457D6" />
+            <Text style={[styles.messageText, { color: colors.foreground }]}>Caricamento dei dati in corso…</Text>
           </View>
         ) : null}
         {message ? (
@@ -150,44 +315,21 @@ export default function BackupScreen() {
 
           <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Summary icon="pets" label="Brushling" value={selectedId} />
-            <Summary icon="history" label="Sessioni" value={String(currentBackup.history.length)} />
+            <Summary icon="history" label="Sessioni archiviate" value={String(lifetimeProgress.attemptedSessions)} />
             <Summary icon="home" label="Oggetti tana" value={String(customization.ownedIds.length)} />
             <Summary icon="redeem" label="Premi famiglia" value={String(parentRewards.length)} />
           </View>
 
-          <View style={styles.actionRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={generate}
-              disabled={demoMode}
-              style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, demoMode && styles.disabled, pressed && styles.pressed]}
-            >
-              <MaterialIcons name="refresh" size={20} color={colors.primary} />
-              <Text style={[styles.secondaryText, { color: colors.primary }]}>Genera codice</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void shareBackup()}
-              disabled={demoMode}
-              style={({ pressed }) => [styles.primaryButton, demoMode && styles.disabled, pressed && styles.pressed]}
-            >
-              <MaterialIcons name="ios-share" size={20} color="#FFFFFF" />
-              <Text style={styles.primaryText}>Condividi backup</Text>
-            </Pressable>
-          </View>
-
-          {backupCode ? (
-            <View>
-              <Text style={[styles.codeLabel, { color: colors.muted }]}>Codice backup · {backupFingerprint(currentBackup)}</Text>
-              <TextInput
-                value={backupCode}
-                editable={false}
-                multiline
-                selectTextOnFocus
-                style={[styles.codeBox, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface }]}
-              />
-            </View>
-          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void shareBackup()}
+            disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
+            style={({ pressed }) => [styles.primaryButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
+          >
+            <MaterialIcons name="ios-share" size={20} color="#FFFFFF" />
+            <Text style={styles.primaryText}>{!nativeBackupAvailable ? "Disponibile su iOS e Android" : busy ? "Preparazione…" : "Salva il file completo"}</Text>
+          </Pressable>
+          <Text style={[styles.codeLabel, { color: colors.muted }]}>ID backup · {backupFingerprint(currentManifest)}</Text>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -196,30 +338,85 @@ export default function BackupScreen() {
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>2. Ripristina sul nuovo telefono</Text>
             <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-              Incolla qui il codice. Prima del ripristino l’app ti mostra un riepilogo del contenuto.
+              Scegli il file .brushlings salvato. L’app controlla integrità e numero di sessioni prima del ripristino.
             </Text>
           </View>
 
-          <TextInput
-            value={importCode}
-            onChangeText={(value) => { setImportCode(value); setPreview(null); setError(null); }}
-            multiline
-            placeholder="Incolla qui BRUSHLINGS-BACKUP-1:..."
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={[styles.importBox, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface }]}
-          />
-
           <Pressable
             accessibilityRole="button"
-            disabled={!importCode.trim()}
-            onPress={inspectImport}
-            style={({ pressed }) => [styles.checkButton, !importCode.trim() && styles.disabled, pressed && styles.pressed]}
+            disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
+            onPress={() => void pickBackupFile()}
+            style={({ pressed }) => [styles.checkButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
           >
-            <MaterialIcons name="verified-user" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryText}>Controlla backup</Text>
+            <MaterialIcons name="folder-open" size={20} color="#FFFFFF" />
+            <Text style={styles.primaryText}>Scegli file backup</Text>
           </Pressable>
+
+          {filePreview ? (
+            <View style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+              <MaterialIcons name="verified-user" size={27} color="#2E8A60" />
+              <View style={styles.previewCopy}>
+                <Text style={[styles.previewEyebrow, { color: "#2E8A60" }]}>
+                  {filePreview.manifest.historyComplete ? "FILE COMPLETO VERIFICATO" : "BACKUP LEGACY VERIFICATO"}
+                </Text>
+                <Text style={[styles.previewTitle, { color: colors.foreground }]}>
+                  {filePreview.manifest.profile.selectedId} · {filePreview.sessionCount} sessioni
+                </Text>
+                <Text style={[styles.previewText, { color: colors.muted }]}>
+                  {formatBytes(filePreview.size)} · creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(filePreview.manifest.createdAt))}.
+                </Text>
+                {!filePreview.manifest.historyComplete ? (
+                  <Text style={[styles.warningText, { color: "#8A5B00" }]}>
+                    Origine legacy: tutti i progressi sono conservati, ma il vecchio codice conteneva solo {filePreview.sessionCount} righe consultabili.
+                  </Text>
+                ) : null}
+                <Text style={[styles.warningText, { color: "#246A4B" }]}>
+                  Il ripristino sostituirà integralmente l’archivio reale di questo telefono.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy || !backupReady}
+                  onPress={() => void restoreFile()}
+                  style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
+                >
+                  <MaterialIcons name="settings-backup-restore" size={20} color="#FFFFFF" />
+                  <Text style={styles.primaryText}>Ripristina archivio completo</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={[styles.legacyCard, { borderColor: colors.border }]}>
+            <Text style={[styles.legacyTitle, { color: colors.foreground }]}>Hai un vecchio codice backup?</Text>
+            <Text style={[styles.previewText, { color: colors.muted }]}>I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.</Text>
+
+            <TextInput
+              value={importCode}
+              onChangeText={(value) => {
+                setImportCode(value);
+                setPreview(null);
+                if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+                setFilePreview(null);
+                setError(null);
+              }}
+              multiline
+              placeholder="Incolla qui BRUSHLINGS-BACKUP-1/2:..."
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[styles.importBox, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface }]}
+            />
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={!importCode.trim()}
+              onPress={inspectImport}
+              style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, !importCode.trim() && styles.disabled, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="manage-search" size={20} color={colors.primary} />
+              <Text style={[styles.secondaryText, { color: colors.primary }]}>Controlla vecchio codice</Text>
+            </Pressable>
+          </View>
 
           {error ? (
             <View style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
@@ -234,7 +431,7 @@ export default function BackupScreen() {
               <View style={styles.previewCopy}>
                 <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>BACKUP VALIDO</Text>
                 <Text style={[styles.previewTitle, { color: colors.foreground }]}>
-                  {preview.profile.selectedId} · {preview.history.length} sessioni
+                  {preview.profile.selectedId} · {preview.lifetimeProgress.completedSessions} sessioni
                 </Text>
                 <Text style={[styles.previewText, { color: colors.muted }]}>
                   Creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(preview.createdAt))}.
@@ -244,8 +441,9 @@ export default function BackupScreen() {
                 </Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => void restore()}
-                  style={({ pressed }) => [styles.restoreButton, pressed && styles.pressed]}
+                  disabled={busy || !backupReady}
+                  onPress={() => void restoreLegacy()}
+                  style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
                 >
                   <MaterialIcons name="settings-backup-restore" size={20} color="#FFFFFF" />
                   <Text style={styles.primaryText}>Ripristina questo Brushling</Text>
@@ -258,7 +456,7 @@ export default function BackupScreen() {
         <View style={[styles.privacyCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
           <MaterialIcons name="privacy-tip" size={21} color={colors.muted} />
           <Text style={[styles.privacyText, { color: colors.muted }]}>
-            Il codice può contenere date e durata delle sessioni. Non pubblicarlo online: conservalo come un piccolo documento privato di famiglia.
+            Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.
           </Text>
         </View>
       </ScrollView>
@@ -303,14 +501,16 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 13, lineHeight: 18, fontWeight: "900", textTransform: "capitalize" },
   summaryLabel: { fontSize: 9, lineHeight: 13, textAlign: "center" },
   actionRow: { flexDirection: "row", gap: 9 },
-  primaryButton: { flex: 1, minHeight: 48, borderRadius: 16, backgroundColor: "#2457D6", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10 },
-  secondaryButton: { flex: 1, minHeight: 48, borderRadius: 16, borderWidth: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10 },
+  primaryButton: { minHeight: 48, borderRadius: 16, backgroundColor: "#2457D6", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10 },
+  secondaryButton: { minHeight: 48, borderRadius: 16, borderWidth: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10 },
   primaryText: { color: "#FFFFFF", fontSize: 11, lineHeight: 16, fontWeight: "900", textAlign: "center" },
   secondaryText: { fontSize: 11, lineHeight: 16, fontWeight: "900" },
   codeLabel: { fontSize: 9, lineHeight: 13, fontWeight: "800", marginBottom: 5 },
   codeBox: { minHeight: 100, maxHeight: 150, borderWidth: 1, borderRadius: 16, padding: 11, fontSize: 9, lineHeight: 13 },
   divider: { height: 1 },
   importBox: { minHeight: 130, borderWidth: 1, borderRadius: 18, padding: 12, fontSize: 10, lineHeight: 15, textAlignVertical: "top" },
+  legacyCard: { borderWidth: 1, borderRadius: 18, padding: 12, gap: 10 },
+  legacyTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   checkButton: { minHeight: 48, borderRadius: 16, backgroundColor: "#2457D6", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
   disabled: { opacity: 0.45 },
   errorCard: { borderWidth: 1, borderRadius: 17, padding: 11, flexDirection: "row", alignItems: "flex-start", gap: 8 },
