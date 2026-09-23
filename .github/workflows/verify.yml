@@ -41,3 +41,18 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Security audit (critical gate)
+        run: pnpm audit --prod --audit-level critical
+
+      - name: Expo Doctor
+        run: pnpm exec expo-doctor
+
+      - name: Bundle web
+        run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-web
+
+      - name: Bundle iOS
+        run: pnpm exec expo export --platform ios --output-dir /tmp/sparkly-ios
+
+      - name: Bundle Android
+        run: pnpm exec expo export --platform android --output-dir /tmp/sparkly-android

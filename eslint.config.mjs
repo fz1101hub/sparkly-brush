@@ -7,4 +7,10 @@ export default defineConfig([
   {
     ignores: ["dist/*"],
   },
+  {
+    files: ["tests/**/*.{ts,tsx}"],
+    rules: {
+      "import/first": "off",
+    },
+  },
 ]);

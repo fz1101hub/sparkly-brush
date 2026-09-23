@@ -39,8 +39,8 @@ export default function CollectionScreen() {
           </View>
           <View style={styles.summaryItem}>
             <MaterialIcons name="local-fire-department" size={22} color="#E76A2C" />
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>{stats.streakDays}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>giorni di serie</Text>
+            <Text style={[styles.summaryValue, { color: colors.foreground }]}>{stats.currentStreakDays}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>serie attuale</Text>
           </View>
         </View>
 

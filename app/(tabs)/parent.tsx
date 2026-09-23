@@ -178,7 +178,7 @@ export default function ParentDashboardScreen() {
             {([
               ["completed-sessions", "Sessioni", "check-circle"],
               ["perfect-days", "Giorni perfetti", "wb-sunny"],
-              ["streak", "Streak", "local-fire-department"],
+              ["streak", "Record serie", "local-fire-department"],
             ] as const).map(([value, label, icon]) => (
               <Pressable
                 key={value}

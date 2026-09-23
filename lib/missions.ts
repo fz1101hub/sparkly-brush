@@ -1,4 +1,14 @@
 import type { BrushSession } from "@/lib/brush-types";
+import {
+  isEvening,
+  isMorning,
+  localDateKey,
+  longestCompletedDayStreak,
+  parseLocalDateKey,
+  uniqueCompletedDayKeys,
+} from "@/lib/day-progress";
+
+export { longestCompletedDayStreak } from "@/lib/day-progress";
 
 export type DailyMissionId = "morning" | "evening" | "double";
 export type AchievementId =
@@ -63,23 +73,6 @@ export type AchievementMetrics = {
 };
 
 const DAILY_CHEST_REWARD = 12;
-
-function localDateKey(timestamp: number): string {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return year + "-" + month + "-" + day;
-}
-
-function isMorning(timestamp: number): boolean {
-  const hour = new Date(timestamp).getHours();
-  return hour >= 5 && hour < 12;
-}
-
-function isEvening(timestamp: number): boolean {
-  return new Date(timestamp).getHours() >= 18;
-}
 
 export function computeDailyMissionSummaryFromCounts(
   dateKey: string,
@@ -156,41 +149,9 @@ export function computeDailyMissionSummary(
   return computeDailyMissionSummaryFromCounts(dateKey, sessions.length, morning >= 1, evening >= 1);
 }
 
-function uniqueCompletedDayKeys(history: BrushSession[]): string[] {
-  return [...new Set(completeSessions(history).map((session) => localDateKey(session.startedAt)))].sort();
-}
-
-function parseLocalDayKey(key: string): Date {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function dayDifference(a: string, b: string): number {
-  const first = parseLocalDayKey(a);
-  const second = parseLocalDayKey(b);
-  return Math.round((second.getTime() - first.getTime()) / 86_400_000);
-}
-
-export function longestCompletedDayStreak(history: BrushSession[]): number {
-  const keys = uniqueCompletedDayKeys(history);
-  if (keys.length === 0) return 0;
-
-  let longest = 1;
-  let current = 1;
-  for (let index = 1; index < keys.length; index += 1) {
-    if (dayDifference(keys[index - 1], keys[index]) === 1) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 1;
-    }
-  }
-  return longest;
-}
-
 function perfectDayCount(history: BrushSession[]): number {
   return uniqueCompletedDayKeys(history).filter((key) => {
-    const timestamp = parseLocalDayKey(key).getTime();
+    const timestamp = parseLocalDateKey(key).getTime();
     const summary = computeDailyMissionSummary(history, timestamp);
     const morning = summary.missions.find((mission) => mission.id === "morning")?.completed;
     const evening = summary.missions.find((mission) => mission.id === "evening")?.completed;
@@ -243,7 +204,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
     {
       id: "seven-day-streak",
       title: "Settimana di fuoco",
-      description: "Spazzola per 7 giorni consecutivi.",
+      description: "Raggiungi una serie record di 7 giorni consecutivi.",
       rewardCoins: 50,
       unlocked: metrics.longestStreakDays >= 7,
       progress: Math.min(metrics.longestStreakDays, 7),
@@ -263,7 +224,7 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
 
 export function computeLifetimeDailyBonusCoins(history: BrushSession[]): number {
   return uniqueCompletedDayKeys(history).reduce((total, key) => {
-    const timestamp = parseLocalDayKey(key).getTime();
+    const timestamp = parseLocalDateKey(key).getTime();
     return total + computeDailyMissionSummary(history, timestamp).earnedCoins;
   }, 0);
 }

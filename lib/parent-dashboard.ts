@@ -1,4 +1,5 @@
 import type { BrushSession } from "@/lib/brush-types";
+import { isEvening, isMorning, sameLocalDay, startOfLocalDay } from "@/lib/day-progress";
 
 export type ParentDaySummary = {
   timestamp: number;
@@ -24,28 +25,6 @@ export type ParentDashboard = {
   manualSessions: number;
   daysWithBoth: number;
 };
-
-function startOfLocalDay(timestamp: number): Date {
-  const date = new Date(timestamp);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function sameLocalDay(a: number, b: number): boolean {
-  const first = new Date(a);
-  const second = new Date(b);
-  return first.getFullYear() === second.getFullYear()
-    && first.getMonth() === second.getMonth()
-    && first.getDate() === second.getDate();
-}
-
-function isMorning(timestamp: number): boolean {
-  const hour = new Date(timestamp).getHours();
-  return hour >= 5 && hour < 12;
-}
-
-function isEvening(timestamp: number): boolean {
-  return new Date(timestamp).getHours() >= 18;
-}
 
 export function computeParentDashboard(
   history: BrushSession[],

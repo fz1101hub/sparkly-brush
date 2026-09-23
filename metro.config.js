@@ -10,7 +10,7 @@ config.watchFolders = [
 
 module.exports = withNativeWind(config, {
   input: "./global.css",
-  // Force write CSS to file system instead of virtual modules
-  // This fixes iOS styling issues in development mode
-  forceWriteFileSystem: true,
+  // Keep virtual-module patching enabled so production exports can hash the
+  // generated CSS; css-interop still writes platform files in production.
+  forceWriteFileSystem: false,
 });

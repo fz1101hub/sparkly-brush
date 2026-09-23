@@ -6,9 +6,12 @@ import { recoverApplicationRestore } from "@/lib/restore-journal";
 import {
   allocateDeviceSessionIdentity,
   applySessionToLifetime,
-  createEmptyLifetimeProgress,
+  clearPendingDeviceFallback,
   createLifetimeProgress,
+  markPendingDeviceFallback,
+  matchesPendingDeviceFallback,
   normalizeLifetimeProgress,
+  reconcilePendingDeviceFallbackProgress,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -151,6 +154,7 @@ async function saveNewSessionUnlocked(
   bundle: HistoryBundle,
   session: BrushSession,
   progressBeforeSession: LifetimeProgress = bundle.lifetimeProgress,
+  transformProgress?: (progress: LifetimeProgress) => LifetimeProgress,
 ): Promise<HistorySaveResult> {
   const existing = bundle.recentHistory.find((item) => item.id === session.id);
   if (existing) {
@@ -162,7 +166,8 @@ async function saveNewSessionUnlocked(
     return { ...persisted, event: null };
   }
 
-  const after = applySessionToLifetime(progressBeforeSession, session);
+  const applied = applySessionToLifetime(progressBeforeSession, session);
+  const after = transformProgress ? transformProgress(applied) : applied;
   const persisted = await persistProgressState({
     recentHistory: [session, ...bundle.recentHistory],
     lifetimeProgress: after,
@@ -180,6 +185,21 @@ export async function saveSessionWithLifetime(session: BrushSession): Promise<Hi
   }));
 }
 
+export async function saveDeviceFallbackWithLifetime(
+  deviceId: string,
+  session: BrushSession,
+): Promise<HistorySaveResult> {
+  return runHistoryOperation(() => queueHistoryWrite(async () => {
+    const bundle = await loadProgressStateUnlocked();
+    return saveNewSessionUnlocked(
+      bundle,
+      session,
+      bundle.lifetimeProgress,
+      (progress) => markPendingDeviceFallback(progress, deviceId, session, bundle.lifetimeProgress),
+    );
+  }));
+}
+
 export async function saveDeviceSessionWithLifetime(
   deviceId: string,
   stored: StoredDeviceSession,
@@ -187,6 +207,14 @@ export async function saveDeviceSessionWithLifetime(
 ): Promise<HistorySaveResult> {
   return runHistoryOperation(() => queueHistoryWrite(async () => {
     const bundle = await loadProgressStateUnlocked();
+    const pending = matchesPendingDeviceFallback(
+      bundle.lifetimeProgress,
+      deviceId,
+      stored.sessionId,
+      stored.durationSeconds,
+      stored.targetSeconds,
+      startedAt,
+    );
     const allocation = allocateDeviceSessionIdentity(
       bundle.lifetimeProgress,
       deviceId,
@@ -204,7 +232,24 @@ export async function saveDeviceSessionWithLifetime(
       completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
       source: "device",
     };
-    return saveNewSessionUnlocked(bundle, session, allocation.progress);
+    const progressWithCursor = clearPendingDeviceFallback(allocation.progress, deviceId);
+    if (pending) {
+      const reconciledProgress = reconcilePendingDeviceFallbackProgress(
+        allocation.progress,
+        deviceId,
+        session,
+      ) ?? progressWithCursor;
+      const recentHistory = normalizeHistory([
+        session,
+        ...bundle.recentHistory.filter((item) => item.id !== pending.sessionId && item.id !== session.id),
+      ]);
+      const persisted = await persistProgressState({
+        recentHistory,
+        lifetimeProgress: reconciledProgress,
+      });
+      return { ...persisted, event: null };
+    }
+    return saveNewSessionUnlocked(bundle, session, progressWithCursor);
   }));
 }
 

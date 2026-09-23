@@ -1,4 +1,5 @@
 import type { BrushSession } from "@/lib/brush-types";
+import { currentCompletedDayStreak, sameLocalDay } from "@/lib/day-progress";
 
 export type BrushlingId = "bloopi" | "spriggo" | "flarello" | "voltuff" | "moonbit";
 
@@ -26,7 +27,7 @@ export type BrushlingGameStats = {
   coins: number;
   completedSessions: number;
   todayCompletedSessions: number;
-  streakDays: number;
+  currentStreakDays: number;
   unlockedIds: BrushlingId[];
 };
 
@@ -138,41 +139,6 @@ export function getNextEvolution(creature: BrushlingDefinition, level: number): 
   return creature.evolutions.find((evolution) => evolution.unlockLevel > level) ?? null;
 }
 
-function startOfLocalDay(timestamp: number): Date {
-  const date = new Date(timestamp);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function isSameLocalDay(a: number, b: number): boolean {
-  const first = new Date(a);
-  const second = new Date(b);
-  return first.getFullYear() === second.getFullYear()
-    && first.getMonth() === second.getMonth()
-    && first.getDate() === second.getDate();
-}
-
-function computeStreak(history: BrushSession[]): number {
-  const completedDays = new Set(
-    history
-      .filter((session) => session.completed)
-      .map((session) => startOfLocalDay(session.startedAt).getTime()),
-  );
-
-  if (completedDays.size === 0) return 0;
-
-  let cursor = startOfLocalDay(Date.now());
-  if (!completedDays.has(cursor.getTime())) {
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  let streak = 0;
-  while (completedDays.has(cursor.getTime())) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
-
 export function computeBrushlingStats(history: BrushSession[]): BrushlingGameStats {
   const completed = history.filter((session) => session.completed);
   const completedSessions = completed.length;
@@ -183,7 +149,7 @@ export function computeBrushlingStats(history: BrushSession[]): BrushlingGameSta
   const totalSeconds = history.reduce((total, session) => total + Math.max(0, session.durationSeconds), 0);
   const level = 1 + Math.floor(xp / XP_PER_LEVEL);
   const levelProgress = (xp % XP_PER_LEVEL) / XP_PER_LEVEL;
-  const todayCompletedSessions = completed.filter((session) => isSameLocalDay(session.startedAt, Date.now())).length;
+  const todayCompletedSessions = completed.filter((session) => sameLocalDay(session.startedAt, Date.now())).length;
   const unlockedIds = BRUSHLINGS
     .filter((brushling) => completedSessions >= brushling.unlockAtCompletedSessions)
     .map((brushling) => brushling.id);
@@ -195,7 +161,7 @@ export function computeBrushlingStats(history: BrushSession[]): BrushlingGameSta
     coins: completedSessions * 12 + Math.floor(totalSeconds / 60),
     completedSessions,
     todayCompletedSessions,
-    streakDays: computeStreak(history),
+    currentStreakDays: currentCompletedDayStreak(history),
     unlockedIds,
   };
 }
