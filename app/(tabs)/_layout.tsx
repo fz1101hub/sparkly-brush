@@ -81,6 +81,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="hardware-test"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           href: null,

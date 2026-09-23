@@ -1,6 +1,6 @@
 # Sparkly Brush
 
-**Sparkly Brush** è un’app mobile iOS/Android indipendente per il **Philips Sonicare for Kids HX6322/04**. Offre collegamento Bluetooth Low Energy, timer guidato di due minuti, quattro zone da trenta secondi, storico locale, diagnostica BLE e un sistema di gioco chiamato **Brushlings**. Non richiede account e non usa un backend.
+**Sparkly Brush** è un’app mobile iOS/Android indipendente per il **Philips Sonicare for Kids HX6322/04**. Offre collegamento Bluetooth Low Energy, timer guidato di due minuti, quattro zone da trenta secondi, storico locale, diagnostica BLE, collaudo hardware guidato e un sistema di gioco chiamato **Brushlings**. Non richiede account e non usa un backend.
 
 > Philips e Sonicare sono marchi dei rispettivi proprietari. Sparkly Brush è un progetto indipendente, non affiliato né approvato da Philips.
 
@@ -28,6 +28,10 @@ Il profilo implementato è quello Sonicare Classic/open GATT della famiglia HX63
 
 Il client mantiene separati listener adapter e subscription di connessione. Disconnect, reconnect e destroy annullano scan/connect/discovery e le transazioni di sync, rimuovono monitor e callback e chiudono la GATT candidata; una generazione monotona scarta eventi tardivi della connessione precedente. Le sync sono FIFO e vincolate al device/generazione catturati. Una caduta durante lo spazzolamento emette uno stop coerente prima di perdere l’identità del manico; due stop ravvicinati non si sovrascrivono. Gli aggiornamenti batteria conservano modello e firmware già letti.
 
+## Collaudo hardware guidato
+
+Dalla scheda **Spazzolino** si apre una matrice persistente di dodici prove per HX6322/04. Ogni caso include istruzione, criterio di successo, esito e note. La schermata mostra anche lo snapshot corrente di BLE, connessione e firmware. Al termine genera un report Markdown condivisibile su iOS/Android e scaricabile sul web con versione app/OS, riepilogo lifetime e diagnostica BLE. Il report non include `device.id` e oscura automaticamente UUID, indirizzi MAC e identificativi presenti nei log.
+
 ## Avvio
 
 ```bash
@@ -35,7 +39,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-La preview web consente di provare navigazione, timer manuale, demo, storico e Brushlings. Il BLE nativo e il backup file completo sono disabilitati sul web.
+La preview web consente di provare navigazione, timer manuale, demo, storico, Brushlings e l’intero assistente di collaudo, incluso il download del report. Il BLE nativo e il backup file completo sono disabilitati sul web.
 
 ## Build e prova su iPhone/Android
 
@@ -48,7 +52,7 @@ npx expo run:android
 npx expo run:ios
 ```
 
-La procedura manuale completa è in [docs/hardware-test-plan.md](docs/hardware-test-plan.md). In sintesi: accendere il manico, aprire **Spazzolino**, premere **Cerca e collega**, completare una sessione e verificare timer, batteria, sincronizzazione, deduplica e riconnessione.
+La procedura completa è in [docs/hardware-test-plan.md](docs/hardware-test-plan.md). In sintesi: accendere il manico, aprire **Spazzolino**, premere **Prova guidata e report**, collegare il dispositivo e compilare i dodici esiti sulla piattaforma in uso.
 
 ## Verifica automatica
 
