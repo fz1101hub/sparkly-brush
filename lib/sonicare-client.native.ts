@@ -49,22 +49,34 @@ function isSonicare(device: Device): boolean {
 }
 
 export class NativeSonicareClient implements SonicareClient {
-  private readonly manager = new BleManager();
+  private readonly manager: BleManager;
   private readonly events: BleClientEvents;
   private device: Device | null = null;
-  private subscriptions: Subscription[] = [];
+  private deviceInfo: import("@/lib/brush-types").ToothbrushDevice | null = null;
+  private adapterSubscription: Subscription | null = null;
+  private connectionSubscriptions: Subscription[] = [];
+  private connectionGeneration = 0;
+  private operationGeneration = 0;
+  private syncSequence = 0;
+  private syncQueue: Promise<void> = Promise.resolve();
+  private syncTransactions = new Set<string>();
+  private cancelScan: (() => void) | null = null;
+  private cancelOperation: (() => void) | null = null;
+  private connecting = false;
+  private destroyed = false;
   private live: BrushLiveData = { ...DEFAULT_LIVE_DATA };
 
-  constructor(events: BleClientEvents) {
+  constructor(events: BleClientEvents, manager: BleManager = new BleManager()) {
     this.events = events;
+    this.manager = manager;
   }
 
   async initialize(): Promise<void> {
-    const stateSubscription = this.manager.onStateChange((state) => {
+    this.adapterSubscription?.remove();
+    this.adapterSubscription = this.manager.onStateChange((state) => {
       this.events.onAdapterState(state);
       this.events.onLog("info", `Bluetooth: ${state}`);
     }, true);
-    this.subscriptions.push(stateSubscription);
   }
 
   private async requestPermissions(): Promise<void> {
@@ -92,12 +104,23 @@ export class NativeSonicareClient implements SonicareClient {
   }
 
   async scanAndConnect(): Promise<void> {
+    if (this.connecting) throw new Error("Connessione Bluetooth già in corso");
+    if (this.destroyed) throw new Error("Client Bluetooth non disponibile");
+    this.connecting = true;
+    const operationGeneration = ++this.operationGeneration;
+    const cancellation = new Promise<never>((_resolve, reject) => {
+      this.cancelOperation = () => reject(new Error("Connessione Bluetooth annullata"));
+    });
+    const guard = <T,>(operation: Promise<T>): Promise<T> => Promise.race([operation, cancellation]);
+    let candidate: Device | null = null;
     try {
-      await this.requestPermissions();
+      await this.resetConnection();
+      await guard(this.requestPermissions());
+      this.assertOperation(operationGeneration);
       this.events.onStatus("scanning", "Accendi lo spazzolino e tienilo vicino");
       this.events.onLog("info", "Scansione BLE avviata (Sonicare4Kids)");
 
-      const found = await new Promise<Device>((resolve, reject) => {
+      const found = await guard(new Promise<Device>((resolve, reject) => {
         let settled = false;
         const timeout = setTimeout(() => {
           if (settled) return;
@@ -105,6 +128,13 @@ export class NativeSonicareClient implements SonicareClient {
           this.manager.stopDeviceScan();
           reject(new Error("Spazzolino non trovato. Accendilo e riprova."));
         }, SCAN_TIMEOUT_MS);
+        this.cancelScan = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          this.manager.stopDeviceScan();
+          reject(new Error("Connessione Bluetooth annullata"));
+        };
 
         this.manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
           if (settled) return;
@@ -122,18 +152,28 @@ export class NativeSonicareClient implements SonicareClient {
             resolve(device);
           }
         });
-      });
+      }).finally(() => {
+        this.cancelScan = null;
+      }));
+      this.assertOperation(operationGeneration);
 
       this.events.onStatus("connecting", "Connessione e lettura dei servizi");
       this.events.onLog("success", `Trovato ${found.name ?? found.localName ?? "Sonicare"}`);
 
-      const connected = await found.connect({ timeout: 12_000 });
-      this.device = await connected.discoverAllServicesAndCharacteristics();
-      const services = await this.device.services();
+      candidate = found;
+      const connected = await guard(found.connect({ timeout: 12_000 }));
+      candidate = connected;
+      this.assertOperation(operationGeneration);
+      this.device = await guard(connected.discoverAllServicesAndCharacteristics());
+      candidate = this.device;
+      this.assertOperation(operationGeneration);
+      this.connectionGeneration += 1;
+      const services = await guard(this.device.services());
+      this.assertOperation(operationGeneration);
       this.events.onLog("info", `${services.length} servizi GATT rilevati`);
 
       const [model, firmware, battery, handleState, elapsed, target, intensity] =
-        await Promise.all([
+        await guard(Promise.all([
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.modelNumber),
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.firmwareRevision),
           this.readByte(SONICARE.services.battery, SONICARE.characteristics.batteryLevel),
@@ -141,7 +181,8 @@ export class NativeSonicareClient implements SonicareClient {
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.brushingTime),
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.routineLength),
           this.readByte(SONICARE.services.routine, SONICARE.characteristics.intensity),
-        ]);
+        ]));
+      this.assertOperation(operationGeneration);
 
       this.live = {
         ...this.live,
@@ -152,36 +193,48 @@ export class NativeSonicareClient implements SonicareClient {
         intensity: intensityFromByte(intensity ?? undefined),
       };
 
-      this.events.onDevice({
+      this.deviceInfo = {
         id: this.device.id,
         name: this.device.name ?? this.device.localName ?? "Sonicare4Kids",
         model: model ? `HX6322/04 · ${model}` : "HX6322/04",
         firmware: firmware || undefined,
         battery: battery ?? undefined,
-      });
+      };
+      this.events.onDevice({ ...this.deviceInfo });
       this.events.onLiveData({ ...this.live });
       this.installMonitors();
 
-      this.device.onDisconnected((error) => {
-        this.events.onStatus("idle", "Spazzolino disconnesso");
-        this.events.onDevice(null);
-        this.events.onLog(error ? "warning" : "info", "Connessione Bluetooth terminata");
-        this.device = null;
-      });
+      const connectedDeviceId = this.device.id;
+      const connectionGeneration = this.connectionGeneration;
+      this.connectionSubscriptions.push(this.device.onDisconnected((error) => {
+        this.handleDisconnected(connectedDeviceId, connectionGeneration, error);
+      }));
 
       this.events.onStatus("connected", "Sonicare pronto");
       this.events.onLog("success", "Connessione completata: GATT aperto HX63xx");
     } catch (error) {
       this.manager.stopDeviceScan();
+      await this.resetConnection(candidate);
+      if (operationGeneration !== this.operationGeneration || this.destroyed) return;
       const message = error instanceof Error ? error.message : "Errore Bluetooth sconosciuto";
       this.events.onStatus("error", message);
       this.events.onLog("error", message);
       throw error;
+    } finally {
+      this.cancelOperation = null;
+      this.connecting = false;
+    }
+  }
+
+  private assertOperation(generation: number): void {
+    if (this.destroyed || generation !== this.operationGeneration) {
+      throw new Error("Connessione Bluetooth annullata");
     }
   }
 
   private installMonitors(): void {
     if (!this.device) return;
+    this.clearMonitorSubscriptions();
 
     this.monitor(
       SONICARE.services.primary,
@@ -192,7 +245,6 @@ export class NativeSonicareClient implements SonicareClient {
           ...this.live,
           handleState,
           isBrushing: handleState === 2,
-          elapsedSeconds: handleState === 2 ? this.live.elapsedSeconds : this.live.elapsedSeconds,
         };
         this.events.onLiveData({ ...this.live });
         this.events.onLog("info", `Stato manico: ${HANDLE_STATE_LABELS[handleState] ?? handleState}`);
@@ -234,23 +286,26 @@ export class NativeSonicareClient implements SonicareClient {
       SONICARE.characteristics.batteryLevel,
       (bytes) => {
         const battery = bytes[0];
-        if (battery === undefined || !this.device) return;
-        this.events.onDevice({
-          id: this.device.id,
-          name: this.device.name ?? this.device.localName ?? "Sonicare4Kids",
-          model: "HX6322/04",
-          battery,
-        });
+        if (battery === undefined || !this.deviceInfo) return;
+        this.deviceInfo = { ...this.deviceInfo, battery };
+        this.events.onDevice({ ...this.deviceInfo });
       },
     );
   }
 
   private monitor(service: string, characteristic: string, callback: (bytes: Uint8Array) => void) {
     if (!this.device) return;
+    const connectedDeviceId = this.device.id;
+    const connectionGeneration = this.connectionGeneration;
     const subscription = this.device.monitorCharacteristicForService(
       service,
       characteristic,
       (error, value) => {
+        if (
+          this.destroyed
+          || this.device?.id !== connectedDeviceId
+          || this.connectionGeneration !== connectionGeneration
+        ) return;
         if (error) {
           this.events.onLog("warning", `Notifica non disponibile: ${characteristic.slice(-4)}`);
           return;
@@ -258,7 +313,74 @@ export class NativeSonicareClient implements SonicareClient {
         callback(bytesFromBase64(value?.value));
       },
     );
-    this.subscriptions.push(subscription);
+    this.connectionSubscriptions.push(subscription);
+  }
+
+  private clearMonitorSubscriptions(): void {
+    this.connectionSubscriptions.forEach((subscription) => subscription.remove());
+    this.connectionSubscriptions = [];
+  }
+
+  private clearConnectionSubscriptions(): void {
+    this.clearMonitorSubscriptions();
+  }
+
+  private cancelSyncTransactions(): void {
+    for (const transactionId of this.syncTransactions) {
+      void this.manager.cancelTransaction(transactionId).catch(() => undefined);
+    }
+    this.syncTransactions.clear();
+  }
+
+  private assertConnection(device: Device, generation: number): void {
+    if (
+      this.destroyed
+      || this.device !== device
+      || this.connectionGeneration !== generation
+    ) {
+      throw new Error("Sincronizzazione Bluetooth annullata");
+    }
+  }
+
+  private async syncTransaction<T>(transactionId: string, operation: () => Promise<T>): Promise<T> {
+    this.syncTransactions.add(transactionId);
+    try {
+      return await operation();
+    } finally {
+      this.syncTransactions.delete(transactionId);
+    }
+  }
+
+  private resetLiveData(notify: boolean): void {
+    this.live = { ...DEFAULT_LIVE_DATA };
+    if (notify && !this.destroyed) this.events.onLiveData({ ...this.live });
+  }
+
+  private async resetConnection(candidate?: Device | null): Promise<void> {
+    this.connectionGeneration += 1;
+    this.cancelSyncTransactions();
+    this.clearConnectionSubscriptions();
+    const connected = this.device;
+    this.device = null;
+    this.deviceInfo = null;
+    const devices = [candidate, connected].filter(
+      (device, index, list): device is Device => Boolean(device) && list.indexOf(device) === index,
+    );
+    await Promise.all(devices.map((device) => device.cancelConnection().catch(() => undefined)));
+    this.resetLiveData(true);
+    if (!this.destroyed) this.events.onDevice(null);
+  }
+
+  private handleDisconnected(deviceId: string, generation: number, error?: Error | null): void {
+    if (this.device?.id !== deviceId || this.connectionGeneration !== generation) return;
+    this.cancelSyncTransactions();
+    this.clearConnectionSubscriptions();
+    this.resetLiveData(true);
+    this.device = null;
+    this.deviceInfo = null;
+    this.events.onStatus("idle", "Spazzolino disconnesso");
+    this.events.onDevice(null);
+    this.events.onLog(error ? "warning" : "info", "Connessione Bluetooth terminata");
   }
 
   private async readCharacteristic(service: string, characteristic: string): Promise<Characteristic | null> {
@@ -287,26 +409,47 @@ export class NativeSonicareClient implements SonicareClient {
     return ascii(bytesFromBase64(value?.value));
   }
 
-  async syncLatestSession(): Promise<StoredDeviceSession | null> {
-    if (!this.device) throw new Error("Collega prima lo spazzolino");
-
-    const latest = await this.readUint16(
-      SONICARE.services.kidsSession,
-      SONICARE.characteristics.latestSessionId,
+  private async syncCapturedDevice(
+    device: Device,
+    generation: number,
+  ): Promise<StoredDeviceSession | null> {
+    this.assertConnection(device, generation);
+    const transactionPrefix = `sonicare-sync-${generation}-${++this.syncSequence}`;
+    const latestValue = await this.syncTransaction(
+      `${transactionPrefix}-latest`,
+      () => device.readCharacteristicForService(
+        SONICARE.services.kidsSession,
+        SONICARE.characteristics.latestSessionId,
+        `${transactionPrefix}-latest`,
+      ),
     );
+    this.assertConnection(device, generation);
+    const latestBytes = bytesFromBase64(latestValue?.value);
+    const latest = latestBytes.length >= 2 ? uint16LE(latestBytes) : null;
     if (latest === null) return null;
 
-    await this.device.writeCharacteristicWithResponseForService(
-      SONICARE.services.kidsSession,
-      SONICARE.characteristics.activeSessionId,
-      base64FromBytes([latest & 0xff, (latest >> 8) & 0xff]),
+    await this.syncTransaction(
+      `${transactionPrefix}-select`,
+      () => device.writeCharacteristicWithResponseForService(
+        SONICARE.services.kidsSession,
+        SONICARE.characteristics.activeSessionId,
+        base64FromBytes([latest & 0xff, (latest >> 8) & 0xff]),
+        `${transactionPrefix}-select`,
+      ),
     );
+    this.assertConnection(device, generation);
     await new Promise((resolve) => setTimeout(resolve, 180));
+    this.assertConnection(device, generation);
 
-    const value = await this.readCharacteristic(
-      SONICARE.services.kidsSession,
-      SONICARE.characteristics.sessionData,
+    const value = await this.syncTransaction(
+      `${transactionPrefix}-data`,
+      () => device.readCharacteristicForService(
+        SONICARE.services.kidsSession,
+        SONICARE.characteristics.sessionData,
+        `${transactionPrefix}-data`,
+      ),
     );
+    this.assertConnection(device, generation);
     const bytes = bytesFromBase64(value?.value);
     if (bytes.length < 14) return null;
 
@@ -319,22 +462,46 @@ export class NativeSonicareClient implements SonicareClient {
     return decoded;
   }
 
+  async syncLatestSession(): Promise<StoredDeviceSession | null> {
+    const device = this.device;
+    if (!device) throw new Error("Collega prima lo spazzolino");
+    const generation = this.connectionGeneration;
+    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation));
+    this.syncQueue = operation.then(() => undefined, () => undefined);
+    return operation;
+  }
+
   async disconnect(): Promise<void> {
+    this.operationGeneration += 1;
+    this.cancelScan?.();
+    this.cancelOperation?.();
     this.manager.stopDeviceScan();
-    if (this.device) {
-      await this.device.cancelConnection().catch(() => undefined);
-    }
-    this.device = null;
-    this.events.onDevice(null);
+    await this.resetConnection();
     this.events.onStatus("idle", "Disconnesso");
   }
 
   destroy(): void {
+    this.destroyed = true;
+    this.operationGeneration += 1;
+    this.cancelScan?.();
+    this.cancelOperation?.();
     this.manager.stopDeviceScan();
-    this.subscriptions.forEach((subscription) => subscription.remove());
-    this.subscriptions = [];
+    this.connectionGeneration += 1;
+    this.cancelSyncTransactions();
+    this.clearConnectionSubscriptions();
+    this.adapterSubscription?.remove();
+    this.adapterSubscription = null;
     void this.device?.cancelConnection().catch(() => undefined);
-    this.manager.destroy();
+    this.device = null;
+    this.deviceInfo = null;
+    try {
+      const result = this.manager.destroy() as unknown;
+      if (result && typeof (result as PromiseLike<void>).then === "function") {
+        void Promise.resolve(result).catch(() => undefined);
+      }
+    } catch {
+      // The native manager is already unusable; destroy remains best-effort.
+    }
   }
 }
 

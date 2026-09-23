@@ -18,7 +18,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.muted,
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "800", marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "800", marginTop: 2 },
         tabBarStyle: {
           paddingTop: 8,
           paddingBottom: bottomPadding,
@@ -33,21 +33,71 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Oggi",
-          tabBarIcon: ({ color }) => <IconSymbol size={25} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="collection"
+        options={{
+          title: "Creature",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="pawprint.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Esplora",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="map.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rewards"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="habitat"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="missions"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="parent"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="backup"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: "Storico",
-          tabBarIcon: ({ color }) => <IconSymbol size={25} name="clock.arrow.circlepath" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="clock.arrow.circlepath" color={color} />,
         }}
       />
       <Tabs.Screen
         name="device"
         options={{
           title: "Spazzolino",
-          tabBarIcon: ({ color }) => <IconSymbol size={25} name="antenna.radiowaves.left.and.right" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="antenna.radiowaves.left.and.right" color={color} />,
         }}
       />
     </Tabs>

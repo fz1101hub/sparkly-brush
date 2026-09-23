@@ -1,0 +1,110 @@
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import { useBrush } from "@/contexts/brush-context";
+import {
+  loadParentRewards,
+  parentRewardProgress,
+  parentRewardProgressFromMetrics,
+  saveParentRewards,
+  type ParentReward,
+  type ParentRewardProgress,
+  type ParentRewardRequirement,
+} from "@/lib/parent-rewards";
+
+type ParentRewardsContextValue = {
+  rewards: ParentRewardProgress[];
+  definitions: ParentReward[];
+  nextReward: ParentRewardProgress | null;
+  ready: boolean;
+  addReward: (title: string, requirement: ParentRewardRequirement, target: number) => Promise<void>;
+  removeReward: (id: string) => Promise<void>;
+  markDelivered: (id: string) => Promise<void>;
+  restoreRewards: (rewards: ParentReward[]) => Promise<void>;
+};
+
+const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(null);
+
+export function ParentRewardsProvider({ children }: PropsWithChildren) {
+  const { history, lifetimeProgress, demoMode } = useBrush();
+  const [definitions, setDefinitions] = useState<ParentReward[]>([]);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    void loadParentRewards().then(setDefinitions).finally(() => setReady(true));
+  }, []);
+
+  const rewards = useMemo(
+    () => definitions.map((reward) => demoMode
+      ? parentRewardProgress(reward, history)
+      : parentRewardProgressFromMetrics(reward, {
+        completedSessions: lifetimeProgress.completedSessions,
+        perfectDays: lifetimeProgress.perfectDays,
+        longestStreakDays: lifetimeProgress.longestStreakDays,
+      })),
+    [definitions, demoMode, history, lifetimeProgress],
+  );
+
+  const nextReward = useMemo(
+    () => rewards.find((reward) => !reward.deliveredAt) ?? null,
+    [rewards],
+  );
+
+  const addReward = useCallback(async (
+    title: string,
+    requirement: ParentRewardRequirement,
+    target: number,
+  ) => {
+    const cleanTitle = title.trim();
+    if (!cleanTitle || target < 1) return;
+    const next: ParentReward[] = [
+      ...definitions,
+      {
+        id: "parent-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6),
+        title: cleanTitle,
+        requirement,
+        target,
+        createdAt: Date.now(),
+        deliveredAt: null,
+      },
+    ];
+    setDefinitions(next);
+    await saveParentRewards(next);
+  }, [definitions]);
+
+  const removeReward = useCallback(async (id: string) => {
+    const next = definitions.filter((reward) => reward.id !== id);
+    setDefinitions(next);
+    await saveParentRewards(next);
+  }, [definitions]);
+
+  const markDelivered = useCallback(async (id: string) => {
+    if (demoMode) return;
+    const next = definitions.map((reward) => reward.id === id ? { ...reward, deliveredAt: Date.now() } : reward);
+    setDefinitions(next);
+    await saveParentRewards(next);
+  }, [definitions, demoMode]);
+
+  const restoreRewards = useCallback(async (restored: ParentReward[]) => {
+    setDefinitions(restored);
+    await saveParentRewards(restored);
+  }, []);
+
+  const value = useMemo(() => ({ rewards, definitions, nextReward, ready, addReward, removeReward, markDelivered, restoreRewards }), [
+    addReward,
+    definitions,
+    markDelivered,
+    nextReward,
+    ready,
+    removeReward,
+    restoreRewards,
+    rewards,
+  ]);
+
+  return <ParentRewardsContext.Provider value={value}>{children}</ParentRewardsContext.Provider>;
+}
+
+export function useParentRewards(): ParentRewardsContextValue {
+  const value = useContext(ParentRewardsContext);
+  if (!value) throw new Error("useParentRewards deve essere usato dentro ParentRewardsProvider");
+  return value;
+}

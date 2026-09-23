@@ -1,0 +1,58 @@
+name: Verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript
+        run: pnpm check
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Security audit (critical gate)
+        run: pnpm audit --prod --audit-level critical
+
+      - name: Expo Doctor
+        run: pnpm exec expo-doctor
+
+      - name: Bundle web
+        run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-web
+
+      - name: Bundle iOS
+        run: pnpm exec expo export --platform ios --output-dir /tmp/sparkly-ios
+
+      - name: Bundle Android
+        run: pnpm exec expo export --platform android --output-dir /tmp/sparkly-android
