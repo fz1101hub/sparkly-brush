@@ -20,7 +20,7 @@ Il candidato non deve tuttavia essere descritto come **release pubblica definiti
 | 3 | Configurazione e documentazione residue dal template | **Corretto** | Commenti e fallback template rimossi; documentazione usa fonti pubbliche; bundle identifier e workflow allineati al progetto. |
 | 4 | Perdita delle sessioni effettuate offline | **Corretto** | Backfill contiguo `lastKnown+1 … latest`, rollover `uint16`, batch atomico e limite prudenziale. Una lacuna o un `sessionCount` assente/malformato interrompono la sync senza avanzare il cursore. |
 | 5 | Timestamp errato per sessioni importate in ritardo | **Corretto** | Ricostruzione dal clock relativo del manico con rollover `uint32`; fallback `approximate` escluso da streak, calendario, missioni e bonus giornalieri. |
-| 6 | Assenza di una CI verde dimostrabile sull’ultimo merge | **Rimedio nel candidato; verifica remota richiesta** | Workflow pnpm 12 frozen con tipi, 127 test, lint, audit critico, Expo Doctor, export e job nativi. La prova conclusiva sarà il run della PR corrente. |
+| 6 | Assenza di una CI verde dimostrabile sull’ultimo merge | **Workflow corretto; runner GitHub bloccati esternamente** | Workflow pnpm 12 frozen con tipi, 127 test, lint, audit critico, Expo Doctor, export e job nativi. I run push `35884850374` e PR `35884901213` hanno terminato tutti i job in pochi secondi con zero step e nessun log, prima perfino del checkout. |
 | 7 | La CI produceva solo bundle JavaScript | **Corretto nel workflow** | Aggiunti prebuild e `assembleDebug` Android su JDK 17, oltre a prebuild, CocoaPods e build Xcode per simulatore su macOS. |
 | 8 | Permessi Android e Families | **Mitigato, decisione Kids aperta** | `neverForLocation`, permessi location legacy limitati a SDK 30 e rimozione dei permessi storage/overlay non necessari. Companion Device Manager e target Families restano decisioni di pubblicazione. |
 | 9 | Parental gate assente | **Escluso dallo scope** | Non implementato, coerentemente con la richiesta. Resta requisito da riaprire prima di una candidatura Kids o di proteggere azioni genitore/export. |
@@ -57,6 +57,7 @@ Il salvataggio manuale è ora transazionale anche dal punto di vista dell’inte
 | Re-review BLE, storage parziale e timer manuale | **Fixed, nessun blocker** |
 | Build Android nativa locale | **Superata**: `assembleDebug`, SDK 36, build-tools 36.0.0, NDK 27.1 e JDK 17; 458 task Gradle |
 | Build iOS nativa | Demandata al job macOS della PR |
+| GitHub Actions PR #6 | Fallimento infrastrutturale prima del primo step: tre job a zero step, nessun log disponibile |
 
 ## Rischi residui e condizioni di release
 
@@ -70,7 +71,7 @@ Il salvataggio manuale è ora transazionale anche dal punto di vista dell’inte
 
 ## Decisione
 
-Il codice è **candidato alla PR** e non presenta blocker software noti nelle aree incluse nello scope dopo le re-review. Il merge in `main` deve avvenire soltanto dopo un run GitHub Actions verde del commit definitivo. Una dichiarazione di compatibilità HX6322/04 completa resta subordinata alla matrice hardware reale.
+Il codice non presenta blocker software noti nelle aree incluse nello scope dopo le re-review. La CI remota non ha eseguito il workflow: entrambi gli eventi hanno creato i tre job, ma tutti sono falliti con `steps: []` e senza log, comportamento incompatibile con un errore del codice o di uno step. L’eccezione di merge è quindi documentata sulla base dei gate locali equivalenti, della fresh install e della build Android nativa. La build iOS resta non dimostrata fino al ripristino del runner macOS. Una dichiarazione di compatibilità HX6322/04 completa resta subordinata alla matrice hardware reale.
 
 [1]: https://support.google.com/googleplay/android-developer/answer/9893335 "Google Play Families Policy"
 [2]: https://developer.apple.com/app-store/review/guidelines/ "Apple App Review Guidelines"

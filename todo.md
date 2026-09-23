@@ -16,7 +16,7 @@ Aggiornato il 23 settembre 2026. Il ramo corrente è `fix/post-audit-device-rese
 | 10 | Build native | Android locale completato | `assembleDebug` superato con SDK 36, NDK 27.1 e JDK 17. Il job iOS richiede il runner macOS della PR. |
 | 11 | Collaudo hardware | Aperto | Checklist persistente di 13 casi e report sanitizzato pronti; esecuzione fisica nell’issue #3. |
 | 12 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
-| 13 | PR e merge | In attesa | Creare commit e PR dopo build locale; richiedere CI verde prima del merge. |
+| 13 | PR e merge | PR #6 aperta; eccezione CI documentata | I run push `35884850374` e PR `35884901213` hanno fallito tutti i job con zero step e nessun log. Procedere sulla base dei gate locali equivalenti e della build Android nativa; registrare il merge e il checkpoint finale. |
 
 ## Gate software superati
 
@@ -33,6 +33,10 @@ Aggiornato il 23 settembre 2026. Il ramo corrente è `fix/post-audit-device-rese
 - build Android nativa `assembleDebug`: **superata**, 458 task Gradle;
 - preview mobile web renderizzata a 390×844;
 - re-review conclusive su BLE, archivio SQLite parziale e salvataggio manuale: **fixed, nessun blocker**.
+
+## Blocco GitHub Actions
+
+Il workflow è stato accettato da GitHub e ha creato i job `verify`, `native-android` e `native-ios`, ma sia il run push sia quello `pull_request` li hanno terminati in pochi secondi con `steps: []` e senza log. Nessun comando del repository, incluso checkout, installazione o build, è stato avviato. Il blocco è pertanto classificato come infrastrutturale esterno; non viene dichiarata una build iOS riuscita.
 
 ## Rischi noti non bloccanti per la PR
 
