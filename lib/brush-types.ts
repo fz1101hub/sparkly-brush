@@ -35,6 +35,8 @@ export interface BrushLiveData {
 export interface BrushSession {
   id: string;
   startedAt: number;
+  timeConfidence?: "exact" | "reconstructed" | "approximate";
+  rewardPolicy?: "legacy" | "completed-only";
   durationSeconds: number;
   targetSeconds: number;
   completed: boolean;
@@ -44,10 +46,18 @@ export interface BrushSession {
 
 export interface StoredDeviceSession {
   sessionId: number;
+  handleTimestampSeconds?: number;
+  startedAt?: number;
+  timeConfidence?: "exact" | "reconstructed" | "approximate";
   durationSeconds: number;
   targetSeconds: number;
   mode: "clean" | "unknown";
   intensity: "bassa" | "media" | "alta" | "sconosciuta";
+}
+
+export interface DeviceSyncCursor {
+  lastSessionId: number;
+  acceptNextSession: boolean;
 }
 
 export interface BleClientEvents {
@@ -62,7 +72,7 @@ export interface SonicareClient {
   initialize(): Promise<void>;
   scanAndConnect(): Promise<void>;
   disconnect(): Promise<void>;
-  syncLatestSession(): Promise<StoredDeviceSession | null>;
+  syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]>;
   destroy(): void;
 }
 

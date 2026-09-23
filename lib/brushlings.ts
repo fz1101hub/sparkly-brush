@@ -143,10 +143,16 @@ export function computeBrushlingStats(history: BrushSession[]): BrushlingGameSta
   const completed = history.filter((session) => session.completed);
   const completedSessions = completed.length;
   const incompleteXp = history
-    .filter((session) => !session.completed && session.durationSeconds >= 5)
+    .filter((session) => (
+      !session.completed
+      && session.rewardPolicy !== "completed-only"
+      && session.durationSeconds >= 5
+    ))
     .reduce((total, session) => total + Math.min(20, Math.floor(session.durationSeconds / 6)), 0);
   const xp = completedSessions * 60 + incompleteXp;
-  const totalSeconds = history.reduce((total, session) => total + Math.max(0, session.durationSeconds), 0);
+  const rewardedSeconds = history
+    .filter((session) => session.completed || session.rewardPolicy !== "completed-only")
+    .reduce((total, session) => total + Math.max(0, session.durationSeconds), 0);
   const level = 1 + Math.floor(xp / XP_PER_LEVEL);
   const levelProgress = (xp % XP_PER_LEVEL) / XP_PER_LEVEL;
   const todayCompletedSessions = completed.filter((session) => sameLocalDay(session.startedAt, Date.now())).length;
@@ -158,7 +164,7 @@ export function computeBrushlingStats(history: BrushSession[]): BrushlingGameSta
     xp,
     level,
     levelProgress,
-    coins: completedSessions * 12 + Math.floor(totalSeconds / 60),
+    coins: completedSessions * 12 + Math.floor(rewardedSeconds / 60),
     completedSessions,
     todayCompletedSessions,
     currentStreakDays: currentCompletedDayStreak(history),

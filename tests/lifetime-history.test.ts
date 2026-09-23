@@ -7,12 +7,17 @@ import { computeMissionCenter } from "@/lib/missions";
 import {
   allocateDeviceSessionIdentity,
   applySessionToLifetime,
+  applySessionToStoredLifetime,
   computeLifetimeBrushlingStats,
   computeLifetimeInventory,
   computeLifetimeMissionCenter,
   createLifetimeProgress,
   createEmptyLifetimeProgress,
+  deviceKey,
+  markPendingDeviceFallback,
   normalizeLifetimeProgress,
+  rewindPendingDeviceFallbackProgress,
+  shouldReplayStoredHistory,
 } from "@/lib/lifetime-progress";
 import {
   parentRewardProgress,
@@ -38,10 +43,14 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 
 import {
   MAX_RECENT_HISTORY,
+  forgetDeviceWithLifetime,
   loadHistoryBundle,
+  loadLastDevice,
   replaceHistoryWithLifetime,
   saveDeviceFallbackWithLifetime,
   saveDeviceSessionWithLifetime,
+  saveDeviceSessionsWithLifetime,
+  saveLastDevice,
   saveSessionWithLifetime,
 } from "@/lib/brush-storage";
 
@@ -133,7 +142,7 @@ describe("lifetime progress", () => {
     expect(reconciled.lifetimeProgress.xp).toBe(60);
     expect(reconciled.recentHistory).toHaveLength(1);
     expect(reconciled.recentHistory[0]).toMatchObject({
-      id: "ble-brush-a-0-42",
+      id: expect.stringMatching(/^device-session-[0-9a-f]{24}-0-42$/),
       deviceSessionId: 42,
     });
     expect(reconciled.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
@@ -160,7 +169,9 @@ describe("lifetime progress", () => {
     expect(reconciled.event).toBeNull();
     expect(reconciled.lifetimeProgress.completedSessions).toBe(2);
     expect(reconciled.recentHistory).toHaveLength(2);
-    expect(reconciled.recentHistory.some((session) => session.id === "ble-brush-a-0-42")).toBe(true);
+    expect(reconciled.recentHistory.some((session) => (
+      /^device-session-[0-9a-f]{24}-0-42$/.test(session.id)
+    ))).toBe(true);
     expect(reconciled.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
   });
 
@@ -282,7 +293,43 @@ describe("lifetime progress", () => {
 
     expect(corrected.recentHistory[0]).toMatchObject({ durationSeconds: 107, completed: false });
     expect(corrected.lifetimeProgress.completedSessions).toBe(0);
-    expect(corrected.lifetimeProgress.xp).toBe(17);
+    expect(corrected.lifetimeProgress.xp).toBe(0);
+  });
+
+  it("preserva la baseline lifetime non materializzata quando riconcilia un archivio parziale", () => {
+    const baseline = createLifetimeProgress(
+      Array.from({ length: 365 }, (_, index) => completeSession(index)),
+    );
+    const fallback = {
+      ...completeSession(366),
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime + 366_000,
+      source: "device" as const,
+    };
+    const withFallback = markPendingDeviceFallback(
+      applySessionToLifetime(baseline, fallback),
+      "brush-a",
+      fallback,
+      baseline,
+    );
+    const rewound = rewindPendingDeviceFallbackProgress(withFallback, "brush-a");
+    expect(rewound).not.toBeNull();
+
+    const authoritative = applySessionToStoredLifetime(rewound!, {
+      ...fallback,
+      id: "device-session-authoritative",
+      timeConfidence: "reconstructed",
+    }, false);
+
+    expect(authoritative.attemptedSessions).toBe(baseline.attemptedSessions + 1);
+    expect(authoritative.completedSessions).toBe(baseline.completedSessions + 1);
+    expect(authoritative.xp).toBe(baseline.xp + 60);
+    expect(authoritative.dailyBonusCoins).toBe(baseline.dailyBonusCoins);
+    expect(authoritative.perfectDays).toBe(baseline.perfectDays);
+    expect(authoritative.currentStreakDays).toBe(baseline.currentStreakDays);
+    expect(authoritative.longestStreakDays).toBe(baseline.longestStreakDays);
+    expect(shouldReplayStoredHistory(true, 1, false)).toBe(false);
+    expect(shouldReplayStoredHistory(true, 1, true)).toBe(true);
   });
 
   it("serializza salvataggi concorrenti senza perdere progressi", async () => {
@@ -335,10 +382,10 @@ describe("lifetime progress", () => {
     const duplicate = await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(0), baseTime + 2_000);
     const secondDevice = await saveDeviceSessionWithLifetime("brush-b", storedDeviceSession(0), baseTime + 3_000);
 
-    expect(beforeRollover.event?.session.id).toContain("brush-a-0-65535");
-    expect(afterRollover.event?.session.id).toContain("brush-a-1-0");
+    expect(beforeRollover.event?.session.id).toMatch(/^device-session-[0-9a-f]{24}-0-65535$/);
+    expect(afterRollover.event?.session.id).toMatch(/^device-session-[0-9a-f]{24}-1-0$/);
     expect(duplicate.event).toBeNull();
-    expect(secondDevice.event?.session.id).toContain("brush-b-0-0");
+    expect(secondDevice.event?.session.id).toMatch(/^device-session-[0-9a-f]{24}-0-0$/);
     expect(secondDevice.lifetimeProgress.completedSessions).toBe(3);
   });
 
@@ -350,6 +397,72 @@ describe("lifetime progress", () => {
     expect(newest.lifetimeProgress.completedSessions).toBe(2);
     expect(stale.event).toBeNull();
     expect(stale.lifetimeProgress.completedSessions).toBe(2);
+  });
+
+  it("accetta il contatore ripartito dopo il reset del solo manico senza perdere progressi", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(100), baseTime);
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(101), baseTime + 1_000);
+    await saveDeviceSessionWithLifetime("brush-b", storedDeviceSession(7), baseTime + 2_000);
+    const beforeReset = await loadHistoryBundle();
+
+    const reset = await forgetDeviceWithLifetime("brush-a");
+    expect(reset.recentHistory).toEqual(beforeReset.recentHistory);
+    expect(reset.lifetimeProgress.completedSessions).toBe(3);
+    expect(reset.lifetimeProgress.xp).toBe(beforeReset.lifetimeProgress.xp);
+
+    const firstAfterReset = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(1),
+      baseTime + 3_000,
+    );
+    const duplicate = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(1),
+      baseTime + 4_000,
+    );
+
+    expect(firstAfterReset.event?.session.id).toMatch(/^device-session-[0-9a-f]{24}-1-1$/);
+    expect(firstAfterReset.lifetimeProgress.completedSessions).toBe(4);
+    expect(duplicate.event).toBeNull();
+    expect(duplicate.lifetimeProgress.completedSessions).toBe(4);
+    expect(firstAfterReset.lifetimeProgress.deviceCursors[deviceKey("brush-b")].lastSessionId).toBe(7);
+  });
+
+  it("salva un batch BLE contiguo con un solo avanzamento atomico del cursore", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime);
+
+    const result = await saveDeviceSessionsWithLifetime("brush-a", [
+      { ...storedDeviceSession(41), startedAt: baseTime + 1_000, timeConfidence: "reconstructed" },
+      { ...storedDeviceSession(42), startedAt: baseTime + 2_000, timeConfidence: "reconstructed" },
+    ]);
+
+    expect(result.importedCount).toBe(2);
+    expect(result.lifetimeProgress.completedSessions).toBe(3);
+    expect(result.lifetimeProgress.deviceCursors[deviceKey("brush-a")].lastSessionId).toBe(42);
+    expect(result.recentHistory.slice(0, 2).map((item) => item.deviceSessionId)).toEqual([42, 41]);
+  });
+
+  it("non usa una data approssimata per streak o missioni calendariali", () => {
+    const approximate = {
+      ...completeSession(1),
+      timeConfidence: "approximate" as const,
+    };
+    const progress = applySessionToLifetime(createEmptyLifetimeProgress(), approximate);
+
+    expect(progress.completedSessions).toBe(1);
+    expect(progress.xp).toBe(60);
+    expect(progress.activeDateKey).toBeNull();
+    expect(progress.currentStreakDays).toBe(0);
+    expect(progress.dailyBonusCoins).toBe(0);
+  });
+
+  it("preserva un nuovo ultimo manico mentre dimentica quello precedente", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(42), baseTime);
+    await saveLastDevice({ id: "brush-b", name: "Sonicare4Kids", model: "HX6322/04" });
+
+    await forgetDeviceWithLifetime("brush-a");
+
+    expect(await loadLastDevice()).toMatchObject({ id: "brush-b" });
   });
 
   it("ignora un pacchetto del ciclo precedente dopo il rollover", async () => {
@@ -432,6 +545,7 @@ describe("lifetime progress", () => {
       {
         lastSessionId: index,
         epoch: 0,
+        acceptNextSession: false,
         previousEpochRecentSessionIds: [],
         recentIdentities: [`0:${index}`],
         updatedAt: 1,

@@ -1,4 +1,4 @@
-import type { BleClientEvents, SonicareClient, StoredDeviceSession } from "@/lib/brush-types";
+import type { BleClientEvents, DeviceSyncCursor, SonicareClient, StoredDeviceSession } from "@/lib/brush-types";
 
 class WebSonicareClient implements SonicareClient {
   constructor(private readonly events: BleClientEvents) {}
@@ -18,9 +18,9 @@ class WebSonicareClient implements SonicareClient {
     this.events.onStatus("unsupported", "Il Bluetooth si attiva nell’app installata");
   }
 
-  async syncLatestSession(): Promise<StoredDeviceSession | null> {
+  async syncStoredSessionsSince(_cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]> {
     this.events.onLog("warning", "Sincronizzazione disponibile solo su iOS e Android");
-    return null;
+    return [];
   }
 
   destroy(): void {}

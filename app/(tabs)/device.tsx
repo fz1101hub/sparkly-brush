@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -21,6 +21,7 @@ export default function DeviceScreen() {
     logs,
     connect,
     disconnect,
+    forgetToothbrush,
     syncLatest,
     demoMode,
     demoSessionCount,
@@ -28,9 +29,30 @@ export default function DeviceScreen() {
     addDemoSession,
     generateDemoWeek,
     clearDemoData,
+    isForgettingToothbrush,
   } = useBrush();
   const connected = status === "connected";
-  const busy = status === "scanning" || status === "connecting";
+  const busy = status === "scanning" || status === "connecting" || isForgettingToothbrush;
+
+  const confirmForgetToothbrush = () => {
+    Alert.alert(
+      "Dimenticare questo manico?",
+      "Usalo dopo un reset di fabbrica o prima di collegare un manico sostitutivo. Storico, Brushling, XP, monete e backup non verranno cancellati.",
+      [
+        { text: "Annulla", style: "cancel" },
+        {
+          text: "Dimentica manico",
+          style: "destructive",
+          onPress: () => void forgetToothbrush().catch((error) => {
+            Alert.alert(
+              "Impossibile dimenticare il manico",
+              error instanceof Error ? error.message : "Riprova tra poco.",
+            );
+          }),
+        },
+      ],
+    );
+  };
 
   const renderLog = ({ item }: { item: DiagnosticLog }) => (
     <View style={styles.logRow}>
@@ -87,8 +109,8 @@ export default function DeviceScreen() {
               </Pressable>
               <Pressable
                 onPress={() => void syncLatest()}
-                disabled={!connected || demoMode}
-                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode) && styles.disabled, pressed && styles.pressed]}
+                disabled={!connected || demoMode || isForgettingToothbrush}
+                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode || isForgettingToothbrush) && styles.disabled, pressed && styles.pressed]}
               >
                 <MaterialIcons name="sync" size={22} color={colors.primary} />
                 <Text style={[styles.secondaryText, { color: colors.primary }]}>Sincronizza ultima</Text>
@@ -104,6 +126,27 @@ export default function DeviceScreen() {
               <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
               <InfoRow icon="memory" label="Firmware" value={device?.firmware ?? "da leggere"} />
             </View>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Conserva tutti i progressi e prepara una nuova generazione del contatore Bluetooth"
+              disabled={!connected || demoMode || isForgettingToothbrush}
+              onPress={confirmForgetToothbrush}
+              style={({ pressed }) => [
+                styles.forgetButton,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+                (!connected || demoMode || isForgettingToothbrush) && styles.disabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <MaterialIcons name="restart-alt" size={22} color="#B33A55" />
+              <View style={styles.forgetCopy}>
+                <Text style={[styles.forgetTitle, { color: colors.foreground }]}>
+                  {isForgettingToothbrush ? "Rimozione in corso…" : "Dimentica manico resettato"}
+                </Text>
+                <Text style={[styles.forgetText, { color: colors.muted }]}>Non elimina storico, progressi o backup.</Text>
+              </View>
+            </Pressable>
 
             <View style={[styles.demoCard, { backgroundColor: demoMode ? "#FFF4C9" : "#F4F6FF", borderColor: demoMode ? "#E8BE38" : "#DCE3FF" }]}>
               <View style={styles.demoTop}>
@@ -262,6 +305,10 @@ const styles = StyleSheet.create({
   infoLabel: { flex: 1, fontSize: 13, lineHeight: 18 },
   infoValue: { fontSize: 13, lineHeight: 18, fontWeight: "800", textTransform: "capitalize" },
   infoDivider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
+  forgetButton: { minHeight: 62, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 11 },
+  forgetCopy: { flex: 1 },
+  forgetTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  forgetText: { fontSize: 10, lineHeight: 15, marginTop: 1 },
   demoCard: { borderWidth: 1.5, borderRadius: 22, padding: 13, gap: 12 },
   demoTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   demoHeading: { flex: 1, flexDirection: "row", alignItems: "center", gap: 9 },

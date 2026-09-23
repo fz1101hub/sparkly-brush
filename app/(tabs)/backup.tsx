@@ -273,7 +273,7 @@ export default function BackupScreen() {
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>Ogni progresso segue il Brushling</Text>
             <Text style={[styles.heroText, { color: colors.muted }]}>
-              Un solo file contiene tutte le sessioni, senza tagli, più compagno, tana, premi e preferenze.
+              Un solo file contiene tutte le sessioni, senza tagli, più date, durate, progressi, compagno, tana, premi e preferenze. Gli identificatori Bluetooth del manico vengono sostituiti da alias non leggibili.
             </Text>
           </View>
         </View>

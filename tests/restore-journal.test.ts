@@ -26,6 +26,7 @@ const previous: RestoreSnapshot = {
   profile: { selectedId: "bloopi", hasChosenStarter: true },
   customization: {
     ownedIds: ["bubble-room"],
+    purchaseLedger: [],
     equippedHabitatId: "bubble-room",
     equippedAccessoryId: null,
     equippedDecorId: null,

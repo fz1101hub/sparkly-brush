@@ -40,4 +40,20 @@ describe("parent dashboard analytics", () => {
     expect(dashboard.deviceSessions).toBe(3);
     expect(dashboard.manualSessions).toBe(1);
   });
+
+  it("conserva il conteggio delle date approssimate ma non le usa nel calendario", () => {
+    const approximate = {
+      ...session("offline", 8, 8),
+      timeConfidence: "approximate" as const,
+    };
+    const dashboard = computeParentDashboard(
+      [approximate],
+      new Date(2026, 8, 8, 21).getTime(),
+    );
+
+    expect(dashboard.approximateTimeSessions).toBe(1);
+    expect(dashboard.completedSessions).toBe(0);
+    expect(dashboard.completedRoutineSlots).toBe(0);
+    expect(dashboard.deviceSessions).toBe(0);
+  });
 });

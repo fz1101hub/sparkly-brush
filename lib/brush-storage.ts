@@ -8,10 +8,11 @@ import {
   applySessionToLifetime,
   clearPendingDeviceFallback,
   createLifetimeProgress,
+  forgetDeviceSessionState,
   markPendingDeviceFallback,
   matchesPendingDeviceFallback,
   normalizeLifetimeProgress,
-  reconcilePendingDeviceFallbackProgress,
+  rewindPendingDeviceFallbackProgress,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -33,6 +34,10 @@ export type HistorySaveResult = HistoryBundle & {
   event: LifetimeProgressEvent | null;
 };
 
+export type HistoryBatchSaveResult = HistorySaveResult & {
+  importedCount: number;
+};
+
 type PersistedProgressState = {
   version: 2;
   recentHistory: BrushSession[];
@@ -41,10 +46,17 @@ type PersistedProgressState = {
 };
 
 let historyWriteQueue: Promise<void> = Promise.resolve();
+let deviceWriteQueue: Promise<void> = Promise.resolve();
 
 function queueHistoryWrite<T>(operation: () => Promise<T>): Promise<T> {
   const result = historyWriteQueue.then(operation, operation);
   historyWriteQueue = result.then(() => undefined, () => undefined);
+  return result;
+}
+
+function queueDeviceWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const result = deviceWriteQueue.then(operation, operation);
+  deviceWriteQueue = result.then(() => undefined, () => undefined);
   return result;
 }
 
@@ -53,6 +65,13 @@ function isBrushSession(value: unknown): value is BrushSession {
   const item = value as Partial<BrushSession>;
   return typeof item.id === "string"
     && typeof item.startedAt === "number"
+    && (item.timeConfidence === undefined
+      || item.timeConfidence === "exact"
+      || item.timeConfidence === "reconstructed"
+      || item.timeConfidence === "approximate")
+    && (item.rewardPolicy === undefined
+      || item.rewardPolicy === "legacy"
+      || item.rewardPolicy === "completed-only")
     && typeof item.durationSeconds === "number"
     && item.durationSeconds >= 0
     && typeof item.targetSeconds === "number"
@@ -203,58 +222,96 @@ export async function saveDeviceFallbackWithLifetime(
 export async function saveDeviceSessionWithLifetime(
   deviceId: string,
   stored: StoredDeviceSession,
-  startedAt: number = Date.now() - stored.durationSeconds * 1000,
+  startedAt?: number,
 ): Promise<HistorySaveResult> {
+  const effectiveStartedAt = startedAt ?? stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
+  const batch = await saveDeviceSessionsWithLifetime(deviceId, [{
+    ...stored,
+    startedAt: effectiveStartedAt,
+    timeConfidence: stored.timeConfidence ?? (startedAt !== undefined ? "exact" : "approximate"),
+  }]);
+  return {
+    recentHistory: batch.recentHistory,
+    lifetimeProgress: batch.lifetimeProgress,
+    event: batch.event,
+  };
+}
+
+export async function saveDeviceSessionsWithLifetime(
+  deviceId: string,
+  storedSessions: StoredDeviceSession[],
+): Promise<HistoryBatchSaveResult> {
   return runHistoryOperation(() => queueHistoryWrite(async () => {
     const bundle = await loadProgressStateUnlocked();
-    const pending = matchesPendingDeviceFallback(
-      bundle.lifetimeProgress,
+    let progress = bundle.lifetimeProgress;
+    let recentHistory = [...bundle.recentHistory];
+    let event: LifetimeProgressEvent | null = null;
+    let importedCount = 0;
+    const pendingStored = storedSessions.find((stored) => matchesPendingDeviceFallback(
+      progress,
       deviceId,
       stored.sessionId,
       stored.durationSeconds,
       stored.targetSeconds,
-      startedAt,
-    );
-    const allocation = allocateDeviceSessionIdentity(
-      bundle.lifetimeProgress,
-      deviceId,
-      stored.sessionId,
-    );
-    if (allocation.duplicate) {
-      return { ...bundle, event: null };
-    }
-    const session: BrushSession = {
-      id: allocation.id,
-      deviceSessionId: stored.sessionId,
-      startedAt,
-      durationSeconds: stored.durationSeconds,
-      targetSeconds: stored.targetSeconds,
-      completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
-      source: "device",
-    };
-    const progressWithCursor = clearPendingDeviceFallback(allocation.progress, deviceId);
-    if (pending) {
-      const reconciledProgress = reconcilePendingDeviceFallbackProgress(
-        allocation.progress,
+      stored.startedAt ?? Date.now() - stored.durationSeconds * 1000,
+    ));
+    if (pendingStored) {
+      const fallback = matchesPendingDeviceFallback(
+        progress,
         deviceId,
-        session,
-      ) ?? progressWithCursor;
-      const recentHistory = normalizeHistory([
-        session,
-        ...bundle.recentHistory.filter((item) => item.id !== pending.sessionId && item.id !== session.id),
-      ]);
-      const persisted = await persistProgressState({
-        recentHistory,
-        lifetimeProgress: reconciledProgress,
-      });
-      return { ...persisted, event: null };
+        pendingStored.sessionId,
+        pendingStored.durationSeconds,
+        pendingStored.targetSeconds,
+        pendingStored.startedAt ?? Date.now() - pendingStored.durationSeconds * 1000,
+      );
+      if (fallback) {
+        recentHistory = recentHistory.filter((item) => item.id !== fallback.sessionId);
+        progress = rewindPendingDeviceFallbackProgress(progress, deviceId) ?? progress;
+      }
     }
-    return saveNewSessionUnlocked(bundle, session, progressWithCursor);
+
+    for (const stored of storedSessions) {
+      const allocation = allocateDeviceSessionIdentity(progress, deviceId, stored.sessionId);
+      if (allocation.duplicate) continue;
+      const session: BrushSession = {
+        id: allocation.id,
+        deviceSessionId: stored.sessionId,
+        startedAt: stored.startedAt ?? Date.now() - stored.durationSeconds * 1000,
+        timeConfidence: stored.timeConfidence ?? "approximate",
+        rewardPolicy: "completed-only",
+        durationSeconds: stored.durationSeconds,
+        targetSeconds: stored.targetSeconds,
+        completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
+        source: "device",
+      };
+      const before = allocation.progress;
+      progress = clearPendingDeviceFallback(applySessionToLifetime(before, session), deviceId);
+      recentHistory = [session, ...recentHistory.filter((item) => item.id !== session.id)];
+      event = { session, before, after: progress };
+      importedCount += 1;
+    }
+    const persisted = await persistProgressState({ recentHistory, lifetimeProgress: progress });
+    return { ...persisted, event: pendingStored ? null : event, importedCount };
   }));
 }
 
 export async function saveSession(session: BrushSession): Promise<BrushSession[]> {
   return (await saveSessionWithLifetime(session)).recentHistory;
+}
+
+export async function forgetDeviceWithLifetime(deviceId: string): Promise<HistoryBundle> {
+  return runHistoryOperation(() => queueHistoryWrite(async () => {
+    const bundle = await loadProgressStateUnlocked();
+    const next = await persistProgressState({
+      recentHistory: bundle.recentHistory,
+      lifetimeProgress: forgetDeviceSessionState(bundle.lifetimeProgress, deviceId),
+    });
+    await queueDeviceWrite(async () => {
+      const current = await loadLastDevice();
+      if (!current || current.id === deviceId) await AsyncStorage.removeItem(DEVICE_KEY);
+    });
+    return next;
+  }));
 }
 
 export async function replaceHistoryWithLifetime(
@@ -320,11 +377,13 @@ export async function saveDemoMode(enabled: boolean): Promise<void> {
 }
 
 export async function saveLastDevice(device: ToothbrushDevice | null): Promise<void> {
-  if (!device) {
-    await AsyncStorage.removeItem(DEVICE_KEY);
-    return;
-  }
-  await AsyncStorage.setItem(DEVICE_KEY, JSON.stringify(device));
+  await queueDeviceWrite(async () => {
+    if (!device) {
+      await AsyncStorage.removeItem(DEVICE_KEY);
+      return;
+    }
+    await AsyncStorage.setItem(DEVICE_KEY, JSON.stringify(device));
+  });
 }
 
 export async function loadLastDevice(): Promise<ToothbrushDevice | null> {

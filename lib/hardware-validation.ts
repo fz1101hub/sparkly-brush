@@ -20,6 +20,7 @@ export type HardwareTestCase = {
     | "deduplication"
     | "demo-cancel"
     | "reconnect"
+    | "factory-reset"
     | "background"
     | "restart"
     | "backup-restore";
@@ -61,9 +62,9 @@ export const HARDWARE_TEST_CASES: readonly HardwareTestCase[] = [
   },
   {
     id: "offline-gap",
-    title: "Sessione offline e salto ID",
-    instruction: "Usa il manico con l’app chiusa e poi completa una sessione con l’app aperta.",
-    success: "Il record GATT riconcilia il fallback live senza doppio accredito.",
+    title: "Sessioni offline, orario e salto ID",
+    instruction: "Completa due sessioni con l’app chiusa, riconnetti, poi completa una sessione con l’app aperta.",
+    success: "Le sessioni offline arrivano in ordine con orario ricostruito o dichiarato approssimato; il fallback live non viene riaccreditato.",
   },
   {
     id: "deduplication",
@@ -82,6 +83,12 @@ export const HARDWARE_TEST_CASES: readonly HardwareTestCase[] = [
     title: "Tre reconnect",
     instruction: "Disconnetti e riconnetti tre volte, avviando brevemente il manico ogni volta.",
     success: "Non compaiono callback duplicate, timer doppi o crash.",
+  },
+  {
+    id: "factory-reset",
+    title: "Reset di fabbrica del manico",
+    instruction: "Dopo un backup, resetta il manico, ricollegalo e usa Dimentica manico resettato prima della prima nuova sessione.",
+    success: "La nuova sessione viene acquisita una volta e storico, XP, monete e Brushling precedenti restano invariati.",
   },
   {
     id: "background",

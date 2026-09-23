@@ -19,6 +19,7 @@ export const SONICARE = {
     quadPacer: "477ea600-a260-11e4-ae37-0002a5d540a0",
     intensity: "477ea600-a260-11e4-ae37-0002a5d540b0",
     latestSessionId: "477ea600-a260-11e4-ae37-0002a5d540d0",
+    sessionCount: "477ea600-a260-11e4-ae37-0002a5d540d2",
     activeSessionId: "477ea600-a260-11e4-ae37-0002a5d540e0",
     sessionData: "477ea600-a260-11e4-ae37-0002a5d54100",
     batteryLevel: "00002a19-0000-1000-8000-00805f9b34fb",

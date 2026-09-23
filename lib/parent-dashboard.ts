@@ -24,6 +24,7 @@ export type ParentDashboard = {
   deviceSessions: number;
   manualSessions: number;
   daysWithBoth: number;
+  approximateTimeSessions: number;
 };
 
 export function computeParentDashboard(
@@ -32,12 +33,13 @@ export function computeParentDashboard(
   daysCount: number = 7,
 ): ParentDashboard {
   const today = startOfLocalDay(now);
+  const datedHistory = history.filter((session) => session.timeConfidence !== "approximate");
 
   const days = Array.from({ length: daysCount }, (_, offset) => {
     const date = new Date(today);
     date.setDate(today.getDate() - (daysCount - 1 - offset));
     const timestamp = date.getTime();
-    const sessions = history.filter((session) => sameLocalDay(session.startedAt, timestamp));
+    const sessions = datedHistory.filter((session) => sameLocalDay(session.startedAt, timestamp));
     const completed = sessions.filter((session) => session.completed);
 
     return {
@@ -55,7 +57,7 @@ export function computeParentDashboard(
   const windowEnd = new Date(today);
   windowEnd.setDate(today.getDate() + 1);
 
-  const windowSessions = history.filter(
+  const windowSessions = datedHistory.filter(
     (session) => session.startedAt >= windowStart && session.startedAt < windowEnd.getTime(),
   );
   const completed = windowSessions.filter((session) => session.completed);
@@ -79,5 +81,6 @@ export function computeParentDashboard(
     deviceSessions: windowSessions.filter((session) => session.source === "device").length,
     manualSessions: windowSessions.filter((session) => session.source === "manual").length,
     daysWithBoth: days.filter((day) => day.morningCompleted && day.eveningCompleted).length,
+    approximateTimeSessions: history.filter((session) => session.timeConfidence === "approximate").length,
   };
 }

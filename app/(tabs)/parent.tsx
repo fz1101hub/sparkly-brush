@@ -147,6 +147,12 @@ export default function ParentDashboardScreen() {
           </View>
         </View>
 
+        {dashboard.approximateTimeSessions > 0 ? (
+          <Text style={[styles.sectionCopy, { color: colors.muted }]}>
+            {dashboard.approximateTimeSessions} sessioni BLE conservate con orario approssimato sono escluse da calendario, streak e missioni giornaliere.
+          </Text>
+        ) : null}
+
         <View style={[styles.progressCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
           <MaterialIcons name="emoji-events" size={26} color="#B98A00" />
           <View style={styles.progressCopy}>

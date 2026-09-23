@@ -6,6 +6,7 @@ import {
   equipCustomization,
   purchaseCustomization,
   spentCoins,
+  type CustomizationState,
 } from "@/lib/customization";
 
 describe("Brushlings customization economy", () => {
@@ -31,5 +32,16 @@ describe("Brushlings customization economy", () => {
     const equipped = equipCustomization(purchased, "blue-scarf");
 
     expect(equipped?.equippedAccessoryId).toBe("blue-scarf");
+  });
+
+  it("calcola la spesa dal prezzo registrato nel ledger acquisti", () => {
+    const historical: CustomizationState = {
+      ...DEFAULT_CUSTOMIZATION_STATE,
+      ownedIds: ["bubble-room", "fresh-garden"],
+      purchaseLedger: [{ itemId: "fresh-garden" as const, pricePaid: 7, purchasedAt: 1 }],
+    };
+
+    expect(spentCoins(historical)).toBe(7);
+    expect(availableCoins(40, historical)).toBe(33);
   });
 });

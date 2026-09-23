@@ -1,5 +1,7 @@
 # Audit finale di Sparkly Brush
 
+> **Documento storico.** Questo rapporto descrive il candidato precedente al merge `d80c194`. Gli audit successivi e i relativi rimedi sono documentati in [`post-audit-remediation-2026-09-23.md`](post-audit-remediation-2026-09-23.md), che sostituisce il presente documento come valutazione corrente.
+
 **Data:** 23 settembre 2026
 
 **Ramo candidato:** `fix/final-hardening-no-parental-gate`
@@ -57,4 +59,4 @@ Il parental gate non è stato sviluppato. Se l’app verrà proposta nella categ
 
 ## Decisione
 
-Il candidato è stato **approvato e unito in `main`**. Non restano blocker software noti nei punti inclusi nello scope. La prova fisica e il parental gate restano attività esplicitamente separate e tracciate.
+Quel candidato è stato **approvato e unito in `main`** sulla base delle evidenze allora disponibili. La prova fisica e il parental gate restavano attività separate; ulteriori rilievi emersi dopo il merge sono trattati nel rapporto post-audit corrente.

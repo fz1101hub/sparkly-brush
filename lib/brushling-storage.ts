@@ -5,6 +5,7 @@ import {
   DEFAULT_CUSTOMIZATION_STATE,
   getCustomizationItem,
   isCustomizationItemId,
+  normalizePurchaseLedger,
   type CustomizationItemId,
   type CustomizationState,
 } from "@/lib/customization";
@@ -80,6 +81,7 @@ export async function loadCustomizationState(): Promise<CustomizationState> {
 
     return {
       ownedIds,
+      purchaseLedger: normalizePurchaseLedger(parsed.purchaseLedger, ownedIds),
       equippedHabitatId: habitat,
       equippedAccessoryId: validEquipped(parsed.equippedAccessoryId, ownedIds, "accessory"),
       equippedDecorId: validEquipped(parsed.equippedDecorId, ownedIds, "decor"),

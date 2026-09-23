@@ -1,4 +1,5 @@
 import type { BrushSession } from "./brush-types";
+import { deviceAlias } from "./device-identity";
 import {
   BRUSHLINGS,
   XP_PER_LEVEL,
@@ -29,6 +30,7 @@ export const LIFETIME_PROGRESS_VERSION = 1;
 export type DeviceSessionCursor = {
   lastSessionId: number;
   epoch: number;
+  acceptNextSession: boolean;
   previousEpochRecentSessionIds: number[];
   recentIdentities: string[];
   updatedAt: number;
@@ -54,6 +56,7 @@ export type LifetimeProgress = {
   attemptedSessions: number;
   completedSessions: number;
   totalBrushingSeconds: number;
+  rewardedBrushingSeconds: number;
   xp: number;
   dailyBonusCoins: number;
   perfectDays: number;
@@ -96,6 +99,7 @@ export function createEmptyLifetimeProgress(): LifetimeProgress {
     attemptedSessions: 0,
     completedSessions: 0,
     totalBrushingSeconds: 0,
+    rewardedBrushingSeconds: 0,
     xp: 0,
     dailyBonusCoins: 0,
     perfectDays: 0,
@@ -192,13 +196,20 @@ export function applySessionToLifetime(
   });
   next.attemptedSessions += 1;
   next.totalBrushingSeconds += Math.max(0, session.durationSeconds);
+  if (session.completed || session.rewardPolicy !== "completed-only") {
+    next.rewardedBrushingSeconds += Math.max(0, session.durationSeconds);
+  }
   next.xp += session.completed
     ? 60
-    : session.durationSeconds >= 5
-      ? Math.min(20, Math.floor(session.durationSeconds / 6))
-      : 0;
+    : session.rewardPolicy === "completed-only" || session.durationSeconds < 5
+      ? 0
+      : Math.min(20, Math.floor(session.durationSeconds / 6));
 
   if (!session.completed) return next;
+
+  next.completedSessions += 1;
+  next.itemCounts[getItemForCompletedSessionNumber(next.completedSessions).id] += 1;
+  if (session.timeConfidence === "approximate") return next;
 
   const dateKey = localDateKey(session.startedAt);
   const previousDay = next.activeDateKey === dateKey
@@ -208,8 +219,6 @@ export function applySessionToLifetime(
   const wasPerfect = previousDay.morningCompleted && previousDay.eveningCompleted;
   const firstCompletionForDay = previousDay.completedSessions === 0;
 
-  next.completedSessions += 1;
-  next.itemCounts[getItemForCompletedSessionNumber(next.completedSessions).id] += 1;
   const updatedDay: DayProgress = {
     completedSessions: previousDay.completedSessions + 1,
     morningCompleted: previousDay.morningCompleted || isMorning(session.startedAt),
@@ -236,6 +245,39 @@ export function applySessionToLifetime(
     next.longestStreakDays = Math.max(next.longestStreakDays, next.currentStreakDays);
   }
   return next;
+}
+
+export function applySessionToPartialLifetime(
+  progress: LifetimeProgress,
+  session: BrushSession,
+): LifetimeProgress {
+  const next = applySessionToLifetime(progress, session);
+  next.dailyBonusCoins = progress.dailyBonusCoins;
+  next.perfectDays = progress.perfectDays;
+  next.lastCompletedDateKey = progress.lastCompletedDateKey;
+  next.currentStreakDays = progress.currentStreakDays;
+  next.longestStreakDays = progress.longestStreakDays;
+  next.activeDateKey = progress.activeDateKey;
+  next.activeDay = progress.activeDay;
+  return next;
+}
+
+export function applySessionToStoredLifetime(
+  progress: LifetimeProgress,
+  session: BrushSession,
+  historyComplete: boolean,
+): LifetimeProgress {
+  return historyComplete
+    ? applySessionToLifetime(progress, session)
+    : applySessionToPartialLifetime(progress, session);
+}
+
+export function shouldReplayStoredHistory(
+  requiresReplay: boolean,
+  importedCount: number,
+  historyComplete: boolean,
+): boolean {
+  return requiresReplay && importedCount > 0 && historyComplete;
 }
 
 export function createLifetimeProgress(history: BrushSession[]): LifetimeProgress {
@@ -266,9 +308,11 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
       if (key.length > 256) return;
       if (!cursor || typeof cursor !== "object") return;
       const candidate = cursor as Partial<DeviceSessionCursor>;
-      deviceCursors[key] = {
+      const migratedKey = deviceKey(key);
+      const normalizedCursor = {
         lastSessionId: Math.min(65_535, nonNegativeInteger(candidate.lastSessionId)),
         epoch: nonNegativeInteger(candidate.epoch),
+        acceptNextSession: candidate.acceptNextSession === true,
         previousEpochRecentSessionIds: Array.isArray(candidate.previousEpochRecentSessionIds)
           ? candidate.previousEpochRecentSessionIds
             .map((sessionId) => Math.min(65_535, nonNegativeInteger(sessionId)))
@@ -279,6 +323,9 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
           : [],
         updatedAt: nonNegativeInteger(candidate.updatedAt),
       };
+      if (!deviceCursors[migratedKey] || deviceCursors[migratedKey].updatedAt <= normalizedCursor.updatedAt) {
+        deviceCursors[migratedKey] = normalizedCursor;
+      }
     });
     Object.keys(deviceCursors)
       .sort((first, second) => (
@@ -302,7 +349,7 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
         || typeof candidate.durationSeconds !== "number"
         || typeof candidate.targetSeconds !== "number"
       ) return;
-      pendingDeviceFallbacks[key] = {
+      pendingDeviceFallbacks[deviceKey(key)] = {
         sessionId: candidate.sessionId,
         startedAt: Math.max(0, Math.floor(candidate.startedAt)),
         durationSeconds: Math.max(0, Math.floor(candidate.durationSeconds)),
@@ -329,6 +376,10 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
     attemptedSessions: nonNegativeInteger(raw.attemptedSessions),
     completedSessions: nonNegativeInteger(raw.completedSessions),
     totalBrushingSeconds: nonNegativeInteger(raw.totalBrushingSeconds),
+    rewardedBrushingSeconds: nonNegativeInteger(
+      raw.rewardedBrushingSeconds,
+      nonNegativeInteger(raw.totalBrushingSeconds),
+    ),
     xp: nonNegativeInteger(raw.xp),
     dailyBonusCoins: nonNegativeInteger(raw.dailyBonusCoins),
     perfectDays: nonNegativeInteger(raw.perfectDays),
@@ -349,8 +400,14 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
   };
 }
 
-function deviceKey(deviceId: string): string {
-  return encodeURIComponent(deviceId);
+export function deviceKey(deviceId: string): string {
+  let decoded = deviceId;
+  try {
+    decoded = decodeURIComponent(deviceId);
+  } catch {
+    // Raw platform identifiers are also valid inputs.
+  }
+  return deviceAlias(decoded);
 }
 
 export function markPendingDeviceFallback(
@@ -419,16 +476,47 @@ export function clearPendingDeviceFallback(
   return next;
 }
 
+/**
+ * Starts a fresh device-local identity generation after the physical handle has
+ * been factory-reset. Lifetime accounting and every stored session stay intact.
+ */
+export function forgetDeviceSessionState(
+  progress: LifetimeProgress,
+  deviceId: string,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  const key = deviceKey(deviceId);
+  const previous = next.deviceCursors[key];
+  next.deviceCursors[key] = {
+    lastSessionId: previous?.lastSessionId ?? 0,
+    epoch: (previous?.epoch ?? 0) + 1,
+    acceptNextSession: true,
+    previousEpochRecentSessionIds: [],
+    recentIdentities: [],
+    updatedAt: Date.now(),
+  };
+  delete next.pendingDeviceFallbacks[key];
+  return next;
+}
+
 export function reconcilePendingDeviceFallbackProgress(
   progress: LifetimeProgress,
   deviceId: string,
   authoritativeSession: BrushSession,
 ): LifetimeProgress | null {
+  const rebuilt = rewindPendingDeviceFallbackProgress(progress, deviceId);
+  return rebuilt ? applySessionToLifetime(rebuilt, authoritativeSession) : null;
+}
+
+export function rewindPendingDeviceFallbackProgress(
+  progress: LifetimeProgress,
+  deviceId: string,
+): LifetimeProgress | null {
   const key = deviceKey(deviceId);
   const pending = progress.pendingDeviceFallbacks[key];
   if (!pending?.progressBeforeSession) return null;
 
-  let rebuilt: LifetimeProgress = {
+  return {
     ...pending.progressBeforeSession,
     itemCounts: { ...pending.progressBeforeSession.itemCounts },
     deviceCursors: Object.fromEntries(
@@ -438,8 +526,6 @@ export function reconcilePendingDeviceFallbackProgress(
       Object.entries(progress.pendingDeviceFallbacks).filter(([fallbackKey]) => fallbackKey !== key),
     ),
   };
-  rebuilt = applySessionToLifetime(rebuilt, authoritativeSession);
-  return rebuilt;
 }
 
 export function allocateDeviceSessionIdentity(
@@ -448,10 +534,21 @@ export function allocateDeviceSessionIdentity(
   sessionId: number,
 ): { progress: LifetimeProgress; id: string; duplicate: boolean } {
   const next = cloneProgress(progress);
-  const key = encodeURIComponent(deviceId);
+  const key = deviceKey(deviceId);
   const previous = next.deviceCursors[key];
-  const rollover = Boolean(previous && previous.lastSessionId >= 65_000 && sessionId <= 1_024);
-  const staleRegression = Boolean(previous && sessionId < previous.lastSessionId && !rollover);
+  const acceptsFreshCounter = previous?.acceptNextSession === true;
+  const rollover = Boolean(
+    previous
+      && !acceptsFreshCounter
+      && previous.lastSessionId >= 65_000
+      && sessionId <= 1_024,
+  );
+  const staleRegression = Boolean(
+    previous
+      && !acceptsFreshCounter
+      && sessionId < previous.lastSessionId
+      && !rollover,
+  );
   const epoch = rollover ? (previous?.epoch ?? 0) + 1 : previous?.epoch ?? 0;
   const identity = `${epoch}:${sessionId}`;
   const previousEpochRecentSessionIds = rollover
@@ -462,11 +559,12 @@ export function allocateDeviceSessionIdentity(
     : previous?.previousEpochRecentSessionIds ?? [];
   const stalePreviousEpoch = Boolean(
     previous
+      && !acceptsFreshCounter
       && previous.epoch > 0
       && previousEpochRecentSessionIds.includes(sessionId)
       && sessionId > previous.lastSessionId + 1,
   );
-  const duplicate = previous?.lastSessionId === sessionId
+  const duplicate = (!acceptsFreshCounter && previous?.lastSessionId === sessionId)
     || staleRegression
     || stalePreviousEpoch
     || previous?.recentIdentities.includes(identity) === true;
@@ -475,6 +573,7 @@ export function allocateDeviceSessionIdentity(
     next.deviceCursors[key] = {
       lastSessionId: sessionId,
       epoch,
+      acceptNextSession: false,
       previousEpochRecentSessionIds: previousEpochRecentSessionIds
         .filter((previousSessionId) => previousSessionId !== sessionId)
         .slice(-32),
@@ -489,7 +588,7 @@ export function allocateDeviceSessionIdentity(
         .forEach((cursorKey) => delete next.deviceCursors[cursorKey]);
     }
   }
-  return { progress: next, id: `ble-${key}-${epoch}-${sessionId}`, duplicate };
+  return { progress: next, id: `device-session-${key.slice(4)}-${epoch}-${sessionId}`, duplicate };
 }
 
 export function computeLifetimeBrushlingStats(
@@ -501,7 +600,7 @@ export function computeLifetimeBrushlingStats(
     xp: progress.xp,
     level,
     levelProgress: (progress.xp % XP_PER_LEVEL) / XP_PER_LEVEL,
-    coins: progress.completedSessions * 12 + Math.floor(progress.totalBrushingSeconds / 60),
+    coins: progress.completedSessions * 12 + Math.floor(progress.rewardedBrushingSeconds / 60),
     completedSessions: progress.completedSessions,
     todayCompletedSessions: progress.activeDateKey === localDateKey(timestamp)
       ? decodeDay(progress.activeDay).completedSessions
