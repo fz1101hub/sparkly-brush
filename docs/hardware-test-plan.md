@@ -13,6 +13,10 @@ Questa prova convalida il protocollo BLE, il lifecycle della connessione e la co
 | Android | Bluetooth attivo, build nativa installata, permessi Dispositivi nelle vicinanze concessi; posizione solo dove richiesta dalla versione Android |
 | Dati | Modalità demo disattivata; annotare il numero iniziale di sessioni e le monete disponibili |
 
+## Assistente in-app
+
+Aprire **Spazzolino → Prova guidata e report**. La schermata conserva localmente lo stato del collaudo, presenta gli stessi dodici casi della matrice e permette di segnare **Superato**, **Fallito**, **Bloccato** o **Da fare**, con una nota fino a 1.000 caratteri. Il pulsante **Condividi report** crea un Markdown con versione app/OS, snapshot BLE, conteggi lifetime, esiti e log sanitizzati. Il report esclude l’ID persistente del dispositivo e oscura UUID, MAC e identificativi espliciti nei log.
+
 ## Matrice minima
 
 | Caso | iOS | Android | Criterio di successo |
@@ -33,8 +37,8 @@ Questa prova convalida il protocollo BLE, il lifecycle della connessione e la co
 ## Procedura dettagliata
 
 1. Installare una development build pulita e avviare l’app.
-2. Aprire **Spazzolino**, verificare che la modalità demo sia disattivata e premere **Cerca e collega**.
-3. Annotare nome annunciato, modello, firmware, livello batteria e messaggi in **Diagnostica BLE**.
+2. Aprire **Spazzolino**, verificare che la modalità demo sia disattivata e aprire **Prova guidata e report**.
+3. Tornare a **Spazzolino**, premere **Cerca e collega**, quindi compilare nell’assistente nome annunciato, modello, firmware, livello batteria ed eventuali anomalie.
 4. Avviare il manico e completare almeno 120 secondi. Verificare lo stato live e i quattro cambi zona.
 5. Fermare il manico. Attendere la sincronizzazione automatica e annotare ID sessione, durata e obiettivo.
 6. Premere la sincronizzazione manuale due volte. Verificare che storico, XP, monete e reward ledger non cambino dopo la prima contabilizzazione.
@@ -44,12 +48,12 @@ Questa prova convalida il protocollo BLE, il lifecycle della connessione e la co
 10. Disconnettere e riconnettere tre volte. Durante ogni ciclo avviare e fermare brevemente il manico; non devono apparire callback duplicate.
 11. Ripetere una sessione dopo aver mandato l’app in background e dopo averla riavviata.
 12. Esportare un backup `.brushlings`, annotare dimensione e conteggio sessioni, quindi importarlo su un secondo dispositivo o dopo una reinstallazione controllata.
-13. Ripetere tutti i casi su iOS e Android.
+13. Condividere il report della piattaforma, scegliere **Nuovo**, quindi ripetere tutti i casi su iOS e Android.
 
 ## Raccolta evidenze
 
-Per ogni piattaforma conservare: versione OS, versione app/commit, firmware del manico, screenshot di **Diagnostica BLE**, esito di ogni riga della matrice e messaggio di errore completo. Non pubblicare identificativi del dispositivo in issue pubbliche.
+Per ogni piattaforma conservare il report generato e gli screenshot necessari a riprodurre le anomalie. Non pubblicare identificativi del dispositivo in issue pubbliche; il report applica una redazione automatica, ma le note inserite manualmente vanno comunque controllate prima della condivisione.
 
 ## Esito attuale
 
-La copertura automatica usa un client BLE finto e verifica scansione/connessione simulata, annullamento scan/connect/sync, update batteria, rimozione subscription, reconnect, callback stale anche con errore, sync vincolata al manico originario, due stop ravvicinati, salto del contatore, fallback e aggiornamento provider. **La matrice fisica resta da eseguire perché richiede il manico HX6322/04 e due dispositivi reali.** Nessun risultato hardware è dichiarato finché la tabella non viene compilata.
+La copertura automatica usa un client BLE finto e verifica scansione/connessione simulata, annullamento scan/connect/sync, update batteria, rimozione subscription, reconnect, callback stale anche con errore, sync vincolata al manico originario, due stop ravvicinati, salto del contatore, fallback e aggiornamento provider. Verifica inoltre normalizzazione della checklist, limiti delle note e redazione di UUID/MAC nel report. **La matrice fisica resta da eseguire perché richiede il manico HX6322/04 e due dispositivi reali.** Nessun risultato hardware è dichiarato finché la tabella non viene compilata.

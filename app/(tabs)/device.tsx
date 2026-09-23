@@ -158,6 +158,25 @@ export default function DeviceScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
+              onPress={() => router.push("/(tabs)/hardware-test")}
+              style={({ pressed }) => [
+                styles.hardwareCard,
+                { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.hardwareIcon}>
+                <MaterialIcons name="fact-check" size={26} color="#14845B" />
+              </View>
+              <View style={styles.hardwareCopy}>
+                <Text style={styles.hardwareEyebrow}>COLLAUDO HX6322/04</Text>
+                <Text style={[styles.hardwareTitle, { color: colors.foreground }]}>Prova guidata e report</Text>
+                <Text style={[styles.hardwareText, { color: colors.muted }]}>Matrice iOS/Android persistente con diagnostica sanitizzata.</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               onPress={() => router.push("/(tabs)/backup")}
               style={({ pressed }) => [
                 styles.backupCard,
@@ -262,6 +281,12 @@ const styles = StyleSheet.create({
   backupEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
   backupTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
   backupText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
+  hardwareCard: { borderWidth: 1, borderRadius: 21, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 },
+  hardwareIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: "#FFFFFFAA", alignItems: "center", justifyContent: "center" },
+  hardwareCopy: { flex: 1 },
+  hardwareEyebrow: { color: "#14845B", fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  hardwareTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
+  hardwareText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   diagnosticHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   sectionTitle: { fontSize: 19, lineHeight: 25, fontWeight: "900" },
   sectionSubtitle: { fontSize: 11, lineHeight: 16, marginTop: 1 },
