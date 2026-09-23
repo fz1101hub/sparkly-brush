@@ -1,6 +1,6 @@
 # Stato del candidato post-audit
 
-Aggiornato il 23 settembre 2026. Il ramo corrente è `fix/post-audit-device-reset-import-hardening`, basato su `main` al commit `d80c194`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
+Aggiornato il 23 settembre 2026. La PR #6 è stata unita in `main` al commit `e2469fd`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
@@ -16,7 +16,7 @@ Aggiornato il 23 settembre 2026. Il ramo corrente è `fix/post-audit-device-rese
 | 10 | Build native | Android locale completato | `assembleDebug` superato con SDK 36, NDK 27.1 e JDK 17. Il job iOS richiede il runner macOS della PR. |
 | 11 | Collaudo hardware | Aperto | Checklist persistente di 13 casi e report sanitizzato pronti; esecuzione fisica nell’issue #3. |
 | 12 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
-| 13 | PR e merge | PR #6 aperta; eccezione CI documentata | I run push `35884850374` e PR `35884901213` hanno fallito tutti i job con zero step e nessun log. Procedere sulla base dei gate locali equivalenti e della build Android nativa; registrare il merge e il checkpoint finale. |
+| 13 | PR e merge | Completato | PR #6 unita in `main` al commit `e2469fd`; eccezione CI a zero step documentata. |
 
 ## Gate software superati
 

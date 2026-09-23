@@ -1,8 +1,9 @@
 # Rapporto di rimedio post-audit — Sparkly Brush
 
 **Data:** 23 settembre 2026  
-**Ramo candidato:** `fix/post-audit-device-reset-import-hardening`  
-**Base:** `main` al commit `d80c194`  
+**Ramo di sviluppo:** `fix/post-audit-device-reset-import-hardening`
+
+**Merge finale:** PR #6, commit `e2469fd` in `main`
 **Ambito escluso:** parental gate, per richiesta esplicita del proprietario
 
 ## Sintesi esecutiva
@@ -71,7 +72,7 @@ Il salvataggio manuale è ora transazionale anche dal punto di vista dell’inte
 
 ## Decisione
 
-Il codice non presenta blocker software noti nelle aree incluse nello scope dopo le re-review. La CI remota non ha eseguito il workflow: entrambi gli eventi hanno creato i tre job, ma tutti sono falliti con `steps: []` e senza log, comportamento incompatibile con un errore del codice o di uno step. L’eccezione di merge è quindi documentata sulla base dei gate locali equivalenti, della fresh install e della build Android nativa. La build iOS resta non dimostrata fino al ripristino del runner macOS. Una dichiarazione di compatibilità HX6322/04 completa resta subordinata alla matrice hardware reale.
+Il codice non presenta blocker software noti nelle aree incluse nello scope dopo le re-review ed è stato unito in `main` tramite PR #6 al commit `e2469fd`. La CI remota non ha eseguito il workflow: entrambi gli eventi hanno creato i tre job, ma tutti sono falliti con `steps: []` e senza log, comportamento incompatibile con un errore del codice o di uno step. L’eccezione di merge è quindi documentata sulla base dei gate locali equivalenti, della fresh install e della build Android nativa. La build iOS resta non dimostrata fino al ripristino del runner macOS. Una dichiarazione di compatibilità HX6322/04 completa resta subordinata alla matrice hardware reale.
 
 [1]: https://support.google.com/googleplay/android-developer/answer/9893335 "Google Play Families Policy"
 [2]: https://developer.apple.com/app-store/review/guidelines/ "Apple App Review Guidelines"
