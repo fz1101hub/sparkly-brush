@@ -20,6 +20,12 @@ export type ParentRewardProgress = ParentReward & {
   unlocked: boolean;
 };
 
+export type ParentRewardMetrics = {
+  completedSessions: number;
+  perfectDays: number;
+  longestStreakDays: number;
+};
+
 function localDateKey(timestamp: number): string {
   const date = new Date(timestamp);
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
@@ -68,11 +74,22 @@ function longestStreak(history: BrushSession[]): number {
 }
 
 export function parentRewardProgress(reward: ParentReward, history: BrushSession[]): ParentRewardProgress {
+  return parentRewardProgressFromMetrics(reward, {
+    completedSessions: completed(history).length,
+    perfectDays: perfectDays(history),
+    longestStreakDays: longestStreak(history),
+  });
+}
+
+export function parentRewardProgressFromMetrics(
+  reward: ParentReward,
+  metrics: ParentRewardMetrics,
+): ParentRewardProgress {
   const progress = reward.requirement === "completed-sessions"
-    ? completed(history).length
+    ? metrics.completedSessions
     : reward.requirement === "perfect-days"
-      ? perfectDays(history)
-      : longestStreak(history);
+      ? metrics.perfectDays
+      : metrics.longestStreakDays;
   return { ...reward, progress: Math.min(progress, reward.target), unlocked: progress >= reward.target };
 }
 

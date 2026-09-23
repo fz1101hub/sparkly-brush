@@ -56,6 +56,12 @@ export type ProgressRewardDelta = {
   totalBonusCoins: number;
 };
 
+export type AchievementMetrics = {
+  completedSessions: number;
+  perfectDays: number;
+  longestStreakDays: number;
+};
+
 const DAILY_CHEST_REWARD = 12;
 
 function localDateKey(timestamp: number): string {
@@ -75,52 +81,41 @@ function isEvening(timestamp: number): boolean {
   return new Date(timestamp).getHours() >= 18;
 }
 
-function completeSessions(history: BrushSession[]): BrushSession[] {
-  return history.filter((session) => session.completed);
-}
-
-function sessionsForDay(history: BrushSession[], dateKey: string): BrushSession[] {
-  return completeSessions(history).filter((session) => localDateKey(session.startedAt) === dateKey);
-}
-
-export function computeDailyMissionSummary(
-  history: BrushSession[],
-  timestamp: number = Date.now(),
+export function computeDailyMissionSummaryFromCounts(
+  dateKey: string,
+  completedSessions: number,
+  morningCompleted: boolean,
+  eveningCompleted: boolean,
 ): DailyMissionSummary {
-  const dateKey = localDateKey(timestamp);
-  const sessions = sessionsForDay(history, dateKey);
-  const morning = sessions.filter((session) => isMorning(session.startedAt)).length;
-  const evening = sessions.filter((session) => isEvening(session.startedAt)).length;
-
   const missions: DailyMissionStatus[] = [
     {
       id: "morning",
       title: "Buongiorno, sorriso!",
       description: "Completa una sessione al mattino.",
-      progress: Math.min(1, morning),
+      progress: Number(morningCompleted),
       target: 1,
       rewardCoins: 5,
-      completed: morning >= 1,
+      completed: morningCompleted,
       icon: "wb-sunny",
     },
     {
       id: "evening",
       title: "Missione buonanotte",
       description: "Completa una sessione dalle 18 in poi.",
-      progress: Math.min(1, evening),
+      progress: Number(eveningCompleted),
       target: 1,
       rewardCoins: 5,
-      completed: evening >= 1,
+      completed: eveningCompleted,
       icon: "dark-mode",
     },
     {
       id: "double",
       title: "Doppio sorriso",
       description: "Completa due sessioni nella stessa giornata.",
-      progress: Math.min(2, sessions.length),
+      progress: Math.min(2, completedSessions),
       target: 2,
       rewardCoins: 8,
-      completed: sessions.length >= 2,
+      completed: completedSessions >= 2,
       icon: "done-all",
     },
   ];
@@ -140,6 +135,25 @@ export function computeDailyMissionSummary(
     chestRewardCoins: DAILY_CHEST_REWARD,
     earnedCoins,
   };
+}
+
+function completeSessions(history: BrushSession[]): BrushSession[] {
+  return history.filter((session) => session.completed);
+}
+
+function sessionsForDay(history: BrushSession[], dateKey: string): BrushSession[] {
+  return completeSessions(history).filter((session) => localDateKey(session.startedAt) === dateKey);
+}
+
+export function computeDailyMissionSummary(
+  history: BrushSession[],
+  timestamp: number = Date.now(),
+): DailyMissionSummary {
+  const dateKey = localDateKey(timestamp);
+  const sessions = sessionsForDay(history, dateKey);
+  const morning = sessions.filter((session) => isMorning(session.startedAt)).length;
+  const evening = sessions.filter((session) => isEvening(session.startedAt)).length;
+  return computeDailyMissionSummaryFromCounts(dateKey, sessions.length, morning >= 1, evening >= 1);
 }
 
 function uniqueCompletedDayKeys(history: BrushSession[]): string[] {
@@ -184,19 +198,15 @@ function perfectDayCount(history: BrushSession[]): number {
   }).length;
 }
 
-export function computeAchievements(history: BrushSession[]): AchievementStatus[] {
-  const completedCount = completeSessions(history).length;
-  const perfectDays = perfectDayCount(history);
-  const longestStreak = longestCompletedDayStreak(history);
-
+export function computeAchievementsFromMetrics(metrics: AchievementMetrics): AchievementStatus[] {
   return [
     {
       id: "first-smile",
       title: "Primo sorriso",
       description: "Completa la tua prima sessione.",
       rewardCoins: 10,
-      unlocked: completedCount >= 1,
-      progress: Math.min(completedCount, 1),
+      unlocked: metrics.completedSessions >= 1,
+      progress: Math.min(metrics.completedSessions, 1),
       target: 1,
       icon: "auto-awesome",
     },
@@ -205,8 +215,8 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
       title: "Piccolo esploratore",
       description: "Completa 5 sessioni.",
       rewardCoins: 20,
-      unlocked: completedCount >= 5,
-      progress: Math.min(completedCount, 5),
+      unlocked: metrics.completedSessions >= 5,
+      progress: Math.min(metrics.completedSessions, 5),
       target: 5,
       icon: "explore",
     },
@@ -215,8 +225,8 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
       title: "Campione dei Brushlings",
       description: "Completa 10 sessioni.",
       rewardCoins: 30,
-      unlocked: completedCount >= 10,
-      progress: Math.min(completedCount, 10),
+      unlocked: metrics.completedSessions >= 10,
+      progress: Math.min(metrics.completedSessions, 10),
       target: 10,
       icon: "emoji-events",
     },
@@ -225,8 +235,8 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
       title: "Tre giorni perfetti",
       description: "Completa mattina e sera per 3 giorni.",
       rewardCoins: 30,
-      unlocked: perfectDays >= 3,
-      progress: Math.min(perfectDays, 3),
+      unlocked: metrics.perfectDays >= 3,
+      progress: Math.min(metrics.perfectDays, 3),
       target: 3,
       icon: "calendar-month",
     },
@@ -235,12 +245,20 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
       title: "Settimana di fuoco",
       description: "Spazzola per 7 giorni consecutivi.",
       rewardCoins: 50,
-      unlocked: longestStreak >= 7,
-      progress: Math.min(longestStreak, 7),
+      unlocked: metrics.longestStreakDays >= 7,
+      progress: Math.min(metrics.longestStreakDays, 7),
       target: 7,
       icon: "local-fire-department",
     },
   ];
+}
+
+export function computeAchievements(history: BrushSession[]): AchievementStatus[] {
+  return computeAchievementsFromMetrics({
+    completedSessions: completeSessions(history).length,
+    perfectDays: perfectDayCount(history),
+    longestStreakDays: longestCompletedDayStreak(history),
+  });
 }
 
 export function computeLifetimeDailyBonusCoins(history: BrushSession[]): number {

@@ -27,15 +27,21 @@ import {
   clearHistory,
   loadDemoHistory,
   loadDemoMode,
-  loadHistory,
+  loadHistoryBundle,
   replaceDemoHistory,
-  replaceHistory,
+  replaceHistoryWithLifetime,
+  saveDeviceSessionWithLifetime,
   saveDemoMode,
   saveDemoSession,
   saveLastDevice,
-  saveSession,
+  saveSessionWithLifetime,
 } from "@/lib/brush-storage";
 import { createSonicareClient } from "@/lib/sonicare-client";
+import {
+  createEmptyLifetimeProgress,
+  type LifetimeProgress,
+  type LifetimeProgressEvent,
+} from "@/lib/lifetime-progress";
 
 export type DemoSessionPeriod = "morning" | "evening" | "now";
 
@@ -47,6 +53,8 @@ type BrushContextValue = {
   live: BrushLiveData;
   history: BrushSession[];
   realHistory: BrushSession[];
+  lifetimeProgress: LifetimeProgress;
+  progressEvent: LifetimeProgressEvent | null;
   historyReady: boolean;
   logs: DiagnosticLog[];
   isActive: boolean;
@@ -65,7 +73,9 @@ type BrushContextValue = {
   addDemoSession: (period: DemoSessionPeriod) => Promise<void>;
   generateDemoWeek: () => Promise<void>;
   clearDemoData: () => Promise<void>;
-  restoreRealHistory: (history: BrushSession[]) => Promise<void>;
+  restoreRealHistory: (history: BrushSession[], progress?: LifetimeProgress, restoreId?: string) => Promise<void>;
+  reloadRealHistory: () => Promise<void>;
+  adoptRestoredHistory: (history: BrushSession[], progress: LifetimeProgress) => void;
   clearAllHistory: () => Promise<void>;
 };
 
@@ -96,6 +106,8 @@ export function BrushProvider({ children }: PropsWithChildren) {
   const [device, setDevice] = useState<ToothbrushDevice | null>(null);
   const [live, setLive] = useState<BrushLiveData>(DEFAULT_LIVE_DATA);
   const [realHistory, setRealHistory] = useState<BrushSession[]>([]);
+  const [lifetimeProgress, setLifetimeProgress] = useState<LifetimeProgress>(createEmptyLifetimeProgress);
+  const [progressEvent, setProgressEvent] = useState<LifetimeProgressEvent | null>(null);
   const [demoHistory, setDemoHistory] = useState<BrushSession[]>([]);
   const [demoMode, setDemoModeState] = useState(false);
   const [historyReady, setHistoryReady] = useState(false);
@@ -104,8 +116,10 @@ export function BrushProvider({ children }: PropsWithChildren) {
   const [manualElapsed, setManualElapsed] = useState(0);
 
   const clientRef = useRef<SonicareClient | null>(null);
+  const deviceRef = useRef<ToothbrushDevice | null>(null);
   const liveRef = useRef<BrushLiveData>(DEFAULT_LIVE_DATA);
   const manualStartRef = useRef<number>(Date.now());
+  const manualDemoModeRef = useRef(false);
   const manualSavedRef = useRef(false);
 
   const history = demoMode ? demoHistory : realHistory;
@@ -118,23 +132,19 @@ export function BrushProvider({ children }: PropsWithChildren) {
   }, []);
 
   const persistDeviceSession = useCallback(async (stored: StoredDeviceSession) => {
-    const session: BrushSession = {
-      id: `ble-${stored.sessionId}`,
-      deviceSessionId: stored.sessionId,
-      startedAt: Date.now() - stored.durationSeconds * 1000,
-      durationSeconds: stored.durationSeconds,
-      targetSeconds: stored.targetSeconds,
-      completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
-      source: "device",
-    };
-    const next = await saveSession(session);
-    setRealHistory(next);
+    const deviceId = deviceRef.current?.id;
+    if (!deviceId) throw new Error("Identità dello spazzolino non disponibile");
+    const next = await saveDeviceSessionWithLifetime(deviceId, stored);
+    setRealHistory(next.recentHistory);
+    setLifetimeProgress(next.lifetimeProgress);
+    if (next.event) setProgressEvent(next.event);
   }, []);
 
   useEffect(() => {
-    void Promise.all([loadHistory(), loadDemoHistory(), loadDemoMode()])
+    void Promise.all([loadHistoryBundle(), loadDemoHistory(), loadDemoMode()])
       .then(([savedHistory, savedDemoHistory, savedDemoMode]) => {
-        setRealHistory(savedHistory);
+        setRealHistory(savedHistory.recentHistory);
+        setLifetimeProgress(savedHistory.lifetimeProgress);
         setDemoHistory(savedDemoHistory);
         setDemoModeState(savedDemoMode);
       })
@@ -148,9 +158,11 @@ export function BrushProvider({ children }: PropsWithChildren) {
       },
       onDevice: (next) => {
         if (!next) {
+          deviceRef.current = null;
           setDevice(null);
           return;
         }
+        deviceRef.current = next;
         setDevice((current) => {
           const merged = { ...current, ...next };
           void saveLastDevice(merged);
@@ -168,16 +180,22 @@ export function BrushProvider({ children }: PropsWithChildren) {
               ?.syncLatestSession()
               .then((stored) => {
                 if (stored) return persistDeviceSession(stored);
-                return saveSession({
+                return saveSessionWithLifetime({
                   id: `ble-live-${Date.now()}`,
                   startedAt: Date.now() - previous.elapsedSeconds * 1000,
                   durationSeconds: previous.elapsedSeconds,
                   targetSeconds: previous.routineSeconds,
                   completed: previous.elapsedSeconds >= Math.min(previous.routineSeconds, 120) * 0.9,
                   source: "device",
-                }).then(setRealHistory);
+                }).then((next) => {
+                  setRealHistory(next.recentHistory);
+                  setLifetimeProgress(next.lifetimeProgress);
+                  if (next.event) setProgressEvent(next.event);
+                });
               })
-              .catch(() => undefined);
+              .catch((error) => {
+                appendLog("error", error instanceof Error ? error.message : "Sessione BLE non salvata");
+              });
           }, 450);
         }
       },
@@ -202,22 +220,33 @@ export function BrushProvider({ children }: PropsWithChildren) {
     if (!manualActive || manualElapsed < 120 || manualSavedRef.current) return;
     manualSavedRef.current = true;
     setManualActive(false);
+    const sessionIsDemo = manualDemoModeRef.current;
     const session: BrushSession = {
-      id: `${demoMode ? "demo-manual" : "manual"}-${manualStartRef.current}`,
+      id: `${sessionIsDemo ? "demo-manual" : "manual"}-${manualStartRef.current}`,
       startedAt: manualStartRef.current,
       durationSeconds: manualElapsed,
       targetSeconds: 120,
       completed: true,
-      source: demoMode ? "demo" : "manual",
+      source: sessionIsDemo ? "demo" : "manual",
     };
-    const persist = demoMode
+    const persist = sessionIsDemo
       ? saveDemoSession(session).then(setDemoHistory)
-      : saveSession(session).then(setRealHistory);
-    void persist;
-    if (Platform.OS !== "web") {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    appendLog("success", demoMode ? "Sessione demo completata" : "Sessione guidata completata");
+      : saveSessionWithLifetime(session).then((next) => {
+        setRealHistory(next.recentHistory);
+        setLifetimeProgress(next.lifetimeProgress);
+        if (next.event) setProgressEvent(next.event);
+      });
+    void persist
+      .then(() => {
+        if (Platform.OS !== "web") {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        appendLog("success", sessionIsDemo ? "Sessione demo completata" : "Sessione guidata completata");
+      })
+      .catch((error) => {
+        manualSavedRef.current = false;
+        appendLog("error", error instanceof Error ? error.message : "Sessione guidata non salvata");
+      });
   }, [appendLog, demoMode, manualActive, manualElapsed]);
 
   const connect = useCallback(async () => {
@@ -254,6 +283,7 @@ export function BrushProvider({ children }: PropsWithChildren) {
 
   const startManual = useCallback(() => {
     manualStartRef.current = Date.now();
+    manualDemoModeRef.current = demoMode;
     manualSavedRef.current = false;
     setManualElapsed(0);
     setManualActive(true);
@@ -268,18 +298,25 @@ export function BrushProvider({ children }: PropsWithChildren) {
     const duration = manualElapsed;
     if (duration >= 5 && !manualSavedRef.current) {
       manualSavedRef.current = true;
+      const sessionIsDemo = manualDemoModeRef.current;
       const session: BrushSession = {
-        id: `${demoMode ? "demo-manual" : "manual"}-${manualStartRef.current}`,
+        id: `${sessionIsDemo ? "demo-manual" : "manual"}-${manualStartRef.current}`,
         startedAt: manualStartRef.current,
         durationSeconds: duration,
         targetSeconds: 120,
         completed: duration >= 108,
-        source: demoMode ? "demo" : "manual",
+        source: sessionIsDemo ? "demo" : "manual",
       };
-      const next = demoMode ? await saveDemoSession(session) : await saveSession(session);
-      if (demoMode) setDemoHistory(next);
-      else setRealHistory(next);
-      appendLog("info", `${demoMode ? "Sessione demo" : "Sessione manuale"} salvata (${duration}s)`);
+      if (sessionIsDemo) {
+        const next = await saveDemoSession(session);
+        setDemoHistory(next);
+      } else {
+        const next = await saveSessionWithLifetime(session);
+        setRealHistory(next.recentHistory);
+        setLifetimeProgress(next.lifetimeProgress);
+        if (next.event) setProgressEvent(next.event);
+      }
+      appendLog("info", `${sessionIsDemo ? "Sessione demo" : "Sessione manuale"} salvata (${duration}s)`);
     }
     setManualElapsed(0);
   }, [appendLog, demoMode, manualElapsed]);
@@ -321,10 +358,31 @@ export function BrushProvider({ children }: PropsWithChildren) {
     appendLog("info", "Dati demo eliminati");
   }, [appendLog]);
 
-  const restoreRealHistory = useCallback(async (restoredHistory: BrushSession[]) => {
-    const next = await replaceHistory(restoredHistory);
-    setRealHistory(next);
+  const restoreRealHistory = useCallback(async (
+    restoredHistory: BrushSession[],
+    restoredProgress?: LifetimeProgress,
+    restoreId?: string,
+  ) => {
+    const next = await replaceHistoryWithLifetime(restoredHistory, restoredProgress, restoreId);
+    setRealHistory(next.recentHistory);
+    setLifetimeProgress(next.lifetimeProgress);
+    setProgressEvent(null);
     appendLog("success", "Storico ripristinato dal backup");
+  }, [appendLog]);
+
+  const reloadRealHistory = useCallback(async () => {
+    const next = await loadHistoryBundle();
+    setRealHistory(next.recentHistory);
+    setLifetimeProgress(next.lifetimeProgress);
+    setProgressEvent(null);
+    appendLog("success", "Archivio completo ripristinato dal backup");
+  }, [appendLog]);
+
+  const adoptRestoredHistory = useCallback((history: BrushSession[], progress: LifetimeProgress) => {
+    setRealHistory(history);
+    setLifetimeProgress(progress);
+    setProgressEvent(null);
+    appendLog("success", "Archivio completo ripristinato dal backup");
   }, [appendLog]);
 
   const clearAllHistory = useCallback(async () => {
@@ -336,6 +394,8 @@ export function BrushProvider({ children }: PropsWithChildren) {
     }
     await clearHistory();
     setRealHistory([]);
+    setLifetimeProgress(createEmptyLifetimeProgress());
+    setProgressEvent(null);
     appendLog("info", "Storico locale eliminato");
   }, [appendLog, demoMode]);
 
@@ -352,6 +412,8 @@ export function BrushProvider({ children }: PropsWithChildren) {
     live,
     history,
     realHistory,
+    lifetimeProgress,
+    progressEvent,
     historyReady,
     logs,
     isActive,
@@ -371,6 +433,8 @@ export function BrushProvider({ children }: PropsWithChildren) {
     generateDemoWeek,
     clearDemoData,
     restoreRealHistory,
+    reloadRealHistory,
+    adoptRestoredHistory,
     clearAllHistory,
   }), [
     activeElapsed,
@@ -387,12 +451,16 @@ export function BrushProvider({ children }: PropsWithChildren) {
     disconnect,
     history,
     historyReady,
+    lifetimeProgress,
     generateDemoWeek,
     isActive,
     live,
     logs,
     manualActive,
+    progressEvent,
     realHistory,
+    reloadRealHistory,
+    adoptRestoredHistory,
     restoreRealHistory,
     setDemoMode,
     startManual,

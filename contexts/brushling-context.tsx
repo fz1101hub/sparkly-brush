@@ -50,6 +50,14 @@ import {
   saveStarterSelection,
   type BrushlingProfile,
 } from "@/lib/brushling-storage";
+import {
+  computeLifetimeBrushlingStats,
+  computeLifetimeDiscovery,
+  computeLifetimeInventory,
+  computeLifetimeMissionCenter,
+  computeLifetimeProgressRewardDelta,
+  computeLifetimeSessionReward,
+} from "@/lib/lifetime-progress";
 
 export type PurchaseResult = "purchased" | "owned" | "insufficient";
 
@@ -63,6 +71,7 @@ type BrushlingContextValue = {
   totalEarnedCoins: number;
   walletCoins: number;
   profileReady: boolean;
+  restoreInProgress: boolean;
   hasChosenStarter: boolean;
   reward: BrushlingReward | null;
   discovery: SessionDiscovery | null;
@@ -72,16 +81,18 @@ type BrushlingContextValue = {
   buyCustomization: (id: CustomizationItemId) => Promise<PurchaseResult>;
   equipCustomization: (id: CustomizationItemId) => Promise<boolean>;
   restoreFromBackup: (profile: BrushlingProfile, customization: CustomizationState) => Promise<void>;
+  setRestoreInProgress: (active: boolean) => void;
   dismissReward: () => void;
 };
 
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
-  const { history, historyReady, demoMode } = useBrush();
+  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } = useBrush();
   const [selectedId, setSelectedId] = useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
   const [customization, setCustomization] = useState<CustomizationState>(DEFAULT_CUSTOMIZATION_STATE);
   const [profileReady, setProfileReady] = useState(false);
+  const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [hasChosenStarter, setHasChosenStarter] = useState(false);
   const [reward, setReward] = useState<BrushlingReward | null>(null);
   const [discovery, setDiscovery] = useState<SessionDiscovery | null>(null);
@@ -89,6 +100,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
   const rewardTrackerReadyRef = useRef(false);
   const knownSessionIdsRef = useRef<Set<string>>(new Set());
+  const lastHandledProgressEventIdRef = useRef<string | null>(null);
   const previousDemoModeRef = useRef(demoMode);
 
   useEffect(() => {
@@ -120,9 +132,18 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     );
   }, [demoMode]);
 
-  const stats = useMemo(() => computeBrushlingStats(history), [history]);
-  const inventory = useMemo(() => computeGameInventory(history), [history]);
-  const missionCenter = useMemo(() => computeMissionCenter(history), [history]);
+  const stats = useMemo(
+    () => demoMode ? computeBrushlingStats(history) : computeLifetimeBrushlingStats(lifetimeProgress),
+    [demoMode, history, lifetimeProgress],
+  );
+  const inventory = useMemo(
+    () => demoMode ? computeGameInventory(history) : computeLifetimeInventory(lifetimeProgress),
+    [demoMode, history, lifetimeProgress],
+  );
+  const missionCenter = useMemo(
+    () => demoMode ? computeMissionCenter(history) : computeLifetimeMissionCenter(lifetimeProgress),
+    [demoMode, history, lifetimeProgress],
+  );
   const totalEarnedCoins = stats.coins + missionCenter.totalBonusCoins;
   const walletCoins = useMemo(
     () => availableCoins(totalEarnedCoins, customization),
@@ -130,14 +151,14 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
-    if (!profileReady) return;
+    if (!profileReady || !historyReady || restoreInProgress) return;
     if (stats.unlockedIds.includes(selectedId)) return;
     setSelectedId(DEFAULT_BRUSHLING_ID);
     if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
-  }, [demoMode, profileReady, selectedId, stats.unlockedIds]);
+  }, [demoMode, historyReady, profileReady, restoreInProgress, selectedId, stats.unlockedIds]);
 
   useEffect(() => {
-    if (!historyReady) return;
+    if (!demoMode || !historyReady) return;
 
     if (!rewardTrackerReadyRef.current) {
       knownSessionIdsRef.current = new Set(history.map((session) => session.id));
@@ -160,7 +181,20 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
       setDiscovery(nextDiscovery);
       setProgressReward(nextProgressReward);
     }
-  }, [hasChosenStarter, history, historyReady, selectedId]);
+  }, [demoMode, hasChosenStarter, history, historyReady, selectedId]);
+
+  useEffect(() => {
+    if (demoMode || !historyReady || !progressEvent) return;
+    if (lastHandledProgressEventIdRef.current === progressEvent.session.id) return;
+    lastHandledProgressEventIdRef.current = progressEvent.session.id;
+    if (progressEvent.session.durationSeconds < 5 || !hasChosenStarter) return;
+
+    const nextReward = computeLifetimeSessionReward(progressEvent, selectedId);
+    if (nextReward.xpEarned <= 0 && nextReward.coinsEarned <= 0) return;
+    setReward(nextReward);
+    setDiscovery(computeLifetimeDiscovery(progressEvent));
+    setProgressReward(computeLifetimeProgressRewardDelta(progressEvent));
+  }, [demoMode, hasChosenStarter, historyReady, progressEvent, selectedId]);
 
   const chooseStarter = useCallback(async (id: BrushlingId) => {
     if (!STARTER_IDS.includes(id)) return false;
@@ -203,6 +237,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     restoredCustomization: CustomizationState,
   ) => {
     rewardTrackerReadyRef.current = false;
+    lastHandledProgressEventIdRef.current = null;
     setSelectedId(profile.selectedId);
     setHasChosenStarter(profile.hasChosenStarter);
     setCustomization(restoredCustomization);
@@ -228,6 +263,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     totalEarnedCoins,
     walletCoins,
     profileReady,
+    restoreInProgress,
     hasChosenStarter,
     reward,
     discovery,
@@ -237,6 +273,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     buyCustomization,
     equipCustomization,
     restoreFromBackup,
+    setRestoreInProgress,
     dismissReward,
   }), [
     buyCustomization,
@@ -251,6 +288,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     profileReady,
     progressReward,
     restoreFromBackup,
+    restoreInProgress,
     reward,
     selectBrushling,
     selectedId,
