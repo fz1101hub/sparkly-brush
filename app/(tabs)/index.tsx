@@ -53,11 +53,15 @@ export default function TodayScreen() {
     activeTarget,
     activeZone,
     manualActive,
+    manualSaveError,
+    hasPendingManualSession,
+    isSavingManualSession,
     demoMode,
     setDemoMode,
     connect,
     startManual,
     stopManual,
+    retryManualSession,
   } = useBrush();
 
   const todaySessions = history.filter((session) => sameDay(session.startedAt)).length;
@@ -280,20 +284,52 @@ export default function TodayScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={manualActive ? () => void stopManual() : startManual}
-            disabled={liveIsActive(isActive, manualActive)}
+            disabled={liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession}
             style={({ pressed }) => [
               styles.primaryButton,
               manualActive && styles.stopButton,
-              liveIsActive(isActive, manualActive) && styles.disabled,
+              (liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession) && styles.disabled,
               pressed && styles.pressed,
             ]}
           >
             <MaterialIcons name={manualActive ? "stop-circle" : "play-arrow"} size={24} color="#FFFFFF" />
             <Text style={styles.primaryButtonText}>
-              {manualActive ? "Termina sessione" : isActive ? "Sessione dallo spazzolino" : "Avvia anche senza Bluetooth"}
+              {manualActive
+                ? "Termina sessione"
+                : isSavingManualSession
+                  ? "Salvataggio in corso…"
+                  : hasPendingManualSession
+                    ? "Salva prima la sessione precedente"
+                    : isActive
+                      ? "Sessione dallo spazzolino"
+                      : "Avvia anche senza Bluetooth"}
             </Text>
           </Pressable>
         </View>
+
+        {hasPendingManualSession ? (
+          <View
+            accessibilityLiveRegion="assertive"
+            style={styles.saveErrorCard}
+          >
+            <MaterialIcons name="error-outline" size={24} color="#B42318" />
+            <View style={styles.saveErrorCopy}>
+              <Text style={styles.saveErrorTitle}>Sessione non ancora salvata</Text>
+              <Text style={styles.saveErrorText}>
+                {manualSaveError ?? "Conserviamo la sessione in memoria finché il salvataggio non termina."}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Riprova il salvataggio della sessione"
+              disabled={isSavingManualSession}
+              onPress={() => void retryManualSession()}
+              style={({ pressed }) => [styles.retryButton, isSavingManualSession && styles.disabled, pressed && styles.pressed]}
+            >
+              <Text style={styles.retryButtonText}>{isSavingManualSession ? "Attendi" : "Riprova"}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
@@ -467,6 +503,12 @@ const styles = StyleSheet.create({
   primaryButton: { marginTop: 16, minHeight: 54, backgroundColor: "#2457D6", borderRadius: 18, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18 },
   stopButton: { backgroundColor: "#D33D5D" },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, lineHeight: 21, fontWeight: "900", textAlign: "center" },
+  saveErrorCard: { borderWidth: 1.5, borderColor: "#FDA29B", backgroundColor: "#FEF3F2", borderRadius: 20, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 },
+  saveErrorCopy: { flex: 1 },
+  saveErrorTitle: { color: "#B42318", fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  saveErrorText: { color: "#7A271A", fontSize: 10, lineHeight: 15, marginTop: 2 },
+  retryButton: { minHeight: 38, borderRadius: 13, backgroundColor: "#B42318", paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
+  retryButtonText: { color: "#FFFFFF", fontSize: 11, lineHeight: 15, fontWeight: "900" },
   pressed: { opacity: 0.86, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.55 },
   statsRow: { flexDirection: "row", gap: 12 },

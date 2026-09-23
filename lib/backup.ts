@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_CUSTOMIZATION_STATE,
   isCustomizationItemId,
+  normalizePurchaseLedger,
   type CustomizationItemId,
   type CustomizationState,
 } from "@/lib/customization";
@@ -76,6 +77,13 @@ function normalizeHistory(value: unknown): BrushSession[] {
       || typeof candidate.durationSeconds !== "number"
       || typeof candidate.targetSeconds !== "number"
       || typeof candidate.completed !== "boolean"
+      || (candidate.timeConfidence !== undefined
+        && candidate.timeConfidence !== "exact"
+        && candidate.timeConfidence !== "reconstructed"
+        && candidate.timeConfidence !== "approximate")
+      || (candidate.rewardPolicy !== undefined
+        && candidate.rewardPolicy !== "legacy"
+        && candidate.rewardPolicy !== "completed-only")
       || (candidate.source !== "manual" && candidate.source !== "device")
     ) {
       throw new Error("Sessione " + String(index + 1) + " non valida");
@@ -83,6 +91,8 @@ function normalizeHistory(value: unknown): BrushSession[] {
     return {
       id: candidate.id,
       startedAt: candidate.startedAt,
+      timeConfidence: candidate.timeConfidence ?? "exact",
+      rewardPolicy: candidate.rewardPolicy ?? "legacy",
       durationSeconds: Math.max(0, candidate.durationSeconds),
       targetSeconds: Math.max(1, candidate.targetSeconds),
       completed: candidate.completed,
@@ -211,6 +221,7 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
     },
     customization: {
       ownedIds,
+      purchaseLedger: normalizePurchaseLedger(rawCustomization?.purchaseLedger, ownedIds),
       equippedHabitatId: normalizeEquipped(rawCustomization?.equippedHabitatId, ownedIds) ?? "bubble-room",
       equippedAccessoryId: normalizeEquipped(rawCustomization?.equippedAccessoryId, ownedIds),
       equippedDecorId: normalizeEquipped(rawCustomization?.equippedDecorId, ownedIds),
@@ -269,6 +280,7 @@ export function parseBackup(code: string): BrushlingsBackup {
     },
     customization: {
       ownedIds,
+      purchaseLedger: normalizePurchaseLedger(rawCustomization?.purchaseLedger, ownedIds),
       equippedHabitatId,
       equippedAccessoryId: normalizeEquipped(rawCustomization?.equippedAccessoryId, ownedIds),
       equippedDecorId: normalizeEquipped(rawCustomization?.equippedDecorId, ownedIds),

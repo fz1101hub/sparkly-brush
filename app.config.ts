@@ -1,31 +1,21 @@
 import type { ExpoConfig } from "expo/config";
 
-// Bundle ID format: space.manus.<project_name_dots>.<timestamp>
-// e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.manus.my.app.t20240115103045"
-// Bundle ID can only contain letters, numbers, and dots
-// Android requires each dot-separated segment to start with a letter
 const rawBundleId = "com.app.sparklybrush";
 const bundleId =
   rawBundleId
-    .replace(/[-_]/g, ".") // Replace hyphens/underscores with dots
-    .replace(/[^a-zA-Z0-9.]/g, "") // Remove invalid chars
-    .replace(/\.+/g, ".") // Collapse consecutive dots
-    .replace(/^\.+|\.+$/g, "") // Trim leading/trailing dots
+    .replace(/[-_]/g, ".")
+    .replace(/[^a-zA-Z0-9.]/g, "")
+    .replace(/\.+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
     .toLowerCase()
     .split(".")
     .map((segment) => {
-      // Android requires each segment to start with a letter
-      // Prefix with 'x' if segment starts with a digit
       return /^[a-zA-Z]/.test(segment) ? segment : "x" + segment;
     })
-    .join(".") || "space.manus.app";
+    .join(".") || "com.app.sparklybrush";
 const env = {
-  // App branding - update these values directly (do not use env vars)
   appName: "Sparkly Brush",
   appSlug: "sparkly-brush",
-  // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
-  // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
   scheme: "sparklybrush",
   iosBundleId: bundleId,
   androidPackage: bundleId,
@@ -43,11 +33,10 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSBluetoothAlwaysUsageDescription": "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
-        "NSBluetoothPeripheralUsageDescription": "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids."
-      }
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      NSBluetoothAlwaysUsageDescription: "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
+    },
   },
   android: {
     adaptiveIcon: {
@@ -57,10 +46,10 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: [
-      "android.permission.BLUETOOTH_SCAN",
-      "android.permission.BLUETOOTH_CONNECT",
-      "android.permission.ACCESS_FINE_LOCATION"
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.SYSTEM_ALERT_WINDOW",
     ],
     intentFilters: [
       {
@@ -97,10 +86,10 @@ const config: ExpoConfig = {
     [
       "react-native-ble-plx",
       {
-        "isBackgroundEnabled": false,
-        "modes": ["central"],
-        "bluetoothAlwaysPermission": "Consenti a Sparkly Brush di collegarsi al Philips Sonicare for Kids."
-      }
+        isBackgroundEnabled: false,
+        neverForLocation: true,
+        bluetoothAlwaysPermission: "Consenti a Sparkly Brush di collegarsi al Philips Sonicare for Kids.",
+      },
     ],
     [
       "expo-splash-screen",

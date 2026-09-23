@@ -10,6 +10,10 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
 import { getBrushling, getEvolution } from "@/lib/brushlings";
+import {
+  celebrationShowsSelectedCreature,
+  sessionCelebrationKind,
+} from "@/lib/session-reward-presentation";
 
 export function SessionRewardModal() {
   const colors = useColors();
@@ -30,13 +34,16 @@ export function SessionRewardModal() {
 
   if (!reward) return null;
 
-  const evolved = Boolean(reward.evolvedTo);
   const hatchDefinition = discovery?.eggHatched;
   const hatchedCreature = hatchDefinition ? getBrushling(hatchDefinition.brushlingId) : null;
+  const celebrationKind = sessionCelebrationKind(reward, Boolean(hatchedCreature));
+  const evolved = celebrationKind === "evolution" || celebrationKind === "double";
+  const doubleSurprise = celebrationKind === "double";
   const specialProgress = Boolean(progressReward && progressReward.totalBonusCoins > 0);
   const celebration = evolved || Boolean(hatchedCreature) || Boolean(progressReward?.chestUnlocked) || Boolean(progressReward?.achievementTitles.length);
-  const displayCreature = hatchedCreature ?? selected;
-  const displayLevel = hatchedCreature ? 1 : reward.level;
+  const showSelectedCreature = celebrationShowsSelectedCreature(celebrationKind);
+  const displayCreature = showSelectedCreature ? selected : hatchedCreature ?? selected;
+  const displayLevel = showSelectedCreature ? reward.level : 1;
   const displayEvolution = getEvolution(displayCreature, displayLevel);
 
   return (
@@ -65,7 +72,9 @@ export function SessionRewardModal() {
           </View>
 
           <Text style={[styles.eyebrow, { color: celebration ? "#BFE3FF" : selected.accent }]}>
-            {evolved
+            {doubleSurprise
+              ? "DOPPIA SORPRESA!"
+              : evolved
               ? "EVOLUZIONE!"
               : hatchedCreature
                 ? "L'UOVO SI È SCHIUSO!"
@@ -75,7 +84,9 @@ export function SessionRewardModal() {
           </Text>
 
           <Text style={[styles.title, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
-            {evolved
+            {doubleSurprise
+              ? `${reward.evolvedFrom} è diventato ${reward.evolvedTo} e ${hatchedCreature?.name} è entrato nella squadra!`
+              : evolved
               ? `${reward.evolvedFrom} si è evoluto in ${reward.evolvedTo}!`
               : hatchedCreature
                 ? `Hai incontrato ${displayEvolution.name}!`
@@ -173,7 +184,9 @@ export function SessionRewardModal() {
           ) : null}
 
           <Text style={[styles.message, { color: celebration ? "#E9F5FF" : colors.muted }]}>
-            {hatchedCreature
+            {doubleSurprise
+              ? `${reward.evolvedTo} è più forte e ${hatchedCreature?.name} ti aspetta nella schermata Creature.`
+              : hatchedCreature
               ? `${displayEvolution.name} ora è disponibile nella schermata Creature. Continua l'avventura per scoprire altri premi.`
               : reward.completed
                 ? "Hai dato al tuo sorriso due minuti di super potere. Il tuo Brushling è diventato più forte!"
@@ -190,7 +203,13 @@ export function SessionRewardModal() {
             ]}
           >
             <Text style={styles.buttonText}>
-              {hatchedCreature ? "Conosci il nuovo amico" : evolved ? "Continua l'avventura" : "Fantastico!"}
+              {doubleSurprise
+                ? "Scopri le sorprese"
+                : hatchedCreature
+                  ? "Conosci il nuovo amico"
+                  : evolved
+                    ? "Continua l'avventura"
+                    : "Fantastico!"}
             </Text>
           </Pressable>
         </View>

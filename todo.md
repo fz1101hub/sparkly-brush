@@ -1,35 +1,47 @@
-# Stato hardening finale
+# Stato del candidato post-audit
 
-Aggiornato il 23 settembre 2026. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario del progetto.
+Aggiornato il 23 settembre 2026. Il ramo corrente è `fix/post-audit-device-reset-import-hardening`, basato su `main` al commit `d80c194`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
-| # | Punto | Stato | Evidenza o passo successivo |
+| # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
-| 1 | Lockfile e CI | Completato | Installazione frozen; CI con TypeScript, test, lint zero-warning, audit critico, Expo Doctor ed export web/iOS/Android. |
-| 2 | Race di idratazione e test | Completato | Test provider per profili Voltuff e Moonbit caricati prima dello storico. |
-| 3 | Profilo lifetime e reward ledger | Completato | SQLite transazionale, progressione senza limite applicativo, ledger idempotente e backup v3. |
-| 4 | Parental gate | Escluso | Non sviluppato per richiesta esplicita; resta necessario prima di candidare l’app alla categoria Kids. |
-| 5 | Utility streak | Completato | Utility unica per giorni locali, fasce mattina/sera, serie corrente e record. |
-| 6 | Fix BLE | Completato nel codice | Cancellazione scan/connect/sync, binding device/generazione, coda FIFO, fallback e deduplica coperti da test. |
-| 7 | Test d’integrazione e prova hardware | Assistente completato; hardware aperto | Client e provider testati end-to-end con periferica finta. L’app ora guida i 12 casi, salva gli esiti ed esporta un report sanitizzato; la matrice fisica resta tracciata nell’issue GitHub #3. |
-| 8 | Pulizie repository | Completato | Backend/OAuth rimossi dal ramo attivo e conservati nell’archivio Git; dipendenze e file template eliminati. |
-| 9 | Audit finale | Completato | Audit parallelo, riproduzioni e re-review conclusive: **APPROVED senza blocker**. |
-| 10 | Merge | Completato | PR #4 integrata nella PR #1; PR #1 unita in `main` con CI GitHub verde. |
+| 1 | Reset del manico per dispositivo | Completato | Nuova epoch BLE del solo device; progressi e storico preservati; race con riconnessione coperta. |
+| 2 | Preflight e restore SQLite | Completato | Header bounded, copia privata verificata, validazione streaming, rollback e journal. |
+| 3 | Backfill BLE offline | Completato nel codice | Recupero contiguo, rollover, batch atomico, `sessionCount` Base64 rigoroso e fail-closed. |
+| 4 | Timestamp del manico | Completato nel codice | Clock relativo `uint32`, ricostruzione rollover-aware e date approssimate escluse dal calendario. |
+| 5 | Timer manuale | Completato | Clock assoluto, sessione pendente su errore, messaggio accessibile e retry single-flight. |
+| 6 | Progressione ed economia | Completato | Anti-farming per nuove sessioni, reward ledger e ledger acquisti con prezzo pagato. |
+| 7 | Privacy backup | Completato | Alias BLE SHA-256, disclosure UI e nessun limite applicativo alla dimensione del file. |
+| 8 | Archivio legacy parziale | Completato | Baseline lifetime preservata; replay completo vietato quando le righe fisiche sono incomplete; test diretto dello storage nativo. |
+| 9 | CI e lockfile | Completato nel candidato | pnpm 12.5.1, workspace/override versionati, installazione frozen riprodotta da directory pulita. |
+| 10 | Build native | Android locale completato | `assembleDebug` superato con SDK 36, NDK 27.1 e JDK 17. Il job iOS richiede il runner macOS della PR. |
+| 11 | Collaudo hardware | Aperto | Checklist persistente di 13 casi e report sanitizzato pronti; esecuzione fisica nell’issue #3. |
+| 12 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
+| 13 | PR e merge | PR #6 aperta; eccezione CI documentata | I run push `35884850374` e PR `35884901213` hanno fallito tutti i job con zero step e nessun log. Procedere sulla base dei gate locali equivalenti e della build Android nativa; registrare il merge e il checkpoint finale. |
 
-## Gate già superati
+## Gate software superati
 
-- `pnpm install --frozen-lockfile`
-- `pnpm check`
-- `pnpm test`: 22 file e 95 test superati
-- `pnpm lint`: zero warning
-- `pnpm audit --prod --audit-level critical`: superato
-- `pnpm exec expo-doctor`: 18 controlli su 18
-- export Expo web, iOS e Android
-- preview web caricata e verificata visivamente
+- `pnpm install --frozen-lockfile` con pnpm 12.5.1;
+- fresh install da `package.json`, `pnpm-lock.yaml` e `pnpm-workspace.yaml`;
+- `pnpm peers check` senza problemi;
+- `pnpm check`;
+- `pnpm test`: **26 file e 127 test superati**;
+- `pnpm lint`: zero warning;
+- `pnpm audit --prod --audit-level critical`: superato;
+- `pnpm exec expo-doctor`: **18/18**;
+- `pnpm exec expo install --check`: dipendenze compatibili;
+- export Expo web, iOS e Android;
+- build Android nativa `assembleDebug`: **superata**, 458 task Gradle;
+- preview mobile web renderizzata a 390×844;
+- re-review conclusive su BLE, archivio SQLite parziale e salvataggio manuale: **fixed, nessun blocker**.
 
-## Rischio noto non bloccante
+## Blocco GitHub Actions
 
-L’audit produttivo segnala due advisory di severità alta in `image-size`, dipendenza transitiva di Metro usata in fase di build. Gli advisory riguardano denial of service su file ICNS, JXL o HEIF malevoli e non dispongono di una versione corretta upstream. La libreria non è esposta dall’app a runtime. La CI blocca comunque eventuali vulnerabilità critiche nuove.
+Il workflow è stato accettato da GitHub e ha creato i job `verify`, `native-android` e `native-ios`, ma sia il run push sia quello `pull_request` li hanno terminati in pochi secondi con `steps: []` e senza log. Nessun comando del repository, incluso checkout, installazione o build, è stato avviato. Il blocco è pertanto classificato come infrastrutturale esterno; non viene dichiarata una build iOS riuscita.
 
-## Evoluzione successiva al merge
+## Rischi noti non bloccanti per la PR
 
-- **Assistente di collaudo hardware:** completato su `feat/hardware-validation-assistant`; checklist persistente, snapshot BLE, note, avanzamento e report Markdown con redazione automatica degli identificativi.
+Due advisory `high` riguardano `image-size`, dipendenza transitiva di Metro usata durante la build. Le pagine GitHub Reviewed non indicano ancora una versione corretta; la libreria non è esposta dal runtime mobile. La CI blocca gli advisory critici e il rischio è documentato in `docs/audit-source-notes-2026-09-23.md`.
+
+## Condizioni prima della release pubblica
+
+La compatibilità fisica definitiva richiede HX6322/04, iPhone e Android reali. Prima degli store servono inoltre privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.

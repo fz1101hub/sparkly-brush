@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { validateBackupSemanticState, type PersistedRewardLedgerEntry } from "@/lib/backup-integrity";
+import {
+  BackupSemanticValidator,
+  validateBackupSemanticState,
+  type PersistedRewardLedgerEntry,
+} from "@/lib/backup-integrity";
 import type { BrushSession } from "@/lib/brush-types";
 import {
   applySessionToLifetime,
@@ -116,5 +120,17 @@ describe("backup semantic integrity", () => {
       historyComplete: false,
       ledger: null,
     })).toThrow("baseline lifetime parziale");
+  });
+
+  it("valida incrementalmente un archivio esteso senza materializzarne le righe", () => {
+    const validator = new BackupSemanticValidator(true, false);
+    let progress = createEmptyLifetimeProgress();
+    for (let index = 0; index < 10_000; index += 1) {
+      const item = session(`stream-${index}`, index * 1_000, index % 3 !== 0);
+      validator.beginSession(item);
+      progress = applySessionToLifetime(progress, item);
+    }
+
+    expect(() => validator.finish(progress)).not.toThrow();
   });
 });

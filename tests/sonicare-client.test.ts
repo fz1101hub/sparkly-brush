@@ -1,4 +1,4 @@
-import { fromByteArray } from "base64-js";
+import { fromByteArray, toByteArray } from "base64-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("react-native", () => ({
@@ -20,6 +20,27 @@ function b64(bytes: number[]) {
   return fromByteArray(Uint8Array.from(bytes));
 }
 
+function uint16Bytes(value: number): number[] {
+  return [value & 0xff, (value >> 8) & 0xff];
+}
+
+function uint32Bytes(value: number): number[] {
+  return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
+}
+
+function sessionPayload(handleTimestamp: number, sessionId: number, duration = 120): number[] {
+  return [
+    ...uint32Bytes(handleTimestamp),
+    ...uint16Bytes(sessionId),
+    ...uint16Bytes(duration),
+    ...uint16Bytes(120),
+    0,
+    1,
+    0,
+    0,
+  ];
+}
+
 class FakeSubscription {
   remove = vi.fn();
 }
@@ -37,7 +58,12 @@ class FakeDevice {
   connect = vi.fn(async () => this);
   discoverAllServicesAndCharacteristics = vi.fn(async () => this);
   services = vi.fn(async () => []);
-  writeCharacteristicWithResponseForService = vi.fn(async () => ({}));
+  writeCharacteristicWithResponseForService = vi.fn(async (
+    _service: string,
+    _characteristic: string,
+    _value: string,
+    _transactionId?: string,
+  ) => ({}));
 
   readCharacteristicForService = vi.fn(async (_service: string, characteristic: string) => {
     if (characteristic === SONICARE.characteristics.modelNumber) return { value: b64([..."HX6340"].map((c) => c.charCodeAt(0))) };
@@ -59,6 +85,52 @@ class FakeDevice {
     this.disconnectedCallback = callback;
     return this.disconnectSubscription;
   }
+}
+
+function configureStoredSessions(
+  device: FakeDevice,
+  input: {
+    latest: number;
+    count: number;
+    handleTime: number;
+    recordTimes: Record<number, number>;
+    recordIds?: Record<number, number>;
+    countError?: Error;
+    countPayload?: number[];
+    countBase64?: string;
+  },
+) {
+  let selected = input.latest;
+  device.writeCharacteristicWithResponseForService.mockImplementation(
+    async (_service: string, characteristic: string, value: string) => {
+      if (characteristic === SONICARE.characteristics.activeSessionId) {
+        const bytes = toByteArray(value);
+        selected = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+      }
+      return {};
+    },
+  );
+  device.readCharacteristicForService.mockImplementation(async (_service: string, characteristic: string) => {
+    if (characteristic === SONICARE.characteristics.latestSessionId) {
+      return { value: b64(uint16Bytes(input.latest)) };
+    }
+    if (characteristic === SONICARE.characteristics.sessionCount) {
+      if (input.countError) throw input.countError;
+      return { value: input.countBase64 ?? b64(input.countPayload ?? uint16Bytes(input.count)) };
+    }
+    if (characteristic === SONICARE.characteristics.handleTime) {
+      return { value: b64(uint32Bytes(input.handleTime)) };
+    }
+    if (characteristic === SONICARE.characteristics.sessionData) {
+      return {
+        value: b64(sessionPayload(
+          input.recordTimes[selected] ?? 0,
+          input.recordIds?.[selected] ?? selected,
+        )),
+      };
+    }
+    return { value: b64([1]) };
+  });
 }
 
 class FakeManager {
@@ -221,6 +293,144 @@ describe("NativeSonicareClient", () => {
     manager.releaseConnect?.();
   });
 
+  it("recupera in ordine tutte le sessioni mancanti e ricostruisce l'orario dal clock", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+    const anchor = new Date(2026, 8, 23, 12).getTime();
+    vi.useFakeTimers();
+    vi.setSystemTime(anchor);
+
+    const syncing = client.syncStoredSessionsSince({ lastSessionId: 40, acceptNextSession: false });
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([41, 42]);
+    expect(sessions.map((session) => session.startedAt)).toEqual([
+      anchor - 200_000,
+      anchor - 100_000,
+    ]);
+    expect(sessions.every((session) => session.timeConfidence === "reconstructed")).toBe(true);
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("non avanza una prima sync se il conteggio storico non è disponibile", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      countError: new Error("sessionCount unavailable"),
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
+      "Conteggio storico BLE non disponibile",
+    );
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("rifiuta un sessionCount troncato senza selezionare il record latest", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      countPayload: [2],
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
+      "Conteggio storico BLE non disponibile",
+    );
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it.each([
+    ["vuoto", ""],
+    ["overlong", "AgAA"],
+    ["Base64 malformato", "Ag?="],
+  ])("rifiuta un sessionCount %s senza selezionare il record latest", async (_case, countBase64) => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      countBase64,
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
+      "Conteggio storico BLE non disponibile",
+    );
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("recupera una sequenza contigua attraverso il rollover uint16", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 1,
+      count: 3,
+      handleTime: 2_000,
+      recordTimes: { 65_535: 1_700, 0: 1_800, 1: 1_900 },
+    });
+    vi.useFakeTimers();
+
+    const syncing = client.syncStoredSessionsSince({ lastSessionId: 65_534, acceptNextSession: false });
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([65_535, 0, 1]);
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("rifiuta l'intero batch se un record selezionato non corrisponde all'ID atteso", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+      recordIds: { 41: 42 },
+    });
+    vi.useFakeTimers();
+
+    const syncing = expect(
+      client.syncStoredSessionsSince({ lastSessionId: 40, acceptNextSession: false }),
+    ).rejects.toThrow("Record BLE 41");
+    await vi.runAllTimersAsync();
+    await syncing;
+    vi.useRealTimers();
+    client.destroy();
+  });
+
   it("scarta una sync del vecchio manico dopo disconnect e reconnect", async () => {
     const manager = new FakeManager();
     const { events } = createEvents();
@@ -239,7 +449,7 @@ describe("NativeSonicareClient", () => {
         return Promise.resolve({ value: b64([1]) });
       },
     );
-    const staleSync = client.syncLatestSession();
+    const staleSync = client.syncStoredSessionsSince({ lastSessionId: 41, acceptNextSession: false });
     await Promise.resolve();
 
     await client.disconnect();

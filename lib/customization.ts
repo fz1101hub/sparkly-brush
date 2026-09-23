@@ -25,8 +25,15 @@ export type CustomizationItem = {
   soft: string;
 };
 
+export type CustomizationPurchase = {
+  itemId: CustomizationItemId;
+  pricePaid: number;
+  purchasedAt: number;
+};
+
 export type CustomizationState = {
   ownedIds: CustomizationItemId[];
+  purchaseLedger: CustomizationPurchase[];
   equippedHabitatId: CustomizationItemId;
   equippedAccessoryId: CustomizationItemId | null;
   equippedDecorId: CustomizationItemId | null;
@@ -137,6 +144,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
 
 export const DEFAULT_CUSTOMIZATION_STATE: CustomizationState = {
   ownedIds: ["bubble-room"],
+  purchaseLedger: [],
   equippedHabitatId: "bubble-room",
   equippedAccessoryId: null,
   equippedDecorId: null,
@@ -151,11 +159,44 @@ export function isCustomizationItemId(value: string): value is CustomizationItem
   return CUSTOMIZATION_ITEMS.some((item) => item.id === value);
 }
 
+export function normalizePurchaseLedger(
+  value: unknown,
+  ownedIds: CustomizationItemId[],
+): CustomizationPurchase[] {
+  const byItem = new Map<CustomizationItemId, CustomizationPurchase>();
+  if (Array.isArray(value)) {
+    value.forEach((candidate) => {
+      if (!candidate || typeof candidate !== "object") return;
+      const entry = candidate as Partial<CustomizationPurchase>;
+      if (
+        typeof entry.itemId !== "string"
+        || !isCustomizationItemId(entry.itemId)
+        || !ownedIds.includes(entry.itemId)
+        || typeof entry.pricePaid !== "number"
+        || !Number.isFinite(entry.pricePaid)
+        || entry.pricePaid < 0
+        || typeof entry.purchasedAt !== "number"
+        || !Number.isFinite(entry.purchasedAt)
+        || entry.purchasedAt < 0
+      ) return;
+      byItem.set(entry.itemId, {
+        itemId: entry.itemId,
+        pricePaid: Math.floor(entry.pricePaid),
+        purchasedAt: Math.floor(entry.purchasedAt),
+      });
+    });
+  }
+  ownedIds.forEach((itemId) => {
+    const item = getCustomizationItem(itemId);
+    if (!item || item.cost === 0 || byItem.has(itemId)) return;
+    byItem.set(itemId, { itemId, pricePaid: item.cost, purchasedAt: 0 });
+  });
+  return ownedIds.flatMap((itemId) => byItem.get(itemId) ?? []);
+}
+
 export function spentCoins(state: CustomizationState): number {
-  return state.ownedIds.reduce((total, id) => {
-    const item = getCustomizationItem(id);
-    return total + (item?.cost ?? 0);
-  }, 0);
+  return normalizePurchaseLedger(state.purchaseLedger, state.ownedIds)
+    .reduce((total, purchase) => total + purchase.pricePaid, 0);
 }
 
 export function availableCoins(totalEarnedCoins: number, state: CustomizationState): number {
@@ -174,6 +215,10 @@ export function purchaseCustomization(
   return {
     ...state,
     ownedIds: [...state.ownedIds, itemId],
+    purchaseLedger: [
+      ...normalizePurchaseLedger(state.purchaseLedger, state.ownedIds),
+      { itemId, pricePaid: item.cost, purchasedAt: Date.now() },
+    ],
   };
 }
 

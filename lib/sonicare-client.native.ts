@@ -11,17 +11,30 @@ import {
   DEFAULT_LIVE_DATA,
   type BleClientEvents,
   type BrushLiveData,
+  type DeviceSyncCursor,
   type SonicareClient,
   type StoredDeviceSession,
 } from "@/lib/brush-types";
-import { decodeKidsSession } from "@/lib/sonicare-codec";
+import {
+  decodeKidsSession,
+  reconstructSessionStart,
+  uint32LE,
+} from "@/lib/sonicare-codec";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
 const SCAN_TIMEOUT_MS = 14_000;
+const MAX_SYNC_BATCH = 128;
 
 function bytesFromBase64(value?: string | null): Uint8Array {
   if (!value) return new Uint8Array();
-  return toByteArray(value);
+  const canonicalBase64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+  if (!canonicalBase64.test(value)) return new Uint8Array();
+  try {
+    const bytes = toByteArray(value);
+    return fromByteArray(bytes) === value ? bytes : new Uint8Array();
+  } catch {
+    return new Uint8Array();
+  }
 }
 
 function base64FromBytes(bytes: number[]): string {
@@ -404,6 +417,46 @@ export class NativeSonicareClient implements SonicareClient {
     return bytes.length >= 2 ? uint16LE(bytes) : null;
   }
 
+  private sessionIdsToSync(
+    latest: number,
+    sessionCount: number | null,
+    cursor?: DeviceSyncCursor | null,
+  ): number[] {
+    if (!cursor || cursor.acceptNextSession) {
+      if (sessionCount === 0) return [];
+      if (sessionCount === null) {
+        throw new Error("Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse");
+      }
+      const available = sessionCount;
+      if (available > MAX_SYNC_BATCH) {
+        throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+      }
+      return Array.from(
+        { length: available },
+        (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
+      );
+    }
+
+    if (latest === cursor.lastSessionId) return [];
+    const rollover = cursor.lastSessionId >= 65_000 && latest <= 1_024;
+    if (latest < cursor.lastSessionId && !rollover) {
+      throw new Error("Il contatore del manico sembra essere stato azzerato: usa ‘Dimentica manico resettato’");
+    }
+    const distance = rollover
+      ? 0x1_0000 - cursor.lastSessionId + latest
+      : latest - cursor.lastSessionId;
+    if (distance <= 0 || distance > MAX_SYNC_BATCH) {
+      throw new Error(`Intervallo BLE non sicuro (${distance} sessioni): il cursore non è stato avanzato`);
+    }
+    if (sessionCount !== null && distance > sessionCount) {
+      throw new Error("Lo storico del manico non contiene più tutte le sessioni mancanti");
+    }
+    return Array.from(
+      { length: distance },
+      (_, index) => (cursor.lastSessionId + index + 1) & 0xffff,
+    );
+  }
+
   private async readText(service: string, characteristic: string): Promise<string> {
     const value = await this.readCharacteristic(service, characteristic);
     return ascii(bytesFromBase64(value?.value));
@@ -412,7 +465,8 @@ export class NativeSonicareClient implements SonicareClient {
   private async syncCapturedDevice(
     device: Device,
     generation: number,
-  ): Promise<StoredDeviceSession | null> {
+    cursor?: DeviceSyncCursor | null,
+  ): Promise<StoredDeviceSession[]> {
     this.assertConnection(device, generation);
     const transactionPrefix = `sonicare-sync-${generation}-${++this.syncSequence}`;
     const latestValue = await this.syncTransaction(
@@ -426,47 +480,102 @@ export class NativeSonicareClient implements SonicareClient {
     this.assertConnection(device, generation);
     const latestBytes = bytesFromBase64(latestValue?.value);
     const latest = latestBytes.length >= 2 ? uint16LE(latestBytes) : null;
-    if (latest === null) return null;
+    if (latest === null) return [];
 
-    await this.syncTransaction(
-      `${transactionPrefix}-select`,
-      () => device.writeCharacteristicWithResponseForService(
-        SONICARE.services.kidsSession,
-        SONICARE.characteristics.activeSessionId,
-        base64FromBytes([latest & 0xff, (latest >> 8) & 0xff]),
-        `${transactionPrefix}-select`,
-      ),
-    );
-    this.assertConnection(device, generation);
-    await new Promise((resolve) => setTimeout(resolve, 180));
-    this.assertConnection(device, generation);
-
-    const value = await this.syncTransaction(
-      `${transactionPrefix}-data`,
-      () => device.readCharacteristicForService(
-        SONICARE.services.kidsSession,
-        SONICARE.characteristics.sessionData,
-        `${transactionPrefix}-data`,
-      ),
-    );
-    this.assertConnection(device, generation);
-    const bytes = bytesFromBase64(value?.value);
-    if (bytes.length < 14) return null;
-
-    const decoded = decodeKidsSession(bytes, latest);
-    if (!decoded) {
-      this.events.onLog("warning", "Formato della sessione non riconosciuto");
-      return null;
+    let sessionCount: number | null = null;
+    try {
+      const countValue = await this.syncTransaction(
+        `${transactionPrefix}-count`,
+        () => device.readCharacteristicForService(
+          SONICARE.services.kidsSession,
+          SONICARE.characteristics.sessionCount,
+          `${transactionPrefix}-count`,
+        ),
+      );
+      this.assertConnection(device, generation);
+      const countBytes = bytesFromBase64(countValue?.value);
+      sessionCount = countBytes.length === 2 ? uint16LE(countBytes) : null;
+    } catch {
+      this.assertConnection(device, generation);
+      this.events.onLog("warning", "Conteggio storico BLE non disponibile; sincronizzazione prudente");
     }
-    this.events.onLog("success", `Sessione ${decoded.sessionId} sincronizzata (${decoded.durationSeconds}s)`);
-    return decoded;
+
+    const anchorBefore = Date.now();
+    let currentHandleTimestampSeconds: number | null = null;
+    try {
+      const handleTimeValue = await this.syncTransaction(
+        `${transactionPrefix}-time`,
+        () => device.readCharacteristicForService(
+          SONICARE.services.primary,
+          SONICARE.characteristics.handleTime,
+          `${transactionPrefix}-time`,
+        ),
+      );
+      this.assertConnection(device, generation);
+      const handleTimeBytes = bytesFromBase64(handleTimeValue?.value);
+      if (handleTimeBytes.length >= 4) currentHandleTimestampSeconds = uint32LE(handleTimeBytes);
+    } catch {
+      this.assertConnection(device, generation);
+      this.events.onLog("warning", "Clock del manico non disponibile: data sessione approssimata");
+    }
+    const anchorWallTime = Math.floor((anchorBefore + Date.now()) / 2);
+    const sessionIds = this.sessionIdsToSync(latest, sessionCount, cursor);
+    const sessions: StoredDeviceSession[] = [];
+
+    for (const sessionId of sessionIds) {
+      await this.syncTransaction(
+        `${transactionPrefix}-select-${sessionId}`,
+        () => device.writeCharacteristicWithResponseForService(
+          SONICARE.services.kidsSession,
+          SONICARE.characteristics.activeSessionId,
+          base64FromBytes([sessionId & 0xff, (sessionId >> 8) & 0xff]),
+          `${transactionPrefix}-select-${sessionId}`,
+        ),
+      );
+      this.assertConnection(device, generation);
+      await new Promise((resolve) => setTimeout(resolve, 180));
+      this.assertConnection(device, generation);
+
+      const value = await this.syncTransaction(
+        `${transactionPrefix}-data-${sessionId}`,
+        () => device.readCharacteristicForService(
+          SONICARE.services.kidsSession,
+          SONICARE.characteristics.sessionData,
+          `${transactionPrefix}-data-${sessionId}`,
+        ),
+      );
+      this.assertConnection(device, generation);
+      const decoded = decodeKidsSession(bytesFromBase64(value?.value), sessionId);
+      if (!decoded) {
+        throw new Error(`Record BLE ${sessionId} mancante o non riconosciuto; cursore invariato`);
+      }
+      const timing = currentHandleTimestampSeconds !== null
+        && decoded.handleTimestampSeconds !== undefined
+        ? reconstructSessionStart({
+          recordHandleTimestampSeconds: decoded.handleTimestampSeconds,
+          currentHandleTimestampSeconds,
+          anchorWallTime,
+          durationSeconds: decoded.durationSeconds,
+        })
+        : {
+          startedAt: anchorWallTime - decoded.durationSeconds * 1_000,
+          timeConfidence: "approximate" as const,
+        };
+      sessions.push({ ...decoded, ...timing });
+      this.events.onLog("success", `Sessione ${decoded.sessionId} letta (${decoded.durationSeconds}s)`);
+    }
+
+    if (sessions.length > 0) {
+      this.events.onLog("success", `${sessions.length} sessioni BLE pronte per il salvataggio atomico`);
+    }
+    return sessions;
   }
 
-  async syncLatestSession(): Promise<StoredDeviceSession | null> {
+  async syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]> {
     const device = this.device;
     if (!device) throw new Error("Collega prima lo spazzolino");
     const generation = this.connectionGeneration;
-    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation));
+    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation, cursor));
     this.syncQueue = operation.then(() => undefined, () => undefined);
     return operation;
   }
