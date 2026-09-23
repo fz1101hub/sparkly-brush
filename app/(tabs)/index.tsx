@@ -351,8 +351,8 @@ export default function TodayScreen() {
         <View style={[styles.rewardStrip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rewardItem}>
             <MaterialIcons name="local-fire-department" size={21} color="#E76A2C" />
-            <Text style={[styles.rewardValue, { color: colors.foreground }]}>{stats.streakDays}</Text>
-            <Text style={[styles.rewardLabel, { color: colors.muted }]}>giorni di serie</Text>
+            <Text style={[styles.rewardValue, { color: colors.foreground }]}>{stats.currentStreakDays}</Text>
+            <Text style={[styles.rewardLabel, { color: colors.muted }]}>giorni di fila (serie attuale)</Text>
           </View>
           <View style={[styles.rewardDivider, { backgroundColor: colors.border }]} />
           <View style={styles.rewardItem}>

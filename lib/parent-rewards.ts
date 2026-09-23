@@ -1,6 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { BrushSession } from "@/lib/brush-types";
+import {
+  isEvening,
+  isMorning,
+  localDateKey,
+  longestCompletedDayStreak,
+  uniqueCompletedDayKeys,
+} from "@/lib/day-progress";
 
 const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
 
@@ -26,58 +33,26 @@ export type ParentRewardMetrics = {
   longestStreakDays: number;
 };
 
-function localDateKey(timestamp: number): string {
-  const date = new Date(timestamp);
-  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
-}
-
-function parseLocalDayKey(key: string): Date {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
 function completed(history: BrushSession[]): BrushSession[] {
   return history.filter((session) => session.completed);
 }
 
 function perfectDays(history: BrushSession[]): number {
   const sessions = completed(history);
-  const keys = [...new Set(sessions.map((session) => localDateKey(session.startedAt)))];
+  const keys = uniqueCompletedDayKeys(history);
   return keys.filter((key) => {
     const daySessions = sessions.filter((session) => localDateKey(session.startedAt) === key);
-    const morning = daySessions.some((session) => {
-      const hour = new Date(session.startedAt).getHours();
-      return hour >= 5 && hour < 12;
-    });
-    const evening = daySessions.some((session) => new Date(session.startedAt).getHours() >= 18);
+    const morning = daySessions.some((session) => isMorning(session.startedAt));
+    const evening = daySessions.some((session) => isEvening(session.startedAt));
     return morning && evening;
   }).length;
-}
-
-function longestStreak(history: BrushSession[]): number {
-  const keys = [...new Set(completed(history).map((session) => localDateKey(session.startedAt)))].sort();
-  if (!keys.length) return 0;
-  let longest = 1;
-  let current = 1;
-  for (let index = 1; index < keys.length; index += 1) {
-    const previous = parseLocalDayKey(keys[index - 1]);
-    const next = parseLocalDayKey(keys[index]);
-    const diff = Math.round((next.getTime() - previous.getTime()) / 86_400_000);
-    if (diff === 1) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 1;
-    }
-  }
-  return longest;
 }
 
 export function parentRewardProgress(reward: ParentReward, history: BrushSession[]): ParentRewardProgress {
   return parentRewardProgressFromMetrics(reward, {
     completedSessions: completed(history).length,
     perfectDays: perfectDays(history),
-    longestStreakDays: longestStreak(history),
+    longestStreakDays: longestCompletedDayStreak(history),
   });
 }
 
@@ -96,7 +71,7 @@ export function parentRewardProgressFromMetrics(
 export function rewardRequirementLabel(requirement: ParentRewardRequirement, target: number): string {
   if (requirement === "completed-sessions") return String(target) + " sessioni complete";
   if (requirement === "perfect-days") return String(target) + " giorni mattina + sera";
-  return String(target) + " giorni consecutivi";
+  return "Record di serie: " + String(target) + " giorni consecutivi";
 }
 
 export async function loadParentRewards(): Promise<ParentReward[]> {

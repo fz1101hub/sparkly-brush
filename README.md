@@ -1,49 +1,45 @@
 # Sparkly Brush
 
-**Sparkly Brush** è un prototipo mobile iOS/Android per il **Philips Sonicare for Kids HX6322/04**. L’app funziona subito anche senza account: offre un timer guidato di due minuti, quattro zone da trenta secondi, storico locale e una modalità diagnostica per verificare il protocollo Bluetooth Low Energy sullo spazzolino reale.
+**Sparkly Brush** è un’app mobile iOS/Android indipendente per il **Philips Sonicare for Kids HX6322/04**. Offre collegamento Bluetooth Low Energy, timer guidato di due minuti, quattro zone da trenta secondi, storico locale, diagnostica BLE e un sistema di gioco chiamato **Brushlings**. Non richiede account e non usa un backend.
 
-## Funzioni implementate
+> Philips e Sonicare sono marchi dei rispettivi proprietari. Sparkly Brush è un progetto indipendente, non affiliato né approvato da Philips.
 
-L’app cerca dispositivi annunciati come `Sonicare4Kids` o con i servizi proprietari Sonicare. Dopo la connessione legge modello, firmware, batteria, stato del manico, tempo di spazzolamento, durata prevista e intensità. Le notifiche GATT aggiornano in tempo reale il timer e, quando una sessione termina, l’app tenta di sincronizzare l’ultimo record memorizzato sul manico.
+## Funzioni principali
 
-Il timer manuale rimane disponibile quando lo spazzolino non è collegato. Le sessioni sono conservate esclusivamente sul telefono tramite AsyncStorage; non è richiesto un account e non viene utilizzato un server per lo storico.
+L’app cerca dispositivi annunciati come `Sonicare4Kids` o che espongono i servizi proprietari Sonicare Classic/open GATT. Dopo la connessione legge modello, firmware, batteria, stato del manico, tempo di spazzolamento, durata prevista e intensità. Le notifiche GATT aggiornano il timer in tempo reale e, quando lo spazzolamento termina, l’app sincronizza l’ultimo record memorizzato dal manico. Il timer manuale rimane disponibile senza spazzolino.
 
-## Brushlings: prototipo di gamification
+La gamification include scelta dello starter, XP, livelli, monete sorriso, evoluzioni, missioni, achievement, collezionabili, uova, aree esplorabili, habitat personalizzabili e premi definiti dalla famiglia. La **serie attuale** e il **record storico** sono metriche distinte; giorni locali e fasce mattina/sera usano un’unica utility condivisa per evitare risultati incoerenti.
 
-Il branch `feature/brushlings-game` aggiunge un primo layer di gioco con creature originali chiamate **Brushlings**. Il bambino può scegliere un compagno iniziale, ottenere XP e “monete sorriso” dalle sessioni di spazzolamento, aumentare di livello e sbloccare nuove creature dopo un certo numero di sessioni complete.
+## Persistenza lifetime e reward ledger
 
-La progressione usa un **database SQLite locale unico**. Ogni sessione reale resta archiviata come riga compatta senza limiti applicativi; l’interfaccia carica soltanto le 120 più recenti per restare veloce, mentre aggregati aggiornati nella stessa transazione mantengono XP, livelli, monete, missioni, streak, premi e collezionabili. Le scritture usano WAL con durabilità `FULL`. Una sessione retrodatata forza la ricostruzione degli aggregati dall’archivio completo, quindi l’ordine di arrivo non altera i risultati. Al primo avvio dopo l’aggiornamento, gli storici precedenti vengono migrati automaticamente, dando priorità all’eventuale blob lifetime completo; gli aggregati dei backup v2 restano preservati anche quando quel vecchio formato possiede solo 120 righe consultabili. Il sistema non modifica il protocollo BLE e non richiede un backend. La schermata **Creature** permette di cambiare il compagno attivo, mentre la home mostra livello, XP, serie di giorni e progressi durante la sessione guidata. I tre starter hanno ora famiglie evolutive originali: **Bloopi → Bubblio → Ondalux**, **Spriggo → Germillo → Floraviva** e **Flarello → Braciolo → Solfiamma**. La seconda forma si sblocca al livello 3 e la forma finale al livello 6.
+La progressione reale usa un unico database **SQLite** locale. Ogni sessione resta archiviata come riga compatta senza limite applicativo; l’interfaccia carica soltanto le 120 sessioni più recenti per mantenere la UI veloce. XP, monete, missioni, serie, premi e collezionabili sono aggregati lifetime aggiornati transazionalmente.
 
-Il loop di gioco include anche una **scelta iniziale dello starter**, una schermata ricompensa dopo le nuove sessioni (XP, monete, level-up ed eventuale evoluzione) e la prima mappa **Isola Sorridente**. Le zone Baia delle Bolle, Foresta Fresca, Monte Splendente, Lago Cristallino e Valle del Sorriso si sbloccano con il numero di sessioni complete. Una GitHub Action esegue TypeScript, test e lint sulle modifiche del branch.
+Ogni accredito produce inoltre righe idempotenti nel **reward ledger** SQLite: premio base della sessione, bonus missioni giornaliere e bonus achievement sono separati, auditabili e protetti da chiavi stabili contro doppi accrediti. Le installazioni esistenti ricevono automaticamente un backfill del ledger dalle sessioni disponibili.
 
-L'esplorazione ora include anche **oggetti collezionabili e uova**. Ogni sessione completa assegna un oggetto coerente con la zona corrente. L'**Uovo Scintilla** viene trovato alla 3ª sessione e si schiude alla 5ª, sbloccando Voltuff; l'**Uovo Lunare** viene trovato all'8ª sessione e si schiude alla 10ª, sbloccando Moonbit. La schermata **Premi e uova** mostra inventario, quantità, incubazione e Brushlings nati, mentre il popup di fine sessione segnala subito oggetti, uova trovate e schiuse.
+SQLite usa WAL e `synchronous=FULL`. Le sessioni duplicate o i pacchetti BLE obsoleti non vengono riaccreditati; i cursori sono separati per dispositivo. Lo storico legacy viene migrato automaticamente. I dati demo restano isolati dalla progressione reale.
 
-Le **monete sorriso** sono ora una vera valuta locale. La schermata **La tana** permette di acquistare ed equipaggiare habitat, accessori e decorazioni; il saldo mostra le monete guadagnate meno quelle già spese. Gli acquisti restano salvati in AsyncStorage e ogni Brushling può essere mostrato nel proprio habitat personalizzato.
+## Backup e trasferimento
 
-La scheda **Spazzolino** include una **Modalità demo** separata dallo storico reale. Permette di aggiungere rapidamente una sessione mattutina o serale, generare una settimana completa di dati simulati e provare evoluzioni, missioni, uova, negozio e dashboard senza avere lo spazzolino a portata di mano. Uscendo dalla demo vengono ricaricati profilo e personalizzazioni reali; le modifiche fatte nel laboratorio non vengono persistite nel mondo reale.
+Il backup v3 è una copia completa e verificabile del database SQLite con profilo Brushling, personalizzazioni, preferenze e premi familiari. Viene condiviso come file `.brushlings`, non tronca la cronologia e include il reward ledger. Il restore usa snapshot di rollback, journal persistente e un token di commit coordinato; le sessioni che arrivano durante il ripristino vengono accodate. I vecchi codici v1/v2 restano importabili, con indicazione esplicita quando il vecchio formato non contiene tutte le righe storiche.
 
-È disponibile anche **Backup & trasferimento**: il formato v3 è una copia completa e verificabile del database SQLite, accompagnata da starter, Brushling attivo, personalizzazioni, preferenze e premi familiari. Non tronca la cronologia e viene condiviso come file `.brushlings`, adatto anche dopo anni di utilizzo; i file temporanei vengono eliminati dopo la condivisione. Il restore conserva prima uno snapshot locale e usa un journal persistente con token di commit per coordinare database, profilo, preferenze e premi anche dopo un crash. Le sessioni BLE o manuali che arrivano durante il restore vengono accodate e salvate subito dopo. I vecchi codici v1 e v2 restano importabili per retrocompatibilità. I dati demo sono esclusi dal backup e il ripristino è bloccato mentre la demo è attiva.
+## Compatibilità BLE
 
-Come primo polish visivo, il Brushling attivo ora ha una leggera animazione di rimbalzo durante la sessione guidata.
+Il profilo implementato è quello Sonicare Classic/open GATT della famiglia HX63xx. UUID e record sono stati confrontati con una cattura pubblica di un HX6340 nel progetto comunitario `mtheli/philips_sonicare_ble`; il codec include un test su un record Kids reale. Revisioni firmware differenti possono omettere caratteristiche opzionali, quindi la convalida definitiva richiede il manico HX6322/04 reale.
 
-I Brushlings sono personaggi originali e temporanei: il concept può richiamare i giochi di creature collezionabili, ma non usa personaggi, nomi, loghi o asset di Pokémon o di altre proprietà intellettuali.
+Il client mantiene separati listener adapter e subscription di connessione. Disconnect, reconnect e destroy rimuovono monitor e callback; una generazione monotona scarta eventi tardivi della connessione precedente. Gli aggiornamenti batteria conservano modello e firmware già letti.
 
-## Compatibilità studiata
-
-Il profilo implementato è quello **Classic/open GATT** usato dalla famiglia Sonicare for Kids HX63xx. Gli UUID e il formato del record sono stati confrontati con una cattura pubblica reale di un HX6340, inclusa nel progetto open source `mtheli/philips_sonicare_ble`. Il modello HX6322 è indicato come compatibile dalla stessa integrazione comunitaria. La conferma definitiva richiede comunque una prova sul tuo esemplare HX6322/04, perché revisioni firmware diverse possono omettere caratteristiche opzionali.
-
-## Avvio dell’anteprima
+## Avvio
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-L’anteprima web consente di provare navigazione, timer manuale, storico e progressione Brushlings. Il Bluetooth è deliberatamente disabilitato sul web.
+La preview web consente di provare navigazione, timer manuale, demo, storico e Brushlings. Il BLE nativo e il backup file completo sono disabilitati sul web.
 
-## Prova Bluetooth su iPhone o Android
+## Build e prova su iPhone/Android
 
-`react-native-ble-plx` contiene codice nativo e non funziona dentro Expo Go. Occorre generare una **development build** oppure una build distribuita:
+`react-native-ble-plx` richiede una **development build**; Expo Go non è sufficiente.
 
 ```bash
 npx expo prebuild
@@ -52,18 +48,24 @@ npx expo run:android
 npx expo run:ios
 ```
 
-Accendi lo spazzolino, apri la scheda **Spazzolino** e premi **Cerca e collega**. La sezione **Diagnostica BLE** mostra l’esito delle letture e aiuta a identificare eventuali differenze del firmware.
+La procedura manuale completa è in [docs/hardware-test-plan.md](docs/hardware-test-plan.md). In sintesi: accendere il manico, aprire **Spazzolino**, premere **Cerca e collega**, completare una sessione e verificare timer, batteria, sincronizzazione, deduplica e riconnessione.
 
-## Verifica del codice
+## Verifica automatica
 
 ```bash
 pnpm check
 pnpm test
 pnpm lint
+pnpm exec expo-doctor
+pnpm exec expo export --platform web --output-dir /tmp/sparkly-web
+pnpm exec expo export --platform ios --output-dir /tmp/sparkly-ios
+pnpm exec expo export --platform android --output-dir /tmp/sparkly-android
 ```
 
-Il test del codec usa il record reale `6cda92017a0113003c00020000000000`, che rappresenta una sessione Kids di 19 secondi con obiettivo 60 secondi e ID 378. Il branch Brushlings aggiunge anche test unitari per XP, livelli, sblocchi e persistenza lifetime oltre 120 sessioni.
+La suite copre codec BLE, lifecycle del client con periferica finta, integrazione provider→BLE→storage, race di idratazione del profilo, progressione oltre 120 sessioni, ledger, migrazioni, backup/restore, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. GitHub Actions usa il lockfile frozen ed esegue gli stessi controlli essenziali e i tre bundle.
 
-## Privacy e pubblicazione
+## Privacy, licenza e pubblicazione
 
-La versione attuale non raccoglie dati personali, non crea profili e non invia dati a servizi esterni. Prima della pubblicazione su App Store o Google Play saranno necessari un test hardware completo, icone definitive nelle varianti richieste dagli store, una privacy policy pubblica e una revisione della denominazione per evitare di suggerire un’affiliazione ufficiale con Philips.
+La versione attuale non crea account e non invia storico o progressi a servizi esterni. Il vecchio scaffold backend/OAuth è stato rimosso dal ramo attivo ed è conservato separatamente nel ramo Git di archivio creato durante l’audit. Il codice è proprietario; vedere [LICENSE](LICENSE).
+
+Prima della pubblicazione negli store restano necessari: prova hardware completa sul manico reale, privacy policy pubblica, verifica delle dichiarazioni store e revisione del naming commerciale. Il **parental gate è deliberatamente escluso da questo intervento**, come richiesto, e deve essere affrontato separatamente prima di candidare l’app alla categoria Kids.

@@ -1,5 +1,4 @@
 import "@/global.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { type ReactNode, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
@@ -22,7 +21,6 @@ import { BrushlingProvider } from "@/contexts/brushling-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
-import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { initializeHistoryStorage } from "@/lib/brush-storage";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
@@ -129,22 +127,6 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, [handleSafeAreaUpdate]);
 
-  // Create clients once and reuse them
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // Disable automatic refetching on window focus for mobile
-            refetchOnWindowFocus: false,
-            // Retry failed requests once
-            retry: 1,
-          },
-        },
-      }),
-  );
-  const [trpcClient] = useState(() => createTRPCClient());
-
   // Ensure minimum 8px padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
     const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
@@ -162,28 +144,20 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DataRecoveryGate>
         <BrushProvider>
-        <PreferencesProvider>
-          <AudioFeedbackProvider>
-          <BrushlingProvider>
-            <ParentRewardsProvider>
-          <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            <QueryClientProvider client={queryClient}>
-              {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-              {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-              {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="oauth/callback" />
-              </Stack>
-              <OnboardingOverlay />
-              <RestoreOperationOverlay />
-              <StatusBar style="dark" />
-            </QueryClientProvider>
-          </trpc.Provider>
-            </ParentRewardsProvider>
-          </BrushlingProvider>
-          </AudioFeedbackProvider>
-        </PreferencesProvider>
+          <PreferencesProvider>
+            <AudioFeedbackProvider>
+              <BrushlingProvider>
+                <ParentRewardsProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                  <OnboardingOverlay />
+                  <RestoreOperationOverlay />
+                  <StatusBar style="dark" />
+                </ParentRewardsProvider>
+              </BrushlingProvider>
+            </AudioFeedbackProvider>
+          </PreferencesProvider>
         </BrushProvider>
       </DataRecoveryGate>
     </GestureHandlerRootView>

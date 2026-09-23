@@ -22,6 +22,7 @@ import {
   type MissionCenter,
   type ProgressRewardDelta,
 } from "./missions";
+import { dayDifference, isEvening, isMorning, localDateKey } from "./day-progress";
 
 export const LIFETIME_PROGRESS_VERSION = 1;
 
@@ -30,6 +31,13 @@ export type DeviceSessionCursor = {
   epoch: number;
   recentIdentities: string[];
   updatedAt: number;
+};
+
+export type PendingDeviceFallback = {
+  sessionId: string;
+  startedAt: number;
+  durationSeconds: number;
+  targetSeconds: number;
 };
 
 export type LifetimeProgress = {
@@ -48,6 +56,7 @@ export type LifetimeProgress = {
   /** completedCount * 4 + morningBit + eveningBit for activeDateKey */
   activeDay: number;
   deviceCursors: Record<string, DeviceSessionCursor>;
+  pendingDeviceFallbacks: Record<string, PendingDeviceFallback>;
 };
 
 export type LifetimeProgressEvent = {
@@ -88,27 +97,8 @@ export function createEmptyLifetimeProgress(): LifetimeProgress {
     activeDateKey: null,
     activeDay: 0,
     deviceCursors: {},
+    pendingDeviceFallbacks: {},
   };
-}
-
-export function localDateKey(timestamp: number): string {
-  const date = new Date(timestamp);
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function parseLocalDateKey(key: string): Date {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function dayDifference(firstKey: string, secondKey: string): number {
-  return Math.round(
-    (parseLocalDateKey(secondKey).getTime() - parseLocalDateKey(firstKey).getTime()) / 86_400_000,
-  );
 }
 
 function decodeDay(encoded: number | undefined): DayProgress {
@@ -124,15 +114,6 @@ function encodeDay(day: DayProgress): number {
   return Math.max(0, Math.floor(day.completedSessions)) * 4
     + Number(day.morningCompleted)
     + Number(day.eveningCompleted) * 2;
-}
-
-function isMorning(timestamp: number): boolean {
-  const hour = new Date(timestamp).getHours();
-  return hour >= 5 && hour < 12;
-}
-
-function isEvening(timestamp: number): boolean {
-  return new Date(timestamp).getHours() >= 18;
 }
 
 function currentStreak(progress: LifetimeProgress, timestamp: number): number {
@@ -170,6 +151,9 @@ function cloneProgress(progress: LifetimeProgress): LifetimeProgress {
     itemCounts: { ...progress.itemCounts },
     deviceCursors: Object.fromEntries(
       Object.entries(progress.deviceCursors).map(([key, cursor]) => [key, { ...cursor }]),
+    ),
+    pendingDeviceFallbacks: Object.fromEntries(
+      Object.entries(progress.pendingDeviceFallbacks).map(([key, fallback]) => [key, { ...fallback }]),
     ),
   };
 }
@@ -265,6 +249,26 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
     });
   }
 
+  const pendingDeviceFallbacks: Record<string, PendingDeviceFallback> = {};
+  if (raw.pendingDeviceFallbacks && typeof raw.pendingDeviceFallbacks === "object") {
+    Object.entries(raw.pendingDeviceFallbacks).forEach(([key, fallback]) => {
+      if (!fallback || typeof fallback !== "object") return;
+      const candidate = fallback as Partial<PendingDeviceFallback>;
+      if (
+        typeof candidate.sessionId !== "string"
+        || typeof candidate.startedAt !== "number"
+        || typeof candidate.durationSeconds !== "number"
+        || typeof candidate.targetSeconds !== "number"
+      ) return;
+      pendingDeviceFallbacks[key] = {
+        sessionId: candidate.sessionId,
+        startedAt: Math.max(0, Math.floor(candidate.startedAt)),
+        durationSeconds: Math.max(0, Math.floor(candidate.durationSeconds)),
+        targetSeconds: Math.max(1, Math.floor(candidate.targetSeconds)),
+      };
+    });
+  }
+
   return {
     version: LIFETIME_PROGRESS_VERSION,
     attemptedSessions: nonNegativeInteger(raw.attemptedSessions),
@@ -286,7 +290,71 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
       : null,
     activeDay: nonNegativeInteger(raw.activeDay),
     deviceCursors,
+    pendingDeviceFallbacks,
   };
+}
+
+function deviceKey(deviceId: string): string {
+  return encodeURIComponent(deviceId);
+}
+
+export function markPendingDeviceFallback(
+  progress: LifetimeProgress,
+  deviceId: string,
+  session: BrushSession,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  next.pendingDeviceFallbacks[deviceKey(deviceId)] = {
+    sessionId: session.id,
+    startedAt: session.startedAt,
+    durationSeconds: session.durationSeconds,
+    targetSeconds: session.targetSeconds,
+  };
+  const activeKeys = Object.keys(next.pendingDeviceFallbacks);
+  if (activeKeys.length > 32) {
+    activeKeys
+      .sort((first, second) => (
+        next.pendingDeviceFallbacks[first].startedAt - next.pendingDeviceFallbacks[second].startedAt
+      ))
+      .slice(0, activeKeys.length - 32)
+      .forEach((key) => delete next.pendingDeviceFallbacks[key]);
+  }
+  return next;
+}
+
+export function pendingDeviceFallback(
+  progress: LifetimeProgress,
+  deviceId: string,
+): PendingDeviceFallback | null {
+  return progress.pendingDeviceFallbacks[deviceKey(deviceId)] ?? null;
+}
+
+export function matchesPendingDeviceFallback(
+  progress: LifetimeProgress,
+  deviceId: string,
+  sessionId: number,
+  durationSeconds: number,
+  targetSeconds: number,
+  observedStartedAt: number,
+): PendingDeviceFallback | null {
+  const key = deviceKey(deviceId);
+  const pending = progress.pendingDeviceFallbacks[key];
+  if (!pending) return null;
+  const cursor = progress.deviceCursors[key];
+  const expectedSessionId = cursor ? (cursor.lastSessionId + 1) & 0xffff : null;
+  const sameShape = Math.abs(pending.durationSeconds - durationSeconds) <= 3
+    && Math.abs(pending.targetSeconds - targetSeconds) <= 3;
+  const closeInTime = Math.abs(pending.startedAt - observedStartedAt) <= 15 * 60 * 1000;
+  return sameShape && (expectedSessionId === sessionId || (!cursor && closeInTime)) ? pending : null;
+}
+
+export function clearPendingDeviceFallback(
+  progress: LifetimeProgress,
+  deviceId: string,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  delete next.pendingDeviceFallbacks[deviceKey(deviceId)];
+  return next;
 }
 
 export function allocateDeviceSessionIdentity(
@@ -345,7 +413,7 @@ export function computeLifetimeBrushlingStats(
     todayCompletedSessions: progress.activeDateKey === localDateKey(timestamp)
       ? decodeDay(progress.activeDay).completedSessions
       : 0,
-    streakDays: currentStreak(progress, timestamp),
+    currentStreakDays: currentStreak(progress, timestamp),
     unlockedIds: BRUSHLINGS
       .filter((brushling) => progress.completedSessions >= brushling.unlockAtCompletedSessions)
       .map((brushling) => brushling.id),
