@@ -42,6 +42,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Security audit (critical gate)
+        run: pnpm audit --prod --audit-level critical
+
       - name: Expo Doctor
         run: pnpm exec expo-doctor
 

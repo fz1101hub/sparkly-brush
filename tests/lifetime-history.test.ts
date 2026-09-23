@@ -12,6 +12,7 @@ import {
   computeLifetimeMissionCenter,
   createLifetimeProgress,
   createEmptyLifetimeProgress,
+  normalizeLifetimeProgress,
 } from "@/lib/lifetime-progress";
 import {
   parentRewardProgress,
@@ -39,6 +40,7 @@ import {
   MAX_RECENT_HISTORY,
   loadHistoryBundle,
   replaceHistoryWithLifetime,
+  saveDeviceFallbackWithLifetime,
   saveDeviceSessionWithLifetime,
   saveSessionWithLifetime,
 } from "@/lib/brush-storage";
@@ -105,6 +107,182 @@ describe("lifetime progress", () => {
     expect(duplicate.event).toBeNull();
     expect(duplicate.lifetimeProgress.completedSessions).toBe(1);
     expect(duplicate.lifetimeProgress.xp).toBe(60);
+  });
+
+  it("riconcilia il fallback live con la successiva sessione GATT senza doppio accredito", async () => {
+    const startedAt = baseTime;
+    const fallback: BrushSession = {
+      id: `ble-live:brush-a:${startedAt}`,
+      startedAt,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    };
+
+    const savedFallback = await saveDeviceFallbackWithLifetime("brush-a", fallback);
+    const reconciled = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(42),
+      startedAt,
+    );
+
+    expect(savedFallback.lifetimeProgress.completedSessions).toBe(1);
+    expect(reconciled.event).toBeNull();
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(1);
+    expect(reconciled.lifetimeProgress.xp).toBe(60);
+    expect(reconciled.recentHistory).toHaveLength(1);
+    expect(reconciled.recentHistory[0]).toMatchObject({
+      id: "ble-brush-a-0-42",
+      deviceSessionId: 42,
+    });
+    expect(reconciled.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
+  });
+
+  it("riconcilia il fallback anche se il contatore GATT salta una sessione", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime - 300_000);
+    const startedAt = baseTime;
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${startedAt}`,
+      startedAt,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+
+    const reconciled = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(42),
+      startedAt,
+    );
+
+    expect(reconciled.event).toBeNull();
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(2);
+    expect(reconciled.recentHistory).toHaveLength(2);
+    expect(reconciled.recentHistory.some((session) => session.id === "ble-brush-a-0-42")).toBe(true);
+    expect(reconciled.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
+  });
+
+  it("non fonde due spazzolate uguali separate da dieci minuti", async () => {
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+    const distinct = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(42),
+      baseTime + 10 * 60_000,
+    );
+
+    expect(distinct.lifetimeProgress.completedSessions).toBe(2);
+    expect(distinct.recentHistory).toHaveLength(2);
+  });
+
+  it("non fonde il successore atteso se arriva dieci minuti dopo", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime - 300_000);
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+    const distinct = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(41),
+      baseTime + 10 * 60_000,
+    );
+
+    expect(distinct.lifetimeProgress.completedSessions).toBe(3);
+    expect(distinct.recentHistory).toHaveLength(3);
+  });
+
+  it("non perde progressi se oltre 120 sessioni seguono un fallback", async () => {
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+    for (let index = 1; index <= 121; index += 1) {
+      await saveSessionWithLifetime({
+        ...completeSession(index),
+        startedAt: baseTime + index * 1_000,
+      });
+    }
+    const canonical = await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(42), baseTime);
+
+    expect(canonical.lifetimeProgress.completedSessions).toBe(123);
+    expect(canonical.recentHistory).toHaveLength(MAX_RECENT_HISTORY);
+  });
+
+  it("non riapplica sessioni future già presenti nello snapshot pre-fallback", async () => {
+    await saveSessionWithLifetime({ ...completeSession(99), startedAt: baseTime + 86_400_000 });
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 107,
+      targetSeconds: 120,
+      completed: false,
+      source: "device",
+    });
+    const corrected = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      { ...storedDeviceSession(42), durationSeconds: 109 },
+      baseTime,
+    );
+
+    expect(corrected.lifetimeProgress.attemptedSessions).toBe(2);
+    expect(corrected.lifetimeProgress.completedSessions).toBe(2);
+  });
+
+  it("sostituisce un fallback incompleto con i dati GATT completi", async () => {
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 107,
+      targetSeconds: 120,
+      completed: false,
+      source: "device",
+    });
+    const corrected = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      { ...storedDeviceSession(42), durationSeconds: 109 },
+      baseTime,
+    );
+
+    expect(corrected.recentHistory).toHaveLength(1);
+    expect(corrected.recentHistory[0]).toMatchObject({ durationSeconds: 109, completed: true });
+    expect(corrected.lifetimeProgress.completedSessions).toBe(1);
+    expect(corrected.lifetimeProgress.xp).toBe(60);
+  });
+
+  it("rimuove un accredito fallback quando il record GATT è incompleto", async () => {
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      durationSeconds: 109,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+    const corrected = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      { ...storedDeviceSession(42), durationSeconds: 107 },
+      baseTime,
+    );
+
+    expect(corrected.recentHistory[0]).toMatchObject({ durationSeconds: 107, completed: false });
+    expect(corrected.lifetimeProgress.completedSessions).toBe(0);
+    expect(corrected.lifetimeProgress.xp).toBe(17);
   });
 
   it("serializza salvataggi concorrenti senza perdere progressi", async () => {
@@ -184,6 +362,46 @@ describe("lifetime progress", () => {
     expect(stalePreviousEpoch.lifetimeProgress.completedSessions).toBe(2);
   });
 
+  it("ricorda l’epoch precedente anche dopo oltre 32 sessioni dal rollover", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(65_535), baseTime);
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(0), baseTime + 1_000);
+    for (let sessionId = 1; sessionId <= 31; sessionId += 1) {
+      await saveDeviceSessionWithLifetime(
+        "brush-a",
+        storedDeviceSession(sessionId),
+        baseTime + (sessionId + 1) * 1_000,
+      );
+    }
+    const stale = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(65_535),
+      baseTime + 60_000,
+    );
+
+    expect(stale.event).toBeNull();
+    expect(stale.lifetimeProgress.completedSessions).toBe(33);
+  });
+
+  it("accetta un salto alto autorevole nel nuovo epoch se non era stato osservato prima", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(65_535), baseTime);
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(0), baseTime + 1_000);
+    for (let sessionId = 1; sessionId <= 31; sessionId += 1) {
+      await saveDeviceSessionWithLifetime(
+        "brush-a",
+        storedDeviceSession(sessionId),
+        baseTime + (sessionId + 1) * 1_000,
+      );
+    }
+    const jumped = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(65_000),
+      baseTime + 60_000,
+    );
+
+    expect(jumped.event).not.toBeNull();
+    expect(jumped.lifetimeProgress.completedSessions).toBe(34);
+  });
+
   it("resta di dimensione costante anche dopo centomila sessioni", () => {
     let progress = createEmptyLifetimeProgress();
     for (let index = 0; index < 100_000; index += 1) {
@@ -205,6 +423,47 @@ describe("lifetime progress", () => {
       progress = allocateDeviceSessionIdentity(progress, `brush-${index}`, 1).progress;
     }
     expect(Object.keys(progress.deviceCursors)).toHaveLength(32);
+  });
+
+  it("limita a 32 anche cursori e fallback importati da payload sovradimensionati", () => {
+    const raw = createEmptyLifetimeProgress();
+    raw.deviceCursors = Object.fromEntries(Array.from({ length: 100 }, (_, index) => [
+      `device-${index}`,
+      {
+        lastSessionId: index,
+        epoch: 0,
+        previousEpochRecentSessionIds: [],
+        recentIdentities: [`0:${index}`],
+        updatedAt: 1,
+      },
+    ]));
+    raw.pendingDeviceFallbacks = Object.fromEntries(Array.from({ length: 100 }, (_, index) => [
+      `device-${index}`,
+      {
+        sessionId: `fallback-${index}`,
+        startedAt: 1,
+        durationSeconds: 120,
+        targetSeconds: 120,
+        expectedSessionId: index,
+        hasInterveningProgress: false,
+        progressBeforeSession: null,
+      },
+    ]));
+
+    const normalized = normalizeLifetimeProgress(raw);
+    const reversed = normalizeLifetimeProgress({
+      ...raw,
+      deviceCursors: Object.fromEntries(Object.entries(raw.deviceCursors).reverse()),
+      pendingDeviceFallbacks: Object.fromEntries(Object.entries(raw.pendingDeviceFallbacks).reverse()),
+    });
+    expect(Object.keys(normalized?.deviceCursors ?? {})).toHaveLength(32);
+    expect(Object.keys(normalized?.pendingDeviceFallbacks ?? {})).toHaveLength(32);
+    expect(Object.keys(reversed?.deviceCursors ?? {}).sort()).toEqual(
+      Object.keys(normalized?.deviceCursors ?? {}).sort(),
+    );
+    expect(Object.keys(reversed?.pendingDeviceFallbacks ?? {}).sort()).toEqual(
+      Object.keys(normalized?.pendingDeviceFallbacks ?? {}).sort(),
+    );
   });
 
   it("mantiene identiche le formule di gioco rispetto allo storico completo", () => {

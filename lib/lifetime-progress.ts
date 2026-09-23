@@ -29,6 +29,7 @@ export const LIFETIME_PROGRESS_VERSION = 1;
 export type DeviceSessionCursor = {
   lastSessionId: number;
   epoch: number;
+  previousEpochRecentSessionIds: number[];
   recentIdentities: string[];
   updatedAt: number;
 };
@@ -38,7 +39,15 @@ export type PendingDeviceFallback = {
   startedAt: number;
   durationSeconds: number;
   targetSeconds: number;
+  expectedSessionId: number | null;
+  hasInterveningProgress: boolean;
+  progressBeforeSession: LifetimeAccountingSnapshot | null;
 };
+
+export type LifetimeAccountingSnapshot = Omit<
+  LifetimeProgress,
+  "deviceCursors" | "pendingDeviceFallbacks"
+>;
 
 export type LifetimeProgress = {
   version: typeof LIFETIME_PROGRESS_VERSION;
@@ -158,11 +167,29 @@ function cloneProgress(progress: LifetimeProgress): LifetimeProgress {
   };
 }
 
+function accountingSnapshot(progress: LifetimeProgress): LifetimeAccountingSnapshot {
+  const { deviceCursors: _deviceCursors, pendingDeviceFallbacks: _fallbacks, ...snapshot } = progress;
+  return { ...snapshot, itemCounts: { ...snapshot.itemCounts } };
+}
+
+function normalizeAccountingSnapshot(value: unknown): LifetimeAccountingSnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  const normalized = normalizeLifetimeProgress({
+    ...(value as object),
+    deviceCursors: {},
+    pendingDeviceFallbacks: {},
+  });
+  return normalized ? accountingSnapshot(normalized) : null;
+}
+
 export function applySessionToLifetime(
   progress: LifetimeProgress,
   session: BrushSession,
 ): LifetimeProgress {
   const next = cloneProgress(progress);
+  Object.values(next.pendingDeviceFallbacks).forEach((fallback) => {
+    fallback.hasInterveningProgress = true;
+  });
   next.attemptedSessions += 1;
   next.totalBrushingSeconds += Math.max(0, session.durationSeconds);
   next.xp += session.completed
@@ -213,7 +240,7 @@ export function applySessionToLifetime(
 
 export function createLifetimeProgress(history: BrushSession[]): LifetimeProgress {
   return [...history]
-    .sort((a, b) => a.startedAt - b.startedAt)
+    .sort((a, b) => a.startedAt - b.startedAt || a.id.localeCompare(b.id))
     .reduce(applySessionToLifetime, createEmptyLifetimeProgress());
 }
 
@@ -236,26 +263,41 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
   const deviceCursors: Record<string, DeviceSessionCursor> = {};
   if (raw.deviceCursors && typeof raw.deviceCursors === "object") {
     Object.entries(raw.deviceCursors).forEach(([key, cursor]) => {
+      if (key.length > 256) return;
       if (!cursor || typeof cursor !== "object") return;
       const candidate = cursor as Partial<DeviceSessionCursor>;
       deviceCursors[key] = {
         lastSessionId: Math.min(65_535, nonNegativeInteger(candidate.lastSessionId)),
         epoch: nonNegativeInteger(candidate.epoch),
+        previousEpochRecentSessionIds: Array.isArray(candidate.previousEpochRecentSessionIds)
+          ? candidate.previousEpochRecentSessionIds
+            .map((sessionId) => Math.min(65_535, nonNegativeInteger(sessionId)))
+            .slice(-32)
+          : [],
         recentIdentities: Array.isArray(candidate.recentIdentities)
           ? candidate.recentIdentities.filter((value): value is string => typeof value === "string").slice(-32)
           : [],
         updatedAt: nonNegativeInteger(candidate.updatedAt),
       };
     });
+    Object.keys(deviceCursors)
+      .sort((first, second) => (
+        deviceCursors[second].updatedAt - deviceCursors[first].updatedAt
+        || first.localeCompare(second)
+      ))
+      .slice(32)
+      .forEach((key) => delete deviceCursors[key]);
   }
 
   const pendingDeviceFallbacks: Record<string, PendingDeviceFallback> = {};
   if (raw.pendingDeviceFallbacks && typeof raw.pendingDeviceFallbacks === "object") {
     Object.entries(raw.pendingDeviceFallbacks).forEach(([key, fallback]) => {
+      if (key.length > 256) return;
       if (!fallback || typeof fallback !== "object") return;
       const candidate = fallback as Partial<PendingDeviceFallback>;
       if (
         typeof candidate.sessionId !== "string"
+        || candidate.sessionId.length > 512
         || typeof candidate.startedAt !== "number"
         || typeof candidate.durationSeconds !== "number"
         || typeof candidate.targetSeconds !== "number"
@@ -265,8 +307,21 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
         startedAt: Math.max(0, Math.floor(candidate.startedAt)),
         durationSeconds: Math.max(0, Math.floor(candidate.durationSeconds)),
         targetSeconds: Math.max(1, Math.floor(candidate.targetSeconds)),
+        expectedSessionId: typeof candidate.expectedSessionId === "number"
+          ? Math.min(65_535, nonNegativeInteger(candidate.expectedSessionId))
+          : null,
+        hasInterveningProgress: candidate.hasInterveningProgress === true
+          || nonNegativeInteger((candidate as { attemptedSessionsAfterFallback?: unknown }).attemptedSessionsAfterFallback) > 0,
+        progressBeforeSession: normalizeAccountingSnapshot(candidate.progressBeforeSession),
       };
     });
+    Object.keys(pendingDeviceFallbacks)
+      .sort((first, second) => (
+        pendingDeviceFallbacks[second].startedAt - pendingDeviceFallbacks[first].startedAt
+        || first.localeCompare(second)
+      ))
+      .slice(32)
+      .forEach((key) => delete pendingDeviceFallbacks[key]);
   }
 
   return {
@@ -302,13 +357,18 @@ export function markPendingDeviceFallback(
   progress: LifetimeProgress,
   deviceId: string,
   session: BrushSession,
+  progressBeforeSession: LifetimeProgress = progress,
 ): LifetimeProgress {
   const next = cloneProgress(progress);
+  const cursor = next.deviceCursors[deviceKey(deviceId)];
   next.pendingDeviceFallbacks[deviceKey(deviceId)] = {
     sessionId: session.id,
     startedAt: session.startedAt,
     durationSeconds: session.durationSeconds,
     targetSeconds: session.targetSeconds,
+    expectedSessionId: cursor ? (cursor.lastSessionId + 1) & 0xffff : null,
+    hasInterveningProgress: false,
+    progressBeforeSession: accountingSnapshot(progressBeforeSession),
   };
   const activeKeys = Object.keys(next.pendingDeviceFallbacks);
   if (activeKeys.length > 32) {
@@ -340,12 +400,14 @@ export function matchesPendingDeviceFallback(
   const key = deviceKey(deviceId);
   const pending = progress.pendingDeviceFallbacks[key];
   if (!pending) return null;
-  const cursor = progress.deviceCursors[key];
-  const expectedSessionId = cursor ? (cursor.lastSessionId + 1) & 0xffff : null;
   const sameShape = Math.abs(pending.durationSeconds - durationSeconds) <= 3
     && Math.abs(pending.targetSeconds - targetSeconds) <= 3;
-  const closeInTime = Math.abs(pending.startedAt - observedStartedAt) <= 15 * 60 * 1000;
-  return sameShape && (expectedSessionId === sessionId || (!cursor && closeInTime)) ? pending : null;
+  const expectedSuccessor = pending.expectedSessionId !== null
+    && pending.expectedSessionId === sessionId;
+  const maximumDrift = expectedSuccessor ? 30_000 : 5_000;
+  const tightlyCorrelatedInTime = Math.abs(pending.startedAt - observedStartedAt) <= maximumDrift;
+  const noInterveningProgress = !pending.hasInterveningProgress;
+  return sameShape && tightlyCorrelatedInTime && noInterveningProgress ? pending : null;
 }
 
 export function clearPendingDeviceFallback(
@@ -355,6 +417,29 @@ export function clearPendingDeviceFallback(
   const next = cloneProgress(progress);
   delete next.pendingDeviceFallbacks[deviceKey(deviceId)];
   return next;
+}
+
+export function reconcilePendingDeviceFallbackProgress(
+  progress: LifetimeProgress,
+  deviceId: string,
+  authoritativeSession: BrushSession,
+): LifetimeProgress | null {
+  const key = deviceKey(deviceId);
+  const pending = progress.pendingDeviceFallbacks[key];
+  if (!pending?.progressBeforeSession) return null;
+
+  let rebuilt: LifetimeProgress = {
+    ...pending.progressBeforeSession,
+    itemCounts: { ...pending.progressBeforeSession.itemCounts },
+    deviceCursors: Object.fromEntries(
+      Object.entries(progress.deviceCursors).map(([cursorKey, cursor]) => [cursorKey, { ...cursor }]),
+    ),
+    pendingDeviceFallbacks: Object.fromEntries(
+      Object.entries(progress.pendingDeviceFallbacks).filter(([fallbackKey]) => fallbackKey !== key),
+    ),
+  };
+  rebuilt = applySessionToLifetime(rebuilt, authoritativeSession);
+  return rebuilt;
 }
 
 export function allocateDeviceSessionIdentity(
@@ -369,12 +454,17 @@ export function allocateDeviceSessionIdentity(
   const staleRegression = Boolean(previous && sessionId < previous.lastSessionId && !rollover);
   const epoch = rollover ? (previous?.epoch ?? 0) + 1 : previous?.epoch ?? 0;
   const identity = `${epoch}:${sessionId}`;
+  const previousEpochRecentSessionIds = rollover
+    ? (previous?.recentIdentities ?? [])
+      .map((recentIdentity) => Number(recentIdentity.split(":").at(-1)))
+      .filter((recentSessionId) => Number.isInteger(recentSessionId))
+      .slice(-32)
+    : previous?.previousEpochRecentSessionIds ?? [];
   const stalePreviousEpoch = Boolean(
     previous
       && previous.epoch > 0
-      && previous.lastSessionId <= 1_024
-      && sessionId >= 65_000
-      && previous.recentIdentities.includes(`${previous.epoch - 1}:${sessionId}`),
+      && previousEpochRecentSessionIds.includes(sessionId)
+      && sessionId > previous.lastSessionId + 1,
   );
   const duplicate = previous?.lastSessionId === sessionId
     || staleRegression
@@ -385,6 +475,9 @@ export function allocateDeviceSessionIdentity(
     next.deviceCursors[key] = {
       lastSessionId: sessionId,
       epoch,
+      previousEpochRecentSessionIds: previousEpochRecentSessionIds
+        .filter((previousSessionId) => previousSessionId !== sessionId)
+        .slice(-32),
       recentIdentities: [...(previous?.recentIdentities ?? []), identity].slice(-32),
       updatedAt: Date.now(),
     };

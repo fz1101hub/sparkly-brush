@@ -239,22 +239,25 @@ describe("BrushProvider BLE integration", () => {
     });
     const client = holder.client!;
     client.syncLatestSession.mockImplementation(() => new Promise(() => undefined));
-    client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
-    client.events.onLiveData({
-      handleState: 2,
-      isBrushing: true,
-      elapsedSeconds: 45,
-      routineSeconds: 120,
-      mode: "clean",
-      intensity: "media",
-    });
-    client.events.onLiveData({
-      handleState: 1,
-      isBrushing: false,
-      elapsedSeconds: 45,
-      routineSeconds: 120,
-      mode: "clean",
-      intensity: "media",
+    await act(async () => {
+      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 45,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 45,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      await vi.runAllTimersAsync();
     });
 
     let disconnectPromise!: Promise<void>;
@@ -263,11 +266,197 @@ describe("BrushProvider BLE integration", () => {
       await Promise.resolve();
     });
     expect(client.disconnect).toHaveBeenCalledTimes(1);
-    expect(client.syncLatestSession).not.toHaveBeenCalled();
+    expect(client.syncLatestSession).toHaveBeenCalledTimes(1);
 
     releaseFallback();
     await act(async () => disconnectPromise);
     await act(async () => renderer.unmount());
     vi.useRealTimers();
+  });
+
+  it("salva un solo fallback quando disconnect emette stop live e device null", async () => {
+    vi.useFakeTimers();
+    const endedAt = new Date(2026, 8, 23, 9, 45).getTime();
+    vi.setSystemTime(endedAt);
+    const holder: { client?: FakeClient } = {};
+    const factory = (events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    };
+    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => ({
+      recentHistory: [session],
+      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
+      event: null,
+    }));
+
+    let disconnect: () => Promise<void> = async () => undefined;
+    function Probe() {
+      disconnect = useBrush().disconnect;
+      return null;
+    }
+
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = holder.client!;
+    client.disconnect.mockImplementation(async () => {
+      await Promise.resolve();
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 0,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onDevice(null);
+    });
+
+    await act(async () => {
+      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 30,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      await disconnect();
+    });
+
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("serializza due stop ravvicinati senza sovrascrivere la prima sessione pendente", async () => {
+    vi.useFakeTimers();
+    const firstEndedAt = new Date(2026, 8, 23, 10).getTime();
+    vi.setSystemTime(firstEndedAt);
+    const holder: { client?: FakeClient } = {};
+    const factory = (events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    };
+    let releaseFirstSync!: (value: StoredDeviceSession | null) => void;
+    const secondStored: StoredDeviceSession = {
+      sessionId: 102,
+      durationSeconds: 40,
+      targetSeconds: 120,
+      mode: "clean",
+      intensity: "media",
+    };
+    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => ({
+      recentHistory: [session],
+      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
+      event: null,
+    }));
+    mocks.saveDevice.mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: createEmptyLifetimeProgress(),
+      event: null,
+    });
+
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>{null}</BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = holder.client!;
+    client.syncLatestSession
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        releaseFirstSync = resolve;
+      }))
+      .mockResolvedValueOnce(secondStored);
+
+    await act(async () => {
+      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 30,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 30,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      await vi.advanceTimersByTimeAsync(450);
+    });
+    expect(client.syncLatestSession).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(firstEndedAt + 60_000);
+    await act(async () => {
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 40,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 40,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      await vi.advanceTimersByTimeAsync(450);
+      releaseFirstSync(null);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    expect(client.syncLatestSession).toHaveBeenCalledTimes(2);
+    expect(mocks.saveDevice).toHaveBeenCalledWith("kids-brush", secondStored);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("annulla anche una scansione in corso prima di attivare la demo", async () => {
+    const holder: { client?: FakeClient } = {};
+    const factory = (events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    };
+    let enableDemo: () => Promise<void> = async () => undefined;
+    function Probe() {
+      const value = useBrush();
+      enableDemo = () => value.setDemoMode(true);
+      return null;
+    }
+
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = holder.client!;
+    await act(async () => {
+      client.events.onStatus("scanning", "Ricerca in corso");
+      await enableDemo();
+    });
+
+    expect(client.disconnect).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
   });
 });

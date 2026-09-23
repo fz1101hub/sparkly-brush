@@ -11,6 +11,7 @@ import {
   markPendingDeviceFallback,
   matchesPendingDeviceFallback,
   normalizeLifetimeProgress,
+  reconcilePendingDeviceFallbackProgress,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -194,7 +195,7 @@ export async function saveDeviceFallbackWithLifetime(
       bundle,
       session,
       bundle.lifetimeProgress,
-      (progress) => markPendingDeviceFallback(progress, deviceId, session),
+      (progress) => markPendingDeviceFallback(progress, deviceId, session, bundle.lifetimeProgress),
     );
   }));
 }
@@ -233,17 +234,18 @@ export async function saveDeviceSessionWithLifetime(
     };
     const progressWithCursor = clearPendingDeviceFallback(allocation.progress, deviceId);
     if (pending) {
-      const fallback = bundle.recentHistory.find((item) => item.id === pending.sessionId);
-      const reconciled: BrushSession = fallback
-        ? { ...fallback, id: session.id, deviceSessionId: stored.sessionId }
-        : session;
+      const reconciledProgress = reconcilePendingDeviceFallbackProgress(
+        allocation.progress,
+        deviceId,
+        session,
+      ) ?? progressWithCursor;
       const recentHistory = normalizeHistory([
-        reconciled,
+        session,
         ...bundle.recentHistory.filter((item) => item.id !== pending.sessionId && item.id !== session.id),
       ]);
       const persisted = await persistProgressState({
         recentHistory,
-        lifetimeProgress: progressWithCursor,
+        lifetimeProgress: reconciledProgress,
       });
       return { ...persisted, event: null };
     }

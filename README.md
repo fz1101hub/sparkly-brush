@@ -16,17 +16,17 @@ La progressione reale usa un unico database **SQLite** locale. Ogni sessione res
 
 Ogni accredito produce inoltre righe idempotenti nel **reward ledger** SQLite: premio base della sessione, bonus missioni giornaliere e bonus achievement sono separati, auditabili e protetti da chiavi stabili contro doppi accrediti. Le installazioni esistenti ricevono automaticamente un backfill del ledger dalle sessioni disponibili.
 
-SQLite usa WAL e `synchronous=FULL`. Le sessioni duplicate o i pacchetti BLE obsoleti non vengono riaccreditati; i cursori sono separati per dispositivo. Lo storico legacy viene migrato automaticamente. I dati demo restano isolati dalla progressione reale.
+SQLite usa WAL e `synchronous=FULL`. Le sessioni duplicate o i pacchetti BLE obsoleti non vengono riaccreditati; i cursori sono separati per dispositivo. Se la connessione cade prima della lettura del record GATT, l’app salva un fallback live device-scoped e lo riconcilia atomicamente con il record autorevole alla sincronizzazione successiva, senza duplicare progressi o reward. Lo storico legacy viene migrato automaticamente. I dati demo restano isolati dalla progressione reale.
 
 ## Backup e trasferimento
 
-Il backup v3 è una copia completa e verificabile del database SQLite con profilo Brushling, personalizzazioni, preferenze e premi familiari. Viene condiviso come file `.brushlings`, non tronca la cronologia e include il reward ledger. Il restore usa snapshot di rollback, journal persistente e un token di commit coordinato; le sessioni che arrivano durante il ripristino vengono accodate. I vecchi codici v1/v2 restano importabili, con indicazione esplicita quando il vecchio formato non contiene tutte le righe storiche.
+Il backup v3 è una copia completa e verificabile del database SQLite con profilo Brushling, personalizzazioni, preferenze e premi familiari. Viene condiviso come file `.brushlings`, non tronca la cronologia e include il reward ledger. Per gli archivi completi, la verifica ricalcola dalle sessioni gli aggregati e i reward indipendenti dal fuso orario; bonus giornalieri, serie e achievement di calendario vengono verificati rispetto allo stato esportato, così un backup genuino resta importabile anche dopo un trasferimento in un altro fuso. Il restore usa snapshot di rollback, journal persistente e un token di commit coordinato; le sessioni che arrivano durante il ripristino vengono accodate. I vecchi codici v1/v2 restano importabili, con indicazione esplicita quando il vecchio formato non contiene tutte le righe storiche.
 
 ## Compatibilità BLE
 
 Il profilo implementato è quello Sonicare Classic/open GATT della famiglia HX63xx. UUID e record sono stati confrontati con una cattura pubblica di un HX6340 nel progetto comunitario `mtheli/philips_sonicare_ble`; il codec include un test su un record Kids reale. Revisioni firmware differenti possono omettere caratteristiche opzionali, quindi la convalida definitiva richiede il manico HX6322/04 reale.
 
-Il client mantiene separati listener adapter e subscription di connessione. Disconnect, reconnect e destroy rimuovono monitor e callback; una generazione monotona scarta eventi tardivi della connessione precedente. Gli aggiornamenti batteria conservano modello e firmware già letti.
+Il client mantiene separati listener adapter e subscription di connessione. Disconnect, reconnect e destroy annullano scan/connect/discovery e le transazioni di sync, rimuovono monitor e callback e chiudono la GATT candidata; una generazione monotona scarta eventi tardivi della connessione precedente. Le sync sono FIFO e vincolate al device/generazione catturati. Una caduta durante lo spazzolamento emette uno stop coerente prima di perdere l’identità del manico; due stop ravvicinati non si sovrascrivono. Gli aggiornamenti batteria conservano modello e firmware già letti.
 
 ## Avvio
 
@@ -62,7 +62,9 @@ pnpm exec expo export --platform ios --output-dir /tmp/sparkly-ios
 pnpm exec expo export --platform android --output-dir /tmp/sparkly-android
 ```
 
-La suite copre codec BLE, lifecycle del client con periferica finta, integrazione provider→BLE→storage, race di idratazione del profilo, progressione oltre 120 sessioni, ledger, migrazioni, backup/restore, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. GitHub Actions usa il lockfile frozen ed esegue gli stessi controlli essenziali e i tre bundle.
+La suite copre codec BLE, cancellazione e lifecycle del client con periferica finta, integrazione provider→BLE→storage, sync stale tra due manici, disconnessioni durante il brushing, due stop ravvicinati, riconciliazione fallback→GATT anche con salto del contatore, race di idratazione del profilo, progressione oltre 120 sessioni, ledger, migrazioni, backup manipolati e cross-timezone, backup/restore, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. GitHub Actions usa il lockfile frozen ed esegue gli stessi controlli, un audit che blocca vulnerabilità critiche e i tre bundle.
+
+Gli override transitive fissano tutte le vulnerabilità con una release corretta disponibile. L’audit produttivo residuo riguarda esclusivamente `image-size`, dipendenza di Metro usata in fase di build, per due advisory DoS su file ICNS/JXL/HEIF appositamente malevoli; upstream non pubblica ancora una versione corretta. L’app non espone questa libreria né accetta tali formati a runtime.
 
 ## Privacy, licenza e pubblicazione
 

@@ -64,8 +64,12 @@ class FakeDevice {
 class FakeManager {
   devices: FakeDevice[] = [];
   failServicesCount = 0;
+  autoScanResult = true;
+  deferConnect = false;
+  releaseConnect: (() => void) | null = null;
   adapterSubscription = new FakeSubscription();
   stopDeviceScan = vi.fn();
+  cancelTransaction = vi.fn(async () => undefined);
   destroy = vi.fn();
   onStateChange = vi.fn((callback: (state: string) => void) => {
     callback("PoweredOn");
@@ -77,8 +81,13 @@ class FakeManager {
       this.failServicesCount -= 1;
       device.services.mockRejectedValueOnce(new Error("GATT services failed"));
     }
+    if (this.deferConnect) {
+      device.connect.mockImplementation(() => new Promise((resolve) => {
+        this.releaseConnect = () => resolve(device);
+      }));
+    }
     this.devices.push(device);
-    callback(null, device);
+    if (this.autoScanResult) callback(null, device);
   });
 }
 
@@ -126,8 +135,11 @@ describe("NativeSonicareClient", () => {
 
     await client.scanAndConnect();
     const updatesBeforeStale = deviceUpdates.length;
+    const logsBeforeStale = vi.mocked(events.onLog).mock.calls.length;
     staleBatteryCallback(null, { value: b64([3]) });
+    staleBatteryCallback(new Error("subscription removed"), null);
     expect(deviceUpdates).toHaveLength(updatesBeforeStale);
+    expect(events.onLog).toHaveBeenCalledTimes(logsBeforeStale);
 
     client.destroy();
     expect(manager.devices[1].monitorSubscriptions.every((item) => item.remove.mock.calls.length === 1)).toBe(true);
@@ -170,6 +182,75 @@ describe("NativeSonicareClient", () => {
     const updatesAfterDisconnect = deviceUpdates.length;
     staleBatteryCallback(null, { value: b64([2]) });
     expect(deviceUpdates).toHaveLength(updatesAfterDisconnect);
+    client.destroy();
+  });
+
+  it("annulla una scansione pendente senza attendere il timeout", async () => {
+    const manager = new FakeManager();
+    manager.autoScanResult = false;
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const connecting = client.scanAndConnect();
+    await Promise.resolve();
+    await client.disconnect();
+    await expect(connecting).resolves.toBeUndefined();
+    expect(manager.stopDeviceScan).toHaveBeenCalled();
+    expect(events.onStatus).not.toHaveBeenCalledWith("error", expect.any(String));
+  });
+
+  it("ignora un connect tardivo dopo destroy e chiude il candidato", async () => {
+    const manager = new FakeManager();
+    manager.deferConnect = true;
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const connecting = client.scanAndConnect();
+    for (let attempt = 0; attempt < 12 && !manager.devices[0]?.connect.mock.calls.length; attempt += 1) {
+      await Promise.resolve();
+    }
+    const candidate = manager.devices[0];
+    expect(candidate).toBeDefined();
+    expect(candidate.connect).toHaveBeenCalledTimes(1);
+    client.destroy();
+    await expect(connecting).resolves.toBeUndefined();
+
+    expect(candidate.cancelConnection).toHaveBeenCalled();
+    expect(deviceUpdates.filter(Boolean)).toHaveLength(0);
+    expect(events.onStatus).not.toHaveBeenCalledWith("connected", expect.any(String));
+    manager.releaseConnect?.();
+  });
+
+  it("scarta una sync del vecchio manico dopo disconnect e reconnect", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+
+    const first = manager.devices[0];
+    let releaseLatest!: () => void;
+    first.readCharacteristicForService.mockImplementation(
+      (_service: string, characteristic: string) => {
+        if (characteristic === SONICARE.characteristics.latestSessionId) {
+          return new Promise((resolve) => {
+            releaseLatest = () => resolve({ value: b64([42, 0]) });
+          });
+        }
+        return Promise.resolve({ value: b64([1]) });
+      },
+    );
+    const staleSync = client.syncLatestSession();
+    await Promise.resolve();
+
+    await client.disconnect();
+    await client.scanAndConnect();
+    const second = manager.devices[1];
+    releaseLatest();
+
+    await expect(staleSync).rejects.toThrow("Sincronizzazione Bluetooth annullata");
+    expect(manager.cancelTransaction).toHaveBeenCalled();
+    expect(first.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    expect(second.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
   });
 });

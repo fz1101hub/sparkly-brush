@@ -94,6 +94,8 @@ type PendingBleSync = {
   startedAt: number;
   timer: ReturnType<typeof setTimeout> | null;
   running: Promise<void> | null;
+  forceFallback: boolean;
+  cancelSync: (() => void) | null;
 };
 
 const nowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -140,7 +142,7 @@ export function BrushProvider({
   const manualStartRef = useRef<number>(Date.now());
   const manualDemoModeRef = useRef(false);
   const manualSavedRef = useRef(false);
-  const pendingBleSyncRef = useRef<PendingBleSync | null>(null);
+  const pendingBleSyncQueueRef = useRef<PendingBleSync[]>([]);
   const flushPendingBleSyncRef = useRef<(() => Promise<void>) | null>(null);
 
   const history = demoMode ? demoHistory : realHistory;
@@ -206,22 +208,54 @@ export function BrushProvider({
         startedAt: Date.now() - snapshot.elapsedSeconds * 1000,
         timer: null,
         running: null,
+        forceFallback: false,
+        cancelSync: null,
       };
     };
 
+    const enqueuePendingBleSync = (candidate: PendingBleSync): PendingBleSync => {
+      const existing = pendingBleSyncQueueRef.current.find((pending) => (
+        pending.deviceId === candidate.deviceId
+        && Math.abs(pending.startedAt - candidate.startedAt) <= 2_000
+        && Math.abs(pending.previous.elapsedSeconds - candidate.previous.elapsedSeconds) <= 1
+        && pending.previous.routineSeconds === candidate.previous.routineSeconds
+      ));
+      if (existing) return existing;
+      pendingBleSyncQueueRef.current.push(candidate);
+      return candidate;
+    };
+
     const runPendingBleSync = (pending: PendingBleSync, fallbackOnly = false): Promise<void> => {
+      if (fallbackOnly) {
+        pending.forceFallback = true;
+        pending.cancelSync?.();
+      }
       if (pending.running) return pending.running;
       if (pending.timer) {
         clearTimeout(pending.timer);
         pending.timer = null;
       }
       pending.running = (async () => {
+        const position = pendingBleSyncQueueRef.current.indexOf(pending);
+        const predecessors = position > 0
+          ? pendingBleSyncQueueRef.current.slice(0, position)
+          : [];
+        for (const predecessor of predecessors) {
+          await runPendingBleSync(predecessor, fallbackOnly);
+        }
         let stored: StoredDeviceSession | null = null;
-        if (!fallbackOnly) {
+        if (!pending.forceFallback) {
           try {
-            stored = await pending.client.syncLatestSession();
+            stored = await Promise.race([
+              pending.client.syncLatestSession(),
+              new Promise<null>((resolve) => {
+                pending.cancelSync = () => resolve(null);
+              }),
+            ]);
           } catch (error) {
             appendLog("warning", error instanceof Error ? error.message : "Record BLE non disponibile");
+          } finally {
+            pending.cancelSync = null;
           }
         }
         if (stored) await persistDeviceSession(stored, pending.deviceId);
@@ -231,7 +265,9 @@ export function BrushProvider({
           appendLog("error", error instanceof Error ? error.message : "Sessione BLE non salvata");
         })
         .finally(() => {
-          if (pendingBleSyncRef.current === pending) pendingBleSyncRef.current = null;
+          pendingBleSyncQueueRef.current = pendingBleSyncQueueRef.current.filter(
+            (queued) => queued !== pending,
+          );
         });
       return pending.running;
     };
@@ -245,9 +281,11 @@ export function BrushProvider({
       onDevice: (next) => {
         if (!next) {
           const deviceId = deviceRef.current?.id;
-          const pending = pendingBleSyncRef.current ?? pendingFromLiveData(client, deviceId);
-          if (pending && !pendingBleSyncRef.current) pendingBleSyncRef.current = pending;
-          if (pending && !pending.running) void runPendingBleSync(pending, true);
+          const livePending = pendingFromLiveData(client, deviceId);
+          if (livePending) enqueuePendingBleSync(livePending);
+          for (const pending of [...pendingBleSyncQueueRef.current]) {
+            if (!pending.running) void runPendingBleSync(pending, true);
+          }
           deviceRef.current = null;
           setDevice(null);
           liveRef.current = { ...DEFAULT_LIVE_DATA };
@@ -272,8 +310,6 @@ export function BrushProvider({
             appendLog("error", "Sessione BLE senza identità del dispositivo");
             return;
           }
-          const existing = pendingBleSyncRef.current;
-          if (existing) void runPendingBleSync(existing);
           const pending: PendingBleSync = {
             client,
             deviceId,
@@ -281,20 +317,26 @@ export function BrushProvider({
             startedAt: Date.now() - previous.elapsedSeconds * 1000,
             timer: null,
             running: null,
+            forceFallback: false,
+            cancelSync: null,
           };
-          pending.timer = setTimeout(() => void runPendingBleSync(pending), syncDelayMs);
-          pendingBleSyncRef.current = pending;
+          const queued = enqueuePendingBleSync(pending);
+          if (queued === pending) {
+            pending.timer = setTimeout(() => void runPendingBleSync(pending), syncDelayMs);
+          }
+          const firstPending = pendingBleSyncQueueRef.current[0];
+          if (firstPending !== queued && !firstPending.running) void runPendingBleSync(firstPending);
         }
       },
       onLog: appendLog,
     });
 
     flushPendingBleSyncRef.current = async () => {
-      const pending = pendingBleSyncRef.current
-        ?? pendingFromLiveData(client, deviceRef.current?.id);
-      if (!pending) return;
-      if (!pendingBleSyncRef.current) pendingBleSyncRef.current = pending;
-      await runPendingBleSync(pending, true);
+      const livePending = pendingFromLiveData(client, deviceRef.current?.id);
+      if (livePending) enqueuePendingBleSync(livePending);
+      for (const pending of [...pendingBleSyncQueueRef.current]) {
+        await runPendingBleSync(pending, true);
+      }
     };
 
     clientRef.current = client;
@@ -423,7 +465,7 @@ export function BrushProvider({
   }, [appendLog, manualElapsed]);
 
   const setDemoMode = useCallback(async (enabled: boolean) => {
-    if (enabled && status === "connected") {
+    if (enabled) {
       const closeConnection = clientRef.current?.disconnect() ?? Promise.resolve();
       const savePending = flushPendingBleSyncRef.current?.() ?? Promise.resolve();
       await Promise.all([closeConnection, savePending]);
@@ -431,7 +473,7 @@ export function BrushProvider({
     setDemoModeState(enabled);
     await saveDemoMode(enabled);
     appendLog("info", enabled ? "Modalità demo attivata" : "Modalità demo disattivata");
-  }, [appendLog, status]);
+  }, [appendLog]);
 
   const addDemoSession = useCallback(async (period: DemoSessionPeriod) => {
     const startedAt = demoTimestamp(period);
