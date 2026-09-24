@@ -13,17 +13,23 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   ADVENTURE_ZONES,
   getCurrentAdventureZone,
   getNextAdventureZone,
   isAdventureZoneUnlocked,
+  localizeAdventureZone,
   sessionsUntilZone,
   type AdventureZoneId,
 } from "@/lib/adventure";
-import { EGG_DEFINITIONS } from "@/lib/game-inventory";
-import { getBrushling, getEvolution } from "@/lib/brushlings";
+import {
+  getBrushling,
+  getEvolution,
+  localizeBrushling,
+} from "@/lib/brushlings";
+import { EGG_DEFINITIONS, localizeEggDefinition } from "@/lib/game-inventory";
 
 const ZONE_ICONS: Record<
   AdventureZoneId,
@@ -39,10 +45,21 @@ const ZONE_ICONS: Record<
 export default function ExploreScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatNumber } = useI18n();
   const { selected, stats, inventory, hasChosenStarter } = useBrushling();
-  const currentZone = getCurrentAdventureZone(stats.completedSessions);
+  const selectedCreature = localizeBrushling(selected, t);
+  const currentZone = localizeAdventureZone(
+    getCurrentAdventureZone(stats.completedSessions),
+    t,
+  );
   const nextZone = getNextAdventureZone(stats.completedSessions);
-  const evolution = getEvolution(selected, stats.level);
+  const evolution = getEvolution(selectedCreature, stats.level);
+  const sessionWord = (count: number) =>
+    t(
+      count === 1
+        ? "game.explore.sessionSingular"
+        : "game.explore.sessionPlural",
+    );
 
   return (
     <ScreenContainer>
@@ -51,11 +68,10 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AppHeader
-          eyebrow="Avventura"
-          title="Isola Sorridente"
+          eyebrow={t("game.explore.eyebrow")}
+          title={t("game.explore.title")}
           connected={false}
         />
-
         <View
           style={[
             styles.hero,
@@ -64,22 +80,30 @@ export default function ExploreScreen() {
         >
           <View style={styles.heroCopy}>
             <Text style={[styles.heroEyebrow, { color: "#0B67B2" }]}>
-              OGNI SPAZZOLATA TI PORTA PIÙ LONTANO
+              {t("game.explore.heroEyebrow")}
             </Text>
             <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
               {hasChosenStarter
-                ? `${evolution.name} esplora con te`
-                : "Scegli prima il tuo compagno"}
+                ? t("game.explore.exploresWithYou", { name: evolution.name })
+                : t("game.explore.chooseCompanionFirst")}
             </Text>
             <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
               {nextZone
-                ? `Mancano ${sessionsUntilZone(nextZone, stats.completedSessions)} sessioni complete per raggiungere ${nextZone.name}.`
-                : "Hai aperto tutte le zone disponibili in questa prima versione dell’isola!"}
+                ? t("game.explore.sessionsUntilZone", {
+                    sessions: formatNumber(
+                      sessionsUntilZone(nextZone, stats.completedSessions),
+                    ),
+                    zone: localizeAdventureZone(nextZone, t).name,
+                  })
+                : t("game.explore.allZonesUnlocked")}
             </Text>
           </View>
-          <BrushlingAvatar creature={selected} size={104} level={stats.level} />
+          <BrushlingAvatar
+            creature={selectedCreature}
+            size={104}
+            level={stats.level}
+          />
         </View>
-
         <View
           style={[
             styles.progressCard,
@@ -89,7 +113,7 @@ export default function ExploreScreen() {
           <View style={styles.progressTop}>
             <View>
               <Text style={[styles.progressEyebrow, { color: colors.primary }]}>
-                ZONA ATTUALE
+                {t("game.explore.currentZone")}
               </Text>
               <Text
                 style={[styles.progressTitle, { color: colors.foreground }]}
@@ -114,7 +138,9 @@ export default function ExploreScreen() {
                   { color: readableAccent(currentZone.accent) },
                 ]}
               >
-                {stats.completedSessions} sessioni
+                {t("game.explore.sessionCount", {
+                  count: formatNumber(stats.completedSessions),
+                })}
               </Text>
             </View>
           </View>
@@ -122,9 +148,9 @@ export default function ExploreScreen() {
             {currentZone.subtitle}
           </Text>
         </View>
-
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t("game.explore.openRewards")}
           onPress={() => router.push("/(tabs)/rewards")}
           style={({ pressed }) => [
             styles.inventoryCard,
@@ -137,33 +163,39 @@ export default function ExploreScreen() {
           </View>
           <View style={styles.inventoryCopy}>
             <Text style={[styles.inventoryEyebrow, { color: GOLD_TEXT }]}>
-              IL TUO ZAINO
+              {t("game.explore.inventoryEyebrow")}
             </Text>
             <Text
               style={[styles.inventoryTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              Premi e uova
+              {t("game.explore.inventoryTitle")}
             </Text>
             <Text style={[styles.inventoryText, { color: LIGHT_CARD_MUTED }]}>
-              {inventory.eggs.filter((egg) => egg.found).length} uova trovate ·{" "}
-              {inventory.hatchedBrushlingIds.length} nuovi Brushlings nati
+              {t("game.explore.inventorySummary", {
+                eggs: formatNumber(
+                  inventory.eggs.filter((egg) => egg.found).length,
+                ),
+                brushlings: formatNumber(inventory.hatchedBrushlingIds.length),
+              })}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={25} color={colors.muted} />
+          <MaterialIcons
+            name="chevron-right"
+            size={25}
+            color={LIGHT_CARD_MUTED}
+          />
         </Pressable>
-
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Mappa dell’isola
+            {t("game.explore.islandMap")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Completa le sessioni da due minuti per aprire nuovi luoghi e
-            preparare futuri incontri, uova e premi.
+            {t("game.explore.islandMapDescription")}
           </Text>
         </View>
-
         <View style={styles.map}>
-          {ADVENTURE_ZONES.map((zone, index) => {
+          {ADVENTURE_ZONES.map((baseZone, index) => {
+            const zone = localizeAdventureZone(baseZone, t);
             const unlocked = isAdventureZoneUnlocked(
               zone,
               stats.completedSessions,
@@ -171,7 +203,6 @@ export default function ExploreScreen() {
             const active = zone.id === currentZone.id;
             const remaining = sessionsUntilZone(zone, stats.completedSessions);
             const alignLeft = index % 2 === 0;
-
             return (
               <View key={zone.id} style={styles.mapStep}>
                 {index > 0 ? (
@@ -187,7 +218,6 @@ export default function ExploreScreen() {
                     ]}
                   />
                 ) : null}
-
                 <View
                   style={[
                     styles.zoneRow,
@@ -206,7 +236,11 @@ export default function ExploreScreen() {
                     <View
                       style={[
                         styles.zoneIcon,
-                        { backgroundColor: unlocked ? zone.accent : "#80889A" },
+                        {
+                          backgroundColor: unlocked
+                            ? readableAccent(zone.accent)
+                            : "#80889A",
+                        },
                       ]}
                     >
                       <MaterialIcons
@@ -215,7 +249,6 @@ export default function ExploreScreen() {
                         color="#FFFFFF"
                       />
                     </View>
-
                     <View style={styles.zoneCopy}>
                       <View style={styles.zoneTitleRow}>
                         <Text
@@ -237,7 +270,9 @@ export default function ExploreScreen() {
                               { backgroundColor: readableAccent(zone.accent) },
                             ]}
                           >
-                            <Text style={styles.hereText}>SEI QUI</Text>
+                            <Text style={styles.hereText}>
+                              {t("game.explore.youAreHere")}
+                            </Text>
                           </View>
                         ) : null}
                       </View>
@@ -264,8 +299,11 @@ export default function ExploreScreen() {
                         ]}
                       >
                         {unlocked
-                          ? "Zona sbloccata"
-                          : `Si apre tra ${remaining} session${remaining === 1 ? "e" : "i"}`}
+                          ? t("game.explore.zoneUnlocked")
+                          : t("game.explore.zoneOpensIn", {
+                              count: formatNumber(remaining),
+                              sessionWord: sessionWord(remaining),
+                            })}
                       </Text>
                     </View>
                   </View>
@@ -274,28 +312,28 @@ export default function ExploreScreen() {
             );
           })}
         </View>
-
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Incontri sull’isola
+            {t("game.explore.islandEncounters")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Alcuni Brushlings arrivano da uova speciali trovate durante
-            l’esplorazione.
+            {t("game.explore.islandEncountersDescription")}
           </Text>
         </View>
-
         <View style={styles.encounterStack}>
-          {EGG_DEFINITIONS.map((eggDefinition) => {
+          {EGG_DEFINITIONS.map((definition) => {
             const egg = inventory.eggs.find(
-              (candidate) => candidate.id === eggDefinition.id,
+              (candidate) => candidate.id === definition.id,
             )!;
-            const creature = getBrushling(eggDefinition.brushlingId);
-            const evolution = getEvolution(creature, 1);
-
+            const localizedEgg = localizeEggDefinition(egg, t);
+            const creature = localizeBrushling(
+              getBrushling(definition.brushlingId),
+              t,
+            );
+            const eggEvolution = getEvolution(creature, 1);
             return (
               <View
-                key={eggDefinition.id}
+                key={egg.id}
                 style={[
                   styles.encounterCard,
                   {
@@ -323,7 +361,9 @@ export default function ExploreScreen() {
                       <MaterialIcons
                         name={egg.found ? "radio-button-unchecked" : "lock"}
                         size={45}
-                        color={egg.found ? egg.accent : "#858C9B"}
+                        color={
+                          egg.found ? readableAccent(egg.accent) : "#858C9B"
+                        }
                       />
                     </View>
                   )}
@@ -334,7 +374,7 @@ export default function ExploreScreen() {
                       styles.encounterEyebrow,
                       {
                         color: egg.hatched
-                          ? creature.textAccent
+                          ? readableAccent(creature.accent)
                           : egg.found
                             ? readableAccent(egg.accent)
                             : colors.foreground,
@@ -342,10 +382,10 @@ export default function ExploreScreen() {
                     ]}
                   >
                     {egg.hatched
-                      ? "NUOVO BRUSHLING"
+                      ? t("game.explore.newBrushling")
                       : egg.found
-                        ? "UOVO TROVATO"
-                        : "INCONTRO SEGRETO"}
+                        ? t("game.explore.eggFound")
+                        : t("game.explore.secretEncounter")}
                   </Text>
                   <Text
                     style={[
@@ -358,10 +398,10 @@ export default function ExploreScreen() {
                     ]}
                   >
                     {egg.hatched
-                      ? evolution.name
+                      ? eggEvolution.name
                       : egg.found
-                        ? egg.name
-                        : "???"}
+                        ? localizedEgg.name
+                        : t("game.explore.unknown")}
                   </Text>
                   <Text
                     style={[
@@ -372,17 +412,23 @@ export default function ExploreScreen() {
                     ]}
                   >
                     {egg.hatched
-                      ? `${evolution.name} è ora disponibile nella tua squadra.`
+                      ? t("game.explore.brushlingAvailable", {
+                          name: eggEvolution.name,
+                        })
                       : egg.found
-                        ? `Ancora ${egg.sessionsRemaining} session${egg.sessionsRemaining === 1 ? "e" : "i"} per la schiusa.`
-                        : `Continua fino alla sessione ${egg.foundAtCompletedSessions} per trovare questo uovo.`}
+                        ? t("game.explore.sessionsUntilHatch", {
+                            count: formatNumber(egg.sessionsRemaining),
+                            sessionWord: sessionWord(egg.sessionsRemaining),
+                          })
+                        : t("game.explore.continueUntilEgg", {
+                            session: formatNumber(egg.foundAtCompletedSessions),
+                          })}
                   </Text>
                 </View>
               </View>
             );
           })}
         </View>
-
         <View
           style={[
             styles.futureCard,
@@ -394,12 +440,10 @@ export default function ExploreScreen() {
             <Text
               style={[styles.futureTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              Prossimo passo: uova e incontri
+              {t("game.explore.nextStepTitle")}
             </Text>
             <Text style={[styles.futureText, { color: LIGHT_CARD_MUTED }]}>
-              La mappa è già agganciata alle sessioni reali. Nel prossimo
-              incremento possiamo far trovare uova, oggetti e Brushlings rari
-              nelle zone sbloccate.
+              {t("game.explore.nextStepDescription")}
             </Text>
           </View>
         </View>

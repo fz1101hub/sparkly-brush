@@ -14,33 +14,55 @@ import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
   LIGHT_CARD_MUTED,
+  readableAccent,
 } from "@/constants/accessibility-colors";
+import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
+import type { LanguagePreference } from "@/lib/locale-types";
+
+const LANGUAGE_OPTIONS = [
+  { value: "system", labelKey: "language.system" },
+  { value: "it", labelKey: "language.it" },
+  { value: "en", labelKey: "language.en" },
+  { value: "de", labelKey: "language.de" },
+  { value: "fr", labelKey: "language.fr" },
+  { value: "es", labelKey: "language.es" },
+] as const satisfies readonly {
+  value: LanguagePreference;
+  labelKey:
+    | "language.system"
+    | "language.it"
+    | "language.en"
+    | "language.de"
+    | "language.fr"
+    | "language.es";
+}[];
 
 export default function SettingsScreen() {
   const colors = useColors();
   const router = useRouter();
   const { preferences, setPreference } = usePreferences();
+  const { languagePreference, setLanguagePreference, t } = useI18n();
 
   const rows = [
     {
       key: "soundsEnabled" as const,
       icon: "volume-up" as const,
-      title: "Suoni",
-      text: "Effetti per ricompense, missioni e interazioni.",
+      title: t("family.settings.soundsTitle"),
+      text: t("family.settings.soundsDescription"),
     },
     {
       key: "musicEnabled" as const,
       icon: "music-note" as const,
-      title: "Musica",
-      text: "Atmosfera musicale durante il gioco e la tana.",
+      title: t("family.settings.musicTitle"),
+      text: t("family.settings.musicDescription"),
     },
     {
       key: "hapticsEnabled" as const,
       icon: "vibration" as const,
-      title: "Vibrazione",
-      text: "Feedback aptico su tap, fine sessione e premi.",
+      title: t("family.settings.hapticsTitle"),
+      text: t("family.settings.hapticsDescription"),
     },
   ];
 
@@ -53,20 +75,20 @@ export default function SettingsScreen() {
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("common.back")}
             onPress={() => router.back()}
             style={({ pressed }) => [styles.back, pressed && styles.pressed]}
           >
             <MaterialIcons
               name="arrow-back"
               size={22}
-              color={colors.foreground}
+              color={LIGHT_CARD_FOREGROUND}
             />
           </Pressable>
           <View style={styles.headerWrap}>
             <AppHeader
-              eyebrow="Comfort & feedback"
-              title="Impostazioni"
+              eyebrow={t("family.settings.eyebrow")}
+              title={t("family.settings.title")}
               connected={false}
             />
           </View>
@@ -78,15 +100,72 @@ export default function SettingsScreen() {
             { backgroundColor: "#F0ECFF", borderColor: "#D4C9F5" },
           ]}
         >
-          <MaterialIcons name="tune" size={28} color="#7357C7" />
+          <MaterialIcons name="tune" size={28} color="#51369C" />
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
-              Il gioco deve adattarsi alla famiglia
+              {t("family.settings.heroTitle")}
             </Text>
             <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
-              Tutte queste preferenze restano su questo telefono e possono
-              essere cambiate in qualsiasi momento.
+              {t("family.settings.heroDescription")}
             </Text>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.languageCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.languageTitle, { color: colors.foreground }]}>
+            {t("language.title")}
+          </Text>
+          <Text style={[styles.languageDescription, { color: colors.muted }]}>
+            {t("language.description")}
+          </Text>
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel={t("language.title")}
+            style={styles.languageOptions}
+          >
+            {LANGUAGE_OPTIONS.map(({ value, labelKey }) => {
+              const selected = languagePreference === value;
+              const label = t(labelKey);
+              return (
+                <Pressable
+                  key={value}
+                  accessibilityRole="radio"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: selected }}
+                  aria-checked={selected}
+                  onPress={() => void setLanguagePreference(value)}
+                  style={({ pressed }) => [
+                    styles.languageOption,
+                    {
+                      backgroundColor: selected ? "#EEF4FF" : colors.background,
+                      borderColor: selected ? "#173F9F" : colors.border,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <MaterialIcons
+                    name={
+                      selected ? "radio-button-checked" : "radio-button-off"
+                    }
+                    size={20}
+                    color={selected ? "#173F9F" : colors.muted}
+                  />
+                  <Text
+                    style={[
+                      styles.languageOptionLabel,
+                      { color: selected ? "#173F9F" : colors.foreground },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
@@ -103,7 +182,7 @@ export default function SettingsScreen() {
                   <MaterialIcons
                     name={row.icon}
                     size={22}
-                    color={colors.primary}
+                    color={readableAccent("#2457D6")}
                   />
                 </View>
                 <View style={styles.rowCopy}>
@@ -137,10 +216,9 @@ export default function SettingsScreen() {
             { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
           ]}
         >
-          <MaterialIcons name="hearing" size={21} color="#B98A00" />
+          <MaterialIcons name="hearing" size={21} color="#6F5100" />
           <Text style={[styles.noteText, { color: LIGHT_CARD_FOREGROUND }]}>
-            I suoni non devono mai essere necessari per capire cosa succede:
-            l’app mantiene sempre testo, icone e feedback visivi.
+            {t("family.settings.audioNote")}
           </Text>
         </View>
       </ScrollView>
@@ -176,6 +254,25 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   heroTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900" },
   heroText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
+  languageCard: { borderWidth: 1, borderRadius: 22, padding: 14 },
+  languageTitle: { fontSize: 16, lineHeight: 21, fontWeight: "900" },
+  languageDescription: { fontSize: 11, lineHeight: 16, marginTop: 3 },
+  languageOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  languageOption: {
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+  },
+  languageOptionLabel: { fontSize: 12, lineHeight: 17, fontWeight: "800" },
   list: { borderWidth: 1, borderRadius: 22, overflow: "hidden" },
   row: {
     minHeight: 76,

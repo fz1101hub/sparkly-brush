@@ -52,6 +52,12 @@ jobs:
       - name: Tests
         run: pnpm test
 
+      - name: Localization catalogs
+        run: pnpm test:i18n
+
+      - name: Lifetime and timezone stress
+        run: pnpm test:stress
+
       - name: Lint
         run: pnpm lint
 

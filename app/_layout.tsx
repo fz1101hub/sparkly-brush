@@ -20,6 +20,8 @@ import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
+import { AppLocaleProvider } from "@/contexts/app-locale-provider";
+import { useI18n } from "@/contexts/locale-context";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { initializeHistoryStorage } from "@/lib/brush-storage";
@@ -33,20 +35,23 @@ export const unstable_settings = {
 };
 
 function DataRecoveryGate({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     void initializeHistoryStorage()
       .then(() => setReady(true))
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Ripristino dati non riuscito"));
+      .catch(() => setFailed(true));
   }, []);
 
-  if (error) {
+  if (failed) {
     return (
       <View style={recoveryStyles.container}>
-        <Text style={recoveryStyles.title}>Dati protetti</Text>
-        <Text style={recoveryStyles.message}>{error}. Riavvia l’app senza cancellarne i dati.</Text>
+        <Text style={recoveryStyles.title}>{t("recovery.protectedTitle")}</Text>
+        <Text style={recoveryStyles.message}>
+          {t("recovery.restart", { error: t("recovery.failed") })}
+        </Text>
       </View>
     );
   }
@@ -54,6 +59,7 @@ function DataRecoveryGate({ children }: { children: ReactNode }) {
 }
 
 function RestoreOperationOverlay() {
+  const { t } = useI18n();
   const active = useSyncExternalStore(
     subscribeRestoreOperation,
     isRestoreOperationActive,
@@ -70,13 +76,17 @@ function RestoreOperationOverlay() {
   return (
     <View
       accessibilityViewIsModal
-      accessibilityLabel="Ripristino dei dati in corso"
+      accessibilityLabel={t("recovery.inProgressLabel")}
       style={recoveryStyles.overlay}
     >
       <View style={recoveryStyles.overlayCard}>
         <ActivityIndicator size="large" color="#2457D6" />
-        <Text style={recoveryStyles.title}>Ripristino protetto in corso</Text>
-        <Text style={recoveryStyles.message}>Non chiudere l’app. Le modifiche torneranno disponibili tra pochi istanti.</Text>
+        <Text style={recoveryStyles.title}>
+          {t("recovery.inProgressTitle")}
+        </Text>
+        <Text style={recoveryStyles.message}>
+          {t("recovery.inProgressMessage")}
+        </Text>
       </View>
     </View>
   );
@@ -119,7 +129,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     document.title = "Sparkly Brush";
-    document.documentElement.lang = "it";
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
@@ -148,24 +157,26 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <DataRecoveryGate>
-        <BrushProvider>
-          <PreferencesProvider>
-            <AudioFeedbackProvider>
-              <BrushlingProvider>
-                <ParentRewardsProvider>
-                  <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="(tabs)" />
-                  </Stack>
-                  <OnboardingOverlay />
-                  <RestoreOperationOverlay />
-                  <StatusBar style="dark" />
-                </ParentRewardsProvider>
-              </BrushlingProvider>
-            </AudioFeedbackProvider>
-          </PreferencesProvider>
-        </BrushProvider>
-      </DataRecoveryGate>
+      <PreferencesProvider>
+        <AppLocaleProvider>
+          <DataRecoveryGate>
+            <BrushProvider>
+              <AudioFeedbackProvider>
+                <BrushlingProvider>
+                  <ParentRewardsProvider>
+                    <Stack screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="(tabs)" />
+                    </Stack>
+                    <OnboardingOverlay />
+                    <RestoreOperationOverlay />
+                    <StatusBar style="dark" />
+                  </ParentRewardsProvider>
+                </BrushlingProvider>
+              </AudioFeedbackProvider>
+            </BrushProvider>
+          </DataRecoveryGate>
+        </AppLocaleProvider>
+      </PreferencesProvider>
     </GestureHandlerRootView>
   );
 

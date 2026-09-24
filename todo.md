@@ -24,24 +24,27 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 18 | Accessibilità automatica | Completata e ampliata | Contratti React Native, 54 verifiche matematiche delle palette e Playwright + axe su 28 stati UI in tema chiaro/scuro; controlli nominati, valori ARIA verificati e zero violazioni WCAG selezionate. |
 | 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
+| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 856 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **37 file e 231 test**;
+- suite Vitest completa: **42 file e 275 test**;
+- gate i18n dedicato: **68 test** su cataloghi, placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
 - Playwright + axe superato su **28 stati UI** chiari/scuri, con contratti DOM ARIA espliciti e report separati per pagina;
-- due percorsi Playwright funzionali superati in **26,1 s**, inclusa persistenza dopo reload;
+- tre percorsi Playwright funzionali superati in **54,1 s**, incluso cambio tra cinque lingue, modalità Sistema e persistenza dopo reload;
 - contratto statico Maestro e re-review del percorso E2E superati;
 - `pnpm lint --max-warnings 0`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
 - `pnpm exec expo-doctor`: **21/21** con Expo 57;
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
-- build Android nativa debug **Expo 57 superata sul checkpoint precedente** con SDK 36, JDK 17 e NDK 27.1; il sandbox ripristinato non contiene più JDK 17 né Android SDK, quindi non viene dichiarata una nuova compilazione nativa dell’esatto checkout di questo ciclo.
+- prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e `locales_config.xml`;
+- build Android nativa debug **Expo 57 superata sul checkpoint precedente** con SDK 36, JDK 17 e NDK 27.1; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una nuova compilazione nativa dell’esatto checkout multilingua.
 
 ## GitHub Actions
 

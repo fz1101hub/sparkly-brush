@@ -1,0 +1,426 @@
+export const itDevice = {
+  "device.eyebrow": "Bluetooth Low Energy",
+  "device.title": "Spazzolino",
+  "device.defaultModel": "Philips Sonicare for Kids",
+  "device.protocol": "HX63xx · GATT aperto",
+  "device.forgetAlertTitle": "Dimenticare questo manico?",
+  "device.forgetAlertMessage":
+    "Usalo solo dopo il reset di fabbrica di questo stesso manico. Se il contatore non risulta azzerato, l’app rifiuterà lo storico per evitare doppi accrediti. Storico, Brushling, XP, monete e backup non verranno cancellati.",
+  "device.forgetAction": "Dimentica manico",
+  "device.forgetFailureTitle": "Impossibile dimenticare il manico",
+  "device.retryLater": "Riprova tra poco.",
+  "device.disconnectLabel": "Disconnetti lo spazzolino",
+  "device.connectLabel": "Collega lo spazzolino",
+  "device.syncLabel": "Sincronizza le sessioni dallo spazzolino",
+  "device.demoActive": "Demo attiva",
+  "device.disconnect": "Disconnetti",
+  "device.searching": "Ricerca…",
+  "device.searchConnect": "Cerca e collega",
+  "device.syncLatest": "Sincronizza ultima",
+  "device.adapter": "Adattatore",
+  "device.adapterState.unknown": "Sconosciuto",
+  "device.adapterState.resetting": "Riavvio in corso",
+  "device.adapterState.unsupported": "Non supportato",
+  "device.adapterState.unauthorized": "Non autorizzato",
+  "device.adapterState.poweredOff": "Spento",
+  "device.adapterState.poweredOn": "Acceso",
+  "device.handleState": "Stato manico",
+  "device.unknown": "sconosciuto",
+  "device.handleState.off": "spento",
+  "device.handleState.idle": "in attesa",
+  "device.handleState.brushing": "spazzolamento",
+  "device.handleState.charging": "in carica",
+  "device.handleState.shuttingDown": "spegnimento",
+  "device.handleState.verifying": "verifica",
+  "device.handleState.background": "background",
+  "device.intensity.low": "bassa",
+  "device.intensity.medium": "media",
+  "device.intensity.high": "alta",
+  "device.intensity": "Intensità",
+  "device.firmware": "Firmware",
+  "device.firmwareToRead": "da leggere",
+  "device.forgetResetLabel": "Dimentica manico resettato",
+  "device.forgetResetHint":
+    "Da usare solo dopo il reset di fabbrica dello stesso manico; conserva tutti i progressi",
+  "device.forgetting": "Rimozione in corso…",
+  "device.forgetResetDescription":
+    "Solo dopo il reset di fabbrica; non elimina storico, progressi o backup.",
+  "device.demoEyebrow": "LABORATORIO SENZA SPAZZOLINO",
+  "device.demoTitle": "Modalità demo",
+  "device.demoSummary":
+    "{count} sessioni simulate · i dati reali restano intatti",
+  "device.demoDescription":
+    "Prova evoluzioni, uova, missioni e dashboard senza toccare lo storico reale.",
+  "device.demoSwitchLabel": "Modalità demo",
+  "device.demoMorningLabel": "Registra una sessione demo del mattino",
+  "device.demoMorning": "Mattina",
+  "device.demoEveningLabel": "Registra una sessione demo della sera",
+  "device.demoEvening": "Sera",
+  "device.demoWeekLabel": "Genera una settimana di dati demo",
+  "device.demoWeek": "7 giorni",
+  "device.demoClearLabel": "Azzera dati demo",
+  "device.demoClear": "Azzera",
+  "device.hardwareOpenLabel": "Apri collaudo hardware",
+  "device.hardwareEyebrow": "COLLAUDO HX6322/04",
+  "device.hardwareTitle": "Prova guidata e report",
+  "device.hardwareDescription":
+    "Matrice iOS/Android persistente con diagnostica sanitizzata.",
+  "device.backupOpenLabel": "Apri backup e ripristino",
+  "device.backupEyebrow": "DATI & TRASFERIMENTO",
+  "device.backupTitle": "Proteggi il Brushling",
+  "device.backupDescription":
+    "Backup portatile per ritrovare progressi e compagno su un nuovo telefono.",
+  "device.diagnosticsTitle": "Diagnostica BLE",
+  "device.diagnosticsDescription": "Utile per validare il tuo HX6322/04 reale",
+  "device.live": "LIVE",
+  "device.emptyLogs": "I messaggi Bluetooth appariranno qui.",
+
+  "backup.bytes": "{value} B",
+  "backup.kilobytes": "{value} KB",
+  "backup.megabytes": "{value} MB",
+  "backup.exportSuccess": "Backup completo: {sessions} sessioni, {size}.",
+  "backup.exportFailed": "Backup non riuscito",
+  "backup.invalidFile": "File backup non valido",
+  "backup.invalidBackup": "Backup non valido",
+  "backup.legacyRestoreSuccess":
+    "Vecchio backup ripristinato. Progressi lifetime e sessioni disponibili sono stati importati.",
+  "backup.restoreSuccess":
+    "Ripristino completo: tutte le sessioni e i progressi sono tornati.",
+  "backup.restoreFailed": "Ripristino non riuscito",
+  "backup.backLabel": "Torna indietro",
+  "backup.eyebrow": "Proteggi il tuo compagno",
+  "backup.title": "Backup & trasferimento",
+  "backup.heroTitle": "Ogni progresso segue il Brushling",
+  "backup.heroDescription":
+    "Un solo file contiene tutte le sessioni, senza tagli, più date, durate, progressi, compagno, tana, premi e preferenze. Gli identificatori Bluetooth del manico vengono sostituiti da alias non leggibili.",
+  "backup.demoTitle": "Modalità demo attiva",
+  "backup.demoDescription":
+    "I backup usano solo i dati reali. Esci dalla demo prima di esportare o ripristinare.",
+  "backup.exitDemo": "Esci demo",
+  "backup.loading": "Caricamento dei dati in corso…",
+  "backup.createTitle": "1. Crea un backup",
+  "backup.createDescription":
+    "Salvalo in Mail, Messaggi, Drive o in un altro posto che resterà accessibile dopo il cambio telefono.",
+  "backup.summaryBrushling": "Brushling",
+  "backup.summarySessions": "Sessioni archiviate",
+  "backup.summaryDenItems": "Oggetti tana",
+  "backup.summaryFamilyRewards": "Premi famiglia",
+  "backup.exportLabel": "Salva il file di backup completo",
+  "backup.nativeOnly": "Disponibile su iOS e Android",
+  "backup.preparing": "Preparazione…",
+  "backup.saveComplete": "Salva il file completo",
+  "backup.fingerprint": "ID backup · {id}",
+  "backup.restoreTitle": "2. Ripristina sul nuovo telefono",
+  "backup.restoreDescription":
+    "Scegli il file .brushlings salvato. L’app controlla integrità e numero di sessioni prima del ripristino.",
+  "backup.pickFileLabel": "Scegli un file .brushlings per il ripristino",
+  "backup.pickFile": "Scegli file backup",
+  "backup.verifiedComplete": "FILE COMPLETO VERIFICATO",
+  "backup.verifiedLegacy": "BACKUP LEGACY VERIFICATO",
+  "backup.previewTitle": "{name} · {sessions} sessioni",
+  "backup.createdAt": "{size} · creato il {date}.",
+  "backup.legacyOrigin":
+    "Origine legacy: tutti i progressi sono conservati, ma il vecchio codice conteneva solo {sessions} righe consultabili.",
+  "backup.replaceCompleteWarning":
+    "Il ripristino sostituirà integralmente l’archivio reale di questo telefono.",
+  "backup.restoreFileLabel":
+    "Ripristina archivio completo dal file selezionato",
+  "backup.restoreFileHint":
+    "Sostituisce integralmente lo storico, i progressi e le impostazioni reali di questo telefono",
+  "backup.restoreComplete": "Ripristina archivio completo",
+  "backup.legacyTitle": "Hai un vecchio codice backup?",
+  "backup.legacyDescription":
+    "I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.",
+  "backup.legacyCodeLabel": "Codice backup legacy",
+  "backup.legacyCodePlaceholder": "Incolla qui BRUSHLINGS-BACKUP-1/2:...",
+  "backup.inspectCodeLabel": "Controlla codice backup",
+  "backup.inspectCode": "Controlla vecchio codice",
+  "backup.validBackup": "BACKUP VALIDO",
+  "backup.createdOn": "Creato il {date}.",
+  "backup.replaceWarning":
+    "Il ripristino sostituirà i progressi reali presenti su questo telefono.",
+  "backup.restoreLegacyLabel":
+    "Ripristina archivio dal codice backup controllato",
+  "backup.restoreLegacyHint":
+    "Sostituisce i progressi reali presenti su questo telefono",
+  "backup.restoreBrushling": "Ripristina questo Brushling",
+  "backup.privacy":
+    "Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.",
+
+  "hardware.status.passed": "Superato",
+  "hardware.status.failed": "Fallito",
+  "hardware.status.blocked": "Bloccato",
+  "hardware.status.pending": "Da fare",
+  "hardware.unknownVersion": "sconosciuta",
+  "hardware.saveFailed": "Salvataggio locale non riuscito",
+  "hardware.loadFailed": "Impossibile caricare il collaudo salvato",
+  "hardware.reportReady": "Report sanitizzato preparato correttamente.",
+  "hardware.exportFailed": "Esportazione del report non riuscita",
+  "hardware.resetConfirmWeb":
+    "Creare un nuovo collaudo? Gli esiti e le note correnti verranno cancellati.",
+  "hardware.resetAlertTitle": "Nuovo collaudo?",
+  "hardware.resetAlertMessage":
+    "Gli esiti e le note della sessione corrente verranno cancellati.",
+  "hardware.resetAction": "Ricomincia",
+  "hardware.resultLabel": "Esito: {title}",
+  "hardware.resultOptionLabel": "{title}: {status}",
+  "hardware.notePlaceholder":
+    "Nota, errore osservato o riferimento screenshot…",
+  "hardware.noteLabel": "Note per {title}",
+  "hardware.backLabel": "Torna indietro",
+  "hardware.eyebrow": "HX6322/04 · iOS e Android",
+  "hardware.title": "Collaudo hardware",
+  "hardware.heroTitle": "Una matrice verificabile, non appunti sparsi",
+  "hardware.heroDescription":
+    "Gli esiti restano sul telefono e il report oscura UUID, MAC e ID persistenti.",
+  "hardware.demoWarning":
+    "Disattiva la demo prima delle prove con il manico reale.",
+  "hardware.progressTitle": "Avanzamento",
+  "hardware.progressSummary":
+    "{completed}/{total} compilate · {passed} superate{saving}",
+  "hardware.progressSaving": " · salvataggio…",
+  "hardware.progressLoading": "Caricamento…",
+  "hardware.snapshotBle": "BLE",
+  "hardware.snapshotStatus": "Stato",
+  "hardware.snapshotFirmware": "Firmware",
+  "hardware.unsavedMessage":
+    "Il dato è visibile ma non ancora salvato: {error}",
+  "hardware.retrySaveLabel": "Riprova il salvataggio del collaudo",
+  "hardware.shareReportLabel": "Condividi il report di collaudo sanitizzato",
+  "hardware.shareReport": "Condividi report",
+  "hardware.newRunLabel": "Crea un nuovo collaudo",
+  "hardware.newRun": "Nuovo",
+  "hardware.matrixTitle": "Matrice di prova",
+  "hardware.matrixDescription":
+    "Compila ogni esito sul dispositivo che stai testando. Le note sono incluse nel report.",
+  "hardware.connection.idle": "Inattivo",
+  "hardware.connection.scanning": "Ricerca in corso",
+  "hardware.connection.connecting": "Connessione in corso",
+  "hardware.connection.connected": "Collegato",
+  "hardware.connection.unsupported": "Non supportato",
+  "hardware.connection.error": "Errore",
+
+  "hardware.test.scanConnect.title": "Scansione e connessione",
+  "hardware.test.scanConnect.instruction":
+    "Avvia la ricerca con il manico vicino e non collegato ad altre app.",
+  "hardware.test.scanConnect.success":
+    "Il manico appare come Sonicare4Kids e lo stato diventa Collegato.",
+  "hardware.test.metadata.title": "Metadati e batteria",
+  "hardware.test.metadata.instruction":
+    "Controlla modello, firmware e batteria, poi attendi almeno un aggiornamento.",
+  "hardware.test.metadata.success":
+    "I campi restano presenti e coerenti dopo l’aggiornamento batteria.",
+  "hardware.test.liveTimer.title": "Timer live e quadranti",
+  "hardware.test.liveTimer.instruction":
+    "Completa una sessione di due minuti osservando timer e cambi zona.",
+  "hardware.test.liveTimer.success":
+    "Avvio, arresto, secondi e quattro zone seguono il manico senza salti.",
+  "hardware.test.sessionSync.title": "Sincronizzazione sessione",
+  "hardware.test.sessionSync.instruction":
+    "Ferma il manico e attendi la sincronizzazione automatica.",
+  "hardware.test.sessionSync.success":
+    "Compare una sola nuova sessione nello storico con durata corretta.",
+  "hardware.test.rapidStops.title": "Due stop ravvicinati",
+  "hardware.test.rapidStops.instruction":
+    "Completa due sessioni senza attendere la fine della prima sincronizzazione.",
+  "hardware.test.rapidStops.success":
+    "Entrambe vengono conservate e contabilizzate una sola volta.",
+  "hardware.test.offlineGap.title": "Sessioni offline, orario e salto ID",
+  "hardware.test.offlineGap.instruction":
+    "Completa due sessioni con l’app chiusa, riconnetti, poi completa una sessione con l’app aperta.",
+  "hardware.test.offlineGap.success":
+    "Le sessioni offline arrivano in ordine con orario ricostruito o dichiarato approssimato; il fallback live non viene riaccreditato.",
+  "hardware.test.deduplication.title": "Deduplica manuale",
+  "hardware.test.deduplication.instruction":
+    "Premi Sincronizza ultima due volte dopo la stessa sessione.",
+  "hardware.test.deduplication.success":
+    "Storico, XP, monete e reward ledger non cambiano al secondo tentativo.",
+  "hardware.test.demoCancel.title": "Demo durante scansione",
+  "hardware.test.demoCancel.instruction":
+    "Avvia la scansione e attiva subito la modalità demo.",
+  "hardware.test.demoCancel.success":
+    "La scansione viene annullata e nessun manico reale resta collegato.",
+  "hardware.test.reconnect.title": "Tre reconnect",
+  "hardware.test.reconnect.instruction":
+    "Disconnetti e riconnetti tre volte, avviando brevemente il manico ogni volta.",
+  "hardware.test.reconnect.success":
+    "Non compaiono callback duplicate, timer doppi o crash.",
+  "hardware.test.factoryReset.title": "Reset di fabbrica del manico",
+  "hardware.test.factoryReset.instruction":
+    "Dopo un backup, resetta il manico, ricollegalo e usa Dimentica manico resettato prima della prima nuova sessione.",
+  "hardware.test.factoryReset.success":
+    "La nuova sessione viene acquisita una volta e storico, XP, monete e Brushling precedenti restano invariati.",
+  "hardware.test.background.title": "App in background",
+  "hardware.test.background.instruction":
+    "Avvia una sessione, porta l’app in background e poi torna in primo piano.",
+  "hardware.test.background.success":
+    "Lo stato torna coerente e non viene creata alcuna sessione fantasma.",
+  "hardware.test.restart.title": "Riavvio applicazione",
+  "hardware.test.restart.instruction":
+    "Chiudi completamente e riapri l’app dopo una sessione sincronizzata.",
+  "hardware.test.restart.success":
+    "Storico, progressione e ultimo dispositivo restano coerenti.",
+  "hardware.test.backupRestore.title": "Backup e ripristino",
+  "hardware.test.backupRestore.instruction":
+    "Esporta il file .brushlings e ripristinalo su un secondo dispositivo o installazione pulita.",
+  "hardware.test.backupRestore.success":
+    "Storico completo, progressione e ledger coincidono dopo il ripristino.",
+
+  "hardware.report.title": "Report collaudo hardware — Sparkly Brush",
+  "hardware.report.intro":
+    "Il report non include l’identificativo Bluetooth persistente del manico. Eventuali UUID o indirizzi MAC nei log sono oscurati automaticamente.",
+  "hardware.report.environment": "Ambiente",
+  "hardware.report.technicalSnapshot": "Snapshot tecnico",
+  "hardware.report.matrix": "Esito matrice",
+  "hardware.report.diagnostics": "Diagnostica BLE sanitizzata",
+  "hardware.report.field": "Campo",
+  "hardware.report.value": "Valore",
+  "hardware.report.run": "Run",
+  "hardware.report.platform": "Piattaforma",
+  "hardware.report.osVersion": "Versione OS",
+  "hardware.report.appVersion": "Versione app",
+  "hardware.report.started": "Avviato",
+  "hardware.report.generated": "Generato",
+  "hardware.report.connectionStatus": "Stato connessione",
+  "hardware.report.adapter": "Adattatore BLE",
+  "hardware.report.name": "Nome",
+  "hardware.report.model": "Modello",
+  "hardware.report.firmware": "Firmware",
+  "hardware.report.battery": "Batteria",
+  "hardware.report.handleState": "Stato manico",
+  "hardware.report.brushingActive": "Spazzolatura attiva",
+  "hardware.report.liveTime": "Tempo live",
+  "hardware.report.intensity": "Intensità",
+  "hardware.report.recentSessions": "Sessioni recenti in UI",
+  "hardware.report.attemptedSessions": "Sessioni lifetime tentate",
+  "hardware.report.completedSessions": "Sessioni lifetime complete",
+  "hardware.report.test": "Verifica",
+  "hardware.report.result": "Esito",
+  "hardware.report.note": "Nota",
+  "hardware.report.summary":
+    "{completed}/{total} verifiche compilate · {passed} superate · {failed} fallite · {blocked} bloccate",
+  "hardware.report.noLogs": "Nessun log disponibile",
+  "hardware.report.log.info": "INFO",
+  "hardware.report.log.success": "SUCCESSO",
+  "hardware.report.log.warning": "AVVISO",
+  "hardware.report.log.error": "ERRORE",
+  "hardware.report.unavailable": "non disponibile",
+  "hardware.report.yes": "sì",
+  "hardware.report.no": "no",
+  "hardware.report.status.passed": "SUPERATO",
+  "hardware.report.status.failed": "FALLITO",
+  "hardware.report.status.blocked": "BLOCCATO",
+  "hardware.report.status.pending": "DA ESEGUIRE",
+  "hardware.report.redactedDevice": "device id: [redacted]",
+  "hardware.report.deviceId": "[device-id]",
+  "hardware.report.emptyCell": "—",
+  "hardware.report.downloadUnavailable":
+    "Il download del report non è disponibile in questo ambiente",
+  "hardware.report.shareUnavailable":
+    "La condivisione file non è disponibile su questo dispositivo",
+  "hardware.report.shareDialogTitle":
+    "Condividi il report di collaudo Sparkly Brush",
+
+  "brush.status.ready": "Pronto per cercare lo spazzolino",
+  "brush.error.identityUnavailable":
+    "Identità dello spazzolino non disponibile",
+  "brush.log.liveFallback":
+    "Sessione salvata dai dati live perché il record del manico non era disponibile",
+  "brush.error.bleRecordUnavailable": "Record BLE non disponibile",
+  "brush.error.bleSessionNotSaved": "Sessione BLE non salvata",
+  "brush.error.bleSessionNoIdentity":
+    "Sessione BLE senza identità del dispositivo",
+  "brush.log.manualSessionSaved": "{type} salvata ({duration}s)",
+  "brush.log.demoSessionSaved": "Sessione demo salvata ({duration}s)",
+  "brush.log.realSessionSaved": "Sessione manuale salvata ({duration}s)",
+  "brush.session.demo": "Sessione demo",
+  "brush.session.manual": "Sessione manuale",
+  "brush.error.guidedSessionNotSaved": "Sessione guidata non salvata",
+  "brush.error.pendingManualSession":
+    "Una sessione precedente deve ancora essere salvata",
+  "brush.log.waitForForget":
+    "Attendi il completamento della rimozione del manico",
+  "brush.log.disableDemoToConnect":
+    "Disattiva la modalità demo per collegare lo spazzolino reale",
+  "brush.error.forgettingInProgress": "La rimozione del manico è già in corso",
+  "brush.error.connectHandleToReset": "Collega il manico da reimpostare",
+  "brush.log.handleForgotten":
+    "Manico dimenticato: il prossimo contatore BLE partirà da una nuova generazione",
+  "brush.error.handleRemovalFailed": "Rimozione del manico non riuscita",
+  "brush.log.syncDisabledInDemo":
+    "La sincronizzazione BLE è disattivata in modalità demo",
+  "brush.error.connectFirst": "Collega prima lo spazzolino",
+  "brush.log.sessionsSynced": "{count} sessioni sincronizzate",
+  "brush.log.noNewSessions": "Nessuna nuova sessione disponibile",
+  "brush.error.syncFailed": "Sincronizzazione non riuscita",
+  "brush.log.retryPreviousSave":
+    "Riprova prima il salvataggio della sessione precedente",
+  "brush.log.demoTimerStarted": "Timer demo avviato",
+  "brush.log.guidedTimerStarted": "Timer guidato avviato",
+  "brush.log.demoModeEnabled": "Modalità demo attivata",
+  "brush.log.demoModeDisabled": "Modalità demo disattivata",
+  "brush.log.demoSessionAdded": "Sessione demo {period} aggiunta",
+  "brush.log.demoSessionMorningAdded": "Sessione demo mattina aggiunta",
+  "brush.log.demoSessionEveningAdded": "Sessione demo sera aggiunta",
+  "brush.log.demoSessionNowAdded": "Sessione demo completa aggiunta",
+  "brush.period.morning": "mattina",
+  "brush.period.evening": "sera",
+  "brush.period.now": "completa",
+  "brush.log.demoWeekGenerated": "Settimana demo completa generata",
+  "brush.log.demoDataDeleted": "Dati demo eliminati",
+  "brush.log.historyRestored": "Storico ripristinato dal backup",
+  "brush.log.archiveRestored": "Archivio completo ripristinato dal backup",
+  "brush.log.demoHistoryDeleted": "Storico demo eliminato",
+  "brush.log.localHistoryDeleted": "Storico locale eliminato",
+  "brush.client.bluetoothState": "Bluetooth: {state}",
+  "brush.client.scanPrompt": "Accendi lo spazzolino e tienilo vicino",
+  "brush.client.scanStarted": "Scansione BLE avviata (Sonicare4Kids)",
+  "brush.client.connecting": "Connessione e lettura dei servizi",
+  "brush.client.found": "Trovato {name}",
+  "brush.client.servicesFound": "{count} servizi GATT rilevati",
+  "brush.client.ready": "Sonicare pronto",
+  "brush.client.connected": "Connessione completata: GATT aperto HX63xx",
+  "brush.client.handleState": "Stato manico: {state}",
+  "brush.client.notificationUnavailable": "Notifica non disponibile: {code}",
+  "brush.client.disconnected": "Spazzolino disconnesso",
+  "brush.client.connectionEnded": "Connessione Bluetooth terminata",
+  "brush.client.optionalReadUnavailable":
+    "Lettura opzionale non disponibile: {code}",
+  "brush.client.historyCountUnavailable":
+    "Conteggio storico BLE non disponibile; sincronizzazione prudente",
+  "brush.client.clockUnavailable":
+    "Clock del manico non disponibile: data sessione approssimata",
+  "brush.client.sessionRead": "Sessione {id} letta ({duration}s)",
+  "brush.client.sessionsReady":
+    "{count} sessioni BLE pronte per il salvataggio atomico",
+  "brush.client.disconnectedShort": "Disconnesso",
+  "brush.client.unsupported": "Bluetooth disponibile solo nell’app installata",
+  "brush.client.webPreview":
+    "Anteprima web: timer manuale disponibile, BLE riservato a iOS e Android",
+  "brush.client.openDevelopmentBuild":
+    "Apri una development build su iPhone o Android",
+  "brush.client.nativeProtocolRequired":
+    "Il protocollo Bluetooth richiede l’app nativa iOS o Android",
+  "brush.client.syncNativeOnly":
+    "Sincronizzazione disponibile solo su iOS e Android",
+  "brush.client.connectionFailed": "Connessione Bluetooth non riuscita",
+  "brush.client.diagnostic": "Aggiornamento diagnostica Bluetooth",
+  "brush.client.permissionDenied": "Autorizzazione Bluetooth non concessa",
+  "brush.client.locationPermissionRequired":
+    "Autorizzazione alla posizione necessaria per la scansione Bluetooth",
+  "brush.client.connectionInProgress": "Connessione Bluetooth già in corso",
+  "brush.client.unavailable": "Client Bluetooth non disponibile",
+  "brush.client.cancelled": "Operazione Bluetooth annullata",
+  "brush.client.unknownError": "Errore Bluetooth sconosciuto",
+  "brush.client.notFound": "Spazzolino non trovato. Accendilo e riprova.",
+  "brush.client.syncLimit":
+    "Il manico espone {count} sessioni: sincronizzazione oltre il limite sicuro",
+  "brush.client.resetDetected":
+    "Il contatore del manico sembra azzerato: usa Dimentica manico resettato",
+  "brush.client.unsafeGap":
+    "Intervallo Bluetooth non sicuro ({count} sessioni): sincronizzazione sospesa",
+  "brush.client.incompleteHistory":
+    "Lo storico del manico non contiene più tutte le sessioni mancanti",
+  "brush.client.missingRecord":
+    "Record Bluetooth {id} mancante o non riconosciuto; sincronizzazione sospesa",
+} as const;

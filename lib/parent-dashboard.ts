@@ -3,7 +3,6 @@ import { isEvening, isMorning, sameLocalDay, startOfLocalDay } from "@/lib/day-p
 
 export type ParentDaySummary = {
   timestamp: number;
-  label: string;
   morningCompleted: boolean;
   eveningCompleted: boolean;
   completedSessions: number;
@@ -44,9 +43,12 @@ export function computeParentDashboard(
 
     return {
       timestamp,
-      label: new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric" }).format(date),
-      morningCompleted: completed.some((session) => isMorning(session.startedAt)),
-      eveningCompleted: completed.some((session) => isEvening(session.startedAt)),
+      morningCompleted: completed.some((session) =>
+        isMorning(session.startedAt),
+      ),
+      eveningCompleted: completed.some((session) =>
+        isEvening(session.startedAt),
+      ),
       completedSessions: completed.length,
       attemptedSessions: sessions.length,
       totalSeconds: sessions.reduce((total, session) => total + session.durationSeconds, 0),

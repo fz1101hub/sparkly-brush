@@ -1,5 +1,9 @@
 import type { BrushSession } from "@/lib/brush-types";
-import { DEFAULT_APP_PREFERENCES, type AppPreferences } from "@/lib/preferences";
+import {
+  DEFAULT_APP_PREFERENCES,
+  type AppPreferences,
+} from "@/lib/preferences";
+import { isLanguagePreference } from "@/lib/locale-types";
 import type { ParentReward } from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
@@ -112,6 +116,7 @@ function normalizePreferences(value: unknown): AppPreferences {
     soundsEnabled: raw.soundsEnabled !== false,
     musicEnabled: raw.musicEnabled === true,
     hapticsEnabled: raw.hapticsEnabled !== false,
+    language: isLanguagePreference(raw.language) ? raw.language : "system",
   };
 }
 

@@ -4,14 +4,14 @@ import {
   type AdventureZoneId,
 } from "@/lib/adventure";
 import type { BrushlingId } from "@/lib/brushlings";
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
 
 export type CollectibleItemId =
-  | "bubble-pearl"
-  | "fresh-leaf"
-  | "spark-crystal"
-  | "moon-shard"
-  | "smile-star";
-
+  "bubble-pearl" | "fresh-leaf" | "spark-crystal" | "moon-shard" | "smile-star";
 export type CollectibleItem = {
   id: CollectibleItemId;
   name: string;
@@ -21,9 +21,7 @@ export type CollectibleItem = {
   accent: string;
   soft: string;
 };
-
 export type EggId = "spark-egg" | "moon-egg";
-
 export type EggDefinition = {
   id: EggId;
   name: string;
@@ -35,21 +33,18 @@ export type EggDefinition = {
   accent: string;
   soft: string;
 };
-
 export type EggProgress = EggDefinition & {
   found: boolean;
   hatched: boolean;
   progress: number;
   sessionsRemaining: number;
 };
-
 export type GameInventory = {
   completedSessions: number;
   itemCounts: Record<CollectibleItemId, number>;
   eggs: EggProgress[];
   hatchedBrushlingIds: BrushlingId[];
 };
-
 export type SessionDiscovery = {
   sessionId: string;
   completedSessionNumber: number;
@@ -59,11 +54,57 @@ export type SessionDiscovery = {
   eggHatched?: EggDefinition;
 };
 
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
+type ItemTextKeys = { name: TranslationKey; description: TranslationKey };
+
+export const COLLECTIBLE_ITEM_TEXT_KEYS = {
+  "bubble-pearl": {
+    name: "game.inventory.bubble-pearl.name",
+    description: "game.inventory.bubble-pearl.description",
+  },
+  "fresh-leaf": {
+    name: "game.inventory.fresh-leaf.name",
+    description: "game.inventory.fresh-leaf.description",
+  },
+  "spark-crystal": {
+    name: "game.inventory.spark-crystal.name",
+    description: "game.inventory.spark-crystal.description",
+  },
+  "moon-shard": {
+    name: "game.inventory.moon-shard.name",
+    description: "game.inventory.moon-shard.description",
+  },
+  "smile-star": {
+    name: "game.inventory.smile-star.name",
+    description: "game.inventory.smile-star.description",
+  },
+} as const satisfies Record<CollectibleItemId, ItemTextKeys>;
+
+export const EGG_TEXT_KEYS = {
+  "spark-egg": {
+    name: "game.egg.spark-egg.name",
+    description: "game.egg.spark-egg.description",
+  },
+  "moon-egg": {
+    name: "game.egg.moon-egg.name",
+    description: "game.egg.moon-egg.description",
+  },
+} as const satisfies Record<EggId, ItemTextKeys>;
+
+const text = (key: TranslationKey) => translateDynamic("it", key);
+const itemText = (id: CollectibleItemId) => ({
+  name: text(COLLECTIBLE_ITEM_TEXT_KEYS[id].name),
+  description: text(COLLECTIBLE_ITEM_TEXT_KEYS[id].description),
+});
+const eggText = (id: EggId) => ({
+  name: text(EGG_TEXT_KEYS[id].name),
+  description: text(EGG_TEXT_KEYS[id].description),
+});
+
 export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
   {
     id: "bubble-pearl",
-    name: "Perla di Bolla",
-    description: "Una perla leggera trovata nella Baia delle Bolle.",
+    ...itemText("bubble-pearl"),
     zoneId: "bubble-bay",
     icon: "opacity",
     accent: "#2457D6",
@@ -71,8 +112,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
   },
   {
     id: "fresh-leaf",
-    name: "Foglia Fresca",
-    description: "Profuma di menta e arriva dalla Foresta Fresca.",
+    ...itemText("fresh-leaf"),
     zoneId: "fresh-forest",
     icon: "eco",
     accent: "#2E9B67",
@@ -80,8 +120,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
   },
   {
     id: "spark-crystal",
-    name: "Cristallo Smile",
-    description: "Una scintilla solidificata del Monte Splendente.",
+    ...itemText("spark-crystal"),
     zoneId: "spark-mountain",
     icon: "bolt",
     accent: "#E76A2C",
@@ -89,8 +128,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
   },
   {
     id: "moon-shard",
-    name: "Scheggia Lunare",
-    description: "Brilla al buio vicino al Lago Cristallino.",
+    ...itemText("moon-shard"),
     zoneId: "crystal-lake",
     icon: "dark-mode",
     accent: "#7357C7",
@@ -98,8 +136,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
   },
   {
     id: "smile-star",
-    name: "Stella Sorriso",
-    description: "Un premio raro custodito nella Valle del Sorriso.",
+    ...itemText("smile-star"),
     zoneId: "smile-valley",
     icon: "star",
     accent: "#B98A00",
@@ -110,8 +147,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
 export const EGG_DEFINITIONS: EggDefinition[] = [
   {
     id: "spark-egg",
-    name: "Uovo Scintilla",
-    description: "Una piccola scarica pulsa dentro il guscio.",
+    ...eggText("spark-egg"),
     zoneId: "fresh-forest",
     foundAtCompletedSessions: 3,
     hatchAtCompletedSessions: 5,
@@ -121,8 +157,7 @@ export const EGG_DEFINITIONS: EggDefinition[] = [
   },
   {
     id: "moon-egg",
-    name: "Uovo Lunare",
-    description: "Il guscio luccica quando arriva la sera.",
+    ...eggText("moon-egg"),
     zoneId: "crystal-lake",
     foundAtCompletedSessions: 8,
     hatchAtCompletedSessions: 10,
@@ -131,6 +166,22 @@ export const EGG_DEFINITIONS: EggDefinition[] = [
     soft: "#F0ECFF",
   },
 ];
+
+export function localizeCollectibleItem(
+  item: CollectibleItem,
+  t: Translator,
+): CollectibleItem {
+  const keys: ItemTextKeys = COLLECTIBLE_ITEM_TEXT_KEYS[item.id];
+  return { ...item, name: t(keys.name), description: t(keys.description) };
+}
+
+export function localizeEggDefinition(
+  egg: EggDefinition,
+  t: Translator,
+): EggDefinition {
+  const keys: ItemTextKeys = EGG_TEXT_KEYS[egg.id];
+  return { ...egg, name: t(keys.name), description: t(keys.description) };
+}
 
 const ITEM_BY_ZONE = new Map<AdventureZoneId, CollectibleItem>(
   COLLECTIBLE_ITEMS.map((item) => [item.zoneId, item]),
@@ -160,12 +211,10 @@ export function getItemForCompletedSessionNumber(completedSessionNumber: number)
 export function computeGameInventory(history: BrushSession[]): GameInventory {
   const completed = completedSessionsChronological(history);
   const itemCounts = emptyCounts();
-
   completed.forEach((_, index) => {
     const item = getItemForCompletedSessionNumber(index + 1);
     itemCounts[item.id] += 1;
   });
-
   const eggs = EGG_DEFINITIONS.map((egg) => {
     const found = completed.length >= egg.foundAtCompletedSessions;
     const hatched = completed.length >= egg.hatchAtCompletedSessions;
@@ -174,7 +223,6 @@ export function computeGameInventory(history: BrushSession[]): GameInventory {
       0,
       Math.min(denominator, completed.length - egg.foundAtCompletedSessions),
     );
-
     return {
       ...egg,
       found,
@@ -183,7 +231,6 @@ export function computeGameInventory(history: BrushSession[]): GameInventory {
       sessionsRemaining: Math.max(0, egg.hatchAtCompletedSessions - completed.length),
     };
   });
-
   return {
     completedSessions: completed.length,
     itemCounts,
@@ -201,10 +248,8 @@ export function computeSessionDiscovery(
   const completed = completedSessionsChronological(history);
   const index = completed.findIndex((session) => session.id === sessionId);
   if (index < 0) return null;
-
   const completedSessionNumber = index + 1;
   const item = getItemForCompletedSessionNumber(completedSessionNumber);
-
   return {
     sessionId,
     completedSessionNumber,

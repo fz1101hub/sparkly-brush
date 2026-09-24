@@ -35,7 +35,9 @@ const config: ExpoConfig = {
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      NSBluetoothAlwaysUsageDescription: "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
+      CFBundleAllowMixedLocalizations: true,
+      NSBluetoothAlwaysUsageDescription:
+        "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
     },
   },
   android: {
@@ -68,12 +70,28 @@ const config: ExpoConfig = {
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
+  locales: {
+    it: "./locales/native/it.json",
+    en: "./locales/native/en.json",
+    de: "./locales/native/de.json",
+    fr: "./locales/native/fr.json",
+    es: "./locales/native/es.json",
+  },
   plugins: [
     "expo-router",
     "expo-asset",
     "expo-document-picker",
     "expo-font",
     "expo-image",
+    [
+      "expo-localization",
+      {
+        supportedLocales: {
+          ios: ["it", "en", "de", "fr", "es"],
+          android: ["it", "en", "de", "fr", "es"],
+        },
+      },
+    ],
     "expo-sharing",
     "expo-sqlite",
     "expo-status-bar",

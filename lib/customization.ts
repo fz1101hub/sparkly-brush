@@ -1,6 +1,12 @@
 import type { ComponentProps } from "react";
 import type MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
+
 export type CustomizationCategory = "habitat" | "accessory" | "decor";
 export type CustomizationItemId =
   | "bubble-room"
@@ -30,7 +36,6 @@ export type CustomizationPurchase = {
   pricePaid: number;
   purchasedAt: number;
 };
-
 export type CustomizationState = {
   ownedIds: CustomizationItemId[];
   purchaseLedger: CustomizationPurchase[];
@@ -39,12 +44,66 @@ export type CustomizationState = {
   equippedDecorId: CustomizationItemId | null;
 };
 
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
+type CustomizationTextKeys = {
+  name: TranslationKey;
+  description: TranslationKey;
+};
+
+export const CUSTOMIZATION_TEXT_KEYS = {
+  "bubble-room": {
+    name: "game.customization.bubble-room.name",
+    description: "game.customization.bubble-room.description",
+  },
+  "fresh-garden": {
+    name: "game.customization.fresh-garden.name",
+    description: "game.customization.fresh-garden.description",
+  },
+  "sunset-camp": {
+    name: "game.customization.sunset-camp.name",
+    description: "game.customization.sunset-camp.description",
+  },
+  "moon-cove": {
+    name: "game.customization.moon-cove.name",
+    description: "game.customization.moon-cove.description",
+  },
+  "blue-scarf": {
+    name: "game.customization.blue-scarf.name",
+    description: "game.customization.blue-scarf.description",
+  },
+  "leaf-crown": {
+    name: "game.customization.leaf-crown.name",
+    description: "game.customization.leaf-crown.description",
+  },
+  "star-glasses": {
+    name: "game.customization.star-glasses.name",
+    description: "game.customization.star-glasses.description",
+  },
+  "smile-cushion": {
+    name: "game.customization.smile-cushion.name",
+    description: "game.customization.smile-cushion.description",
+  },
+  "mint-plant": {
+    name: "game.customization.mint-plant.name",
+    description: "game.customization.mint-plant.description",
+  },
+  "star-mobile": {
+    name: "game.customization.star-mobile.name",
+    description: "game.customization.star-mobile.description",
+  },
+} as const satisfies Record<CustomizationItemId, CustomizationTextKeys>;
+
+const text = (key: TranslationKey) => translateDynamic("it", key);
+const localized = (id: CustomizationItemId) => ({
+  name: text(CUSTOMIZATION_TEXT_KEYS[id].name),
+  description: text(CUSTOMIZATION_TEXT_KEYS[id].description),
+});
+
 export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "bubble-room",
     category: "habitat",
-    name: "Stanza delle Bolle",
-    description: "La casetta iniziale, luminosa e piena di bollicine.",
+    ...localized("bubble-room"),
     cost: 0,
     icon: "opacity",
     accent: "#2457D6",
@@ -53,8 +112,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "fresh-garden",
     category: "habitat",
-    name: "Giardino Fresco",
-    description: "Un angolo verde con foglie, erba e profumo di menta.",
+    ...localized("fresh-garden"),
     cost: 28,
     icon: "nature",
     accent: "#2E9B67",
@@ -63,8 +121,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "sunset-camp",
     category: "habitat",
-    name: "Campo del Tramonto",
-    description: "Un rifugio caldo per riposarsi dopo una grande avventura.",
+    ...localized("sunset-camp"),
     cost: 48,
     icon: "wb-sunny",
     accent: "#E76A2C",
@@ -73,8 +130,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "moon-cove",
     category: "habitat",
-    name: "Cala Lunare",
-    description: "Un habitat tranquillo che brilla sotto le stelle.",
+    ...localized("moon-cove"),
     cost: 72,
     icon: "dark-mode",
     accent: "#7357C7",
@@ -83,8 +139,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "blue-scarf",
     category: "accessory",
-    name: "Foulard Splash",
-    description: "Un piccolo foulard da esploratore.",
+    ...localized("blue-scarf"),
     cost: 18,
     icon: "waves",
     accent: "#2457D6",
@@ -93,8 +148,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "leaf-crown",
     category: "accessory",
-    name: "Corona di Foglie",
-    description: "Per Brushlings che amano sentirsi re della foresta.",
+    ...localized("leaf-crown"),
     cost: 26,
     icon: "eco",
     accent: "#2E9B67",
@@ -103,8 +157,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "star-glasses",
     category: "accessory",
-    name: "Occhiali Stellari",
-    description: "Brillano quando una missione è completata.",
+    ...localized("star-glasses"),
     cost: 38,
     icon: "star",
     accent: "#B98A00",
@@ -113,8 +166,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "smile-cushion",
     category: "decor",
-    name: "Cuscino Sorriso",
-    description: "Un cuscino morbido per la tana.",
+    ...localized("smile-cushion"),
     cost: 20,
     icon: "sentiment-very-satisfied",
     accent: "#E76A2C",
@@ -123,8 +175,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "mint-plant",
     category: "decor",
-    name: "Pianta di Menta",
-    description: "Una piantina sempre fresca vicino al lettino.",
+    ...localized("mint-plant"),
     cost: 24,
     icon: "local-florist",
     accent: "#2E9B67",
@@ -133,14 +184,21 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
   {
     id: "star-mobile",
     category: "decor",
-    name: "Mobile di Stelle",
-    description: "Piccole stelle sospese per la buonanotte.",
+    ...localized("star-mobile"),
     cost: 34,
     icon: "auto-awesome",
     accent: "#7357C7",
     soft: "#F0ECFF",
   },
 ];
+
+export function localizeCustomizationItem(
+  item: CustomizationItem,
+  t: Translator,
+): CustomizationItem {
+  const keys: CustomizationTextKeys = CUSTOMIZATION_TEXT_KEYS[item.id];
+  return { ...item, name: t(keys.name), description: t(keys.description) };
+}
 
 export const DEFAULT_CUSTOMIZATION_STATE: CustomizationState = {
   ownedIds: ["bubble-room"],
@@ -211,7 +269,6 @@ export function purchaseCustomization(
   if (state.ownedIds.includes(itemId)) return state;
   const item = getCustomizationItem(itemId);
   if (!item || availableCoins(totalEarnedCoins, state) < item.cost) return null;
-
   return {
     ...state,
     ownedIds: [...state.ownedIds, itemId],
@@ -229,12 +286,9 @@ export function equipCustomization(
   if (!state.ownedIds.includes(itemId)) return null;
   const item = getCustomizationItem(itemId);
   if (!item) return null;
-
-  if (item.category === "habitat") {
+  if (item.category === "habitat")
     return { ...state, equippedHabitatId: item.id };
-  }
-  if (item.category === "accessory") {
+  if (item.category === "accessory")
     return { ...state, equippedAccessoryId: item.id };
-  }
   return { ...state, equippedDecorId: item.id };
 }

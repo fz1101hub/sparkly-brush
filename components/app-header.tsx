@@ -1,10 +1,12 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Text, View } from "react-native";
 
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 
 export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; title: string; connected?: boolean }) {
   const colors = useColors();
+  const { t } = useI18n();
 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -17,7 +19,11 @@ export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; titl
         </Text>
       </View>
       <View
-        accessibilityLabel={connected ? "Spazzolino collegato" : "Spazzolino non collegato"}
+        accessibilityLabel={t(
+          connected
+            ? "header.toothbrushConnected"
+            : "header.toothbrushDisconnected",
+        )}
         style={{
           width: 52,
           height: 52,

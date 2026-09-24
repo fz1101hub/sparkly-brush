@@ -14,29 +14,18 @@ import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
   LIGHT_CARD_MUTED,
+  readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { BrushSession } from "@/lib/brush-types";
-
-function formatDuration(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function formatDate(timestamp: number) {
-  return new Intl.DateTimeFormat("it-IT", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(timestamp));
-}
 
 export default function HistoryScreen() {
   const colors = useColors();
   const router = useRouter();
   const { history, clearAllHistory } = useBrush();
+  const { t, formatDate, formatNumber } = useI18n();
   const completed = history.filter((session) => session.completed).length;
   const average = history.length
     ? Math.round(
@@ -45,14 +34,28 @@ export default function HistoryScreen() {
       )
     : 0;
 
+  const formatDuration = (seconds: number) =>
+    t("family.history.duration", {
+      minutes: formatNumber(Math.floor(seconds / 60)),
+      seconds: formatNumber(seconds % 60).padStart(2, "0"),
+    });
+  const formatSessionDate = (timestamp: number) =>
+    formatDate(timestamp, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
   const confirmClear = () => {
     Alert.alert(
-      "Eliminare lo storico?",
-      "Le sessioni salvate su questo telefono verranno rimosse.",
+      t("family.history.clearTitle"),
+      t("family.history.clearMessage"),
       [
-        { text: "Annulla", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Elimina",
+          text: t("family.history.clearAction"),
           style: "destructive",
           onPress: () => void clearAllHistory(),
         },
@@ -66,47 +69,60 @@ export default function HistoryScreen() {
   }: {
     item: BrushSession;
     index: number;
-  }) => (
-    <View
-      testID={`history-session-${index}`}
-      accessibilityLabel={`${item.completed ? "Sessione completa" : "Sessione incompleta"}, ${formatDuration(item.durationSeconds)}, ${formatDate(item.startedAt)}`}
-      style={[
-        styles.sessionCard,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
-    >
+  }) => {
+    const status = item.completed
+      ? t("family.history.sessionComplete")
+      : t("family.history.sessionIncomplete");
+    const sessionDate = formatSessionDate(item.startedAt);
+
+    return (
       <View
+        testID={`history-session-${index}`}
+        accessibilityLabel={t("family.history.sessionAccessibility", {
+          status,
+          duration: formatDuration(item.durationSeconds),
+          date: sessionDate,
+        })}
         style={[
-          styles.sessionIcon,
-          { backgroundColor: item.completed ? "#E1F7EF" : "#FFF0E4" },
+          styles.sessionCard,
+          { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
-        <MaterialIcons
-          name={item.completed ? "verified" : "timelapse"}
-          size={24}
-          color={item.completed ? colors.success : colors.warning}
-        />
+        <View
+          style={[
+            styles.sessionIcon,
+            { backgroundColor: item.completed ? "#E1F7EF" : "#FFF0E4" },
+          ]}
+        >
+          <MaterialIcons
+            name={item.completed ? "verified" : "timelapse"}
+            size={24}
+            color={readableAccent(item.completed ? "#2E9B67" : "#E76A2C")}
+          />
+        </View>
+        <View style={styles.sessionCopy}>
+          <Text style={[styles.sessionTitle, { color: colors.foreground }]}>
+            {sessionDate}
+          </Text>
+          <Text style={[styles.sessionSubtitle, { color: colors.muted }]}>
+            {item.source === "device"
+              ? t("family.history.deviceSource")
+              : t("family.history.manualSource")}
+          </Text>
+        </View>
+        <View style={styles.durationBlock}>
+          <Text style={[styles.duration, { color: colors.foreground }]}>
+            {formatDuration(item.durationSeconds)}
+          </Text>
+          <Text style={[styles.goal, { color: colors.muted }]}>
+            {t("family.history.durationOf", {
+              duration: formatDuration(item.targetSeconds),
+            })}
+          </Text>
+        </View>
       </View>
-      <View style={styles.sessionCopy}>
-        <Text style={[styles.sessionTitle, { color: colors.foreground }]}>
-          {formatDate(item.startedAt)}
-        </Text>
-        <Text style={[styles.sessionSubtitle, { color: colors.muted }]}>
-          {item.source === "device"
-            ? "Sincronizzata dallo spazzolino"
-            : "Timer guidato"}
-        </Text>
-      </View>
-      <View style={styles.durationBlock}>
-        <Text style={[styles.duration, { color: colors.foreground }]}>
-          {formatDuration(item.durationSeconds)}
-        </Text>
-        <Text style={[styles.goal, { color: colors.muted }]}>
-          su {formatDuration(item.targetSeconds)}
-        </Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <ScreenContainer>
@@ -120,9 +136,13 @@ export default function HistoryScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
           <View style={styles.headerContent}>
-            <AppHeader eyebrow="I tuoi progressi" title="Storico" />
+            <AppHeader
+              eyebrow={t("family.history.progressEyebrow")}
+              title={t("family.history.title")}
+            />
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t("family.history.parentCardLabel")}
               onPress={() => router.push("/(tabs)/parent")}
               style={({ pressed }) => [
                 styles.parentCard,
@@ -134,20 +154,20 @@ export default function HistoryScreen() {
                 <MaterialIcons
                   name="family-restroom"
                   size={25}
-                  color={colors.primary}
+                  color={readableAccent("#2457D6")}
                 />
               </View>
               <View style={styles.parentCopy}>
                 <Text style={[styles.parentEyebrow, { color: "#173F9F" }]}>
-                  AREA GENITORI
+                  {t("family.history.parentArea")}
                 </Text>
                 <Text
                   style={[styles.parentTitle, { color: LIGHT_CARD_FOREGROUND }]}
                 >
-                  Riepilogo settimanale
+                  {t("family.history.parentSummary")}
                 </Text>
                 <Text style={[styles.parentText, { color: LIGHT_CARD_MUTED }]}>
-                  Mattina/sera, durata, tentativi e sessioni sincronizzate.
+                  {t("family.history.parentDescription")}
                 </Text>
               </View>
               <MaterialIcons
@@ -162,45 +182,49 @@ export default function HistoryScreen() {
                 style={[styles.summaryCard, { backgroundColor: "#E7EEFF" }]}
               >
                 <Text style={[styles.summaryValue, { color: "#173F9F" }]}>
-                  {history.length}
+                  {formatNumber(history.length)}
                 </Text>
                 <Text
                   style={[styles.summaryLabel, { color: LIGHT_CARD_MUTED }]}
                 >
-                  sessioni
+                  {t("common.sessions")}
                 </Text>
               </View>
               <View
                 style={[styles.summaryCard, { backgroundColor: "#E1F7EF" }]}
               >
                 <Text style={[styles.summaryValue, { color: "#17633F" }]}>
-                  {completed}
+                  {formatNumber(completed)}
                 </Text>
                 <Text
                   style={[styles.summaryLabel, { color: LIGHT_CARD_MUTED }]}
                 >
-                  complete
+                  {t("common.complete")}
                 </Text>
               </View>
               <View
                 style={[styles.summaryCard, { backgroundColor: "#FFF0E4" }]}
               >
                 <Text style={[styles.summaryValue, { color: "#9A3F0D" }]}>
-                  {Math.round(average / 60)}m
+                  {t("family.history.minutes", {
+                    minutes: formatNumber(Math.round(average / 60)),
+                  })}
                 </Text>
                 <Text
                   style={[styles.summaryLabel, { color: LIGHT_CARD_MUTED }]}
                 >
-                  media
+                  {t("family.history.average")}
                 </Text>
               </View>
             </View>
             {history.length > 0 ? (
               <View style={styles.listHeading}>
                 <Text style={[styles.listTitle, { color: colors.foreground }]}>
-                  Ultime sessioni
+                  {t("family.history.lastSessions")}
                 </Text>
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("family.history.clearButtonLabel")}
                   onPress={confirmClear}
                   style={({ pressed }) => [
                     styles.clearButton,
@@ -208,7 +232,7 @@ export default function HistoryScreen() {
                   ]}
                 >
                   <Text style={[styles.clearText, { color: colors.error }]}>
-                    Svuota
+                    {t("family.history.clearAction")}
                   </Text>
                 </Pressable>
               </View>
@@ -226,15 +250,14 @@ export default function HistoryScreen() {
               <MaterialIcons
                 name="auto-awesome"
                 size={32}
-                color={colors.primary}
+                color={readableAccent("#2457D6")}
               />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Il viaggio inizia qui
+              {t("family.history.emptyTitle")}
             </Text>
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Completa una sessione guidata oppure sincronizza lo spazzolino per
-              vedere i progressi.
+              {t("family.history.emptyDescription")}
             </Text>
           </View>
         }

@@ -1,3 +1,9 @@
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
+
 export type AdventureZoneId =
   | "bubble-bay"
   | "fresh-forest"
@@ -14,50 +20,89 @@ export type AdventureZone = {
   soft: string;
 };
 
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
+type AdventureTextKeys = { name: TranslationKey; subtitle: TranslationKey };
+
+export const ADVENTURE_ZONE_TEXT_KEYS = {
+  "bubble-bay": {
+    name: "game.adventure.bubble-bay.name",
+    subtitle: "game.adventure.bubble-bay.subtitle",
+  },
+  "fresh-forest": {
+    name: "game.adventure.fresh-forest.name",
+    subtitle: "game.adventure.fresh-forest.subtitle",
+  },
+  "spark-mountain": {
+    name: "game.adventure.spark-mountain.name",
+    subtitle: "game.adventure.spark-mountain.subtitle",
+  },
+  "crystal-lake": {
+    name: "game.adventure.crystal-lake.name",
+    subtitle: "game.adventure.crystal-lake.subtitle",
+  },
+  "smile-valley": {
+    name: "game.adventure.smile-valley.name",
+    subtitle: "game.adventure.smile-valley.subtitle",
+  },
+} as const satisfies Record<AdventureZoneId, AdventureTextKeys>;
+
+const text = (key: TranslationKey) => translateDynamic("it", key);
+
 export const ADVENTURE_ZONES: AdventureZone[] = [
   {
     id: "bubble-bay",
-    name: "Baia delle Bolle",
-    subtitle: "Il primo approdo, pieno di schiuma brillante.",
+    name: text(ADVENTURE_ZONE_TEXT_KEYS["bubble-bay"].name),
+    subtitle: text(ADVENTURE_ZONE_TEXT_KEYS["bubble-bay"].subtitle),
     unlockAtSessions: 0,
     accent: "#2457D6",
     soft: "#E7F1FF",
   },
   {
     id: "fresh-forest",
-    name: "Foresta Fresca",
-    subtitle: "Foglie profumate e sentieri verdi.",
+    name: text(ADVENTURE_ZONE_TEXT_KEYS["fresh-forest"].name),
+    subtitle: text(ADVENTURE_ZONE_TEXT_KEYS["fresh-forest"].subtitle),
     unlockAtSessions: 2,
     accent: "#2E9B67",
     soft: "#E6F7EE",
   },
   {
     id: "spark-mountain",
-    name: "Monte Splendente",
-    subtitle: "Una vetta luminosa che premia la costanza.",
+    name: text(ADVENTURE_ZONE_TEXT_KEYS["spark-mountain"].name),
+    subtitle: text(ADVENTURE_ZONE_TEXT_KEYS["spark-mountain"].subtitle),
     unlockAtSessions: 5,
     accent: "#E76A2C",
     soft: "#FFF0E7",
   },
   {
     id: "crystal-lake",
-    name: "Lago Cristallino",
-    subtitle: "Acqua limpida, gemme e nuovi incontri.",
+    name: text(ADVENTURE_ZONE_TEXT_KEYS["crystal-lake"].name),
+    subtitle: text(ADVENTURE_ZONE_TEXT_KEYS["crystal-lake"].subtitle),
     unlockAtSessions: 8,
     accent: "#7357C7",
     soft: "#F0ECFF",
   },
   {
     id: "smile-valley",
-    name: "Valle del Sorriso",
-    subtitle: "La valle segreta dei Brushlings più rari.",
+    name: text(ADVENTURE_ZONE_TEXT_KEYS["smile-valley"].name),
+    subtitle: text(ADVENTURE_ZONE_TEXT_KEYS["smile-valley"].subtitle),
     unlockAtSessions: 12,
     accent: "#B98A00",
     soft: "#FFF8D9",
   },
 ];
 
-export function isAdventureZoneUnlocked(zone: AdventureZone, completedSessions: number): boolean {
+export function localizeAdventureZone(
+  zone: AdventureZone,
+  t: Translator,
+): AdventureZone {
+  const keys: AdventureTextKeys = ADVENTURE_ZONE_TEXT_KEYS[zone.id];
+  return { ...zone, name: t(keys.name), subtitle: t(keys.subtitle) };
+}
+
+export function isAdventureZoneUnlocked(
+  zone: AdventureZone,
+  completedSessions: number,
+): boolean {
   return completedSessions >= zone.unlockAtSessions;
 }
 

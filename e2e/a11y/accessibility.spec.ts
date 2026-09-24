@@ -95,7 +95,10 @@ test.describe("WCAG automatic audit", () => {
     await expect(timer).toHaveAttribute("aria-valuemin", "0");
     await expect(timer).toHaveAttribute("aria-valuenow", "0");
     await expect(timer).toHaveAttribute("aria-valuemax", "120");
-    await expect(timer).toHaveAttribute("aria-valuetext", "0:00 di 2:00");
+    await expect(timer).toHaveAttribute(
+      "aria-valuetext",
+      "Timer di spazzolamento: 0:00 di 2:00",
+    );
     const zones = page.getByTestId("mouth-zones-progress");
     await expect(zones).toHaveAttribute("aria-valuemin", "0");
     await expect(zones).toHaveAttribute("aria-valuenow", "0");

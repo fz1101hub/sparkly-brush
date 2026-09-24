@@ -63,6 +63,7 @@ vi.mock("@/contexts/brushling-context", () => ({
 import { MouthZones } from "@/components/mouth-zones";
 import { StarterChooser } from "@/components/starter-chooser";
 import { TimerRing } from "@/components/timer-ring";
+import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 
 function byTestId(container: TestInstance, testID: string): TestInstance {
   const match = container.queryAll((node) => node.props.testID === testID)[0];
@@ -80,21 +81,30 @@ describe("accessibility semantic contracts", () => {
     const renderer = createRoot({ textComponentTypes: ["Text"] });
     await act(async () => {
       renderer.render(
-        <>
+        <TestLocaleProvider>
           <TimerRing elapsed={45} target={120} active />
           <MouthZones activeZone={2} isActive />
-        </>,
+        </TestLocaleProvider>,
       );
     });
 
     const timer = byTestId(renderer.container, "manual-timer");
     expect(timer.props.accessibilityRole).toBe("progressbar");
-    expect(timer.props.accessibilityLabel).toBe("Timer di spazzolamento: 0:45 di 2:00");
-    expect(timer.props.accessibilityValue).toEqual({ min: 0, now: 45, max: 120, text: "0:45 di 2:00" });
+    expect(timer.props.accessibilityLabel).toBe(
+      "Timer di spazzolamento: 0:45 di 2:00",
+    );
+    expect(timer.props.accessibilityValue).toEqual({
+      min: 0,
+      now: 45,
+      max: 120,
+      text: "Timer di spazzolamento: 0:45 di 2:00",
+    });
     expect(timer.props["aria-valuemin"]).toBe(0);
     expect(timer.props["aria-valuenow"]).toBe(45);
     expect(timer.props["aria-valuemax"]).toBe(120);
-    expect(timer.props["aria-valuetext"]).toBe("0:45 di 2:00");
+    expect(timer.props["aria-valuetext"]).toBe(
+      "Timer di spazzolamento: 0:45 di 2:00",
+    );
 
     const zones = byTestId(renderer.container, "mouth-zones-progress");
     expect(zones.props.accessibilityRole).toBe("progressbar");
@@ -109,7 +119,13 @@ describe("accessibility semantic contracts", () => {
 
   it("modella gli starter come radio e mantiene una sola scelta selezionata", async () => {
     const renderer = createRoot({ textComponentTypes: ["Text"] });
-    await act(async () => renderer.render(<StarterChooser />));
+    await act(async () =>
+      renderer.render(
+        <TestLocaleProvider>
+          <StarterChooser />
+        </TestLocaleProvider>,
+      ),
+    );
 
     const group = byTestId(renderer.container, "starter-chooser");
     expect(group.props.accessibilityRole).toBe("radiogroup");

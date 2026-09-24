@@ -6,7 +6,7 @@
 
 ## Sintesi
 
-Questo intervento aggiunge tre livelli complementari di verifica: **stress pluriennale della progressione e dei backup**, **accessibilità automatica web e contratti semantici React Native**, e **flussi end-to-end Android con Maestro**. Nessuno di questi gate sostituisce la prova Bluetooth sul Philips Sonicare for Kids HX6322/04 reale; riducono però in modo sostanziale le regressioni rilevabili prima del collaudo fisico.
+Questo intervento aggiunge quattro livelli complementari di verifica: **stress pluriennale della progressione e dei backup**, **accessibilità automatica web e contratti semantici React Native**, **flussi end-to-end Android con Maestro** e **localizzazione completa in cinque lingue**. Nessuno di questi gate sostituisce la prova Bluetooth sul Philips Sonicare for Kids HX6322/04 reale; riducono però in modo sostanziale le regressioni rilevabili prima del collaudo fisico.
 
 ## Risultati implementati
 
@@ -18,13 +18,18 @@ Questo intervento aggiunge tre livelli complementari di verifica: **stress pluri
 | Fusi orari | Gate separati per `America/New_York`, `Europe/Rome` e `Pacific/Kiritimati`, oltre alla suite UTC | Giorni civili consecutivi, ora ripetuta DST e coppia mattina/sera verificati |
 | Semantica accessibile | Ruoli, nomi, valori, stato selezionato e `testID` stabili su onboarding, starter, timer, zone, device, backup, storico e collaudo | Contratti component-level con Test Renderer 1.2 |
 | WCAG automatico | Playwright 1.63 + axe 4.13 su viewport mobile, in tema chiaro e scuro | Ventotto stati UI complessivi senza violazioni WCAG 2 A/AA e 2.1 A/AA; dialog, nomi dei controlli e valori ARIA verificati nel DOM |
-| E2E web funzionale | Due percorsi Playwright su Expo Web con timer E2E a cinque secondi | Sessione → ricompensa → storico dopo reload; checklist hardware persistente → backup web e fallback file nativo |
+| E2E web funzionale | Tre percorsi Playwright su Expo Web con timer E2E a cinque secondi | Sessione → ricompensa → storico; checklist hardware → backup; cinque lingue e modalità Sistema, sempre con persistenza dopo reload |
+| Localizzazione | Italiano, inglese, tedesco, francese e spagnolo con rilevamento dispositivo, override persistente e fallback italiano | 856 chiavi per catalogo; parità, placeholder, valori vuoti, titoli evolutivi, migrazione backup, hydration e formati locali verificati |
+| E2E web multilingua | Selettore lingua reale nella schermata Impostazioni | Cambio immediato tra cinque lingue, modalità Sistema, attributo `lang` e persistenza dopo reload |
+| Metadati nativi | `expo-localization` con risorse iOS/Android per tutte le lingue | Prebuild genera cinque `InfoPlist.strings`, cinque `values-b+*`, `locales_config.xml` e dichiarazioni iOS |
 | E2E Android | Due flow Maestro 2.10.0 e APK release E2E autonomo `x86_64` da 53 MiB | `assembleRelease` superato; primo avvio → timer → ricompensa → storico → backup; checklist hardware → riavvio → persistenza esito |
 | CI | Gate axe e funzionale web nei pull request; build e flow Maestro su emulatore per release o `workflow_dispatch` | Report Playwright e Maestro caricati come artifact anche in caso di errore |
 
 Tre review read-only separate hanno controllato streaming/stress, accessibilità e Maestro/CI. La review accessibilità ha inizialmente riprodotto l’assenza degli attributi `aria-value*` nel DOM e una duplicazione `aria-modal` su un wrapper web senza ruolo; entrambi i casi sono stati corretti e una re-review su server Expo fresco ha concluso senza blocker. Le review stress e Maestro hanno confermato le invarianti bounded e la coerenza tra flow, `testID`, persistenza e build E2E.
 
 Una review finale indipendente, divisa tra percorso funzionale web, accessibilità light/dark e integrazione CI, non ha trovato blocker sorgente residui. Il revisore CI ha inoltre riprodotto in una copia isolata sia i tre audit axe sia i due percorsi funzionali con installazione frozen e Chromium, confermando che porte, timeout, artifact e variabile `EXPO_PUBLIC_E2E` sono coerenti.
+
+Quattro review indipendenti aggiuntive hanno verificato i cataloghi inglese, tedesco, francese e spagnolo; una quinta ha esaminato architettura e persistenza. Sono stati corretti titoli evolutivi rimasti in italiano, formulazioni terminologiche, una race tra hydration e override, log diagnostici non ritraducibili, numeri del backup con separatore fisso e stati tecnici raw. Il client BLE conserva la propria identità durante il cambio lingua; un test dedicato impedisce regressioni di lifecycle.
 
 ## Modifiche tecniche rilevanti
 
@@ -38,6 +43,8 @@ I flow Maestro usano esclusivamente identificatori stabili. Un test Vitest scans
 
 La checklist hardware salva esplicitamente ogni modifica invece di affidarsi a un effetto successivo al render. Il flow attende l’indicatore `hardware-checklist-saved-1` prima del force-stop, quindi il test di persistenza non dipende da uno sleep arbitrario.
 
+Il runtime i18n è locale e non introduce backend. Il catalogo italiano tipizzato è la sorgente delle chiavi e viene suddiviso nei domini core, dispositivo, famiglia e gioco. I cataloghi esteri devono avere esattamente le stesse chiavi e gli stessi placeholder. Le chiamate letterali al traduttore verificano i placeholder a compile time; i percorsi dinamici usano un’API distinta. La preferenza `system | it | en | de | fr | es` usa lo storage esistente ed entra nei backup senza rompere i formati legacy. Il provider attende l’idratazione prima di renderizzare l’app e protegge le modifiche concorrenti con una revisione monotona.
+
 ## Comandi
 
 ```bash
@@ -46,6 +53,7 @@ pnpm test:stress
 pnpm test:a11y:semantic
 pnpm test:a11y:web
 pnpm test:e2e:web
+pnpm test:i18n
 pnpm test:e2e:android
 ```
 
@@ -55,17 +63,18 @@ pnpm test:e2e:android
 
 Il sandbox non espone `/dev/kvm`; l’emulatore Android in accelerazione software non ha completato il boot entro sei minuti. Sono stati comunque verificati localmente la configurazione x86_64, la build `assembleRelease` dell’APK E2E autonomo, i riferimenti dei selettori e la sintassi accettata dalla CLI fino alla fase di connessione al device. L’esecuzione completa dei due flow è demandata al runner GitHub con virtualizzazione hardware o a una workstation Android.
 
-La suite Vitest completa comprende **37 file e 231 test**; il gate stress aggiunge esecuzioni separate nei tre fusi orari. Playwright esegue **tre test di accessibilità che attraversano 28 stati UI** e **due percorsi funzionali**, producendo un report axe distinto per ogni stato oltre a screenshot, video e trace in caso di errore. Il run completo supera inoltre frozen install, peer check, TypeScript, lint senza warning, audit produttivo high, Expo dependency check, Doctor 21/21 ed export web/iOS/Android.
+La suite Vitest completa comprende **42 file e 275 test**; il gate i18n dedicato esegue 68 verifiche e il gate stress aggiunge esecuzioni separate nei tre fusi orari. Playwright esegue **tre test di accessibilità che attraversano 28 stati UI** e **tre percorsi funzionali**, producendo un report axe distinto per ogni stato oltre a screenshot, video e trace in caso di errore. Il percorso multilingua completo termina in 54,1 secondi e la matrice axe in circa 1,8 minuti nel sandbox corrente.
 
-La build Android nativa Expo 57 era già stata superata sul checkpoint precedente con SDK 36, JDK 17 e NDK 27.1, inclusa la variante E2E release. Il tentativo di ricompilare l’esatto checkout di questo ciclo è stato arrestato dall’ambiente ripristinato, che non contiene più né JDK 17 né Android SDK; non viene quindi dichiarata una nuova build nativa per questo checkout. Le modifiche del ciclo sono TypeScript, UI web e configurazione test, e l’export Android finale è comunque verde.
+La build Android nativa Expo 57 era già stata superata sul checkpoint precedente con SDK 36, JDK 17 e NDK 27.1, inclusa la variante E2E release. Per il candidato multilingua, `expo prebuild` genera correttamente i progetti iOS/Android e tutte le risorse localizzate. Il sandbox corrente contiene JDK 21 ma non Android SDK né JDK 17; non viene quindi dichiarata una nuova compilazione nativa dell’esatto checkout. Gli export Expo restano il gate locale disponibile, mentre la build Gradle rimane obbligatoria nella CI prima del merge.
 
 Restano inoltre fuori dall’automazione il Bluetooth fisico, il comportamento radio in background, il picker documenti e lo share sheet di sistema. Questi casi rimangono nella checklist manuale dell’issue hardware.
 
 ## Fonti
 
-Le decisioni seguono la documentazione ufficiale di Maestro per React Native, `launchApp`, selettori, attese e report JUnit [1], le API di accessibilità React Native [2], la guida Playwright per axe [3] e le note Expo SDK 57 [4].
+Le decisioni seguono la documentazione ufficiale di Maestro per React Native, `launchApp`, selettori, attese e report JUnit [1], le API di accessibilità React Native [2], la guida Playwright per axe [3], le note Expo SDK 57 [4] e la guida Expo Localization [5].
 
-[1]: https://docs.maestro.dev/get-started/supported-platform/react-native
-[2]: https://reactnative.dev/docs/accessibility
-[3]: https://playwright.dev/docs/accessibility-testing
-[4]: https://expo.dev/changelog/sdk-57
+[1]: https://docs.maestro.dev/get-started/supported-platform/react-native "Maestro — React Native"
+[2]: https://reactnative.dev/docs/accessibility "React Native Accessibility"
+[3]: https://playwright.dev/docs/accessibility-testing "Playwright Accessibility testing"
+[4]: https://expo.dev/changelog/sdk-57 "Expo SDK 57"
+[5]: https://docs.expo.dev/guides/localization/ "Expo Localization guide"

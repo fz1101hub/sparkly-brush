@@ -20,10 +20,13 @@ import {
   LIGHT_CARD_MUTED,
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   createHardwareValidationRun,
-  HARDWARE_TEST_CASES,
+  connectionStatusLabel,
+  getHardwareTestCases,
+  hardwareTestStatusLabel,
   hardwareValidationSummary,
   renderHardwareValidationReport,
   reportFileName,
@@ -40,29 +43,13 @@ import {
 
 const STATUS_OPTIONS: readonly {
   status: HardwareTestStatus;
-  label: string;
   icon: React.ComponentProps<typeof MaterialIcons>["name"];
   color: string;
 }[] = [
-  {
-    status: "passed",
-    label: "Superato",
-    icon: "check-circle",
-    color: "#14845B",
-  },
-  { status: "failed", label: "Fallito", icon: "cancel", color: "#C43D58" },
-  {
-    status: "blocked",
-    label: "Bloccato",
-    icon: "pause-circle",
-    color: "#B27700",
-  },
-  {
-    status: "pending",
-    label: "Da fare",
-    icon: "radio-button-unchecked",
-    color: "#68758A",
-  },
+  { status: "passed", icon: "check-circle", color: "#14845B" },
+  { status: "failed", icon: "cancel", color: "#C43D58" },
+  { status: "blocked", icon: "pause-circle", color: "#B27700" },
+  { status: "pending", icon: "radio-button-unchecked", color: "" },
 ];
 
 function currentPlatform(): HardwareValidationRun["platform"] {
@@ -79,7 +66,7 @@ function currentPlatform(): HardwareValidationRun["platform"] {
 function newRun(): HardwareValidationRun {
   return createHardwareValidationRun(
     currentPlatform(),
-    Constants.expoConfig?.version ?? "sconosciuta",
+    Constants.expoConfig?.version ?? "unknown",
     String(Platform.Version),
   );
 }
@@ -87,6 +74,7 @@ function newRun(): HardwareValidationRun {
 export default function HardwareTestScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useI18n();
   const {
     status,
     adapterState,
@@ -98,6 +86,7 @@ export default function HardwareTestScreen() {
     demoMode,
   } = useBrush();
   const [run, setRun] = useState<HardwareValidationRun | null>(null);
+  const testCases = useMemo(() => getHardwareTestCases(t), [t]);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
@@ -105,25 +94,24 @@ export default function HardwareTestScreen() {
   const [error, setError] = useState<string | null>(null);
   const saveRevisionRef = useRef(0);
 
-  const persistRun = useCallback((next: HardwareValidationRun) => {
-    const revision = saveRevisionRef.current + 1;
-    saveRevisionRef.current = revision;
-    setSaving(true);
-    setPersistenceError(null);
-    void saveHardwareValidationRun(next)
-      .then(() => {
-        if (saveRevisionRef.current === revision) setSaving(false);
-      })
-      .catch((caught) => {
-        if (saveRevisionRef.current !== revision) return;
-        setSaving(false);
-        setPersistenceError(
-          caught instanceof Error
-            ? caught.message
-            : "Salvataggio locale non riuscito",
-        );
-      });
-  }, []);
+  const persistRun = useCallback(
+    (next: HardwareValidationRun) => {
+      const revision = saveRevisionRef.current + 1;
+      saveRevisionRef.current = revision;
+      setSaving(true);
+      setPersistenceError(null);
+      void saveHardwareValidationRun(next)
+        .then(() => {
+          if (saveRevisionRef.current === revision) setSaving(false);
+        })
+        .catch(() => {
+          if (saveRevisionRef.current !== revision) return;
+          setSaving(false);
+          setPersistenceError(t("hardware.saveFailed"));
+        });
+    },
+    [t],
+  );
 
   useEffect(() => {
     let active = true;
@@ -134,20 +122,16 @@ export default function HardwareTestScreen() {
           setRun(initial);
         }
       })
-      .catch((caught) => {
+      .catch(() => {
         if (!active) return;
         const fallback = newRun();
         setRun(fallback);
-        setPersistenceError(
-          caught instanceof Error
-            ? caught.message
-            : "Impossibile caricare il collaudo salvato",
-        );
+        setPersistenceError(t("hardware.loadFailed"));
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const summary = useMemo(
     () => (run ? hardwareValidationSummary(run) : null),
@@ -173,31 +157,32 @@ export default function HardwareTestScreen() {
     setMessage(null);
     setError(null);
     try {
-      const report = renderHardwareValidationReport(run, {
-        connectionStatus: status,
-        adapterState,
-        device: device
-          ? {
-              name: device.name,
-              model: device.model,
-              firmware: device.firmware,
-              battery: device.battery,
-            }
-          : null,
-        live,
-        recentSessionCount: realHistory.length,
-        attemptedSessions: lifetimeProgress.attemptedSessions,
-        completedSessions: lifetimeProgress.completedSessions,
-        diagnosticLogs: logs,
-      });
-      await exportHardwareValidationReport(reportFileName(run), report);
-      setMessage("Report sanitizzato preparato correttamente.");
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Esportazione del report non riuscita",
+      const report = renderHardwareValidationReport(
+        run,
+        {
+          connectionStatus: status,
+          adapterState,
+          device: device
+            ? {
+                name: device.name,
+                model: device.model,
+                firmware: device.firmware,
+                battery: device.battery,
+              }
+            : null,
+          live,
+          recentSessionCount: realHistory.length,
+          attemptedSessions: lifetimeProgress.attemptedSessions,
+          completedSessions: lifetimeProgress.completedSessions,
+          diagnosticLogs: logs,
+        },
+        Date.now(),
+        t,
       );
+      await exportHardwareValidationReport(reportFileName(run), report, t);
+      setMessage(t("hardware.reportReady"));
+    } catch {
+      setError(t("hardware.exportFailed"));
     } finally {
       setBusy(false);
     }
@@ -212,22 +197,18 @@ export default function HardwareTestScreen() {
       setError(null);
     };
     if (Platform.OS === "web") {
-      if (
-        globalThis.confirm?.(
-          "Creare un nuovo collaudo? Gli esiti e le note correnti verranno cancellati.",
-        )
-      ) {
+      if (globalThis.confirm?.(t("hardware.resetConfirmWeb"))) {
         performReset();
       }
       return;
     }
     Alert.alert(
-      "Nuovo collaudo?",
-      "Gli esiti e le note della sessione corrente verranno cancellati.",
+      t("hardware.resetAlertTitle"),
+      t("hardware.resetAlertMessage"),
       [
-        { text: "Annulla", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Ricomincia",
+          text: t("hardware.resetAction"),
           style: "destructive",
           onPress: performReset,
         },
@@ -281,19 +262,23 @@ export default function HardwareTestScreen() {
 
         <View
           accessibilityRole="radiogroup"
-          accessibilityLabel={`Esito: ${item.title}`}
+          accessibilityLabel={t("hardware.resultLabel", { title: item.title })}
           style={styles.statusGrid}
         >
           {STATUS_OPTIONS.map((option) => {
             const selected = result.status === option.status;
             const optionColor =
-              option.status === "pending" ? colors.muted : option.color;
+              option.status === "pending" ? colors.foreground : option.color;
+            const optionLabel = hardwareTestStatusLabel(option.status, t);
             return (
               <Pressable
                 key={option.status}
                 testID={`hardware-status-${item.id}-${option.status}${selected ? "-selected" : ""}`}
                 accessibilityRole="radio"
-                accessibilityLabel={`${item.title}: ${option.label}`}
+                accessibilityLabel={t("hardware.resultOptionLabel", {
+                  title: item.title,
+                  status: optionLabel,
+                })}
                 accessibilityState={{ checked: selected }}
                 aria-checked={selected}
                 onPress={() => updateResult(item, { status: option.status })}
@@ -319,7 +304,7 @@ export default function HardwareTestScreen() {
                     { color: selected ? optionColor : colors.muted },
                   ]}
                 >
-                  {option.label}
+                  {optionLabel}
                 </Text>
               </Pressable>
             );
@@ -329,9 +314,9 @@ export default function HardwareTestScreen() {
         <TextInput
           value={result.note}
           onChangeText={(note) => updateResult(item, { note })}
-          placeholder="Nota, errore osservato o riferimento screenshot…"
+          placeholder={t("hardware.notePlaceholder")}
           placeholderTextColor={colors.muted}
-          accessibilityLabel={`Note per ${item.title}`}
+          accessibilityLabel={t("hardware.noteLabel", { title: item.title })}
           multiline
           maxLength={1_000}
           textAlignVertical="top"
@@ -352,7 +337,7 @@ export default function HardwareTestScreen() {
     <ScreenContainer>
       <FlatList
         testID="hardware-test-screen"
-        data={HARDWARE_TEST_CASES as readonly HardwareTestCase[]}
+        data={testCases as readonly HardwareTestCase[]}
         keyExtractor={(item) => item.id}
         renderItem={renderTest}
         showsVerticalScrollIndicator={false}
@@ -364,7 +349,7 @@ export default function HardwareTestScreen() {
             <View style={styles.topRow}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Torna indietro"
+                accessibilityLabel={t("hardware.backLabel")}
                 onPress={() => router.back()}
                 style={({ pressed }) => [
                   styles.backButton,
@@ -380,8 +365,8 @@ export default function HardwareTestScreen() {
               </Pressable>
               <View style={styles.headerWrap}>
                 <AppHeader
-                  eyebrow="HX6322/04 · iOS e Android"
-                  title="Collaudo hardware"
+                  eyebrow={t("hardware.eyebrow")}
+                  title={t("hardware.title")}
                   connected={status === "connected"}
                 />
               </View>
@@ -400,11 +385,10 @@ export default function HardwareTestScreen() {
                 <Text
                   style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}
                 >
-                  Una matrice verificabile, non appunti sparsi
+                  {t("hardware.heroTitle")}
                 </Text>
                 <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
-                  Gli esiti restano sul telefono e il report oscura UUID, MAC e
-                  ID persistenti.
+                  {t("hardware.heroDescription")}
                 </Text>
               </View>
             </View>
@@ -420,7 +404,7 @@ export default function HardwareTestScreen() {
                 <Text
                   style={[styles.warningText, { color: LIGHT_CARD_FOREGROUND }]}
                 >
-                  Disattiva la demo prima delle prove con il manico reale.
+                  {t("hardware.demoWarning")}
                 </Text>
               </View>
             ) : null}
@@ -443,12 +427,17 @@ export default function HardwareTestScreen() {
                   <Text
                     style={[styles.summaryTitle, { color: colors.foreground }]}
                   >
-                    Avanzamento
+                    {t("hardware.progressTitle")}
                   </Text>
                   <Text style={[styles.summaryText, { color: colors.muted }]}>
                     {summary
-                      ? `${summary.completed}/${summary.total} compilate · ${summary.passed} superate${saving ? " · salvataggio…" : ""}`
-                      : "Caricamento…"}
+                      ? t("hardware.progressSummary", {
+                          completed: summary.completed,
+                          total: summary.total,
+                          passed: summary.passed,
+                          saving: saving ? t("hardware.progressSaving") : "",
+                        })
+                      : t("hardware.progressLoading")}
                   </Text>
                 </View>
                 <Text
@@ -474,9 +463,18 @@ export default function HardwareTestScreen() {
                 />
               </View>
               <View style={styles.snapshotRow}>
-                <Snapshot label="BLE" value={adapterState} />
-                <Snapshot label="Stato" value={status} />
-                <Snapshot label="Firmware" value={device?.firmware ?? "—"} />
+                <Snapshot
+                  label={t("hardware.snapshotBle")}
+                  value={adapterState}
+                />
+                <Snapshot
+                  label={t("hardware.snapshotStatus")}
+                  value={connectionStatusLabel(status, t)}
+                />
+                <Snapshot
+                  label={t("hardware.snapshotFirmware")}
+                  value={device?.firmware ?? "—"}
+                />
               </View>
             </View>
 
@@ -511,11 +509,11 @@ export default function HardwareTestScreen() {
               >
                 <MaterialIcons name="sync-problem" size={20} color="#9A7200" />
                 <Text style={styles.feedbackWarning}>
-                  Il dato è visibile ma non ancora salvato: {persistenceError}
+                  {t("hardware.unsavedMessage", { error: persistenceError })}
                 </Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Riprova il salvataggio del collaudo"
+                  accessibilityLabel={t("hardware.retrySaveLabel")}
                   onPress={() => {
                     if (run) persistRun(run);
                   }}
@@ -524,7 +522,7 @@ export default function HardwareTestScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.retryText}>Riprova</Text>
+                  <Text style={styles.retryText}>{t("common.retry")}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -532,7 +530,7 @@ export default function HardwareTestScreen() {
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Condividi il report di collaudo sanitizzato"
+                accessibilityLabel={t("hardware.shareReportLabel")}
                 onPress={() => void shareReport()}
                 disabled={!run || busy}
                 style={({ pressed }) => [
@@ -543,12 +541,12 @@ export default function HardwareTestScreen() {
               >
                 <MaterialIcons name="ios-share" size={20} color="#FFFFFF" />
                 <Text style={styles.primaryText}>
-                  {busy ? "Preparazione…" : "Condividi report"}
+                  {busy ? t("backup.preparing") : t("hardware.shareReport")}
                 </Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Crea un nuovo collaudo"
+                accessibilityLabel={t("hardware.newRunLabel")}
                 onPress={resetRun}
                 disabled={!run || busy}
                 style={({ pressed }) => [
@@ -564,18 +562,17 @@ export default function HardwareTestScreen() {
                   color={colors.primary}
                 />
                 <Text style={[styles.resetText, { color: colors.primary }]}>
-                  Nuovo
+                  {t("hardware.newRun")}
                 </Text>
               </Pressable>
             </View>
 
             <View>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Matrice di prova
+                {t("hardware.matrixTitle")}
               </Text>
               <Text style={[styles.sectionText, { color: colors.muted }]}>
-                Compila ogni esito sul dispositivo che stai testando. Le note
-                sono incluse nel report.
+                {t("hardware.matrixDescription")}
               </Text>
             </View>
           </View>

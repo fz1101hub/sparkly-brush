@@ -15,9 +15,11 @@ import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
   LIGHT_CARD_MUTED,
+  readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
 import { computeParentDashboard } from "@/lib/parent-dashboard";
@@ -26,19 +28,39 @@ import {
   type ParentRewardRequirement,
 } from "@/lib/parent-rewards";
 
-function percentage(value: number): string {
-  return String(Math.round(value * 100)) + "%";
-}
-
-function duration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  return String(minutes) + ":" + String(rest).padStart(2, "0");
-}
+const REQUIREMENTS = [
+  {
+    value: "completed-sessions",
+    labelKey: "family.parent.requirementSessions",
+    icon: "check-circle",
+    defaultTarget: "5",
+  },
+  {
+    value: "perfect-days",
+    labelKey: "family.parent.requirementPerfectDays",
+    icon: "wb-sunny",
+    defaultTarget: "3",
+  },
+  {
+    value: "streak",
+    labelKey: "family.parent.requirementStreak",
+    icon: "local-fire-department",
+    defaultTarget: "7",
+  },
+] as const satisfies readonly {
+  value: ParentRewardRequirement;
+  labelKey:
+    | "family.parent.requirementSessions"
+    | "family.parent.requirementPerfectDays"
+    | "family.parent.requirementStreak";
+  icon: "check-circle" | "wb-sunny" | "local-fire-department";
+  defaultTarget: string;
+}[];
 
 export default function ParentDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatDate, formatNumber } = useI18n();
   const { history, demoMode } = useBrush();
   const { stats, missionCenter } = useBrushling();
   const { rewards, addReward, removeReward, markDelivered } =
@@ -48,6 +70,16 @@ export default function ParentDashboardScreen() {
     useState<ParentRewardRequirement>("perfect-days");
   const [target, setTarget] = useState("3");
   const dashboard = computeParentDashboard(history);
+
+  const formatPercentage = (value: number) =>
+    t("family.parent.percentage", {
+      value: formatNumber(Math.round(value * 100)),
+    });
+  const formatDuration = (seconds: number) =>
+    t("family.parent.duration", {
+      minutes: formatNumber(Math.floor(seconds / 60)),
+      seconds: formatNumber(seconds % 60).padStart(2, "0"),
+    });
 
   const createReward = async () => {
     const parsedTarget = Math.max(
@@ -68,7 +100,7 @@ export default function ParentDashboardScreen() {
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("common.back")}
             onPress={() => router.back()}
             style={({ pressed }) => [
               styles.backButton,
@@ -78,13 +110,13 @@ export default function ParentDashboardScreen() {
             <MaterialIcons
               name="arrow-back"
               size={22}
-              color={colors.foreground}
+              color={LIGHT_CARD_FOREGROUND}
             />
           </Pressable>
           <View style={styles.headerWrap}>
             <AppHeader
-              eyebrow="Solo su questo telefono"
-              title="Area genitori"
+              eyebrow={t("family.parent.localOnly")}
+              title={t("family.parent.title")}
               connected={false}
             />
           </View>
@@ -96,55 +128,59 @@ export default function ParentDashboardScreen() {
             { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" },
           ]}
         >
-          <MaterialIcons name="lock-outline" size={22} color="#2457D6" />
+          <MaterialIcons
+            name="lock-outline"
+            size={22}
+            color={readableAccent("#2457D6")}
+          />
           <Text style={[styles.privacyText, { color: LIGHT_CARD_FOREGROUND }]}>
-            Questa dashboard usa soltanto lo storico locale dell’app. Non invia
-            dati a un account o a un server.
+            {t("family.parent.privacy")}
           </Text>
         </View>
 
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
-            <Text style={[styles.statValue, { color: "#2E8A60" }]}>
-              {percentage(dashboard.adherenceRate)}
+            <Text style={[styles.statValue, { color: "#17633F" }]}>
+              {formatPercentage(dashboard.adherenceRate)}
             </Text>
             <Text style={[styles.statLabel, { color: LIGHT_CARD_MUTED }]}>
-              routine mattina/sera
+              {t("family.parent.routine")}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#E7EEFF" }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
-              {dashboard.completedSessions}
+            <Text style={[styles.statValue, { color: "#173F9F" }]}>
+              {formatNumber(dashboard.completedSessions)}
             </Text>
             <Text style={[styles.statLabel, { color: LIGHT_CARD_MUTED }]}>
-              sessioni complete
+              {t("family.parent.completedSessions")}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#FFF0E4" }]}>
-            <Text style={[styles.statValue, { color: "#BA4E13" }]}>
-              {dashboard.totalMinutes}m
+            <Text style={[styles.statValue, { color: "#9A3F0D" }]}>
+              {t("family.parent.minutes", {
+                minutes: formatNumber(dashboard.totalMinutes),
+              })}
             </Text>
             <Text style={[styles.statLabel, { color: LIGHT_CARD_MUTED }]}>
-              tempo registrato
+              {t("family.parent.recordedTime")}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#F0ECFF" }]}>
-            <Text style={[styles.statValue, { color: "#7357C7" }]}>
-              {dashboard.daysWithBoth}
+            <Text style={[styles.statValue, { color: "#51369C" }]}>
+              {formatNumber(dashboard.daysWithBoth)}
             </Text>
             <Text style={[styles.statLabel, { color: LIGHT_CARD_MUTED }]}>
-              giorni completi
+              {t("family.parent.completeDays")}
             </Text>
           </View>
         </View>
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Ultimi 7 giorni
+            {t("family.parent.recentDays")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Una spunta indica una sessione completa registrata nella fascia
-            mattina o sera.
+            {t("family.parent.routineDescription")}
           </Text>
         </View>
 
@@ -156,16 +192,16 @@ export default function ParentDashboardScreen() {
         >
           <View style={styles.weekHeader}>
             <Text style={[styles.dayHeader, { color: LIGHT_CARD_MUTED }]}>
-              Giorno
+              {t("family.parent.day")}
             </Text>
             <Text style={[styles.slotHeader, { color: LIGHT_CARD_MUTED }]}>
-              Mattina
+              {t("family.parent.morning")}
             </Text>
             <Text style={[styles.slotHeader, { color: LIGHT_CARD_MUTED }]}>
-              Sera
+              {t("family.parent.evening")}
             </Text>
             <Text style={[styles.slotHeader, { color: LIGHT_CARD_MUTED }]}>
-              Totale
+              {t("family.parent.total")}
             </Text>
           </View>
 
@@ -175,7 +211,10 @@ export default function ParentDashboardScreen() {
               style={[styles.dayRow, { borderTopColor: colors.border }]}
             >
               <Text style={[styles.dayLabel, { color: colors.foreground }]}>
-                {day.label}
+                {formatDate(day.timestamp, {
+                  weekday: "short",
+                  day: "numeric",
+                })}
               </Text>
               <View style={styles.slot}>
                 <MaterialIcons
@@ -185,7 +224,7 @@ export default function ParentDashboardScreen() {
                       : "radio-button-unchecked"
                   }
                   size={21}
-                  color={day.morningCompleted ? "#2E9B67" : "#B6BBC6"}
+                  color={day.morningCompleted ? "#17633F" : LIGHT_CARD_MUTED}
                 />
               </View>
               <View style={styles.slot}>
@@ -196,11 +235,11 @@ export default function ParentDashboardScreen() {
                       : "radio-button-unchecked"
                   }
                   size={21}
-                  color={day.eveningCompleted ? "#7357C7" : "#B6BBC6"}
+                  color={day.eveningCompleted ? "#51369C" : LIGHT_CARD_MUTED}
                 />
               </View>
               <Text style={[styles.slotValue, { color: colors.foreground }]}>
-                {day.completedSessions}
+                {formatNumber(day.completedSessions)}
               </Text>
             </View>
           ))}
@@ -213,12 +252,12 @@ export default function ParentDashboardScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <MaterialIcons name="verified" size={23} color={colors.success} />
+            <MaterialIcons name="verified" size={23} color="#17633F" />
             <Text style={[styles.detailValue, { color: colors.foreground }]}>
-              {percentage(dashboard.completionRate)}
+              {formatPercentage(dashboard.completionRate)}
             </Text>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>
-              tentativi completati
+              {t("family.parent.completedAttempts")}
             </Text>
           </View>
           <View
@@ -227,12 +266,16 @@ export default function ParentDashboardScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <MaterialIcons name="schedule" size={23} color={colors.primary} />
+            <MaterialIcons
+              name="schedule"
+              size={23}
+              color={readableAccent("#2457D6")}
+            />
             <Text style={[styles.detailValue, { color: colors.foreground }]}>
-              {duration(dashboard.averageCompletedSeconds)}
+              {formatDuration(dashboard.averageCompletedSeconds)}
             </Text>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>
-              durata media completa
+              {t("family.parent.averageCompletedDuration")}
             </Text>
           </View>
           <View
@@ -241,12 +284,16 @@ export default function ParentDashboardScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <MaterialIcons name="bluetooth" size={23} color={colors.primary} />
+            <MaterialIcons
+              name="bluetooth"
+              size={23}
+              color={readableAccent("#2457D6")}
+            />
             <Text style={[styles.detailValue, { color: colors.foreground }]}>
-              {dashboard.deviceSessions}
+              {formatNumber(dashboard.deviceSessions)}
             </Text>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>
-              da spazzolino
+              {t("family.parent.fromToothbrush")}
             </Text>
           </View>
           <View
@@ -255,21 +302,21 @@ export default function ParentDashboardScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <MaterialIcons name="touch-app" size={23} color="#E76A2C" />
+            <MaterialIcons name="touch-app" size={23} color="#9A3F0D" />
             <Text style={[styles.detailValue, { color: colors.foreground }]}>
-              {dashboard.manualSessions}
+              {formatNumber(dashboard.manualSessions)}
             </Text>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>
-              timer manuale
+              {t("family.parent.manualTimer")}
             </Text>
           </View>
         </View>
 
         {dashboard.approximateTimeSessions > 0 ? (
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            {dashboard.approximateTimeSessions} sessioni BLE conservate con
-            orario approssimato sono escluse da calendario, streak e missioni
-            giornaliere.
+            {t("family.parent.approximateSessions", {
+              count: formatNumber(dashboard.approximateTimeSessions),
+            })}
           </Text>
         ) : null}
 
@@ -279,32 +326,32 @@ export default function ParentDashboardScreen() {
             { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
           ]}
         >
-          <MaterialIcons name="emoji-events" size={26} color="#B98A00" />
+          <MaterialIcons name="emoji-events" size={26} color="#6F5100" />
           <View style={styles.progressCopy}>
             <Text
               style={[styles.progressTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              Progressione gioco
+              {t("family.parent.gameProgress")}
             </Text>
             <Text style={[styles.progressText, { color: LIGHT_CARD_MUTED }]}>
-              Livello {stats.level} · {stats.completedSessions} sessioni
-              complete ·{" "}
-              {
-                missionCenter.achievements.filter((item) => item.unlocked)
-                  .length
-              }{" "}
-              badge sbloccati.
+              {t("family.parent.gameProgressDescription", {
+                level: formatNumber(stats.level),
+                sessions: formatNumber(stats.completedSessions),
+                badges: formatNumber(
+                  missionCenter.achievements.filter((item) => item.unlocked)
+                    .length,
+                ),
+              })}
             </Text>
           </View>
         </View>
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Premi di famiglia
+            {t("family.parent.rewardsTitle")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Crea ricompense reali scelte dal genitore. L’app tiene solo il
-            progresso; la promessa resta una cosa di famiglia.
+            {t("family.parent.rewardsDescription")}
           </Text>
         </View>
 
@@ -314,14 +361,14 @@ export default function ParentDashboardScreen() {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text style={[styles.builderEyebrow, { color: colors.primary }]}>
-            NUOVO PREMIO
+          <Text style={[styles.builderEyebrow, { color: "#173F9F" }]}>
+            {t("family.parent.newReward")}
           </Text>
           <TextInput
-            accessibilityLabel="Nome del premio"
+            accessibilityLabel={t("family.parent.rewardNameLabel")}
             value={rewardTitle}
             onChangeText={setRewardTitle}
-            placeholder="Es. scegli il film di stasera"
+            placeholder={t("family.parent.rewardNamePlaceholder")}
             placeholderTextColor={colors.muted}
             style={[
               styles.rewardInput,
@@ -333,71 +380,70 @@ export default function ParentDashboardScreen() {
             ]}
           />
 
-          <View style={styles.requirementRow}>
-            {(
-              [
-                ["completed-sessions", "Sessioni", "check-circle"],
-                ["perfect-days", "Giorni perfetti", "wb-sunny"],
-                ["streak", "Record serie", "local-fire-department"],
-              ] as const
-            ).map(([value, label, icon]) => (
-              <Pressable
-                key={value}
-                onPress={() => {
-                  setRequirement(value);
-                  setTarget(
-                    value === "completed-sessions"
-                      ? "5"
-                      : value === "perfect-days"
-                        ? "3"
-                        : "7",
-                  );
-                }}
-                style={({ pressed }) => [
-                  styles.requirementButton,
-                  {
-                    backgroundColor:
-                      requirement === value ? "#EEF4FF" : colors.background,
-                    borderColor:
-                      requirement === value ? colors.primary : colors.border,
-                  },
-                  pressed && styles.pressed,
-                ]}
-              >
-                <MaterialIcons
-                  name={icon}
-                  size={18}
-                  color={requirement === value ? colors.primary : colors.muted}
-                />
-                <Text
-                  style={[
-                    styles.requirementText,
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel={t("family.parent.rewardRequirementLabel")}
+            style={styles.requirementRow}
+          >
+            {REQUIREMENTS.map(({ value, labelKey, icon, defaultTarget }) => {
+              const selected = requirement === value;
+              const label = t(labelKey);
+              return (
+                <Pressable
+                  key={value}
+                  accessibilityRole="radio"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: selected }}
+                  aria-checked={selected}
+                  onPress={() => {
+                    setRequirement(value);
+                    setTarget(defaultTarget);
+                  }}
+                  style={({ pressed }) => [
+                    styles.requirementButton,
                     {
-                      color:
-                        requirement === value ? "#173F9F" : colors.foreground,
+                      backgroundColor: selected ? "#EEF4FF" : colors.background,
+                      borderColor: selected ? "#173F9F" : colors.border,
                     },
+                    pressed && styles.pressed,
                   ]}
                 >
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
+                  <MaterialIcons
+                    name={icon}
+                    size={18}
+                    color={selected ? "#173F9F" : LIGHT_CARD_MUTED}
+                  />
+                  <Text
+                    style={[
+                      styles.requirementText,
+                      {
+                        color: selected ? "#173F9F" : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           <View style={styles.targetRow}>
             <View style={styles.targetCopy}>
               <Text style={[styles.targetLabel, { color: colors.foreground }]}>
-                Obiettivo
+                {t("family.parent.target")}
               </Text>
               <Text style={[styles.targetHelp, { color: colors.muted }]}>
                 {rewardRequirementLabel(
                   requirement,
                   Number.parseInt(target, 10) || 1,
+                  t,
+                  formatNumber,
                 )}
               </Text>
             </View>
             <TextInput
-              accessibilityLabel="Obiettivo del premio"
+              accessibilityLabel={t("family.parent.targetAccessibilityLabel")}
               value={target}
               onChangeText={(value) =>
                 setTarget(value.replace(/[^0-9]/g, "").slice(0, 2))
@@ -412,6 +458,7 @@ export default function ParentDashboardScreen() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t("family.parent.addReward")}
             disabled={!rewardTitle.trim()}
             onPress={() => void createReward()}
             style={({ pressed }) => [
@@ -421,7 +468,9 @@ export default function ParentDashboardScreen() {
             ]}
           >
             <MaterialIcons name="add-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.addRewardText}>Aggiungi premio</Text>
+            <Text style={styles.addRewardText}>
+              {t("family.parent.addReward")}
+            </Text>
           </Pressable>
         </View>
 
@@ -451,10 +500,10 @@ export default function ParentDashboardScreen() {
                     styles.rewardIcon,
                     {
                       backgroundColor: reward.deliveredAt
-                        ? "#B8BDC8"
+                        ? "#68707E"
                         : reward.unlocked
-                          ? "#55B987"
-                          : "#E8BE38",
+                          ? "#17633F"
+                          : "#6F5100",
                     },
                   ]}
                 >
@@ -482,8 +531,17 @@ export default function ParentDashboardScreen() {
                   <Text
                     style={[styles.rewardMeta, { color: LIGHT_CARD_MUTED }]}
                   >
-                    {rewardRequirementLabel(reward.requirement, reward.target)}{" "}
-                    · {reward.progress}/{reward.target}
+                    {rewardRequirementLabel(
+                      reward.requirement,
+                      reward.target,
+                      t,
+                      formatNumber,
+                    )}{" "}
+                    ·{" "}
+                    {t("family.parent.rewardProgress", {
+                      progress: formatNumber(reward.progress),
+                      target: formatNumber(reward.target),
+                    })}
                   </Text>
                   <Text
                     style={[
@@ -492,23 +550,27 @@ export default function ParentDashboardScreen() {
                         color: reward.deliveredAt
                           ? LIGHT_CARD_MUTED
                           : reward.unlocked
-                            ? "#2E8A60"
-                            : "#8A6900",
+                            ? "#17633F"
+                            : "#6F5100",
                       },
                     ]}
                   >
                     {reward.deliveredAt
-                      ? "Consegnato"
+                      ? t("family.parent.rewardDelivered")
                       : reward.unlocked
                         ? demoMode
-                          ? "Sbloccato nella demo · non consegnabile"
-                          : "Sbloccato · pronto da consegnare"
-                        : "In corso"}
+                          ? t("family.parent.rewardDemoUnlocked")
+                          : t("family.parent.rewardUnlocked")
+                        : t("family.parent.rewardInProgress")}
                   </Text>
                 </View>
                 <View style={styles.rewardActions}>
                   {reward.unlocked && !reward.deliveredAt ? (
                     <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("family.parent.deliverReward", {
+                        title: reward.title,
+                      })}
                       disabled={demoMode}
                       onPress={() => void markDelivered(reward.id)}
                       style={({ pressed }) => [
@@ -521,6 +583,10 @@ export default function ParentDashboardScreen() {
                     </Pressable>
                   ) : null}
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("family.parent.removeReward", {
+                      title: reward.title,
+                    })}
                     onPress={() => void removeReward(reward.id)}
                     style={({ pressed }) => [
                       styles.removeButton,
@@ -530,7 +596,7 @@ export default function ParentDashboardScreen() {
                     <MaterialIcons
                       name="delete-outline"
                       size={19}
-                      color="#D33D5D"
+                      color="#B4233D"
                     />
                   </Pressable>
                 </View>
@@ -539,15 +605,16 @@ export default function ParentDashboardScreen() {
           </View>
         ) : (
           <View style={[styles.emptyRewards, { borderColor: colors.border }]}>
-            <MaterialIcons name="redeem" size={25} color={colors.muted} />
+            <MaterialIcons name="redeem" size={25} color={LIGHT_CARD_MUTED} />
             <Text style={[styles.emptyRewardText, { color: colors.muted }]}>
-              Nessun premio di famiglia ancora configurato.
+              {t("family.parent.noRewards")}
             </Text>
           </View>
         )}
 
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t("family.parent.settingsCardLabel")}
           onPress={() => router.push("/(tabs)/settings")}
           style={({ pressed }) => [
             styles.settingsCard,
@@ -555,15 +622,15 @@ export default function ParentDashboardScreen() {
             pressed && styles.pressed,
           ]}
         >
-          <MaterialIcons name="tune" size={24} color="#7357C7" />
+          <MaterialIcons name="tune" size={24} color="#51369C" />
           <View style={styles.settingsCopy}>
             <Text
               style={[styles.settingsTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              Suoni, musica e vibrazione
+              {t("family.parent.settingsTitle")}
             </Text>
             <Text style={[styles.settingsText, { color: LIGHT_CARD_MUTED }]}>
-              Regola il feedback dell’app senza cambiare progressi o storico.
+              {t("family.parent.settingsDescription")}
             </Text>
           </View>
           <MaterialIcons
@@ -585,8 +652,7 @@ export default function ParentDashboardScreen() {
             color={LIGHT_CARD_MUTED}
           />
           <Text style={[styles.noteText, { color: LIGHT_CARD_MUTED }]}>
-            I dati mostrano soltanto ciò che l’app ha registrato e non
-            costituiscono una valutazione odontoiatrica o clinica.
+            {t("family.parent.clinicalNote")}
           </Text>
         </View>
       </ScrollView>
@@ -776,7 +842,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#2E9B67",
+    backgroundColor: "#17633F",
     alignItems: "center",
     justifyContent: "center",
   },

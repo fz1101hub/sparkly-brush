@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
 import { createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
 import type { BrushlingId } from "@/lib/brushlings";
+import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -60,7 +61,11 @@ async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: Brushling
   const renderer = createRoot();
   await act(async () => {
     renderer.render(
-      <BrushlingProvider><Probe /></BrushlingProvider>,
+      <TestLocaleProvider>
+        <BrushlingProvider>
+          <Probe />
+        </BrushlingProvider>
+      </TestLocaleProvider>,
     );
   });
   await act(async () => {
@@ -79,7 +84,13 @@ async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: Brushling
   };
   mocks.brushState.historyReady = true;
   await act(async () => {
-    renderer.render(<BrushlingProvider><Probe /></BrushlingProvider>);
+    renderer.render(
+      <TestLocaleProvider>
+        <BrushlingProvider>
+          <Probe />
+        </BrushlingProvider>
+      </TestLocaleProvider>,
+    );
   });
 
   expect(observed.selectedId).toBe(selectedId);

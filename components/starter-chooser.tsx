@@ -4,10 +4,12 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { STARTER_IDS, getBrushling, type BrushlingId } from "@/lib/brushlings";
 
 export function StarterChooser() {
   const { selectedId, chooseStarter } = useBrushling();
+  const { t } = useI18n();
   const [candidate, setCandidate] = useState<BrushlingId>(
     STARTER_IDS.includes(selectedId) ? selectedId : STARTER_IDS[0],
   );
@@ -25,19 +27,19 @@ export function StarterChooser() {
     <View style={[styles.panel, { backgroundColor: "#0B4F9C" }]}>
       <View style={styles.sparkleRow}>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
-        <Text style={styles.eyebrow}>INIZIA L’AVVENTURA</Text>
+        <Text style={styles.eyebrow}>{t("starter.eyebrow")}</Text>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
       </View>
 
-      <Text accessibilityRole="header" style={styles.title}>Scegli il tuo primo Brushling!</Text>
-      <Text style={styles.copy}>
-        Ogni grande avventura inizia con un piccolo compagno. Potrai cambiare squadra più avanti.
+      <Text accessibilityRole="header" style={styles.title}>
+        {t("starter.title")}
       </Text>
+      <Text style={styles.copy}>{t("starter.description")}</Text>
 
       <View
         testID="starter-chooser"
         accessibilityRole="radiogroup"
-        accessibilityLabel="Scegli il tuo primo Brushling"
+        accessibilityLabel={t("starter.groupLabel")}
         style={styles.starterRow}
       >
         {STARTER_IDS.map((id) => {
@@ -48,7 +50,10 @@ export function StarterChooser() {
               key={id}
               testID={`starter-${id}`}
               accessibilityRole="radio"
-              accessibilityLabel={`${creature.name}, tipo ${creature.element}`}
+              accessibilityLabel={t("starter.optionLabel", {
+                name: creature.name,
+                element: creature.element,
+              })}
               accessibilityState={{ checked: selected }}
               aria-checked={selected}
               onPress={() => setCandidate(id)}
@@ -89,7 +94,7 @@ export function StarterChooser() {
       <Pressable
         testID="starter-confirm"
         accessibilityRole="button"
-        accessibilityLabel={`Conferma ${chosen.name} come primo Brushling`}
+        accessibilityLabel={t("starter.confirmLabel", { name: chosen.name })}
         accessibilityState={{ disabled: saving, busy: saving }}
         disabled={saving}
         onPress={() => void confirm()}
@@ -101,7 +106,11 @@ export function StarterChooser() {
         ]}
       >
         <MaterialIcons name="favorite" size={20} color="#FFFFFF" />
-        <Text style={styles.confirmText}>{saving ? "Salvo..." : `Parti con ${chosen.name}`}</Text>
+        <Text style={styles.confirmText}>
+          {saving
+            ? t("starter.saving")
+            : t("starter.confirm", { name: chosen.name })}
+        </Text>
       </Pressable>
     </View>
   );

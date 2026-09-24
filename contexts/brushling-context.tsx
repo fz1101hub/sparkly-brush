@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import {
   DEFAULT_BRUSHLING_ID,
   STARTER_IDS,
@@ -88,9 +89,14 @@ type BrushlingContextValue = {
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
-  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } = useBrush();
-  const [selectedId, setSelectedId] = useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
-  const [customization, setCustomization] = useState<CustomizationState>(DEFAULT_CUSTOMIZATION_STATE);
+  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } =
+    useBrush();
+  const { t } = useI18n();
+  const [selectedId, setSelectedId] =
+    useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
+  const [customization, setCustomization] = useState<CustomizationState>(
+    DEFAULT_CUSTOMIZATION_STATE,
+  );
   const [profileReady, setProfileReady] = useState(false);
   const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [hasChosenStarter, setHasChosenStarter] = useState(false);
@@ -301,7 +307,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 }
 
 export function useBrushling(): BrushlingContextValue {
+  const { t } = useI18n();
   const value = useContext(BrushlingContext);
-  if (!value) throw new Error("useBrushling deve essere usato dentro BrushlingProvider");
+  if (!value) throw new Error(t("context.brushling.missingProvider"));
   return value;
 }

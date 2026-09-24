@@ -17,17 +17,25 @@ import {
   LIGHT_CARD_MUTED,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
+import { localizeAchievement, localizeDailyMission } from "@/lib/missions";
 
 export default function MissionsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatNumber } = useI18n();
   const { missionCenter, walletCoins } = useBrushling();
   const today = missionCenter.today;
-  const unlockedAchievements = missionCenter.achievements.filter(
+  const missions = today.missions.map((mission) =>
+    localizeDailyMission(mission, t),
+  );
+  const achievements = missionCenter.achievements.map((achievement) =>
+    localizeAchievement(achievement, t),
+  );
+  const unlockedAchievements = achievements.filter(
     (achievement) => achievement.unlocked,
   ).length;
-
   return (
     <ScreenContainer>
       <ScrollView
@@ -37,7 +45,7 @@ export default function MissionsScreen() {
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("game.missions.backLabel")}
             onPress={() => router.back()}
             style={({ pressed }) => [
               styles.backButton,
@@ -47,18 +55,17 @@ export default function MissionsScreen() {
             <MaterialIcons
               name="arrow-back"
               size={22}
-              color={colors.foreground}
+              color={LIGHT_CARD_FOREGROUND}
             />
           </Pressable>
           <View style={styles.headerWrap}>
             <AppHeader
-              eyebrow="Avventura quotidiana"
-              title="Missioni"
+              eyebrow={t("game.missions.eyebrow")}
+              title={t("game.missions.title")}
               connected={false}
             />
           </View>
         </View>
-
         <View
           style={[
             styles.hero,
@@ -69,22 +76,23 @@ export default function MissionsScreen() {
             <MaterialIcons name="flag" size={32} color="#0B67B2" />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroEyebrow, { color: "#0B67B2" }]}>OGGI</Text>
+            <Text style={[styles.heroEyebrow, { color: "#0B67B2" }]}>
+              {t("game.missions.today")}
+            </Text>
             <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
-              {today.completedCount}/3 missioni complete
+              {t("game.missions.completeCount", {
+                completed: today.completedCount,
+              })}
             </Text>
             <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
-              Completa mattina e sera per aprire lo Scrigno del Sorriso.
+              {t("game.missions.heroDescription")}
             </Text>
           </View>
         </View>
-
         <View style={styles.missionStack}>
-          {today.missions.map((mission) => {
+          {missions.map((mission) => {
             const progress = Math.min(1, mission.progress / mission.target);
-            const width = (String(Math.round(progress * 100)) +
-              "%") as DimensionValue;
-
+            const width = `${Math.round(progress * 100)}%` as DimensionValue;
             return (
               <View
                 key={mission.id}
@@ -140,7 +148,7 @@ export default function MissionsScreen() {
                           },
                         ]}
                       >
-                        +{mission.rewardCoins}
+                        +{formatNumber(mission.rewardCoins)}
                       </Text>
                     </View>
                   </View>
@@ -176,15 +184,14 @@ export default function MissionsScreen() {
                     ]}
                   >
                     {mission.completed
-                      ? "Completata!"
-                      : String(mission.progress) + "/" + String(mission.target)}
+                      ? t("game.missions.completed")
+                      : `${formatNumber(mission.progress)}/${formatNumber(mission.target)}`}
                   </Text>
                 </View>
               </View>
             );
           })}
         </View>
-
         <View
           style={[
             styles.chestCard,
@@ -213,42 +220,41 @@ export default function MissionsScreen() {
                 { color: today.allCompleted ? GOLD_TEXT : LIGHT_CARD_MUTED },
               ]}
             >
-              SCRIGNO DEL SORRISO
+              {t("game.missions.smileChest")}
             </Text>
             <Text style={[styles.chestTitle, { color: LIGHT_CARD_FOREGROUND }]}>
               {today.allCompleted
-                ? "Scrigno aperto!"
-                : "Completa tutte le missioni"}
+                ? t("game.missions.chestOpen")
+                : t("game.missions.completeAll")}
             </Text>
             <Text style={[styles.chestText, { color: LIGHT_CARD_MUTED }]}>
-              Bonus giornaliero: +{today.chestRewardCoins} monete sorriso.
+              {t("game.missions.chestBonus", {
+                coins: formatNumber(today.chestRewardCoins),
+              })}
             </Text>
           </View>
         </View>
-
         <View style={styles.sectionHeading}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Obiettivi
+              {t("game.missions.achievements")}
             </Text>
             <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-              Badge permanenti che premiano costanza e routine.
+              {t("game.missions.achievementsDescription")}
             </Text>
           </View>
           <Text style={[styles.badgeCount, { color: colors.primary }]}>
-            {unlockedAchievements}/{missionCenter.achievements.length}
+            {formatNumber(unlockedAchievements)}/
+            {formatNumber(achievements.length)}
           </Text>
         </View>
-
         <View style={styles.achievementStack}>
-          {missionCenter.achievements.map((achievement) => {
+          {achievements.map((achievement) => {
             const progress = Math.min(
               1,
               achievement.progress / achievement.target,
             );
-            const width = (String(Math.round(progress * 100)) +
-              "%") as DimensionValue;
-
+            const width = `${Math.round(progress * 100)}%` as DimensionValue;
             return (
               <View
                 key={achievement.id}
@@ -306,7 +312,7 @@ export default function MissionsScreen() {
                           },
                         ]}
                       >
-                        +{achievement.rewardCoins}
+                        +{formatNumber(achievement.rewardCoins)}
                       </Text>
                     </View>
                   </View>
@@ -344,19 +350,17 @@ export default function MissionsScreen() {
                     ]}
                   >
                     {achievement.unlocked
-                      ? "Badge sbloccato"
-                      : String(achievement.progress) +
-                        "/" +
-                        String(achievement.target)}
+                      ? t("game.missions.badgeUnlocked")
+                      : `${formatNumber(achievement.progress)}/${formatNumber(achievement.target)}`}
                   </Text>
                 </View>
               </View>
             );
           })}
         </View>
-
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t("game.missions.openHabitat")}
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.walletCard,
@@ -369,20 +373,26 @@ export default function MissionsScreen() {
             <Text
               style={[styles.walletTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              {walletCoins} monete disponibili
+              {t("game.missions.walletTitle", {
+                coins: formatNumber(walletCoins),
+              })}
             </Text>
             <Text style={[styles.walletText, { color: LIGHT_CARD_MUTED }]}>
-              Bonus missioni e obiettivi: +{missionCenter.totalBonusCoins}{" "}
-              guadagnate finora.
+              {t("game.missions.walletDescription", {
+                coins: formatNumber(missionCenter.totalBonusCoins),
+              })}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+          <MaterialIcons
+            name="chevron-right"
+            size={24}
+            color={LIGHT_CARD_MUTED}
+          />
         </Pressable>
       </ScrollView>
     </ScreenContainer>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,

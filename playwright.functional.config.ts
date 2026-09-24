@@ -21,6 +21,7 @@ export default defineConfig({
     video: "retain-on-failure",
     colorScheme: "light",
     ...devices["Desktop Chrome"],
+    locale: "it-IT",
     viewport: { width: 390, height: 844 },
   },
   webServer: {

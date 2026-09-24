@@ -1,6 +1,7 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Ellipse, G, Path } from "react-native-svg";
 
+import { useI18n } from "@/contexts/locale-context";
 import {
   getEvolution,
   getEvolutionIndex,
@@ -21,6 +22,7 @@ export function BrushlingAvatar({
   stageIndex?: number;
   showLevelBadge?: boolean;
 }) {
+  const { t } = useI18n();
   const resolvedStage = Math.min(
     creature.evolutions.length - 1,
     Math.max(0, stageIndex ?? getEvolutionIndex(creature, level)),
@@ -32,7 +34,11 @@ export function BrushlingAvatar({
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={`${evolution.name}, creatura ${creature.element}, evoluzione ${resolvedStage + 1}`}
+      accessibilityLabel={t("avatar.label", {
+        name: evolution.name,
+        element: creature.element,
+        stage: resolvedStage + 1,
+      })}
       style={[
         styles.shell,
         {
@@ -57,7 +63,9 @@ export function BrushlingAvatar({
         <View
           style={[styles.levelBadge, { backgroundColor: creature.textAccent }]}
         >
-          <Text style={styles.levelText}>Lv {level}</Text>
+          <Text style={styles.levelText}>
+            {t("avatar.levelBadge", { level })}
+          </Text>
         </View>
       ) : null}
     </View>

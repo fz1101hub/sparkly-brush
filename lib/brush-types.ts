@@ -13,6 +13,8 @@ export interface DiagnosticLog {
   at: number;
   level: LogLevel;
   message: string;
+  translationKey?: TranslationKey;
+  translationParams?: TranslationParams;
 }
 
 export interface ToothbrushDevice {
@@ -85,3 +87,4 @@ export const DEFAULT_LIVE_DATA: BrushLiveData = {
   mode: "clean",
   intensity: "media",
 };
+import type { TranslationKey, TranslationParams } from "@/lib/i18n";

@@ -5,7 +5,13 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { ScreenContainer } from "@/components/screen-container";
+import {
+  LIGHT_CARD_FOREGROUND,
+  LIGHT_CARD_MUTED,
+  readableAccent,
+} from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   BRUSHLINGS,
@@ -13,14 +19,13 @@ import {
   getEvolution,
   getEvolutionIndex,
   getNextEvolution,
+  localizeBrushling,
 } from "@/lib/brushlings";
-
-const PASTEL_FOREGROUND = "#17213C";
-const PASTEL_MUTED = "#4B5563";
 
 export default function CollectionScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatNumber } = useI18n();
   const {
     selectedId,
     selected,
@@ -29,9 +34,10 @@ export default function CollectionScreen() {
     customization,
     selectBrushling,
   } = useBrushling();
+  const selectedCreature = localizeBrushling(selected, t);
   const starters = BRUSHLINGS.filter((creature) =>
     STARTER_IDS.includes(creature.id),
-  );
+  ).map((creature) => localizeBrushling(creature, t));
 
   return (
     <ScreenContainer>
@@ -40,8 +46,8 @@ export default function CollectionScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AppHeader
-          eyebrow="Brushlings"
-          title="La tua squadra"
+          eyebrow={t("game.collection.eyebrow")}
+          title={t("game.collection.title")}
           connected={false}
         />
 
@@ -58,19 +64,19 @@ export default function CollectionScreen() {
               color={colors.primary}
             />
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              Lv {stats.level}
+              {t("game.collection.level", { level: stats.level })}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              {stats.xp} XP totali
+              {t("game.collection.totalXp", { xp: formatNumber(stats.xp) })}
             </Text>
           </View>
           <View style={styles.summaryItem}>
             <MaterialIcons name="stars" size={22} color="#B98A00" />
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              {walletCoins}
+              {formatNumber(walletCoins)}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              monete disponibili
+              {t("game.collection.availableCoins")}
             </Text>
           </View>
           <View style={styles.summaryItem}>
@@ -80,50 +86,68 @@ export default function CollectionScreen() {
               color="#E76A2C"
             />
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              {stats.currentStreakDays}
+              {formatNumber(stats.currentStreakDays)}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              serie attuale
+              {t("game.collection.currentStreak")}
             </Text>
           </View>
         </View>
 
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t("game.collection.openHabitat")}
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.habitatCard,
-            { backgroundColor: selected.soft, borderColor: selected.accent },
+            {
+              backgroundColor: selectedCreature.soft,
+              borderColor: selectedCreature.accent,
+            },
             pressed && styles.pressed,
           ]}
         >
           <View style={[styles.habitatIcon, { backgroundColor: "#FFFFFFAA" }]}>
-            <MaterialIcons name="home" size={28} color={selected.textAccent} />
+            <MaterialIcons
+              name="home"
+              size={28}
+              color={readableAccent(selectedCreature.accent)}
+            />
           </View>
           <View style={styles.habitatCopy}>
             <Text
-              style={[styles.habitatEyebrow, { color: selected.textAccent }]}
+              style={[
+                styles.habitatEyebrow,
+                { color: readableAccent(selectedCreature.accent) },
+              ]}
             >
-              LA TANA
+              {t("game.collection.habitatEyebrow")}
             </Text>
-            <Text style={[styles.habitatTitle, { color: PASTEL_FOREGROUND }]}>
-              Personalizza la casa
+            <Text
+              style={[styles.habitatTitle, { color: LIGHT_CARD_FOREGROUND }]}
+            >
+              {t("game.collection.habitatTitle")}
             </Text>
-            <Text style={[styles.habitatText, { color: PASTEL_MUTED }]}>
-              {customization.ownedIds.length} oggetti posseduti · {walletCoins}{" "}
-              monete da spendere
+            <Text style={[styles.habitatText, { color: LIGHT_CARD_MUTED }]}>
+              {t("game.collection.habitatSummary", {
+                items: formatNumber(customization.ownedIds.length),
+                coins: formatNumber(walletCoins),
+              })}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={25} color={colors.muted} />
+          <MaterialIcons
+            name="chevron-right"
+            size={25}
+            color={LIGHT_CARD_MUTED}
+          />
         </Pressable>
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Le tre famiglie starter
+            {t("game.collection.starterFamilies")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Bloopi, Spriggo e Flarello cambiano forma ai livelli 3 e 6. Le
-            evoluzioni dipendono dai progressi reali di spazzolamento.
+            {t("game.collection.starterFamiliesDescription")}
           </Text>
         </View>
 
@@ -146,13 +170,16 @@ export default function CollectionScreen() {
                     <Text
                       style={[
                         styles.familyElement,
-                        { color: creature.textAccent },
+                        { color: readableAccent(creature.accent) },
                       ]}
                     >
                       {creature.element}
                     </Text>
                     <Text
-                      style={[styles.familyTitle, { color: PASTEL_FOREGROUND }]}
+                      style={[
+                        styles.familyTitle,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
                     >
                       {creature.name}
                     </Text>
@@ -160,10 +187,12 @@ export default function CollectionScreen() {
                   <Text
                     style={[
                       styles.familyCurrent,
-                      { color: creature.textAccent },
+                      { color: readableAccent(creature.accent) },
                     ]}
                   >
-                    Forma {currentIndex + 1}/3
+                    {t("game.collection.formProgress", {
+                      current: currentIndex + 1,
+                    })}
                   </Text>
                 </View>
 
@@ -186,8 +215,8 @@ export default function CollectionScreen() {
                             styles.evolutionName,
                             {
                               color: unlocked
-                                ? PASTEL_FOREGROUND
-                                : PASTEL_MUTED,
+                                ? LIGHT_CARD_FOREGROUND
+                                : LIGHT_CARD_MUTED,
                             },
                           ]}
                         >
@@ -198,14 +227,16 @@ export default function CollectionScreen() {
                             styles.evolutionLevel,
                             {
                               color: unlocked
-                                ? creature.textAccent
-                                : PASTEL_MUTED,
+                                ? readableAccent(creature.accent)
+                                : LIGHT_CARD_MUTED,
                             },
                           ]}
                         >
                           {unlocked
-                            ? "Sbloccata"
-                            : `Lv ${evolution.unlockLevel}`}
+                            ? t("game.collection.unlocked")
+                            : t("game.collection.level", {
+                                level: evolution.unlockLevel,
+                              })}
                         </Text>
                       </View>
                     );
@@ -218,20 +249,27 @@ export default function CollectionScreen() {
 
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Scegli il compagno
+            {t("game.collection.chooseCompanion")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Le prime tre creature sono disponibili subito. Le altre si sbloccano
-            completando sessioni da due minuti.
+            {t("game.collection.chooseCompanionDescription")}
           </Text>
         </View>
 
         <View style={styles.grid}>
-          {BRUSHLINGS.map((creature) => {
+          {BRUSHLINGS.map((baseCreature) => {
+            const creature = localizeBrushling(baseCreature, t);
             const unlocked = stats.unlockedIds.includes(creature.id);
-            const selected = selectedId === creature.id;
+            const isSelected = selectedId === creature.id;
             const currentEvolution = getEvolution(creature, stats.level);
             const nextEvolution = getNextEvolution(creature, stats.level);
+            const buttonLabel = isSelected
+              ? t("game.collection.inTeam")
+              : unlocked
+                ? t("game.collection.choose")
+                : t("game.collection.afterSessions", {
+                    sessions: creature.unlockAtCompletedSessions,
+                  });
 
             return (
               <View
@@ -240,8 +278,7 @@ export default function CollectionScreen() {
                   styles.card,
                   {
                     backgroundColor: unlocked ? creature.soft : colors.surface,
-                    borderColor: selected ? creature.accent : colors.border,
-                    opacity: unlocked ? 1 : 0.68,
+                    borderColor: isSelected ? creature.accent : colors.border,
                   },
                 ]}
               >
@@ -261,7 +298,11 @@ export default function CollectionScreen() {
                 <Text
                   style={[
                     styles.name,
-                    { color: unlocked ? PASTEL_FOREGROUND : colors.foreground },
+                    {
+                      color: unlocked
+                        ? LIGHT_CARD_FOREGROUND
+                        : colors.foreground,
+                    },
                   ]}
                 >
                   {currentEvolution.name}
@@ -269,7 +310,11 @@ export default function CollectionScreen() {
                 <Text
                   style={[
                     styles.element,
-                    { color: unlocked ? creature.textAccent : colors.muted },
+                    {
+                      color: unlocked
+                        ? readableAccent(creature.accent)
+                        : colors.muted,
+                    },
                   ]}
                 >
                   {creature.element} · {currentEvolution.title}
@@ -277,29 +322,42 @@ export default function CollectionScreen() {
                 <Text
                   style={[
                     styles.tagline,
-                    { color: unlocked ? PASTEL_MUTED : colors.muted },
+                    { color: unlocked ? LIGHT_CARD_MUTED : colors.muted },
                   ]}
                   numberOfLines={3}
                 >
                   {nextEvolution
-                    ? `Prossima evoluzione: ${nextEvolution.name} al livello ${nextEvolution.unlockLevel}.`
+                    ? t("game.collection.nextEvolution", {
+                        name: nextEvolution.name,
+                        level: nextEvolution.unlockLevel,
+                      })
                     : creature.tagline}
                 </Text>
 
                 <Pressable
                   accessibilityRole="button"
-                  disabled={!unlocked || selected}
+                  accessibilityLabel={
+                    unlocked
+                      ? t("game.collection.selectCreature", {
+                          name: creature.name,
+                        })
+                      : t("game.collection.lockedCreature", {
+                          name: creature.name,
+                          sessions: creature.unlockAtCompletedSessions,
+                        })
+                  }
+                  disabled={!unlocked || isSelected}
                   onPress={() => void selectBrushling(creature.id)}
                   style={({ pressed }) => [
                     styles.selectButton,
                     {
-                      backgroundColor: selected
-                        ? creature.textAccent
+                      backgroundColor: isSelected
+                        ? readableAccent(creature.accent)
                         : unlocked
                           ? colors.surface
                           : "#E7E9EF",
-                      borderColor: selected
-                        ? creature.textAccent
+                      borderColor: isSelected
+                        ? readableAccent(creature.accent)
                         : colors.border,
                     },
                     pressed && styles.pressed,
@@ -308,14 +366,10 @@ export default function CollectionScreen() {
                   <Text
                     style={[
                       styles.selectButtonText,
-                      { color: selected ? "#FFFFFF" : colors.foreground },
+                      { color: isSelected ? "#FFFFFF" : colors.foreground },
                     ]}
                   >
-                    {selected
-                      ? "In squadra"
-                      : unlocked
-                        ? "Scegli"
-                        : `Dopo ${creature.unlockAtCompletedSessions} sessioni`}
+                    {buttonLabel}
                   </Text>
                 </Pressable>
               </View>
@@ -335,8 +389,7 @@ export default function CollectionScreen() {
             color={colors.primary}
           />
           <Text style={[styles.tipText, { color: colors.foreground }]}>
-            Ogni sessione completa vale 60 XP. Al livello 3 lo starter raggiunge
-            la seconda forma; al livello 6 raggiunge la forma finale.
+            {t("game.collection.tip")}
           </Text>
         </View>
       </ScrollView>

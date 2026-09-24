@@ -1,0 +1,1081 @@
+import type { TranslationCatalog } from "@/locales/it";
+
+export const fr = {
+  "common.back": "Retour",
+  "common.cancel": "Annuler",
+  "common.continue": "Continuer",
+  "common.loading": "Chargement…",
+  "common.retry": "Réessayer",
+  "common.unknown": "Inconnu",
+  "common.sessions": "sessions",
+  "common.complete": "Terminé",
+  "language.title": "Langue",
+  "language.description":
+    "Choisissez la langue de l’application. L’option Système suit la langue de l’appareil.",
+  "language.system": "Système",
+  "language.it": "Italiano",
+  "language.en": "English",
+  "language.de": "Deutsch",
+  "language.fr": "Français",
+  "language.es": "Español",
+  "recovery.failed": "Échec de la restauration des données",
+  "recovery.protectedTitle": "Données protégées",
+  "recovery.restart": "{error}. Redémarre l’app sans effacer ses données.",
+  "recovery.inProgressLabel": "Restauration des données en cours",
+  "recovery.inProgressTitle": "Restauration protégée en cours",
+  "recovery.inProgressMessage":
+    "Ne fermez pas l’application. Les modifications seront disponibles d’ici quelques instants.",
+  "app.brand": "Brushlings",
+  "tabs.today": "Aujourd’hui",
+  "tabs.creatures": "Créatures",
+  "tabs.explore": "Explorer",
+  "tabs.history": "Historique",
+  "tabs.toothbrush": "Brosse à dents",
+  "header.toothbrushConnected": "Brosse à dents connectée",
+  "header.toothbrushDisconnected": "Brosse à dents non connectée",
+  "home.loading.headerTitle": "Je prépare l'aventure...",
+  "home.loading.title": "Je charge ton monde",
+  "home.loading.description":
+    "Un instant : je prépare les créatures et les progrès enregistrés sur ce téléphone.",
+  "home.starter.headerTitle": "Ton aventure commence ici",
+  "home.starter.privacyNote":
+    "Le choix du compagnon est enregistré uniquement sur ce téléphone.",
+  "home.greeting": "Salut, {name} est prêt !",
+  "home.demo.eyebrow": "LABORATOIRE DÉMO",
+  "home.demo.title": "Données simulées actives",
+  "home.demo.description":
+    "L’historique réel et les sauvegardes restent séparés et intacts.",
+  "home.demo.exitLabel": "Quitter le mode démo",
+  "home.demo.exit": "Quitter",
+  "home.companion.eyebrow": "TON COMPAGNON",
+  "home.companion.evolutionNotice":
+    "Au niveau {level}, il peut évoluer en {name}.",
+  "home.companion.levelProgressLabel": "Progression du niveau {level}",
+  "home.companion.stats": "Niveau {level} · {xp} XP · {coins} pièces sourire",
+  "home.companion.speechAttribution": "{name} dit :",
+  "home.familyReward.eyebrow": "RÉCOMPENSE FAMILIALE",
+  "home.familyReward.progressLabel":
+    "Progression de la récompense familiale : {title}",
+  "home.familyReward.unlockedMessage":
+    "Objectif atteint ! Parle-en à un parent.",
+  "home.familyReward.lockedMessage": "Continue la routine pour le débloquer.",
+  "home.device.demoMode": "Mode démo",
+  "home.device.searching": "Recherche de Sonicare…",
+  "home.device.defaultModel": "HX6322/04",
+  "home.device.demoDescription":
+    "Les sessions simulées n'affectent pas l'historique réel.",
+  "home.device.connectLabel": "Connecte la brosse à dents",
+  "home.device.wait": "Patiente",
+  "home.device.connect": "Connecte",
+  "home.device.modeKids": "Enfant",
+  "home.device.modeClean": "Nettoyage",
+  "home.timer.eyebrow": "SÉANCE GUIDÉE",
+  "home.timer.activeTitle": "{name} t'encourage !",
+  "home.timer.inactiveTitle": "Prêt à te brosser les dents ?",
+  "home.timer.activeZonePrompt": "Brosse : {zone}",
+  "home.timer.inactiveZonePrompt": "Chaque zone reçoit la même attention",
+  "home.timer.stopManualLabel": "Arrêter le minuteur manuel",
+  "home.timer.startManualLabel": "Démarrer le minuteur manuel de deux minutes",
+  "home.timer.stopSession": "Terminer la séance",
+  "home.timer.saving": "Enregistrement en cours…",
+  "home.timer.savePrevious": "Enregistre d'abord la session précédente",
+  "home.timer.fromToothbrush": "Session depuis la brosse à dents",
+  "home.timer.startWithoutBluetooth": "Démarrer même sans Bluetooth",
+  "home.saveError.title": "Session non encore enregistrée",
+  "home.saveError.fallback":
+    "Nous gardons la session en mémoire jusqu'à la fin de l'enregistrement.",
+  "home.saveError.retryLabel": "Réessaye l'enregistrement de la session",
+  "home.saveError.retry": "Réessayer",
+  "home.stats.sessionsToday": "sessions aujourd'hui",
+  "home.stats.minutesToday": "minutes brossées aujourd'hui",
+  "home.stats.minutesValue": "{minutes} min",
+  "home.missions.label":
+    "Ouvre les missions d'aujourd'hui, {completed} sur {total} complétées",
+  "home.missions.eyebrow": "MISSIONS DU JOUR",
+  "home.missions.progress": "{completed}/{total} complétées",
+  "home.missions.completedMessage": "Coffre du sourire ouvert !",
+  "home.missions.incompleteMessage":
+    "Matin, soir et double sourire : complète la routine pour obtenir le bonus.",
+  "home.rewards.currentStreak": "jours d'affilée (série actuelle)",
+  "home.rewards.completedToday": "sessions complètes aujourd'hui",
+  "home.privacyNote":
+    "Pas de compte : l'historique et les progrès restent sur ce téléphone.",
+  "onboarding.dialogLabel":
+    "Premiers pas Sparkly Brush, page {current} sur {total}",
+  "onboarding.slide1.eyebrow": "BIENVENUE",
+  "onboarding.slide1.title": "Un petit compagnon qui grandit avec le sourire",
+  "onboarding.slide1.body":
+    "Chaque session aide ton Brushling à gagner des XP, à explorer l'île et à trouver de nouveaux amis.",
+  "onboarding.slide2.eyebrow": "COMMENT ÇA MARCHE",
+  "onboarding.slide2.title": "Deux minutes deviennent une aventure",
+  "onboarding.slide2.body":
+    "Le matin et le soir, tu trouveras des missions, des œufs, des évolutions, des objets et des récompenses. Le jeu suit l'historique réel des sessions.",
+  "onboarding.slide3.eyebrow": "POUR LES PARENTS",
+  "onboarding.slide3.title": "Les parents voient la routine, pas une note",
+  "onboarding.slide3.body":
+    "Le tableau de bord affiche ce que l’application a enregistré et permet de créer des récompenses familiales. Aucune donnée n'est envoyée à un compte.",
+  "onboarding.slide4.eyebrow": "TON UNIVERS",
+  "onboarding.slide4.title":
+    "Le Brushling peut te suivre même sur un nouveau téléphone",
+  "onboarding.slide4.body":
+    "La sauvegarde, la démo séparée et les paramètres locaux aident à protéger les progrès sans obliger à créer un profil en ligne.",
+  "onboarding.pageCount": "{current} sur {total}",
+  "onboarding.backLabel": "Retour à la page précédente",
+  "onboarding.back": "Retour",
+  "onboarding.nextLabel": "Aller à la page suivante",
+  "onboarding.completeLabel": "Terminer l'onboarding et commencer l'aventure",
+  "onboarding.start": "Commence l'aventure",
+  "starter.eyebrow": "COMMENCE L'AVENTURE",
+  "starter.title": "Choisis ton premier Brushling !",
+  "starter.description":
+    "Toute grande aventure commence avec un petit compagnon. Tu pourras changer d'équipe plus tard.",
+  "starter.groupLabel": "Choisis ton premier Brushling",
+  "starter.optionLabel": "{name}, type {element}",
+  "starter.confirmLabel": "Confirme {name} comme premier Brushling",
+  "starter.saving": "Enregistrement...",
+  "starter.confirm": "Pars avec {name}",
+  "sessionReward.completedLabel": "Session terminée",
+  "sessionReward.interruptedLabel": "Session interrompue",
+  "sessionReward.doubleSurpriseEyebrow": "DOUBLE SURPRISE !",
+  "sessionReward.evolutionEyebrow": "ÉVOLUTION !",
+  "sessionReward.hatchedEyebrow": "L'ŒUF EST ÉCLOS !",
+  "sessionReward.completedEyebrow": "SESSION TERMINÉE",
+  "sessionReward.interruptedEyebrow": "BIEN TENTÉ !",
+  "sessionReward.doubleSurpriseTitle":
+    "{from} est devenu {to} et {name} a rejoint l'équipe !",
+  "sessionReward.evolutionTitle": "{from} a évolué en {to} !",
+  "sessionReward.encounterTitle": "Tu as rencontré {name} !",
+  "sessionReward.completedTitle": "Bravo !",
+  "sessionReward.interruptedTitle": "Chaque seconde compte !",
+  "sessionReward.xpEarned": "+{xp} XP",
+  "sessionReward.coinsEarned": "+{coins}",
+  "sessionReward.discoveryEyebrow": "TU AS TROUVÉ",
+  "sessionReward.eggFound":
+    "+ {name} : continue à te brosser les dents pour le faire éclore !",
+  "sessionReward.eggHatched":
+    "{name} a éclos : un nouveau Brushling rejoint l'équipe.",
+  "sessionReward.adventureBonus": "BONUS AVENTURE +{coins}",
+  "sessionReward.chestUnlocked": "Coffre du sourire ouvert !",
+  "sessionReward.newBadge": "Nouveau badge débloqué !",
+  "sessionReward.missionCompleted": "Mission accomplie !",
+  "sessionReward.newLevel": "Nouveau niveau : {level}",
+  "sessionReward.doubleSurpriseMessage":
+    "{evolvedName} est plus fort et {hatchedName} t'attend sur l'écran Créatures.",
+  "sessionReward.hatchedMessage":
+    "{name} est maintenant disponible sur l'écran Créatures. Continue l'aventure pour découvrir d'autres récompenses.",
+  "sessionReward.completedMessage":
+    "Tu as donné deux minutes de super-pouvoir à ton sourire. Ton Brushling est devenu plus fort !",
+  "sessionReward.interruptedMessage":
+    "La prochaine fois, essaie d'aller jusqu'au bout : ton Brushling t'attend.",
+  "sessionReward.dismissLabel": "Ferme la récompense et continue",
+  "sessionReward.doubleSurpriseAction": "Découvre les surprises",
+  "sessionReward.hatchedAction": "Rencontre le nouvel ami",
+  "sessionReward.evolutionAction": "Continue l'aventure",
+  "sessionReward.defaultAction": "Génial !",
+  "timerRing.label": "Minuteur de brossage : {elapsed} sur {target}",
+  "timerRing.objective": "objectif {time}",
+  "timer.zone.upperRight": "En haut à droite",
+  "timer.zone.upperLeft": "En haut à gauche",
+  "timer.zone.lowerLeft": "En bas à gauche",
+  "timer.zone.lowerRight": "En bas à droite",
+  "mouthZones.progressLabel": "Progression des zones de brossage",
+  "mouthZones.activeHint": "Zone active : {zone}",
+  "mouthZones.inactiveHint": "La session n'a pas encore commencé",
+  "mouthZones.progressText": "{completed} zones terminées sur {total}",
+  "mouthZones.completedZone": "Fait · {zone}",
+  "mouthZones.activeZone": "Maintenant · {zone}",
+  "mouthZones.duration": "{seconds} secondes",
+  "avatar.label": "{name}, créature {element}, évolution {stage}",
+  "avatar.levelBadge": "Niv. {level}",
+  "context.brushling.missingProvider":
+    "useBrushling doit être utilisé dans BrushlingProvider",
+  "device.eyebrow": "Bluetooth Low Energy",
+  "device.title": "Brosse à dents",
+  "device.defaultModel": "Philips Sonicare for Kids",
+  "device.protocol": "HX63xx · GATT ouvert",
+  "device.forgetAlertTitle": "Oublier ce manche ?",
+  "device.forgetAlertMessage":
+    "Ne l'utilisez qu'après la réinitialisation d'usine de ce même manche. Si le compteur n'est pas remis à zéro, l’application rejettera l'historique pour éviter des crédits en double. L'historique, Brushling, XP, les pièces et les sauvegardes ne seront pas supprimés.",
+  "device.forgetAction": "Oublier le manche",
+  "device.forgetFailureTitle": "Impossible d'oublier le manche",
+  "device.retryLater": "Réessaie dans un instant.",
+  "device.disconnectLabel": "Déconnecter la brosse à dents",
+  "device.connectLabel": "Connecter la brosse à dents",
+  "device.syncLabel": "Synchroniser les sessions depuis la brosse à dents",
+  "device.demoActive": "Démo active",
+  "device.disconnect": "Déconnecter",
+  "device.searching": "Recherche…",
+  "device.searchConnect": "Rechercher et connecter",
+  "device.syncLatest": "Synchroniser la plus récente",
+  "device.adapter": "Adaptateur",
+  "device.adapterState.unknown": "Inconnu",
+  "device.adapterState.resetting": "Redémarrage en cours",
+  "device.adapterState.unsupported": "Non pris en charge",
+  "device.adapterState.unauthorized": "Non autorisé",
+  "device.adapterState.poweredOff": "Éteint",
+  "device.adapterState.poweredOn": "Allumé",
+  "device.handleState": "État du manche",
+  "device.unknown": "inconnu",
+  "device.handleState.off": "éteint",
+  "device.handleState.idle": "en attente",
+  "device.handleState.brushing": "brossage",
+  "device.handleState.charging": "en charge",
+  "device.handleState.shuttingDown": "arrêt",
+  "device.handleState.verifying": "vérification",
+  "device.handleState.background": "arrière-plan",
+  "device.intensity.low": "faible",
+  "device.intensity.medium": "moyenne",
+  "device.intensity.high": "élevée",
+  "device.intensity": "Intensité",
+  "device.firmware": "Firmware",
+  "device.firmwareToRead": "à lire",
+  "device.forgetResetLabel": "Oublier le manche réinitialisé",
+  "device.forgetResetHint":
+    "À utiliser uniquement après la réinitialisation d'usine du même manche ; conserve tous les progrès",
+  "device.forgetting": "Suppression en cours…",
+  "device.forgetResetDescription":
+    "Uniquement après la réinitialisation d'usine ; n'efface pas l'historique, les progrès ni les sauvegardes.",
+  "device.demoEyebrow": "LABORATOIRE SANS BROSSE À DENTS",
+  "device.demoTitle": "Mode démo",
+  "device.demoSummary":
+    "{count} sessions simulées · les données réelles restent intactes",
+  "device.demoDescription":
+    "Essaie les évolutions, les œufs, les missions et le tableau de bord sans toucher à l'historique réel.",
+  "device.demoSwitchLabel": "Mode démo",
+  "device.demoMorningLabel": "Enregistrer une session démo du matin",
+  "device.demoMorning": "Matin",
+  "device.demoEveningLabel": "Enregistrer une session démo du soir",
+  "device.demoEvening": "Soir",
+  "device.demoWeekLabel": "Générer une semaine de données démo",
+  "device.demoWeek": "7 jours",
+  "device.demoClearLabel": "Réinitialiser les données démo",
+  "device.demoClear": "Réinitialiser",
+  "device.hardwareOpenLabel": "Ouvrir le test matériel",
+  "device.hardwareEyebrow": "TEST HX6322/04",
+  "device.hardwareTitle": "Test guidé et rapport",
+  "device.hardwareDescription":
+    "Matrice iOS/Android persistante avec des diagnostics anonymisés.",
+  "device.backupOpenLabel": "Ouvrir sauvegarde et restauration",
+  "device.backupEyebrow": "DONNÉES & TRANSFERT",
+  "device.backupTitle": "Protégez le Brushling",
+  "device.backupDescription":
+    "Sauvegarde portable pour retrouver les progrès et le compagnon sur un nouveau téléphone.",
+  "device.diagnosticsTitle": "Diagnostic BLE",
+  "device.diagnosticsDescription": "Utile pour valider votre HX6322/04 réel",
+  "device.live": "EN DIRECT",
+  "device.emptyLogs": "Les messages Bluetooth apparaîtront ici.",
+  "backup.bytes": "{value} B",
+  "backup.kilobytes": "{value} KB",
+  "backup.megabytes": "{value} MB",
+  "backup.exportSuccess": "Sauvegarde terminée : {sessions} sessions, {size}.",
+  "backup.exportFailed": "Échec de la sauvegarde",
+  "backup.invalidFile": "Fichier de sauvegarde invalide",
+  "backup.invalidBackup": "Sauvegarde invalide",
+  "backup.legacyRestoreSuccess":
+    "Ancienne sauvegarde restaurée. Les progrès à vie et les sessions disponibles ont été importés.",
+  "backup.restoreSuccess":
+    "Restauration complète : toutes les sessions et les progrès ont été récupérés.",
+  "backup.restoreFailed": "Échec de la restauration",
+  "backup.backLabel": "Retour",
+  "backup.eyebrow": "Protégez votre compagnon",
+  "backup.title": "Sauvegarde et transfert",
+  "backup.heroTitle": "Chaque progrès suit le Brushling",
+  "backup.heroDescription":
+    "Un seul fichier contient toutes les sessions, sans coupures, avec les dates, durées, progrès, compagnon, tanière, récompenses et préférences. Les identifiants Bluetooth du manche sont remplacés par des alias illisibles.",
+  "backup.demoTitle": "Mode démo activé",
+  "backup.demoDescription":
+    "Les sauvegardes n'utilisent que des données réelles. Quittez le mode démo avant d'exporter ou de restaurer.",
+  "backup.exitDemo": "Quitter la démo",
+  "backup.loading": "Chargement des données…",
+  "backup.createTitle": "1. Créer une sauvegarde",
+  "backup.createDescription":
+    "Enregistrez-le dans Mail, Messages, Drive ou ailleurs, dans un endroit qui restera accessible après le changement de téléphone.",
+  "backup.summaryBrushling": "Brushling",
+  "backup.summarySessions": "Sessions archivées",
+  "backup.summaryDenItems": "Objets de la tanière",
+  "backup.summaryFamilyRewards": "Récompenses familiales",
+  "backup.exportLabel": "Enregistrer le fichier de sauvegarde complet",
+  "backup.nativeOnly": "Disponible sur iOS et Android",
+  "backup.preparing": "Préparation…",
+  "backup.saveComplete": "Enregistrer le fichier complet",
+  "backup.fingerprint": "ID sauvegarde · {id}",
+  "backup.restoreTitle": "2. Restaurer sur le nouveau téléphone",
+  "backup.restoreDescription":
+    "Sélectionnez le fichier .brushlings enregistré. L’app vérifie l’intégrité et le nombre de sessions avant la restauration.",
+  "backup.pickFileLabel":
+    "Sélectionnez un fichier .brushlings pour la restauration",
+  "backup.pickFile": "Choisir un fichier de sauvegarde",
+  "backup.verifiedComplete": "FICHIER COMPLET VÉRIFIÉ",
+  "backup.verifiedLegacy": "SAUVEGARDE LEGACY VÉRIFIÉE",
+  "backup.previewTitle": "{name} · {sessions} sessions",
+  "backup.createdAt": "{size} · créé le {date}.",
+  "backup.legacyOrigin":
+    "Origine legacy : tous les progrès sont conservés, mais l’ancien code ne contenait que {sessions} lignes consultables.",
+  "backup.replaceCompleteWarning":
+    "La restauration remplacera intégralement les données réelles de ce téléphone.",
+  "backup.restoreFileLabel":
+    "Restaurer l'archive complète depuis le fichier sélectionné",
+  "backup.restoreFileHint":
+    "Remplace intégralement l'historique, les progrès et les réglages actuels de ce téléphone",
+  "backup.restoreComplete": "Restaurer l'archive complète",
+  "backup.legacyTitle": "Vous avez un ancien code de sauvegarde ?",
+  "backup.legacyDescription":
+    "Les codes v1 et v2 restent importables pour ne pas perdre les données créées par les versions précédentes.",
+  "backup.legacyCodeLabel": "Code de sauvegarde legacy",
+  "backup.legacyCodePlaceholder": "Collez ici BRUSHLINGS-BACKUP-1/2 :...",
+  "backup.inspectCodeLabel": "Vérifier le code de sauvegarde",
+  "backup.inspectCode": "Vérifier l'ancien code",
+  "backup.validBackup": "SAUVEGARDE VALIDE",
+  "backup.createdOn": "Créé le {date}.",
+  "backup.replaceWarning":
+    "La restauration remplacera les progrès actuels présents sur ce téléphone.",
+  "backup.restoreLegacyLabel":
+    "Restaurer l'archive depuis le code de sauvegarde vérifié",
+  "backup.restoreLegacyHint":
+    "Remplace les progrès actuels présents sur ce téléphone",
+  "backup.restoreBrushling": "Restaure ce Brushling",
+  "backup.privacy":
+    "Le fichier contient les dates et la durée de toutes les sessions. Ne le publiez pas en ligne : conservez-le comme document privé de la famille.",
+  "hardware.status.passed": "Réussi",
+  "hardware.status.failed": "Échec",
+  "hardware.status.blocked": "Bloqué",
+  "hardware.status.pending": "À faire",
+  "hardware.unknownVersion": "inconnue",
+  "hardware.saveFailed": "Échec de l'enregistrement local",
+  "hardware.loadFailed": "Impossible de charger le test sauvegardé",
+  "hardware.reportReady": "Rapport anonymisé préparé avec succès.",
+  "hardware.exportFailed": "Échec de l'exportation du rapport",
+  "hardware.resetConfirmWeb":
+    "Créer un nouveau test ? Les résultats et les notes en cours seront supprimés.",
+  "hardware.resetAlertTitle": "Nouveau test ?",
+  "hardware.resetAlertMessage":
+    "Les résultats et les notes de la session en cours seront supprimés.",
+  "hardware.resetAction": "Recommencer",
+  "hardware.resultLabel": "Résultat : {title}",
+  "hardware.resultOptionLabel": "{title} : {status}",
+  "hardware.notePlaceholder":
+    "Note, erreur observée ou référence de capture d'écran…",
+  "hardware.noteLabel": "Note pour {title}",
+  "hardware.backLabel": "Retour",
+  "hardware.eyebrow": "HX6322/04 · iOS et Android",
+  "hardware.title": "Test matériel",
+  "hardware.heroTitle": "Une matrice vérifiable, pas des notes éparses",
+  "hardware.heroDescription":
+    "Les résultats restent sur le téléphone et le rapport masque UUID, MAC et ID persistants.",
+  "hardware.demoWarning":
+    "Désactive la démo avant les tests avec le manche réel.",
+  "hardware.progressTitle": "Avancement",
+  "hardware.progressSummary":
+    "{completed}/{total} complétées · {passed} réussies{saving}",
+  "hardware.progressSaving": " · sauvegarde…",
+  "hardware.progressLoading": "Chargement…",
+  "hardware.snapshotBle": "BLE",
+  "hardware.snapshotStatus": "État",
+  "hardware.snapshotFirmware": "Firmware",
+  "hardware.unsavedMessage":
+    "La donnée est visible mais pas encore enregistrée : {error}",
+  "hardware.retrySaveLabel": "Réessayer l'enregistrement du test",
+  "hardware.shareReportLabel": "Partager le rapport de test anonymisé",
+  "hardware.shareReport": "Partager le rapport",
+  "hardware.newRunLabel": "Créer un nouveau test",
+  "hardware.newRun": "Nouveau",
+  "hardware.matrixTitle": "Matrice de test",
+  "hardware.matrixDescription":
+    "Complétez chaque résultat sur l'appareil que vous testez. Les notes sont incluses dans le rapport.",
+  "hardware.connection.idle": "Inactif",
+  "hardware.connection.scanning": "Recherche en cours",
+  "hardware.connection.connecting": "Connexion en cours",
+  "hardware.connection.connected": "Connecté",
+  "hardware.connection.unsupported": "Non pris en charge",
+  "hardware.connection.error": "Erreur",
+  "hardware.test.scanConnect.title": "Recherche et connexion",
+  "hardware.test.scanConnect.instruction":
+    "Démarrez la recherche avec le manche à proximité, sans qu'il soit connecté à d'autres applications.",
+  "hardware.test.scanConnect.success":
+    "Le manche apparaît comme Sonicare4Kids et l'état devient Connecté.",
+  "hardware.test.metadata.title": "Métadonnées et batterie",
+  "hardware.test.metadata.instruction":
+    "Vérifiez le modèle, le firmware et la batterie, puis attendez au moins une mise à jour.",
+  "hardware.test.metadata.success":
+    "Les champs restent présents et cohérents après la mise à jour de la batterie.",
+  "hardware.test.liveTimer.title": "Minuteur en temps réel et cadrans",
+  "hardware.test.liveTimer.instruction":
+    "Effectuez une session de deux minutes en observant le minuteur et les changements de zone.",
+  "hardware.test.liveTimer.success":
+    "Le démarrage, l'arrêt, les secondes et les quatre zones suivent le manche sans à-coups.",
+  "hardware.test.sessionSync.title": "Synchronisation de la session",
+  "hardware.test.sessionSync.instruction":
+    "Arrêtez le manche et attendez la synchronisation automatique.",
+  "hardware.test.sessionSync.success":
+    "Une seule nouvelle session apparaît dans l'historique avec la durée correcte.",
+  "hardware.test.rapidStops.title": "Deux arrêts rapprochés",
+  "hardware.test.rapidStops.instruction":
+    "Effectuez deux sessions sans attendre la fin de la première synchronisation.",
+  "hardware.test.rapidStops.success":
+    "Les deux sont conservées et comptées une seule fois.",
+  "hardware.test.offlineGap.title":
+    "Sessions hors ligne, horodatage et saut d'ID",
+  "hardware.test.offlineGap.instruction":
+    "Effectuez deux sessions avec l'application fermée, reconnectez, puis réalisez une session avec l'application ouverte.",
+  "hardware.test.offlineGap.success":
+    "Les sessions hors ligne arrivent dans l'ordre avec un horodatage reconstruit ou déclaré approximatif ; le fallback en direct n'est pas recrédité.",
+  "hardware.test.deduplication.title": "Déduplication manuelle",
+  "hardware.test.deduplication.instruction":
+    "Appuyez deux fois sur 'Synchroniser la dernière' après la même session.",
+  "hardware.test.deduplication.success":
+    "L'historique, XP, les pièces et le registre des récompenses ne changent pas au deuxième essai.",
+  "hardware.test.demoCancel.title": "Démo pendant la recherche",
+  "hardware.test.demoCancel.instruction":
+    "Démarrez la recherche et activez immédiatement le mode démo.",
+  "hardware.test.demoCancel.success":
+    "La recherche est annulée et aucun manche réel reste connecté.",
+  "hardware.test.reconnect.title": "Trois reconnexions",
+  "hardware.test.reconnect.instruction":
+    "Déconnectez et reconnectez trois fois, en démarrant brièvement le manche à chaque fois.",
+  "hardware.test.reconnect.success":
+    "Aucun callback dupliqué, minuteur double ou crash n'apparaît.",
+  "hardware.test.factoryReset.title": "Réinitialisation d'usine du manche",
+  "hardware.test.factoryReset.instruction":
+    "Après une sauvegarde, réinitialisez le manche, reconnectez-le et utilisez 'Oublier le manche réinitialisé' avant la première nouvelle session.",
+  "hardware.test.factoryReset.success":
+    "La nouvelle session est enregistrée une seule fois et l'historique, XP, les pièces et les Brushling précédents restent inchangés.",
+  "hardware.test.background.title": "Application en arrière-plan",
+  "hardware.test.background.instruction":
+    "Démarrez une session, mettez l'application en arrière-plan puis revenez au premier plan.",
+  "hardware.test.background.success":
+    "L'état redevient cohérent et aucune session fantôme n'est créée.",
+  "hardware.test.restart.title": "Redémarrage de l'application",
+  "hardware.test.restart.instruction":
+    "Fermez complètement et rouvrez l'application après une session synchronisée.",
+  "hardware.test.restart.success":
+    "L'historique, la progression et le dernier appareil restent cohérents.",
+  "hardware.test.backupRestore.title": "Sauvegarde et restauration",
+  "hardware.test.backupRestore.instruction":
+    "Exportez le fichier .brushlings et restaurez-le sur un deuxième appareil ou une installation propre.",
+  "hardware.test.backupRestore.success":
+    "L'historique complet, la progression et le registre coïncident après la restauration.",
+  "hardware.report.title": "Rapport de test matériel — Sparkly Brush",
+  "hardware.report.intro":
+    "Le rapport n'inclut pas l'identifiant persistant Bluetooth du manche. Éventuels UUID ou adresses MAC dans les journaux sont automatiquement masqués.",
+  "hardware.report.environment": "Environnement",
+  "hardware.report.technicalSnapshot": "Instantané technique",
+  "hardware.report.matrix": "Résultat de la matrice",
+  "hardware.report.diagnostics": "Diagnostic BLE anonymisé",
+  "hardware.report.field": "Champ",
+  "hardware.report.value": "Valeur",
+  "hardware.report.run": "Exécution",
+  "hardware.report.platform": "Plateforme",
+  "hardware.report.osVersion": "Version OS",
+  "hardware.report.appVersion": "Version de l'application",
+  "hardware.report.started": "Démarré",
+  "hardware.report.generated": "Généré",
+  "hardware.report.connectionStatus": "État de la connexion",
+  "hardware.report.adapter": "Adaptateur BLE",
+  "hardware.report.name": "Nom",
+  "hardware.report.model": "Modèle",
+  "hardware.report.firmware": "Firmware",
+  "hardware.report.battery": "Batterie",
+  "hardware.report.handleState": "État du manche",
+  "hardware.report.brushingActive": "Brossage actif",
+  "hardware.report.liveTime": "Temps réel",
+  "hardware.report.intensity": "Intensité",
+  "hardware.report.recentSessions": "Sessions récentes dans l'interface",
+  "hardware.report.attemptedSessions": "Sessions tentées au total",
+  "hardware.report.completedSessions": "Sessions complètes au total",
+  "hardware.report.test": "Test",
+  "hardware.report.result": "Résultat",
+  "hardware.report.note": "Note",
+  "hardware.report.summary":
+    "{completed}/{total} vérifications réalisées · {passed} réussies · {failed} échouées · {blocked} bloquées",
+  "hardware.report.noLogs": "Aucun journal disponible",
+  "hardware.report.log.info": "INFO",
+  "hardware.report.log.success": "SUCCÈS",
+  "hardware.report.log.warning": "AVERTISSEMENT",
+  "hardware.report.log.error": "ERREUR",
+  "hardware.report.unavailable": "non disponible",
+  "hardware.report.yes": "oui",
+  "hardware.report.no": "non",
+  "hardware.report.status.passed": "RÉUSSI",
+  "hardware.report.status.failed": "ÉCHOUÉ",
+  "hardware.report.status.blocked": "BLOQUÉ",
+  "hardware.report.status.pending": "À EXÉCUTER",
+  "hardware.report.redactedDevice": "device id: [redacted]",
+  "hardware.report.deviceId": "[device-id]",
+  "hardware.report.emptyCell": "—",
+  "hardware.report.downloadUnavailable":
+    "Le téléchargement du rapport n'est pas disponible dans cet environnement",
+  "hardware.report.shareUnavailable":
+    "Le partage de fichiers n'est pas disponible sur cet appareil",
+  "hardware.report.shareDialogTitle":
+    "Partager le rapport de test Sparkly Brush",
+  "brush.status.ready": "Prêt à rechercher la brosse à dents",
+  "brush.error.identityUnavailable":
+    "Identité de la brosse à dents non disponible",
+  "brush.log.liveFallback":
+    "Session sauvegardée à partir des données en direct car l'enregistrement du manche n'était pas disponible",
+  "brush.error.bleRecordUnavailable": "Enregistrement BLE non disponible",
+  "brush.error.bleSessionNotSaved": "Session BLE non enregistrée",
+  "brush.error.bleSessionNoIdentity": "Session BLE sans identité de l'appareil",
+  "brush.log.manualSessionSaved": "{type} sauvegardée ({duration}s)",
+  "brush.log.demoSessionSaved": "Session de démo enregistrée ({duration}s)",
+  "brush.log.realSessionSaved": "Session manuelle enregistrée ({duration}s)",
+  "brush.session.demo": "Session de démo",
+  "brush.session.manual": "Session manuelle",
+  "brush.error.guidedSessionNotSaved": "Session guidée non sauvegardée",
+  "brush.error.pendingManualSession":
+    "Une session précédente doit encore être enregistrée",
+  "brush.log.waitForForget": "Attendez la fin de la suppression du manche",
+  "brush.log.disableDemoToConnect":
+    "Désactivez le mode démo pour connecter la vraie brosse à dents",
+  "brush.error.forgettingInProgress":
+    "La suppression du manche est déjà en cours",
+  "brush.error.connectHandleToReset": "Connectez le manche à réinitialiser",
+  "brush.log.handleForgotten":
+    "Manche oublié : le prochain compteur BLE repartira à partir d'une nouvelle génération",
+  "brush.error.handleRemovalFailed": "Échec de la suppression du manche",
+  "brush.log.syncDisabledInDemo":
+    "La synchronisation BLE est désactivée en mode démo",
+  "brush.error.connectFirst": "Connectez d'abord la brosse à dents",
+  "brush.log.sessionsSynced": "{count} sessions synchronisées",
+  "brush.log.noNewSessions": "Aucune nouvelle session disponible",
+  "brush.error.syncFailed": "Échec de la synchronisation",
+  "brush.log.retryPreviousSave":
+    "Réessayez d'abord la sauvegarde de la session précédente",
+  "brush.log.demoTimerStarted": "Minuteur démo démarré",
+  "brush.log.guidedTimerStarted": "Minuteur guidé démarré",
+  "brush.log.demoModeEnabled": "Mode démo activé",
+  "brush.log.demoModeDisabled": "Mode démo désactivé",
+  "brush.log.demoSessionAdded": "Session de démo {period} ajoutée",
+  "brush.log.demoSessionMorningAdded": "Session de démo du matin ajoutée",
+  "brush.log.demoSessionEveningAdded": "Session de démo du soir ajoutée",
+  "brush.log.demoSessionNowAdded": "Session de démo complète ajoutée",
+  "brush.period.morning": "matin",
+  "brush.period.evening": "soir",
+  "brush.period.now": "complète",
+  "brush.log.demoWeekGenerated": "Semaine de démo complète générée",
+  "brush.log.demoDataDeleted": "Données de démo supprimées",
+  "brush.log.historyRestored": "Historique restauré depuis la sauvegarde",
+  "brush.log.archiveRestored":
+    "Archive complète restaurée depuis la sauvegarde",
+  "brush.log.demoHistoryDeleted": "Historique de démo supprimé",
+  "brush.log.localHistoryDeleted": "Historique local supprimé",
+  "game.collection.eyebrow": "Brushlings",
+  "game.collection.title": "Ton équipe",
+  "game.collection.level": "Niv. {level}",
+  "game.collection.totalXp": "{xp} XP au total",
+  "game.collection.availableCoins": "pièces disponibles",
+  "game.collection.currentStreak": "série actuelle",
+  "game.collection.habitatEyebrow": "LA TANIÈRE",
+  "game.collection.habitatTitle": "Personnalise la maison",
+  "game.collection.habitatSummary":
+    "{items} objets possédés · {coins} pièces à dépenser",
+  "game.collection.openHabitat": "Ouvre la tanière",
+  "game.collection.starterFamilies": "Les trois familles de départ",
+  "game.collection.starterFamiliesDescription":
+    "Bloopi, Spriggo et Flarello changent de forme aux niveaux 3 et 6. Les évolutions dépendent des progrès réels de brossage.",
+  "game.collection.formProgress": "Forme {current}/3",
+  "game.collection.unlocked": "Débloqué",
+  "game.collection.chooseCompanion": "Choisis ton compagnon",
+  "game.collection.chooseCompanionDescription":
+    "Les trois premières créatures sont disponibles tout de suite. Les autres se débloquent en complétant des sessions de deux minutes.",
+  "game.collection.nextEvolution":
+    "Prochaine évolution : {name} au niveau {level}.",
+  "game.collection.inTeam": "Dans l'équipe",
+  "game.collection.choose": "Choisir",
+  "game.collection.afterSessions": "Après {sessions} sessions",
+  "game.collection.selectCreature": "Choisis {name}",
+  "game.collection.lockedCreature": "{name} bloqué jusqu'à {sessions} sessions",
+  "game.collection.tip":
+    "Chaque session complète vaut 60 XP. Au niveau 3, le compagnon de départ atteint la deuxième forme ; au niveau 6, il atteint la forme finale.",
+  "game.explore.eyebrow": "Aventure",
+  "game.explore.title": "Île Souriante",
+  "game.explore.heroEyebrow": "CHAQUE BROSSAGE TE MÈNE PLUS LOIN",
+  "game.explore.exploresWithYou": "{name} explore avec toi",
+  "game.explore.chooseCompanionFirst": "Choisis d'abord ton compagnon",
+  "game.explore.sessionsUntilZone":
+    "Il reste {sessions} sessions complètes pour atteindre {zone}.",
+  "game.explore.allZonesUnlocked":
+    "Tu as débloqué toutes les zones disponibles dans cette première version de l'île !",
+  "game.explore.currentZone": "ZONE ACTUELLE",
+  "game.explore.sessionCount": "{count} sessions",
+  "game.explore.openRewards": "Ouvre les récompenses et les œufs",
+  "game.explore.inventoryEyebrow": "TON SAC À DOS",
+  "game.explore.inventoryTitle": "Récompenses et œufs",
+  "game.explore.inventorySummary":
+    "{eggs} œufs trouvés · {brushlings} nouveaux Brushlings éclos",
+  "game.explore.islandMap": "Carte de l'île",
+  "game.explore.islandMapDescription":
+    "Complète les sessions de deux minutes pour ouvrir de nouveaux lieux et préparer de futures rencontres, œufs et récompenses.",
+  "game.explore.youAreHere": "TU ES ICI",
+  "game.explore.zoneUnlocked": "Zone débloquée",
+  "game.explore.zoneOpensIn": "S'ouvre dans {count} {sessionWord}",
+  "game.explore.sessionSingular": "session",
+  "game.explore.sessionPlural": "sessions",
+  "game.explore.islandEncounters": "Rencontres sur l'île",
+  "game.explore.islandEncountersDescription":
+    "Certains Brushlings viennent d'œufs spéciaux trouvés pendant l'exploration.",
+  "game.explore.newBrushling": "NOUVEAU BRUSHLING",
+  "game.explore.eggFound": "ŒUF TROUVÉ",
+  "game.explore.secretEncounter": "RENCONTRE SECRÈTE",
+  "game.explore.unknown": "???",
+  "game.explore.brushlingAvailable":
+    "{name} est maintenant disponible dans ton équipe.",
+  "game.explore.sessionsUntilHatch":
+    "Encore {count} {sessionWord} avant l'éclosion.",
+  "game.explore.continueUntilEgg":
+    "Continue jusqu'à la session {session} pour trouver cet œuf.",
+  "game.explore.nextStepTitle": "Continue à explorer",
+  "game.explore.nextStepDescription":
+    "Les séances de brossage débloquent des œufs, des objets et des Brushlings rares sur la carte.",
+  "game.missions.backLabel": "Retour",
+  "game.missions.eyebrow": "Aventure quotidienne",
+  "game.missions.title": "Missions",
+  "game.missions.today": "AUJOURD'HUI",
+  "game.missions.completeCount": "{completed}/3 missions complètes",
+  "game.missions.heroDescription":
+    "Fais le matin et le soir pour ouvrir le Coffre du Sourire.",
+  "game.missions.completed": "Terminé !",
+  "game.missions.smileChest": "COFFRE DU SOURIRE",
+  "game.missions.chestOpen": "Coffre ouvert !",
+  "game.missions.completeAll": "Complète toutes les missions",
+  "game.missions.chestBonus": "Bonus quotidien : +{coins} pièces sourire.",
+  "game.missions.achievements": "Objectifs",
+  "game.missions.achievementsDescription":
+    "Badges permanents qui récompensent la constance et la routine.",
+  "game.missions.badgeUnlocked": "Badge débloqué",
+  "game.missions.openHabitat": "Ouvre la tanière",
+  "game.missions.walletTitle": "{coins} pièces disponibles",
+  "game.missions.walletDescription":
+    "Bonus missions et objectifs : +{coins} gagnées jusqu'à présent.",
+  "game.rewards.backLabel": "Retour à la carte",
+  "game.rewards.eyebrow": "Collection",
+  "game.rewards.title": "Tes récompenses",
+  "game.rewards.completedAdventures": "{count} aventures terminées",
+  "game.rewards.heroDescription":
+    "Chaque session complète laisse un souvenir de la zone explorée. Les œufs ont besoin de plusieurs sessions pour éclore.",
+  "game.rewards.foundItems": "Objets trouvés",
+  "game.rewards.foundItemsDescription":
+    "Ta petite collection grandit avec tes bonnes habitudes.",
+  "game.rewards.unknownItem": "???",
+  "game.rewards.continueToDiscoverItem":
+    "Continue à explorer pour découvrir cet objet.",
+  "game.rewards.mysteryEggs": "Œufs mystérieux",
+  "game.rewards.mysteryEggsDescription":
+    "Quand un œuf éclot, le nouveau Brushling rejoint ta collection.",
+  "game.rewards.hatched": "ÉCLOS",
+  "game.rewards.incubating": "EN INCUBATION",
+  "game.rewards.notFound": "PAS ENCORE TROUVÉ",
+  "game.rewards.mysteryEgg": "Œuf mystérieux",
+  "game.rewards.brushlingJoined": "{name} a rejoint ton équipe !",
+  "game.rewards.eggFoundAfter":
+    "Peut être trouvé après {count} sessions complètes.",
+  "game.rewards.sessionsUntilHatch": "{count} {sessionWord} avant l'éclosion",
+  "game.rewards.goToHabitat": "Va à la tanière",
+  "game.rewards.goToHabitatLabel": "Va à la tanière",
+  "game.rewards.habitatCoins":
+    "Tu as {coins} pièces sourire à dépenser pour l'habitat, les accessoires et les décorations.",
+  "game.habitat.backLabel": "Retour",
+  "game.habitat.eyebrow": "Maison Brushling",
+  "game.habitat.title": "La tanière",
+  "game.habitat.wallet": "PORTEFEUILLE",
+  "game.habitat.walletValue": "{coins} pièces sourire",
+  "game.habitat.walletDescription":
+    "Tu les gagnes en te brossant ; ce que tu achètes reste enregistré sur ce téléphone.",
+  "game.habitat.customizeSpace":
+    "Personnalise son espace avec un habitat, un accessoire et une décoration.",
+  "game.habitat.equipped": "{name} équipé !",
+  "game.habitat.equipFailed": "Impossible d'équiper cet objet.",
+  "game.habitat.needMoreCoins": "Il te faut {coins} pièces sourire de plus.",
+  "game.habitat.purchased": "{name} acheté et équipé !",
+  "game.habitat.category.habitat": "Habitat",
+  "game.habitat.category.accessory": "Accessoires",
+  "game.habitat.category.decor": "Décorations",
+  "game.habitat.categoryDescription.habitat":
+    "Change l'environnement où vit ton Brushling.",
+  "game.habitat.categoryDescription.accessory":
+    "Ajoute un détail spécial à ton compagnon.",
+  "game.habitat.categoryDescription.decor":
+    "Rends la tanière plus personnelle et accueillante.",
+  "game.habitat.included": "Inclus",
+  "game.habitat.equippedButton": "Équipé",
+  "game.habitat.equip": "Équiper",
+  "game.habitat.use": "Utiliser",
+  "game.habitat.buy": "Acheter",
+  "game.habitat.needCoins": "Besoin de pièces",
+  "game.habitat.customizationAction": "{action} : {name}",
+  "game.habitat.currentConfiguration": "Configuration actuelle",
+  "game.habitat.defaultHome": "Ta tanière",
+  "game.habitat.sceneLabel": "Habitat de {name} : {habitat}",
+  "game.brushling.bloopi.element": "Eau",
+  "game.brushling.bloopi.tagline":
+    "Transforme chaque zone en une cascade de bulles propres.",
+  "game.brushling.bloopi.evolution.1.title": "Goutte curieuse",
+  "game.brushling.bloopi.evolution.3.title": "Gardien des bulles",
+  "game.brushling.bloopi.evolution.6.title": "Maître des marées",
+  "game.brushling.spriggo.element": "Nature",
+  "game.brushling.spriggo.tagline": "Il grandit avec tes bonnes habitudes.",
+  "game.brushling.spriggo.evolution.1.title": "Bourgeon joyeux",
+  "game.brushling.spriggo.evolution.3.title": "Gardien du jardin",
+  "game.brushling.spriggo.evolution.6.title": "Esprit de la forêt",
+  "game.brushling.flarello.element": "Feu",
+  "game.brushling.flarello.tagline":
+    "Il donne de l'énergie quand il ne reste que quelques secondes.",
+  "game.brushling.flarello.evolution.1.title": "Étincelle courageuse",
+  "game.brushling.flarello.evolution.3.title": "Champion des braises",
+  "game.brushling.flarello.evolution.6.title": "Cœur du soleil",
+  "game.brushling.voltuff.element": "Énergie",
+  "game.brushling.voltuff.tagline":
+    "Il se charge avec les sessions complètes et les séries positives.",
+  "game.brushling.voltuff.evolution.1.title": "Pompon électrique",
+  "game.brushling.moonbit.element": "Nuit",
+  "game.brushling.moonbit.tagline": "Le compagnon des brossages du soir.",
+  "game.brushling.moonbit.evolution.1.title": "Rêveur lunaire",
+  "game.adventure.bubble-bay.name": "Baie des Bulles",
+  "game.adventure.bubble-bay.subtitle":
+    "Le premier port, plein d'écume scintillante.",
+  "game.adventure.fresh-forest.name": "Forêt Fraîche",
+  "game.adventure.fresh-forest.subtitle":
+    "Des feuilles parfumées et des sentiers verts.",
+  "game.adventure.spark-mountain.name": "Mont Étincelant",
+  "game.adventure.spark-mountain.subtitle":
+    "Un sommet lumineux qui récompense la régularité.",
+  "game.adventure.crystal-lake.name": "Lac Cristallin",
+  "game.adventure.crystal-lake.subtitle":
+    "Eau limpide, gemmes et nouvelles rencontres.",
+  "game.adventure.smile-valley.name": "Vallée du Sourire",
+  "game.adventure.smile-valley.subtitle":
+    "La vallée secrète des Brushlings les plus rares.",
+  "game.customization.bubble-room.name": "Chambre des Bulles",
+  "game.customization.bubble-room.description":
+    "La petite maison de départ, lumineuse et pleine de bulles.",
+  "game.customization.fresh-garden.name": "Jardin Frais",
+  "game.customization.fresh-garden.description":
+    "Un coin vert avec des feuilles, de l'herbe et un parfum de menthe.",
+  "game.customization.sunset-camp.name": "Camp du Crépuscule",
+  "game.customization.sunset-camp.description":
+    "Un refuge chaleureux pour te reposer après une grande aventure.",
+  "game.customization.moon-cove.name": "Crique Lunaire",
+  "game.customization.moon-cove.description":
+    "Un habitat tranquille qui brille sous les étoiles.",
+  "game.customization.blue-scarf.name": "Foulard éclaboussé",
+  "game.customization.blue-scarf.description":
+    "Un petit foulard d'explorateur.",
+  "game.customization.leaf-crown.name": "Couronne de feuilles",
+  "game.customization.leaf-crown.description":
+    "Pour les Brushlings qui aiment se sentir rois de la forêt.",
+  "game.customization.star-glasses.name": "Lunettes Stellaires",
+  "game.customization.star-glasses.description":
+    "Elles brillent quand une mission est accomplie.",
+  "game.customization.smile-cushion.name": "Coussin Sourire",
+  "game.customization.smile-cushion.description":
+    "Un coussin moelleux pour la tanière.",
+  "game.customization.mint-plant.name": "Plante de menthe",
+  "game.customization.mint-plant.description":
+    "Une petite plante de menthe toujours fraîche près du lit.",
+  "game.customization.star-mobile.name": "Mobile d'Étoiles",
+  "game.customization.star-mobile.description":
+    "Petites étoiles suspendues pour l'heure du coucher.",
+  "game.inventory.bubble-pearl.name": "Perle de bulle",
+  "game.inventory.bubble-pearl.description":
+    "Une perle légère trouvée dans la Baie des Bulles.",
+  "game.inventory.fresh-leaf.name": "Feuille fraîche",
+  "game.inventory.fresh-leaf.description":
+    "Elle sent la menthe et vient de la Forêt Fraîche.",
+  "game.inventory.spark-crystal.name": "Cristal étincelant",
+  "game.inventory.spark-crystal.description":
+    "Une étincelle solidifiée du Mont Étincelant.",
+  "game.inventory.moon-shard.name": "Éclat lunaire",
+  "game.inventory.moon-shard.description":
+    "Brille dans le noir près du Lac Cristallin.",
+  "game.inventory.smile-star.name": "Étoile souriante",
+  "game.inventory.smile-star.description":
+    "Une récompense rare gardée dans la Vallée du Sourire.",
+  "game.egg.spark-egg.name": "Œuf Étincelle",
+  "game.egg.spark-egg.description":
+    "Une petite décharge palpite à l'intérieur de la coquille.",
+  "game.egg.moon-egg.name": "Œuf Lunaire",
+  "game.egg.moon-egg.description":
+    "La coquille scintille quand le soir arrive.",
+  "game.mission.morning.title": "Bonjour, sourire !",
+  "game.mission.morning.description": "Complète une séance le matin.",
+  "game.mission.evening.title": "Mission bonne nuit",
+  "game.mission.evening.description": "Complète une séance à partir de 18 h.",
+  "game.mission.double.title": "Double sourire",
+  "game.mission.double.description":
+    "Complète deux séances dans la même journée.",
+  "game.achievement.first-smile.title": "Premier sourire",
+  "game.achievement.first-smile.description": "Complète ta première séance.",
+  "game.achievement.five-adventures.title": "Petit explorateur",
+  "game.achievement.five-adventures.description": "Complète 5 séances.",
+  "game.achievement.ten-adventures.title": "Champion des Brushlings",
+  "game.achievement.ten-adventures.description": "Complète 10 séances.",
+  "game.achievement.three-perfect-days.title": "Trois jours parfaits",
+  "game.achievement.three-perfect-days.description":
+    "Complète les séances du matin et du soir pendant 3 jours.",
+  "game.achievement.seven-day-streak.title": "Semaine de feu",
+  "game.achievement.seven-day-streak.description":
+    "Atteins une série record de 7 jours consécutifs.",
+  "game.dialogue.bloopi.idle.0":
+    "Je parie qu'aujourd'hui on va trouver quelque chose qui brille.",
+  "game.dialogue.bloopi.idle.1":
+    "Les meilleures bulles arrivent après un bon brossage.",
+  "game.dialogue.bloopi.morning.0":
+    "Splash ! Faisons briller ton sourire avant l'aventure.",
+  "game.dialogue.bloopi.morning.1": "Bonjour ! J'ai déjà préparé les bulles.",
+  "game.dialogue.bloopi.evening.0": "Un brossage et ensuite des rêves de mer.",
+  "game.dialogue.bloopi.evening.1":
+    "Nettoyons tout avant l'arrivée de la lune.",
+  "game.dialogue.bloopi.brushing.0": "Continue comme ça ! Une zone à la fois.",
+  "game.dialogue.bloopi.brushing.1": "Splash splash, tu fais super bien !",
+  "game.dialogue.bloopi.reward.0":
+    "Je le savais ! Il y avait une récompense cachée.",
+  "game.dialogue.bloopi.reward.1":
+    "Chaque sourire propre fait grandir notre île.",
+  "game.dialogue.spriggo.idle.0":
+    "Chaque petite habitude fait pousser quelque chose de grand.",
+  "game.dialogue.spriggo.idle.1":
+    "Aujourd'hui on peut faire pousser un nouveau bourgeon.",
+  "game.dialogue.spriggo.morning.0": "Bonjour ! Faisons grandir ton sourire.",
+  "game.dialogue.spriggo.morning.1": "Feuilles levées, brosse prête !",
+  "game.dialogue.spriggo.evening.0":
+    "Les racines se reposent mieux quand les dents sont propres.",
+  "game.dialogue.spriggo.evening.1":
+    "Dernière mission, puis dodo dans le jardin.",
+  "game.dialogue.spriggo.brushing.0":
+    "Régulier et délicat, exactement comme ça.",
+  "game.dialogue.spriggo.brushing.1": "Tu cultives un super sourire !",
+  "game.dialogue.spriggo.reward.0": "Quelle croissance ! Je suis fier de nous.",
+  "game.dialogue.spriggo.reward.1":
+    "Encore un pas et le jardin devient plus grand.",
+  "game.dialogue.flarello.idle.0": "On lance une nouvelle mission ?",
+  "game.dialogue.flarello.idle.1":
+    "J'ai de l'énergie à revendre. Toi, tu as la brosse à dents ?",
+  "game.dialogue.flarello.morning.0": "Étincelles du matin ! C'est parti !",
+  "game.dialogue.flarello.morning.1": "Sourire allumé avant de sortir.",
+  "game.dialogue.flarello.evening.0": "Dernière flambée de la journée !",
+  "game.dialogue.flarello.evening.1":
+    "Faisons tout briller, puis on se repose.",
+  "game.dialogue.flarello.brushing.0":
+    "Allez ! Il ne manque que quelques étincelles.",
+  "game.dialogue.flarello.brushing.1": "Flamme constante, sourire puissant !",
+  "game.dialogue.flarello.reward.0": "Boom ! Récompense gagnée.",
+  "game.dialogue.flarello.reward.1": "Quelle flambée ! On a assuré.",
+  "game.dialogue.voltuff.idle.0":
+    "Bzzzt ! J'ai repéré une mission toute proche.",
+  "game.dialogue.voltuff.idle.1": "Batteries chargées. Sourire prêt ?",
+  "game.dialogue.voltuff.morning.0": "Charge matinale à fond !",
+  "game.dialogue.voltuff.morning.1": "Zap ! Deux minutes et on part.",
+  "game.dialogue.voltuff.evening.0": "Dernière recharge avant la nuit.",
+  "game.dialogue.voltuff.evening.1":
+    "Enlevons les dernières miettes sur les dents.",
+  "game.dialogue.voltuff.brushing.0": "Bzzzt ! Rythme parfait.",
+  "game.dialogue.voltuff.brushing.1": "Énergie stable : continue comme ça !",
+  "game.dialogue.voltuff.reward.0": "ZAP ! Récompense débloquée.",
+  "game.dialogue.voltuff.reward.1": "Signal très fort : mission accomplie !",
+  "game.dialogue.moonbit.idle.0":
+    "Même les aventures tranquilles font grandir.",
+  "game.dialogue.moonbit.idle.1":
+    "La lune dit qu'aujourd'hui on peut faire un petit pas.",
+  "game.dialogue.moonbit.morning.0":
+    "Un bonjour tout doux et un sourire propre.",
+  "game.dialogue.moonbit.morning.1": "Doucement, commençons bien la journée.",
+  "game.dialogue.moonbit.evening.0":
+    "La lune est prête. Faisons la dernière mission.",
+  "game.dialogue.moonbit.evening.1":
+    "Dents propres, pensées légères, bonne nuit.",
+  "game.dialogue.moonbit.brushing.0":
+    "Respire et continue, tu t'en sors très bien.",
+  "game.dialogue.moonbit.brushing.1": "Calme et constance : encore un peu.",
+  "game.dialogue.moonbit.reward.0": "Une petite lumière nouvelle dans la nuit.",
+  "game.dialogue.moonbit.reward.1": "Génial : on a gagné un autre souvenir.",
+  "game.reward.doubleEyebrow": "DOUBLE SURPRISE !",
+  "game.reward.evolutionEyebrow": "ÉVOLUTION !",
+  "game.reward.hatchEyebrow": "L'ŒUF A ÉCLOS !",
+  "game.reward.completedEyebrow": "SESSION TERMINÉE",
+  "game.reward.attemptEyebrow": "BIEN ESSAYÉ !",
+  "game.reward.doubleTitle":
+    "{from} est devenu {to} et {hatched} a rejoint l'équipe !",
+  "game.reward.evolutionTitle": "{from} a évolué en {to} !",
+  "game.reward.hatchTitle": "Tu as rencontré {name} !",
+  "game.reward.completedTitle": "Super travail !",
+  "game.reward.attemptTitle": "Chaque seconde compte !",
+  "game.reward.found": "TU AS TROUVÉ",
+  "game.reward.eggFound":
+    "+ {name} : continue de te brosser pour le faire éclore !",
+  "game.reward.eggHatched": "{name} a éclos : nouveau Brushling dans l'équipe.",
+  "game.reward.adventureBonus": "BONUS AVENTURE +{coins}",
+  "game.reward.chestOpened": "Coffre du Sourire ouvert !",
+  "game.reward.newBadge": "Nouveau badge débloqué !",
+  "game.reward.missionCompleted": "Mission accomplie !",
+  "game.reward.newLevel": "Nouveau niveau : {level}",
+  "game.reward.doubleMessage":
+    "{evolved} est plus fort et {hatched} t'attend dans l'écran Créatures.",
+  "game.reward.hatchMessage":
+    "{name} est maintenant disponible dans l'écran Créatures. Continue l'aventure pour découvrir d'autres récompenses.",
+  "game.reward.completedMessage":
+    "Tu as offert deux minutes de super-pouvoir à ton sourire. Ton Brushling est devenu plus fort !",
+  "game.reward.attemptMessage":
+    "La prochaine fois, essaie d'aller jusqu'au bout : ton Brushling t'attend.",
+  "game.reward.dismissLabel": "Ferme la récompense et continue",
+  "game.reward.discoverSurprises": "Découvre les surprises",
+  "game.reward.meetFriend": "Fais connaissance avec le nouvel ami",
+  "game.reward.continueAdventure": "Continue l'aventure",
+  "game.reward.fantastic": "Fantastique !",
+  "family.history.clearTitle": "Supprimer l'historique ?",
+  "family.history.clearMessage":
+    "Les sessions enregistrées sur ce téléphone seront supprimées.",
+  "family.history.clearAction": "Supprimer",
+  "family.history.clearButtonLabel": "Vider l'historique",
+  "family.history.sessionComplete": "Session complète",
+  "family.history.sessionIncomplete": "Session incomplète",
+  "family.history.sessionAccessibility": "{status}, {duration}, {date}",
+  "family.history.duration": "{minutes}:{seconds}",
+  "family.history.deviceSource": "Synchronisée depuis la brosse à dents",
+  "family.history.manualSource": "Minuteur guidé",
+  "family.history.durationOf": "sur {duration}",
+  "family.history.progressEyebrow": "Vos progrès",
+  "family.history.title": "Historique",
+  "family.history.parentCardLabel": "Ouvrir l’espace parents",
+  "family.history.parentArea": "ESPACE PARENTS",
+  "family.history.parentSummary": "Récapitulatif hebdomadaire",
+  "family.history.parentDescription":
+    "Matin/soir, durée, tentatives et sessions synchronisées.",
+  "family.history.average": "moyenne",
+  "family.history.lastSessions": "Dernières séances",
+  "family.history.emptyTitle": "Le voyage commence ici",
+  "family.history.emptyDescription":
+    "Effectuez une séance guidée ou synchronisez la brosse à dents pour voir les progrès.",
+  "family.history.minutes": "{minutes} min",
+  "family.parent.localOnly": "Seulement sur ce téléphone",
+  "family.parent.title": "Espace parents",
+  "family.parent.privacy":
+    "Ce tableau de bord n'utilise que l'historique local de l'application. Il n'envoie pas de données vers un compte ou un serveur.",
+  "family.parent.routine": "routine matin/soir",
+  "family.parent.completedSessions": "séances complètes",
+  "family.parent.recordedTime": "temps enregistré",
+  "family.parent.completeDays": "jours complets",
+  "family.parent.recentDays": "7 derniers jours",
+  "family.parent.routineDescription":
+    "Une coche indique une séance complète enregistrée le matin ou le soir.",
+  "family.parent.day": "Jour",
+  "family.parent.morning": "Matin",
+  "family.parent.evening": "Soir",
+  "family.parent.total": "Total",
+  "family.parent.completedAttempts": "tentatives effectuées",
+  "family.parent.averageCompletedDuration":
+    "durée moyenne des séances complètes",
+  "family.parent.fromToothbrush": "de la brosse à dents",
+  "family.parent.manualTimer": "minuteur manuel",
+  "family.parent.approximateSessions":
+    "{count} séances BLE sauvegardées avec une heure approximative sont exclues du calendrier, des séries et des missions quotidiennes.",
+  "family.parent.gameProgress": "Progression du jeu",
+  "family.parent.gameProgressDescription":
+    "Niveau {level} · {sessions} séances complètes · {badges} badges débloqués.",
+  "family.parent.rewardsTitle": "Récompenses familiales",
+  "family.parent.rewardsDescription":
+    "Crée des récompenses réelles choisies par le parent. L'application ne garde que la progression ; la promesse reste une affaire de famille.",
+  "family.parent.newReward": "NOUVELLE RÉCOMPENSE",
+  "family.parent.rewardNameLabel": "Nom de la récompense",
+  "family.parent.rewardNamePlaceholder": "Ex. : choisissez le film de ce soir",
+  "family.parent.rewardRequirementLabel": "Condition de la récompense",
+  "family.parent.requirementSessions": "Séances",
+  "family.parent.requirementPerfectDays": "Jours parfaits",
+  "family.parent.requirementStreak": "Record de série",
+  "family.parent.target": "Objectif",
+  "family.parent.targetAccessibilityLabel": "Objectif de la récompense",
+  "family.parent.addReward": "Ajouter une récompense",
+  "family.parent.rewardDelivered": "Remis",
+  "family.parent.rewardDemoUnlocked": "Débloqué dans la démo · non livrable",
+  "family.parent.rewardUnlocked": "Débloqué · prêt à être remis",
+  "family.parent.rewardInProgress": "En cours",
+  "family.parent.rewardProgress": "{progress}/{target}",
+  "family.parent.deliverReward": "Remettre la récompense {title}",
+  "family.parent.removeReward": "Supprimer la récompense {title}",
+  "family.parent.noRewards":
+    "Aucune récompense familiale n'est encore configurée.",
+  "family.parent.settingsCardLabel": "Ouvrir les paramètres",
+  "family.parent.settingsTitle": "Sons, musique et vibration",
+  "family.parent.settingsDescription":
+    "Ajustez les retours de l’application sans modifier les progrès ni l’historique.",
+  "family.parent.clinicalNote":
+    "Les données montrent uniquement ce que l’application a enregistré et ne constituent pas une évaluation dentaire ou clinique.",
+  "family.parent.percentage": "{value}%",
+  "family.parent.minutes": "{minutes} min",
+  "family.parent.duration": "{minutes}:{seconds}",
+  "family.rewardRequirement.completedSessions": "{target} sessions complètes",
+  "family.rewardRequirement.perfectDays": "{target} jours matin et soir",
+  "family.rewardRequirement.streak":
+    "Meilleure série : {target} jours consécutifs",
+  "family.rewards.contextError":
+    "useParentRewards doit être utilisé à l'intérieur de ParentRewardsProvider",
+  "family.settings.eyebrow": "Confort et retours",
+  "family.settings.title": "Paramètres",
+  "family.settings.heroTitle": "Le jeu doit s’adapter à la famille",
+  "family.settings.heroDescription":
+    "Toutes ces préférences restent sur ce téléphone et peuvent être modifiées à tout moment.",
+  "family.settings.soundsTitle": "Sons",
+  "family.settings.soundsDescription":
+    "Effets pour les récompenses, les missions et les interactions.",
+  "family.settings.musicTitle": "Musique",
+  "family.settings.musicDescription":
+    "Ambiance musicale pendant le jeu et la tanière.",
+  "family.settings.hapticsTitle": "Vibration",
+  "family.settings.hapticsDescription":
+    "Retour haptique sur les appuis, à la fin de la session et lors des récompenses.",
+  "family.settings.audioNote":
+    "Les sons ne doivent jamais être nécessaires pour comprendre ce qui se passe : l’application fournit toujours du texte, des icônes et des retours visuels.",
+  "brush.client.bluetoothState": "Bluetooth : {state}",
+  "brush.client.scanPrompt": "Allume la brosse à dents et garde-la à proximité",
+  "brush.client.scanStarted": "Recherche BLE démarrée (Sonicare4Kids)",
+  "brush.client.connecting": "Connexion et lecture des services",
+  "brush.client.found": "{name} trouvé",
+  "brush.client.servicesFound": "{count} services GATT détectés",
+  "brush.client.ready": "Sonicare est prête",
+  "brush.client.connected": "Connexion établie : GATT HX63xx ouvert",
+  "brush.client.handleState": "État du manche : {state}",
+  "brush.client.notificationUnavailable": "Notification indisponible : {code}",
+  "brush.client.disconnected": "Brosse à dents déconnectée",
+  "brush.client.connectionEnded": "Connexion Bluetooth terminée",
+  "brush.client.optionalReadUnavailable":
+    "Lecture facultative indisponible : {code}",
+  "brush.client.historyCountUnavailable":
+    "Nombre d’éléments de l’historique BLE indisponible ; synchronisation prudente",
+  "brush.client.clockUnavailable":
+    "Horloge du manche indisponible : date de session approximative",
+  "brush.client.sessionRead": "Session {id} lue ({duration}s)",
+  "brush.client.sessionsReady":
+    "{count} sessions BLE prêtes pour l’enregistrement atomique",
+  "brush.client.disconnectedShort": "Déconnectée",
+  "brush.client.unsupported":
+    "Le Bluetooth est disponible uniquement dans l’application installée",
+  "brush.client.webPreview":
+    "Aperçu web : minuteur manuel disponible ; le BLE est réservé à iOS et Android",
+  "brush.client.openDevelopmentBuild":
+    "Ouvre une version de développement sur iPhone ou Android",
+  "brush.client.nativeProtocolRequired":
+    "Le protocole Bluetooth nécessite l’application native iOS ou Android",
+  "brush.client.syncNativeOnly":
+    "La synchronisation est disponible uniquement sur iOS et Android",
+  "brush.client.connectionFailed": "Échec de la connexion Bluetooth",
+  "brush.client.diagnostic": "Mise à jour du diagnostic Bluetooth",
+  "brush.client.permissionDenied":
+    "L’autorisation Bluetooth n’a pas été accordée",
+  "brush.client.locationPermissionRequired":
+    "L’autorisation de localisation est nécessaire pour la recherche Bluetooth",
+  "brush.client.connectionInProgress":
+    "Une connexion Bluetooth est déjà en cours",
+  "brush.client.unavailable": "Client Bluetooth indisponible",
+  "brush.client.cancelled": "Opération Bluetooth annulée",
+  "brush.client.unknownError": "Erreur Bluetooth inconnue",
+  "brush.client.notFound": "Brosse à dents introuvable. Allume-la et réessaie.",
+  "brush.client.syncLimit":
+    "Le manche indique {count} sessions : la synchronisation dépasse la limite de sécurité",
+  "brush.client.resetDetected":
+    "Le compteur du manche semble avoir été réinitialisé : utilise Oublier le manche réinitialisé",
+  "brush.client.unsafeGap":
+    "Intervalle Bluetooth non sûr ({count} sessions) : synchronisation suspendue",
+  "brush.client.incompleteHistory":
+    "L’historique du manche ne contient plus toutes les sessions manquantes",
+  "brush.client.missingRecord":
+    "L’enregistrement Bluetooth {id} est manquant ou non reconnu ; synchronisation suspendue",
+} as const satisfies TranslationCatalog;

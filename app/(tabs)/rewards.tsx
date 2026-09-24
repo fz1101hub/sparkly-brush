@@ -11,15 +11,31 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
-import { COLLECTIBLE_ITEMS, EGG_DEFINITIONS } from "@/lib/game-inventory";
-import { getBrushling, getEvolution } from "@/lib/brushlings";
+import {
+  getBrushling,
+  getEvolution,
+  localizeBrushling,
+} from "@/lib/brushlings";
+import {
+  COLLECTIBLE_ITEMS,
+  EGG_DEFINITIONS,
+  localizeCollectibleItem,
+  localizeEggDefinition,
+} from "@/lib/game-inventory";
 
 export default function RewardsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatNumber } = useI18n();
   const { inventory, walletCoins } = useBrushling();
-
+  const sessionWord = (count: number) =>
+    t(
+      count === 1
+        ? "game.explore.sessionSingular"
+        : "game.explore.sessionPlural",
+    );
   return (
     <ScreenContainer>
       <ScrollView
@@ -29,7 +45,7 @@ export default function RewardsScreen() {
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna alla mappa"
+            accessibilityLabel={t("game.rewards.backLabel")}
             onPress={() => router.back()}
             style={({ pressed }) => [
               styles.backButton,
@@ -39,18 +55,17 @@ export default function RewardsScreen() {
             <MaterialIcons
               name="arrow-back"
               size={22}
-              color={colors.foreground}
+              color={LIGHT_CARD_FOREGROUND}
             />
           </Pressable>
           <View style={styles.headerWrap}>
             <AppHeader
-              eyebrow="Collezione"
-              title="I tuoi premi"
+              eyebrow={t("game.rewards.eyebrow")}
+              title={t("game.rewards.title")}
               connected={false}
             />
           </View>
         </View>
-
         <View
           style={[
             styles.hero,
@@ -60,26 +75,26 @@ export default function RewardsScreen() {
           <MaterialIcons name="stars" size={34} color="#B98A00" />
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
-              {inventory.completedSessions} avventure completate
+              {t("game.rewards.completedAdventures", {
+                count: formatNumber(inventory.completedSessions),
+              })}
             </Text>
             <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
-              Ogni sessione completa lascia un ricordo della zona esplorata. Le
-              uova richiedono altre sessioni per schiudersi.
+              {t("game.rewards.heroDescription")}
             </Text>
           </View>
         </View>
-
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Oggetti trovati
+            {t("game.rewards.foundItems")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            La tua piccola collezione cresce insieme alle buone abitudini.
+            {t("game.rewards.foundItemsDescription")}
           </Text>
         </View>
-
         <View style={styles.itemGrid}>
-          {COLLECTIBLE_ITEMS.map((item) => {
+          {COLLECTIBLE_ITEMS.map((definition) => {
+            const item = localizeCollectibleItem(definition, t);
             const count = inventory.itemCounts[item.id];
             return (
               <View
@@ -95,7 +110,10 @@ export default function RewardsScreen() {
                 <View
                   style={[
                     styles.itemIcon,
-                    { backgroundColor: count > 0 ? item.accent : "#8C93A3" },
+                    {
+                      backgroundColor:
+                        count > 0 ? readableAccent(item.accent) : "#8C93A3",
+                    },
                   ]}
                 >
                   <MaterialIcons name={item.icon} size={25} color="#FFFFFF" />
@@ -120,7 +138,9 @@ export default function RewardsScreen() {
                     },
                   ]}
                 >
-                  {count > 0 ? `x${count}` : "???"}
+                  {count > 0
+                    ? `x${formatNumber(count)}`
+                    : t("game.rewards.unknownItem")}
                 </Text>
                 <Text
                   style={[
@@ -131,33 +151,33 @@ export default function RewardsScreen() {
                 >
                   {count > 0
                     ? item.description
-                    : "Continua a esplorare per scoprire questo oggetto."}
+                    : t("game.rewards.continueToDiscoverItem")}
                 </Text>
               </View>
             );
           })}
         </View>
-
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Uova misteriose
+            {t("game.rewards.mysteryEggs")}
           </Text>
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-            Quando un uovo si schiude, il nuovo Brushling entra nella tua
-            collezione.
+            {t("game.rewards.mysteryEggsDescription")}
           </Text>
         </View>
-
         <View style={styles.eggStack}>
           {EGG_DEFINITIONS.map((definition) => {
             const egg = inventory.eggs.find(
               (candidate) => candidate.id === definition.id,
             )!;
-            const creature = getBrushling(definition.brushlingId);
+            const localizedEgg = localizeEggDefinition(egg, t);
+            const creature = localizeBrushling(
+              getBrushling(definition.brushlingId),
+              t,
+            );
             const evolution = getEvolution(creature, 1);
             const progressWidth =
               `${Math.round(egg.progress * 100)}%` as `${number}%`;
-
             return (
               <View
                 key={egg.id}
@@ -185,11 +205,10 @@ export default function RewardsScreen() {
                     <MaterialIcons
                       name={egg.found ? "egg" : "lock"}
                       size={52}
-                      color={egg.found ? egg.accent : "#7D8494"}
+                      color={egg.found ? readableAccent(egg.accent) : "#7D8494"}
                     />
                   )}
                 </View>
-
                 <View style={styles.eggCopy}>
                   <Text
                     style={[
@@ -202,10 +221,10 @@ export default function RewardsScreen() {
                     ]}
                   >
                     {egg.hatched
-                      ? "SCHIUSO"
+                      ? t("game.rewards.hatched")
                       : egg.found
-                        ? "IN COVA"
-                        : "NON ANCORA TROVATO"}
+                        ? t("game.rewards.incubating")
+                        : t("game.rewards.notFound")}
                   </Text>
                   <Text
                     style={[
@@ -220,8 +239,8 @@ export default function RewardsScreen() {
                     {egg.hatched
                       ? evolution.name
                       : egg.found
-                        ? egg.name
-                        : "Uovo misterioso"}
+                        ? localizedEgg.name
+                        : t("game.rewards.mysteryEgg")}
                   </Text>
                   <Text
                     style={[
@@ -230,12 +249,15 @@ export default function RewardsScreen() {
                     ]}
                   >
                     {egg.hatched
-                      ? `${evolution.name} è entrato nella tua squadra!`
+                      ? t("game.rewards.brushlingJoined", {
+                          name: evolution.name,
+                        })
                       : egg.found
-                        ? egg.description
-                        : `Si può trovare dopo ${egg.foundAtCompletedSessions} sessioni complete.`}
+                        ? localizedEgg.description
+                        : t("game.rewards.eggFoundAfter", {
+                            count: formatNumber(egg.foundAtCompletedSessions),
+                          })}
                   </Text>
-
                   {egg.found && !egg.hatched ? (
                     <>
                       <View
@@ -249,7 +271,7 @@ export default function RewardsScreen() {
                             styles.progressFill,
                             {
                               width: progressWidth,
-                              backgroundColor: egg.accent,
+                              backgroundColor: readableAccent(egg.accent),
                             },
                           ]}
                         />
@@ -260,8 +282,10 @@ export default function RewardsScreen() {
                           { color: LIGHT_CARD_MUTED },
                         ]}
                       >
-                        {egg.sessionsRemaining} session
-                        {egg.sessionsRemaining === 1 ? "e" : "i"} alla schiusa
+                        {t("game.rewards.sessionsUntilHatch", {
+                          count: formatNumber(egg.sessionsRemaining),
+                          sessionWord: sessionWord(egg.sessionsRemaining),
+                        })}
                       </Text>
                     </>
                   ) : null}
@@ -270,9 +294,9 @@ export default function RewardsScreen() {
             );
           })}
         </View>
-
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t("game.rewards.goToHabitatLabel")}
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.footerCard,
@@ -280,16 +304,21 @@ export default function RewardsScreen() {
             pressed && styles.pressed,
           ]}
         >
-          <MaterialIcons name="home" size={22} color={colors.primary} />
+          <MaterialIcons
+            name="home"
+            size={22}
+            color={readableAccent("#2457D6")}
+          />
           <View style={styles.footerCopy}>
             <Text
               style={[styles.footerTitle, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              Vai alla tana
+              {t("game.rewards.goToHabitat")}
             </Text>
             <Text style={[styles.footerText, { color: LIGHT_CARD_MUTED }]}>
-              Hai {walletCoins} monete sorriso da spendere in habitat, accessori
-              e decorazioni.
+              {t("game.rewards.habitatCoins", {
+                coins: formatNumber(walletCoins),
+              })}
             </Text>
           </View>
           <MaterialIcons
@@ -302,7 +331,6 @@ export default function RewardsScreen() {
     </ScreenContainer>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,

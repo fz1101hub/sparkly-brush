@@ -3,41 +3,42 @@ import { useEffect, useState } from "react";
 import { Animated, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
+import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { getBrushling } from "@/lib/brushlings";
 
-const SLIDES = [
-  {
-    icon: "pets" as const,
-    eyebrow: "BENVENUTO",
-    title: "Un piccolo amico che cresce con il sorriso",
-    body: "Ogni sessione aiuta il tuo Brushling a guadagnare XP, esplorare l’isola e trovare nuovi amici.",
-  },
-  {
-    icon: "auto-awesome" as const,
-    eyebrow: "COME FUNZIONA",
-    title: "Due minuti diventano un’avventura",
-    body: "Mattina e sera trovi missioni, uova, evoluzioni, oggetti e ricompense. Il gioco segue lo storico reale delle sessioni.",
-  },
-  {
-    icon: "family-restroom" as const,
-    eyebrow: "PER I GRANDI",
-    title: "I genitori vedono la routine, non un voto",
-    body: "La dashboard mostra ciò che l’app ha registrato e permette di creare premi di famiglia. Nessun dato viene inviato a un account.",
-  },
-  {
-    icon: "shield" as const,
-    eyebrow: "IL TUO MONDO",
-    title: "Il Brushling può seguirti anche su un nuovo telefono",
-    body: "Backup, demo separata e impostazioni locali aiutano a proteggere i progressi senza obbligare a creare un profilo online.",
-  },
-];
-
 export function OnboardingOverlay() {
   const { preferences, ready, completeOnboarding } = usePreferences();
+  const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const [fade] = useState(() => new Animated.Value(1));
   const bloopi = getBrushling("bloopi");
+  const slides = [
+    {
+      icon: "pets" as const,
+      eyebrow: t("onboarding.slide1.eyebrow"),
+      title: t("onboarding.slide1.title"),
+      body: t("onboarding.slide1.body"),
+    },
+    {
+      icon: "auto-awesome" as const,
+      eyebrow: t("onboarding.slide2.eyebrow"),
+      title: t("onboarding.slide2.title"),
+      body: t("onboarding.slide2.body"),
+    },
+    {
+      icon: "family-restroom" as const,
+      eyebrow: t("onboarding.slide3.eyebrow"),
+      title: t("onboarding.slide3.title"),
+      body: t("onboarding.slide3.body"),
+    },
+    {
+      icon: "shield" as const,
+      eyebrow: t("onboarding.slide4.eyebrow"),
+      title: t("onboarding.slide4.title"),
+      body: t("onboarding.slide4.body"),
+    },
+  ];
 
   useEffect(() => {
     fade.setValue(0);
@@ -45,8 +46,8 @@ export function OnboardingOverlay() {
   }, [fade, index]);
 
   if (!ready || preferences.onboardingCompleted) return null;
-  const slide = SLIDES[index];
-  const finalSlide = index === SLIDES.length - 1;
+  const slide = slides[index];
+  const finalSlide = index === slides.length - 1;
 
   return (
     <Modal visible animationType="fade" statusBarTranslucent>
@@ -54,7 +55,10 @@ export function OnboardingOverlay() {
         testID="onboarding-overlay"
         role="dialog"
         accessibilityViewIsModal={Platform.OS !== "web"}
-        accessibilityLabel={`Onboarding Sparkly Brush, pagina ${index + 1} di ${SLIDES.length}`}
+        accessibilityLabel={t("onboarding.dialogLabel", {
+          current: index + 1,
+          total: slides.length,
+        })}
         style={styles.backdrop}
       >
         <View style={styles.orbOne} />
@@ -71,36 +75,58 @@ export function OnboardingOverlay() {
           <Text style={styles.body}>{slide.body}</Text>
 
           <View style={styles.dots}>
-            {SLIDES.map((_, dotIndex) => (
+            {slides.map((_, dotIndex) => (
               <View
                 key={dotIndex}
                 style={[styles.dot, dotIndex === index && styles.dotActive]}
               />
             ))}
           </View>
-          <Text style={styles.pageCount}>{index + 1} di {SLIDES.length}</Text>
+          <Text style={styles.pageCount}>
+            {t("onboarding.pageCount", {
+              current: index + 1,
+              total: slides.length,
+            })}
+          </Text>
 
           <View style={styles.actions}>
             {index > 0 ? (
               <Pressable
                 testID="onboarding-back"
                 accessibilityRole="button"
-                accessibilityLabel="Torna alla pagina precedente"
+                accessibilityLabel={t("onboarding.backLabel")}
                 onPress={() => setIndex((value) => value - 1)}
                 style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
               >
-                <Text style={styles.secondaryText}>Indietro</Text>
+                <Text style={styles.secondaryText}>{t("onboarding.back")}</Text>
               </Pressable>
             ) : <View style={styles.secondaryPlaceholder} />}
             <Pressable
               testID="onboarding-next"
               accessibilityRole="button"
-              accessibilityLabel={finalSlide ? "Completa onboarding e inizia l’avventura" : "Vai alla pagina successiva"}
-              onPress={() => finalSlide ? void completeOnboarding() : setIndex((value) => value + 1)}
-              style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+              accessibilityLabel={t(
+                finalSlide
+                  ? "onboarding.completeLabel"
+                  : "onboarding.nextLabel",
+              )}
+              onPress={() =>
+                finalSlide
+                  ? void completeOnboarding()
+                  : setIndex((value) => value + 1)
+              }
+              style={({ pressed }) => [
+                styles.primary,
+                pressed && styles.pressed,
+              ]}
             >
-              <Text style={styles.primaryText}>{finalSlide ? "Inizia l’avventura" : "Continua"}</Text>
-              <MaterialIcons name={finalSlide ? "rocket-launch" : "arrow-forward"} size={18} color="#FFFFFF" />
+              <Text style={styles.primaryText}>
+                {finalSlide ? t("onboarding.start") : t("common.continue")}
+              </Text>
+              <MaterialIcons
+                name={finalSlide ? "rocket-launch" : "arrow-forward"}
+                size={18}
+                color="#FFFFFF"
+              />
             </Pressable>
           </View>
         </Animated.View>

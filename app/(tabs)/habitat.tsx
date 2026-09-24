@@ -13,24 +13,48 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import {
   CUSTOMIZATION_ITEMS,
   getCustomizationItem,
+  localizeCustomizationItem,
   type CustomizationCategory,
   type CustomizationItem,
 } from "@/lib/customization";
-import { getEvolution } from "@/lib/brushlings";
+import { getEvolution, localizeBrushling } from "@/lib/brushlings";
 
-const CATEGORY_LABELS: Record<CustomizationCategory, string> = {
-  habitat: "Habitat",
-  accessory: "Accessori",
-  decor: "Decorazioni",
+const CATEGORY_KEYS: Record<
+  CustomizationCategory,
+  {
+    label:
+      | "game.habitat.category.habitat"
+      | "game.habitat.category.accessory"
+      | "game.habitat.category.decor";
+    description:
+      | "game.habitat.categoryDescription.habitat"
+      | "game.habitat.categoryDescription.accessory"
+      | "game.habitat.categoryDescription.decor";
+  }
+> = {
+  habitat: {
+    label: "game.habitat.category.habitat",
+    description: "game.habitat.categoryDescription.habitat",
+  },
+  accessory: {
+    label: "game.habitat.category.accessory",
+    description: "game.habitat.categoryDescription.accessory",
+  },
+  decor: {
+    label: "game.habitat.category.decor",
+    description: "game.habitat.categoryDescription.decor",
+  },
 };
 
 export default function HabitatScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatNumber } = useI18n();
   const {
     selected,
     stats,
@@ -40,8 +64,8 @@ export default function HabitatScreen() {
     equipCustomization,
   } = useBrushling();
   const [message, setMessage] = useState<string | null>(null);
-  const evolution = getEvolution(selected, stats.level);
-
+  const selectedCreature = localizeBrushling(selected, t);
+  const evolution = getEvolution(selectedCreature, stats.level);
   const groups = useMemo(
     () =>
       (["habitat", "accessory", "decor"] as const).map((category) => ({
@@ -50,36 +74,34 @@ export default function HabitatScreen() {
       })),
     [],
   );
-
-  const isEquipped = (item: CustomizationItem) => {
-    if (item.category === "habitat")
-      return customization.equippedHabitatId === item.id;
-    if (item.category === "accessory")
-      return customization.equippedAccessoryId === item.id;
-    return customization.equippedDecorId === item.id;
-  };
-
+  const isEquipped = (item: CustomizationItem) =>
+    item.category === "habitat"
+      ? customization.equippedHabitatId === item.id
+      : item.category === "accessory"
+        ? customization.equippedAccessoryId === item.id
+        : customization.equippedDecorId === item.id;
   const handleItem = async (item: CustomizationItem) => {
     setMessage(null);
-
+    const localizedItem = localizeCustomizationItem(item, t);
     if (customization.ownedIds.includes(item.id)) {
       const equipped = await equipCustomization(item.id);
       setMessage(
         equipped
-          ? `${item.name} equipaggiato!`
-          : "Non riesco a equipaggiare questo oggetto.",
+          ? t("game.habitat.equipped", { name: localizedItem.name })
+          : t("game.habitat.equipFailed"),
       );
       return;
     }
-
     const result = await buyCustomization(item.id);
-    if (result === "insufficient") {
-      setMessage(`Servono ${item.cost - walletCoins} monete sorriso in più.`);
-    } else if (result === "purchased") {
-      setMessage(`${item.name} acquistato ed equipaggiato!`);
-    }
+    if (result === "insufficient")
+      setMessage(
+        t("game.habitat.needMoreCoins", {
+          coins: formatNumber(item.cost - walletCoins),
+        }),
+      );
+    else if (result === "purchased")
+      setMessage(t("game.habitat.purchased", { name: localizedItem.name }));
   };
-
   return (
     <ScreenContainer>
       <ScrollView
@@ -89,7 +111,7 @@ export default function HabitatScreen() {
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("game.habitat.backLabel")}
             onPress={() => router.back()}
             style={({ pressed }) => [
               styles.backButton,
@@ -99,25 +121,23 @@ export default function HabitatScreen() {
             <MaterialIcons
               name="arrow-back"
               size={22}
-              color={colors.foreground}
+              color={LIGHT_CARD_FOREGROUND}
             />
           </Pressable>
           <View style={styles.headerWrap}>
             <AppHeader
-              eyebrow="Casa Brushling"
-              title="La tana"
+              eyebrow={t("game.habitat.eyebrow")}
+              title={t("game.habitat.title")}
               connected={false}
             />
           </View>
         </View>
-
         <BrushlingHabitat
-          creature={selected}
+          creature={selectedCreature}
           level={stats.level}
           customization={customization}
           height={320}
         />
-
         <View
           style={[
             styles.walletCard,
@@ -129,38 +149,43 @@ export default function HabitatScreen() {
           </View>
           <View style={styles.walletCopy}>
             <Text style={[styles.walletEyebrow, { color: GOLD_TEXT }]}>
-              PORTAFOGLIO
+              {t("game.habitat.wallet")}
             </Text>
             <Text
               style={[styles.walletValue, { color: LIGHT_CARD_FOREGROUND }]}
             >
-              {walletCoins} monete sorriso
+              {t("game.habitat.walletValue", {
+                coins: formatNumber(walletCoins),
+              })}
             </Text>
             <Text style={[styles.walletText, { color: LIGHT_CARD_MUTED }]}>
-              Le guadagni spazzolando; ciò che acquisti resta salvato su questo
-              telefono.
+              {t("game.habitat.walletDescription")}
             </Text>
           </View>
         </View>
-
         <View
           style={[
             styles.infoCard,
-            { backgroundColor: selected.soft, borderColor: selected.accent },
+            {
+              backgroundColor: selectedCreature.soft,
+              borderColor: selectedCreature.accent,
+            },
           ]}
         >
-          <MaterialIcons name="pets" size={24} color={selected.textAccent} />
+          <MaterialIcons
+            name="pets"
+            size={24}
+            color={readableAccent(selectedCreature.accent)}
+          />
           <View style={styles.infoCopy}>
             <Text style={[styles.infoTitle, { color: LIGHT_CARD_FOREGROUND }]}>
               {evolution.name}
             </Text>
             <Text style={[styles.infoText, { color: LIGHT_CARD_MUTED }]}>
-              Personalizza il suo spazio con un habitat, un accessorio e una
-              decorazione.
+              {t("game.habitat.customizeSpace")}
             </Text>
           </View>
         </View>
-
         {message ? (
           <View
             style={[
@@ -176,28 +201,32 @@ export default function HabitatScreen() {
             </Text>
           </View>
         ) : null}
-
         {groups.map(({ category, items }) => (
           <View key={category} style={styles.section}>
             <View>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                {CATEGORY_LABELS[category]}
+                {t(CATEGORY_KEYS[category].label)}
               </Text>
               <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-                {category === "habitat"
-                  ? "Cambia l’ambiente in cui vive il tuo Brushling."
-                  : category === "accessory"
-                    ? "Aggiungi un dettaglio speciale al tuo compagno."
-                    : "Rendi la tana più personale e accogliente."}
+                {t(CATEGORY_KEYS[category].description)}
               </Text>
             </View>
-
             <View style={styles.grid}>
               {items.map((item) => {
+                const localizedItem = localizeCustomizationItem(item, t);
                 const owned = customization.ownedIds.includes(item.id);
                 const equipped = isEquipped(item);
                 const affordable = walletCoins >= item.cost;
-
+                const buttonText = equipped
+                  ? t("game.habitat.equippedButton")
+                  : owned
+                    ? t("game.habitat.equip")
+                    : item.cost === 0
+                      ? t("game.habitat.use")
+                      : affordable
+                        ? t("game.habitat.buy")
+                        : t("game.habitat.needCoins");
+                const insufficient = !owned && item.cost > 0 && !affordable;
                 return (
                   <View
                     key={item.id}
@@ -215,10 +244,9 @@ export default function HabitatScreen() {
                       <MaterialIcons
                         name={item.icon}
                         size={27}
-                        color={item.accent}
+                        color={readableAccent(item.accent)}
                       />
                     </View>
-
                     <Text
                       style={[
                         styles.itemName,
@@ -229,7 +257,7 @@ export default function HabitatScreen() {
                         },
                       ]}
                     >
-                      {item.name}
+                      {localizedItem.name}
                     </Text>
                     <Text
                       style={[
@@ -238,9 +266,8 @@ export default function HabitatScreen() {
                       ]}
                       numberOfLines={3}
                     >
-                      {item.description}
+                      {localizedItem.description}
                     </Text>
-
                     <View style={styles.itemMeta}>
                       {item.cost === 0 ? (
                         <Text
@@ -249,7 +276,7 @@ export default function HabitatScreen() {
                             { color: readableAccent(item.accent) },
                           ]}
                         >
-                          Incluso
+                          {t("game.habitat.included")}
                         </Text>
                       ) : (
                         <View style={styles.costRow}>
@@ -267,14 +294,17 @@ export default function HabitatScreen() {
                               },
                             ]}
                           >
-                            {item.cost}
+                            {formatNumber(item.cost)}
                           </Text>
                         </View>
                       )}
                     </View>
-
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t(
+                        "game.habitat.customizationAction",
+                        { action: buttonText, name: localizedItem.name },
+                      )}
                       disabled={equipped}
                       onPress={() => void handleItem(item)}
                       style={({ pressed }) => [
@@ -286,7 +316,7 @@ export default function HabitatScreen() {
                               ? "#FFFFFF"
                               : affordable || item.cost === 0
                                 ? readableAccent(item.accent)
-                                : "#D9DCE4",
+                                : "#7A2E2E",
                           borderColor:
                             equipped || !owned
                               ? readableAccent(item.accent)
@@ -300,23 +330,13 @@ export default function HabitatScreen() {
                           styles.itemButtonText,
                           {
                             color:
-                              equipped || !owned
+                              equipped || !owned || insufficient
                                 ? "#FFFFFF"
-                                : owned
-                                  ? LIGHT_CARD_FOREGROUND
-                                  : colors.foreground,
+                                : LIGHT_CARD_FOREGROUND,
                           },
                         ]}
                       >
-                        {equipped
-                          ? "Equipaggiato"
-                          : owned
-                            ? "Equipaggia"
-                            : item.cost === 0
-                              ? "Usa"
-                              : affordable
-                                ? "Acquista"
-                                : "Servono monete"}
+                        {buttonText}
                       </Text>
                     </Pressable>
                   </View>
@@ -325,26 +345,32 @@ export default function HabitatScreen() {
             </View>
           </View>
         ))}
-
         <View
           style={[
             styles.currentCard,
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <MaterialIcons name="home" size={22} color={colors.primary} />
+          <MaterialIcons
+            name="home"
+            size={22}
+            color={readableAccent("#2457D6")}
+          />
           <View style={styles.currentCopy}>
             <Text style={[styles.currentTitle, { color: colors.foreground }]}>
-              Configurazione attuale
+              {t("game.habitat.currentConfiguration")}
             </Text>
             <Text style={[styles.currentText, { color: colors.muted }]}>
-              {getCustomizationItem(customization.equippedHabitatId)?.name}
-              {customization.equippedAccessoryId
-                ? ` · ${getCustomizationItem(customization.equippedAccessoryId)?.name}`
-                : ""}
-              {customization.equippedDecorId
-                ? ` · ${getCustomizationItem(customization.equippedDecorId)?.name}`
-                : ""}
+              {[
+                customization.equippedHabitatId,
+                customization.equippedAccessoryId,
+                customization.equippedDecorId,
+              ]
+                .flatMap((id) => {
+                  const item = getCustomizationItem(id);
+                  return item ? [localizeCustomizationItem(item, t).name] : [];
+                })
+                .join(" · ")}
             </Text>
           </View>
         </View>
@@ -352,7 +378,6 @@ export default function HabitatScreen() {
     </ScreenContainer>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,

@@ -2,10 +2,21 @@ import React, { act } from "react";
 import { createRoot } from "test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BleClientEvents, BrushSession, SonicareClient, StoredDeviceSession } from "@/lib/brush-types";
-import { applySessionToLifetime, createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
+import type {
+  BleClientEvents,
+  BrushSession,
+  SonicareClient,
+  StoredDeviceSession,
+} from "@/lib/brush-types";
+import {
+  applySessionToLifetime,
+  createEmptyLifetimeProgress,
+} from "@/lib/lifetime-progress";
+import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => ({
   forgetDevice: vi.fn(),
@@ -80,13 +91,68 @@ describe("BrushProvider BLE integration", () => {
       event: null,
       importedCount: 0,
     });
-    mocks.saveFallback.mockReset().mockResolvedValue({ recentHistory: [], lifetimeProgress: empty, event: null });
+    mocks.saveFallback.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: empty,
+      event: null,
+    });
     mocks.saveDemo.mockReset().mockResolvedValue([]);
-    mocks.saveSession.mockReset().mockResolvedValue({ recentHistory: [], lifetimeProgress: empty, event: null });
+    mocks.saveSession.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: empty,
+      event: null,
+    });
     mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
     mocks.loadPendingManual.mockReset().mockResolvedValue(null);
     mocks.savePendingManual.mockReset().mockResolvedValue(undefined);
     mocks.clearPendingManual.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("cambia lingua senza ricreare il client BLE", async () => {
+    const holder: { client?: FakeClient } = {};
+    const factory = vi.fn((events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    });
+    let statusMessage = "";
+    function Probe() {
+      statusMessage = useBrush().statusMessage;
+      return null;
+    }
+
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="it">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+      await Promise.resolve();
+    });
+    act(() =>
+      holder.client?.events.onStatus(
+        "scanning",
+        "Accendi lo spazzolino e tienilo vicino",
+      ),
+    );
+    expect(statusMessage).toBe("Accendi lo spazzolino e tienilo vicino");
+
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="en">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+    });
+
+    expect(statusMessage).toBe("Turn on the toothbrush and keep it nearby");
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(holder.client?.destroy).not.toHaveBeenCalled();
+    await act(async () => renderer.unmount());
   });
 
   it("salva una sessione terminata dal manico e aggiorna storico e progressione", async () => {
@@ -622,7 +688,7 @@ describe("BrushProvider BLE integration", () => {
     await act(async () => stopManual());
 
     expect(pending).toBe(true);
-    expect(error).toBe("storage non disponibile");
+    expect(error).toBe("Sessione guidata non salvata");
     expect(history).toEqual([]);
     expect(mocks.savePendingManual).toHaveBeenCalledTimes(1);
     expect(mocks.clearPendingManual).not.toHaveBeenCalled();
@@ -722,7 +788,7 @@ describe("BrushProvider BLE integration", () => {
     });
 
     expect(pending).toBe(true);
-    expect(error).toBe("demo storage non disponibile");
+    expect(error).toBe("Sessione guidata non salvata");
     expect(history).toEqual([]);
 
     await act(async () => retryManualSession());

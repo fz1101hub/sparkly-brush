@@ -1,38 +1,53 @@
 import { Text, View } from "react-native";
 
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 
-const ZONES = [
-  "Alto a destra",
-  "Alto a sinistra",
-  "Basso a sinistra",
-  "Basso a destra",
-];
-
-export function MouthZones({ activeZone, isActive }: { activeZone: number; isActive: boolean }) {
+export function MouthZones({
+  activeZone,
+  isActive,
+}: {
+  activeZone: number;
+  isActive: boolean;
+}) {
   const colors = useColors();
-  const safeZone = Math.max(0, Math.min(activeZone, ZONES.length - 1));
+  const { t } = useI18n();
+  const zones = [
+    t("timer.zone.upperRight"),
+    t("timer.zone.upperLeft"),
+    t("timer.zone.lowerLeft"),
+    t("timer.zone.lowerRight"),
+  ];
+  const safeZone = Math.max(0, Math.min(activeZone, zones.length - 1));
   const completedZones = isActive ? safeZone : 0;
+  const progressText = t("mouthZones.progressText", {
+    completed: completedZones,
+    total: zones.length,
+  });
 
   return (
     <View
       testID="mouth-zones-progress"
       accessibilityRole="progressbar"
-      accessibilityLabel="Avanzamento delle zone di spazzolamento"
-      accessibilityHint={isActive ? `Zona attiva: ${ZONES[safeZone]}` : "La sessione non è ancora iniziata"}
+      accessibilityLabel={t("mouthZones.progressLabel")}
+      accessibilityHint={
+        isActive
+          ? t("mouthZones.activeHint", { zone: zones[safeZone] })
+          : t("mouthZones.inactiveHint")
+      }
       accessibilityValue={{
         min: 0,
         now: completedZones,
-        max: ZONES.length,
-        text: isActive ? `${completedZones} zone completate su ${ZONES.length}` : "0 zone completate su 4",
+        max: zones.length,
+        text: progressText,
       }}
       aria-valuemin={0}
       aria-valuenow={completedZones}
-      aria-valuemax={ZONES.length}
-      aria-valuetext={isActive ? `${completedZones} zone completate su ${ZONES.length}` : "0 zone completate su 4"}
+      aria-valuemax={zones.length}
+      aria-valuetext={progressText}
     >
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {ZONES.map((label, index) => {
+        {zones.map((label, index) => {
           const selected = isActive && index === activeZone;
           const completed = isActive && index < activeZone;
           return (
@@ -50,10 +65,25 @@ export function MouthZones({ activeZone, isActive }: { activeZone: number; isAct
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: selected ? colors.primary : colors.foreground, fontWeight: "800", fontSize: 13, lineHeight: 18 }}>
-                {completed ? "Fatto · " : selected ? "Ora · " : ""}{label}
+              <Text
+                style={{
+                  color: selected ? colors.primary : colors.foreground,
+                  fontWeight: "800",
+                  fontSize: 13,
+                  lineHeight: 18,
+                }}
+              >
+                {completed
+                  ? t("mouthZones.completedZone", { zone: label })
+                  : selected
+                    ? t("mouthZones.activeZone", { zone: label })
+                    : label}
               </Text>
-              <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>30 secondi</Text>
+              <Text
+                style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}
+              >
+                {t("mouthZones.duration", { seconds: 30 })}
+              </Text>
             </View>
           );
         })}

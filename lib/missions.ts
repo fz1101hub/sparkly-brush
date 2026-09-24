@@ -7,6 +7,11 @@ import {
   parseLocalDateKey,
   uniqueCompletedDayKeys,
 } from "@/lib/day-progress";
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
 
 export { longestCompletedDayStreak } from "@/lib/day-progress";
 
@@ -17,7 +22,6 @@ export type AchievementId =
   | "ten-adventures"
   | "three-perfect-days"
   | "seven-day-streak";
-
 export type DailyMissionStatus = {
   id: DailyMissionId;
   title: string;
@@ -28,7 +32,6 @@ export type DailyMissionStatus = {
   completed: boolean;
   icon: "wb-sunny" | "dark-mode" | "done-all";
 };
-
 export type AchievementStatus = {
   id: AchievementId;
   title: string;
@@ -39,7 +42,6 @@ export type AchievementStatus = {
   target: number;
   icon: "auto-awesome" | "explore" | "emoji-events" | "calendar-month" | "local-fire-department";
 };
-
 export type DailyMissionSummary = {
   dateKey: string;
   missions: DailyMissionStatus[];
@@ -48,7 +50,6 @@ export type DailyMissionSummary = {
   chestRewardCoins: number;
   earnedCoins: number;
 };
-
 export type MissionCenter = {
   today: DailyMissionSummary;
   achievements: AchievementStatus[];
@@ -56,7 +57,6 @@ export type MissionCenter = {
   achievementBonusCoins: number;
   totalBonusCoins: number;
 };
-
 export type ProgressRewardDelta = {
   missionTitles: string[];
   achievementTitles: string[];
@@ -65,12 +65,82 @@ export type ProgressRewardDelta = {
   chestUnlocked: boolean;
   totalBonusCoins: number;
 };
-
 export type AchievementMetrics = {
   completedSessions: number;
   perfectDays: number;
   longestStreakDays: number;
 };
+
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
+type StatusTextKeys = { title: TranslationKey; description: TranslationKey };
+
+export const DAILY_MISSION_TEXT_KEYS = {
+  morning: {
+    title: "game.mission.morning.title",
+    description: "game.mission.morning.description",
+  },
+  evening: {
+    title: "game.mission.evening.title",
+    description: "game.mission.evening.description",
+  },
+  double: {
+    title: "game.mission.double.title",
+    description: "game.mission.double.description",
+  },
+} as const satisfies Record<DailyMissionId, StatusTextKeys>;
+
+export const ACHIEVEMENT_TEXT_KEYS = {
+  "first-smile": {
+    title: "game.achievement.first-smile.title",
+    description: "game.achievement.first-smile.description",
+  },
+  "five-adventures": {
+    title: "game.achievement.five-adventures.title",
+    description: "game.achievement.five-adventures.description",
+  },
+  "ten-adventures": {
+    title: "game.achievement.ten-adventures.title",
+    description: "game.achievement.ten-adventures.description",
+  },
+  "three-perfect-days": {
+    title: "game.achievement.three-perfect-days.title",
+    description: "game.achievement.three-perfect-days.description",
+  },
+  "seven-day-streak": {
+    title: "game.achievement.seven-day-streak.title",
+    description: "game.achievement.seven-day-streak.description",
+  },
+} as const satisfies Record<AchievementId, StatusTextKeys>;
+
+const text = (key: TranslationKey) => translateDynamic("it", key);
+const missionText = (id: DailyMissionId) => ({
+  title: text(DAILY_MISSION_TEXT_KEYS[id].title),
+  description: text(DAILY_MISSION_TEXT_KEYS[id].description),
+});
+const achievementText = (id: AchievementId) => ({
+  title: text(ACHIEVEMENT_TEXT_KEYS[id].title),
+  description: text(ACHIEVEMENT_TEXT_KEYS[id].description),
+});
+
+export function localizeDailyMission(
+  mission: DailyMissionStatus,
+  t: Translator,
+): DailyMissionStatus {
+  const keys: StatusTextKeys = DAILY_MISSION_TEXT_KEYS[mission.id];
+  return { ...mission, title: t(keys.title), description: t(keys.description) };
+}
+
+export function localizeAchievement(
+  achievement: AchievementStatus,
+  t: Translator,
+): AchievementStatus {
+  const keys: StatusTextKeys = ACHIEVEMENT_TEXT_KEYS[achievement.id];
+  return {
+    ...achievement,
+    title: t(keys.title),
+    description: t(keys.description),
+  };
+}
 
 const DAILY_CHEST_REWARD = 12;
 
@@ -83,8 +153,7 @@ export function computeDailyMissionSummaryFromCounts(
   const missions: DailyMissionStatus[] = [
     {
       id: "morning",
-      title: "Buongiorno, sorriso!",
-      description: "Completa una sessione al mattino.",
+      ...missionText("morning"),
       progress: Number(morningCompleted),
       target: 1,
       rewardCoins: 5,
@@ -93,8 +162,7 @@ export function computeDailyMissionSummaryFromCounts(
     },
     {
       id: "evening",
-      title: "Missione buonanotte",
-      description: "Completa una sessione dalle 18 in poi.",
+      ...missionText("evening"),
       progress: Number(eveningCompleted),
       target: 1,
       rewardCoins: 5,
@@ -103,8 +171,7 @@ export function computeDailyMissionSummaryFromCounts(
     },
     {
       id: "double",
-      title: "Doppio sorriso",
-      description: "Completa due sessioni nella stessa giornata.",
+      ...missionText("double"),
       progress: Math.min(2, completedSessions),
       target: 2,
       rewardCoins: 8,
@@ -112,14 +179,13 @@ export function computeDailyMissionSummaryFromCounts(
       icon: "done-all",
     },
   ];
-
   const completedCount = missions.filter((mission) => mission.completed).length;
   const allCompleted = completedCount === missions.length;
-  const earnedCoins = missions
-    .filter((mission) => mission.completed)
-    .reduce((total, mission) => total + mission.rewardCoins, 0)
-    + (allCompleted ? DAILY_CHEST_REWARD : 0);
-
+  const earnedCoins =
+    missions
+      .filter((mission) => mission.completed)
+      .reduce((total, mission) => total + mission.rewardCoins, 0) +
+    (allCompleted ? DAILY_CHEST_REWARD : 0);
   return {
     dateKey,
     missions,
@@ -133,9 +199,13 @@ export function computeDailyMissionSummaryFromCounts(
 function completeSessions(history: BrushSession[]): BrushSession[] {
   return history.filter((session) => session.completed);
 }
-
-function sessionsForDay(history: BrushSession[], dateKey: string): BrushSession[] {
-  return completeSessions(history).filter((session) => localDateKey(session.startedAt) === dateKey);
+function sessionsForDay(
+  history: BrushSession[],
+  dateKey: string,
+): BrushSession[] {
+  return completeSessions(history).filter(
+    (session) => localDateKey(session.startedAt) === dateKey,
+  );
 }
 
 export function computeDailyMissionSummary(
@@ -163,8 +233,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
   return [
     {
       id: "first-smile",
-      title: "Primo sorriso",
-      description: "Completa la tua prima sessione.",
+      ...achievementText("first-smile"),
       rewardCoins: 10,
       unlocked: metrics.completedSessions >= 1,
       progress: Math.min(metrics.completedSessions, 1),
@@ -173,8 +242,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
     },
     {
       id: "five-adventures",
-      title: "Piccolo esploratore",
-      description: "Completa 5 sessioni.",
+      ...achievementText("five-adventures"),
       rewardCoins: 20,
       unlocked: metrics.completedSessions >= 5,
       progress: Math.min(metrics.completedSessions, 5),
@@ -183,8 +251,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
     },
     {
       id: "ten-adventures",
-      title: "Campione dei Brushlings",
-      description: "Completa 10 sessioni.",
+      ...achievementText("ten-adventures"),
       rewardCoins: 30,
       unlocked: metrics.completedSessions >= 10,
       progress: Math.min(metrics.completedSessions, 10),
@@ -193,8 +260,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
     },
     {
       id: "three-perfect-days",
-      title: "Tre giorni perfetti",
-      description: "Completa mattina e sera per 3 giorni.",
+      ...achievementText("three-perfect-days"),
       rewardCoins: 30,
       unlocked: metrics.perfectDays >= 3,
       progress: Math.min(metrics.perfectDays, 3),
@@ -203,8 +269,7 @@ export function computeAchievementsFromMetrics(metrics: AchievementMetrics): Ach
     },
     {
       id: "seven-day-streak",
-      title: "Settimana di fuoco",
-      description: "Raggiungi una serie record di 7 giorni consecutivi.",
+      ...achievementText("seven-day-streak"),
       rewardCoins: 50,
       unlocked: metrics.longestStreakDays >= 7,
       progress: Math.min(metrics.longestStreakDays, 7),
@@ -222,11 +287,16 @@ export function computeAchievements(history: BrushSession[]): AchievementStatus[
   });
 }
 
-export function computeLifetimeDailyBonusCoins(history: BrushSession[]): number {
-  return uniqueCompletedDayKeys(history).reduce((total, key) => {
-    const timestamp = parseLocalDateKey(key).getTime();
-    return total + computeDailyMissionSummary(history, timestamp).earnedCoins;
-  }, 0);
+export function computeLifetimeDailyBonusCoins(
+  history: BrushSession[],
+): number {
+  return uniqueCompletedDayKeys(history).reduce(
+    (total, key) =>
+      total +
+      computeDailyMissionSummary(history, parseLocalDateKey(key).getTime())
+        .earnedCoins,
+    0,
+  );
 }
 
 export function computeMissionCenter(
@@ -238,7 +308,6 @@ export function computeMissionCenter(
   const achievementBonusCoins = achievements
     .filter((achievement) => achievement.unlocked)
     .reduce((total, achievement) => total + achievement.rewardCoins, 0);
-
   return {
     today: computeDailyMissionSummary(history, timestamp),
     achievements,
@@ -254,32 +323,33 @@ export function computeProgressRewardDelta(
 ): ProgressRewardDelta | null {
   const session = history.find((item) => item.id === sessionId);
   if (!session || !session.completed) return null;
-
   const beforeHistory = history.filter((item) => item.id !== sessionId);
   const beforeDay = computeDailyMissionSummary(beforeHistory, session.startedAt);
   const afterDay = computeDailyMissionSummary(history, session.startedAt);
   const beforeAchievements = computeAchievements(beforeHistory);
   const afterAchievements = computeAchievements(history);
-
   const missionTitles = afterDay.missions
     .filter((mission) => mission.completed)
     .filter((mission) => !beforeDay.missions.find((before) => before.id === mission.id)?.completed)
     .map((mission) => mission.title);
-
   const achievementTitles = afterAchievements
     .filter((achievement) => achievement.unlocked)
     .filter((achievement) => !beforeAchievements.find((before) => before.id === achievement.id)?.unlocked)
     .map((achievement) => achievement.title);
-
-  const dailyBonusCoins = Math.max(0, afterDay.earnedCoins - beforeDay.earnedCoins);
+  const dailyBonusCoins = Math.max(
+    0,
+    afterDay.earnedCoins - beforeDay.earnedCoins,
+  );
   const beforeAchievementCoins = beforeAchievements
     .filter((achievement) => achievement.unlocked)
     .reduce((total, achievement) => total + achievement.rewardCoins, 0);
   const afterAchievementCoins = afterAchievements
     .filter((achievement) => achievement.unlocked)
     .reduce((total, achievement) => total + achievement.rewardCoins, 0);
-  const achievementBonusCoins = Math.max(0, afterAchievementCoins - beforeAchievementCoins);
-
+  const achievementBonusCoins = Math.max(
+    0,
+    afterAchievementCoins - beforeAchievementCoins,
+  );
   return {
     missionTitles,
     achievementTitles,

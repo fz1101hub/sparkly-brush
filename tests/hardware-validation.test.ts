@@ -9,6 +9,7 @@ import {
   renderHardwareValidationReport,
   updateHardwareTestResult,
 } from "@/lib/hardware-validation";
+import { translateDynamic, type Translate } from "@/lib/i18n";
 
 const startedAt = Date.UTC(2026, 8, 23, 10, 0, 0);
 
@@ -139,5 +140,54 @@ describe("hardware validation assistant", () => {
     expect(report).not.toContain("log-private");
     expect(report).not.toContain("123e4567-e89b-12d3-a456-426614174000");
     expect(report).toContain("[device-id]");
+  });
+
+  it("ritraduce log e stati tecnici nella lingua attiva", () => {
+    const english: Translate = (key, params) =>
+      translateDynamic("en", key, params);
+    const report = renderHardwareValidationReport(
+      run(),
+      {
+        connectionStatus: "connected",
+        adapterState: "PoweredOn",
+        device: null,
+        live: {
+          handleState: 1,
+          isBrushing: false,
+          elapsedSeconds: 0,
+          routineSeconds: 120,
+          mode: "clean",
+          intensity: "media",
+        },
+        recentSessionCount: 0,
+        attemptedSessions: 0,
+        completedSessions: 0,
+        diagnosticLogs: [
+          {
+            id: "raw-client-log",
+            at: startedAt,
+            level: "info",
+            message: "Accendi lo spazzolino e tienilo vicino",
+          },
+          {
+            id: "semantic-log",
+            at: startedAt,
+            level: "success",
+            message: "2 sessioni sincronizzate",
+            translationKey: "brush.log.sessionsSynced",
+            translationParams: { count: 2 },
+          },
+        ],
+      },
+      startedAt,
+      english,
+    );
+
+    expect(report).toContain("Turn on the toothbrush and keep it nearby");
+    expect(report).toContain("2 sessions synchronized");
+    expect(report).toContain("| BLE adapter | On |");
+    expect(report).toContain("| Handle state | idle |");
+    expect(report).toContain("| Intensity | medium |");
+    expect(report).not.toContain("Accendi lo spazzolino");
   });
 });

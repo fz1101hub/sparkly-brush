@@ -63,4 +63,69 @@ test.describe("percorso funzionale web", () => {
     await page.getByTestId("backup-inspect-code").click();
     await expect(page.getByTestId("backup-error")).toBeVisible();
   });
+
+  test("cambia lingua immediatamente e conserva la scelta dopo reload", async ({
+    page,
+  }) => {
+    await completeFirstRun(page);
+    await page.goto("/settings");
+
+    const languages = [
+      {
+        code: "en",
+        option: "English",
+        title: "Settings",
+        deviceTitle: "Toothbrush",
+      },
+      {
+        code: "de",
+        option: "Deutsch",
+        title: "Einstellungen",
+        deviceTitle: "Zahnbürste",
+      },
+      {
+        code: "fr",
+        option: "Français",
+        title: "Paramètres",
+        deviceTitle: "Brosse à dents",
+      },
+      {
+        code: "es",
+        option: "Español",
+        title: "Ajustes",
+        deviceTitle: "Cepillo",
+      },
+      {
+        code: "it",
+        option: "Italiano",
+        title: "Impostazioni",
+        deviceTitle: "Spazzolino",
+      },
+    ] as const;
+
+    for (const language of languages) {
+      await page.getByRole("radio", { name: language.option }).click();
+      await expect(page.locator("html")).toHaveAttribute("lang", language.code);
+      await expect(
+        page.getByText(language.title, { exact: true }).first(),
+      ).toBeVisible();
+      await page.getByTestId("tab-device").click();
+      await expect(
+        page.getByText(language.deviceTitle, { exact: true }).first(),
+      ).toBeVisible();
+      await page.goto("/settings");
+    }
+
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("lang", "it");
+    await expect(page.getByRole("radio", { name: "Italiano" })).toBeChecked();
+    await expect(
+      page.getByText("Impostazioni", { exact: true }).first(),
+    ).toBeVisible();
+
+    await page.getByRole("radio", { name: "Sistema" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "it");
+    await page.reload();
+    await expect(page.getByRole("radio", { name: "Sistema" })).toBeChecked();
+  });
 });

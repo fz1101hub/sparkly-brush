@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import type { TranslationKey, TranslationParams } from "@/lib/i18n";
 import type { BrushSession } from "@/lib/brush-types";
 import {
   isEvening,
@@ -32,6 +33,8 @@ export type ParentRewardMetrics = {
   perfectDays: number;
   longestStreakDays: number;
 };
+
+type Translate = (key: TranslationKey, params?: TranslationParams) => string;
 
 function completed(history: BrushSession[]): BrushSession[] {
   return history.filter((session) => session.completed);
@@ -68,10 +71,20 @@ export function parentRewardProgressFromMetrics(
   return { ...reward, progress: Math.min(progress, reward.target), unlocked: progress >= reward.target };
 }
 
-export function rewardRequirementLabel(requirement: ParentRewardRequirement, target: number): string {
-  if (requirement === "completed-sessions") return String(target) + " sessioni complete";
-  if (requirement === "perfect-days") return String(target) + " giorni mattina + sera";
-  return "Record di serie: " + String(target) + " giorni consecutivi";
+export function rewardRequirementLabel(
+  requirement: ParentRewardRequirement,
+  target: number,
+  t: Translate,
+  formatNumber: (value: number) => string,
+): string {
+  const params = { target: formatNumber(target) };
+  if (requirement === "completed-sessions") {
+    return t("family.rewardRequirement.completedSessions", params);
+  }
+  if (requirement === "perfect-days") {
+    return t("family.rewardRequirement.perfectDays", params);
+  }
+  return t("family.rewardRequirement.streak", params);
 }
 
 export async function loadParentRewards(): Promise<ParentReward[]> {
