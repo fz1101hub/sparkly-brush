@@ -64,6 +64,7 @@ export default function BackupScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manifestCreatedAt] = useState(Date.now);
   const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
   const backupReady = historyReady && profileReady && preferencesReady && rewardsReady && !restoreInProgress;
   const nativeBackupAvailable = Platform.OS !== "web";
@@ -81,10 +82,10 @@ export default function BackupScreen() {
       { selectedId, hasChosenStarter },
       customization,
       lifetimeProgress,
-      Date.now(),
+      manifestCreatedAt,
       { preferences, parentRewards },
     ),
-    [customization, hasChosenStarter, lifetimeProgress, parentRewards, preferences, selectedId],
+    [customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId],
   );
 
   const shareBackup = async () => {

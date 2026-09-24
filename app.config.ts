@@ -29,7 +29,6 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "light",
-  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
@@ -43,7 +42,6 @@ const config: ExpoConfig = {
       backgroundColor: "#EAF4FF",
       foregroundImage: "./assets/images/android-icon-foreground.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     blockedPermissions: [
@@ -74,7 +72,10 @@ const config: ExpoConfig = {
     "expo-asset",
     "expo-document-picker",
     "expo-font",
+    "expo-image",
+    "expo-sharing",
     "expo-sqlite",
+    "expo-status-bar",
     [
       "expo-audio",
       {

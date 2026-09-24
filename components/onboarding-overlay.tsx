@@ -1,5 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
@@ -36,7 +36,7 @@ const SLIDES = [
 export function OnboardingOverlay() {
   const { preferences, ready, completeOnboarding } = usePreferences();
   const [index, setIndex] = useState(0);
-  const fade = useRef(new Animated.Value(1)).current;
+  const [fade] = useState(() => new Animated.Value(1));
   const bloopi = getBrushling("bloopi");
 
   useEffect(() => {

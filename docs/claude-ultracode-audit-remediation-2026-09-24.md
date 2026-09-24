@@ -47,24 +47,24 @@ Il filtro `autoVerify` è stato rimosso dallo scheme custom Android perché non 
 | TypeScript | Superato |
 | Vitest | **30 file, 166 test superati** |
 | ESLint | Superato con zero warning |
-| Audit produttivo critico | Superato; due advisory `high` residui |
-| Expo Doctor | **18/18** |
+| Audit produttivo da severità `high` | **Superato; nessuna vulnerabilità nota** |
+| Expo Doctor | **21/21** con Expo 57 |
 | Expo dependency check | Superato |
 | Export web | Superato |
 | Export iOS | Superato |
 | Export Android | Superato |
-| Build Android nativa debug | **Superata** con SDK 36, JDK 17 e NDK 27.1 |
-| Build iOS nativa | Da eseguire su runner macOS o Mac reale |
+| Build Android nativa debug | **Superata anche dopo l’upgrade a Expo 57** con SDK 36, JDK 17 e NDK 27.1 |
+| Build iOS nativa | Workflow su `macos-26` e Xcode 26.4.1; esecuzione richiesta su runner macOS o Mac reale |
 | Collaudo HX6322/04 | Da eseguire su hardware reale |
 | GitHub Actions | Run `35938089366` fallito a zero step; **merge bloccato** |
 
 ## Supply chain
 
-`pnpm audit` continua a segnalare due advisory `high` su `image-size` 1.2.1, dipendenza transitiva di Metro usata durante la build. Gli advisory indicano `2.0.3` come versione corretta.[4] [5] È stato provato un override diretto alla major 2, ma Metro 0.83 ha fallito l’export perché usa l’API CommonJS della major 1. Il lockfile è stato quindi ripristinato alla versione compatibile. Il rischio non è esposto dal runtime mobile, ma resta documentato fino a un aggiornamento Expo/Metro compatibile.
+L’upgrade incrementale da Expo 54 a Expo 57 ha eliminato `image-size` dal grafo delle dipendenze. I due advisory `high` che avevano motivato l’aggiornamento non sono più presenti e `pnpm audit --prod --audit-level high` passa senza vulnerabilità note.[4] [5] Expo 57 usa inoltre React Native 0.86.3, che include la correzione delle regressioni Hermes V1 di memoria e avvio segnalate nelle release precedenti.[8]
 
 ## Limiti e decisione di rilascio
 
-Il candidato non è ancora pronto per una pubblicazione store. Le build native locali seguono il flusso Expo documentato, ma iOS richiede un runner macOS o un Mac reale.[3] Servono inoltre una CI GitHub verde, il collaudo fisico completo e le attività di release già tracciate: privacy policy, dichiarazioni Data Safety e target audience, revisione trademark e decisione esplicita su Kids/Families. Il parental gate resta escluso per scelta del proprietario e non è stato introdotto da questo audit.
+Il candidato non è ancora pronto per una pubblicazione store. Le build native locali seguono il flusso Expo documentato, ma iOS richiede un runner macOS o un Mac reale con Xcode 26.4 o successivo; il deployment target minimo è iOS 16.4.[3] [9] Servono inoltre una CI GitHub verde, il collaudo fisico completo e le attività di release già tracciate: privacy policy, dichiarazioni Data Safety e target audience, revisione trademark e decisione esplicita su Kids/Families. Il parental gate resta escluso per scelta del proprietario e non è stato introdotto da questo audit.
 
 ## References
 
@@ -75,3 +75,5 @@ Il candidato non è ancora pronto per una pubblicazione store. Le build native l
 [5]: https://github.com/advisories/GHSA-5p2g-fcmc-qvqq "image-size JXL and HEIF denial-of-service advisory"
 [6]: https://developer.android.com/develop/connectivity/bluetooth/bt-permissions "Android Bluetooth permissions"
 [7]: https://support.google.com/googleplay/android-developer/answer/9893335?hl=en "Google Play Families Policy Requirements"
+[8]: https://expo.dev/changelog/sdk-57 "Expo SDK 57 release notes"
+[9]: https://expo.dev/changelog/sdk-56 "Expo SDK 56 release notes"

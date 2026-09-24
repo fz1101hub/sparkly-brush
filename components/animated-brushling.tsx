@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -15,7 +15,7 @@ export function AnimatedBrushling({
   size?: number;
   active: boolean;
 }) {
-  const bounce = useRef(new Animated.Value(0)).current;
+  const [bounce] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!active) {

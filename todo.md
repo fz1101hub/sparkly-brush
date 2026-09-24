@@ -1,4 +1,4 @@
-# Stato del candidato Claude Ultracode post-audit
+# Stato del candidato Claude Ultracode ed Expo 57
 
 Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
@@ -17,7 +17,8 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 11 | Privacy backup | Rafforzata | Alias BLE deterministici qualificati come pseudonimi; guardia runtime sugli ID portatili; nessun MAC/UUID grezzo ammesso. |
 | 12 | Collaudo hardware reale | Aperto | Checklist persistente di 13 casi; esecuzione fisica nell’issue #3 con HX6322/04, iPhone e Android. |
 | 13 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
-| 14 | Re-review e build finale | Completato localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
+| 14 | Re-review audit Claude | Completata localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa pre-upgrade superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
+| 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 
 ## Gate software già superati sul candidato
 
@@ -27,11 +28,11 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 - suite Vitest completa: **30 file e 166 test**;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - `pnpm lint --max-warnings 0`;
-- `pnpm audit --prod --audit-level critical`: superato, due advisory `high` residui;
-- `pnpm exec expo-doctor`: **18/18**;
+- `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
+- `pnpm exec expo-doctor`: **21/21** con Expo 57;
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android.
-- build Android nativa debug con SDK 36, JDK 17 e NDK 27.1.
+- build Android nativa debug **Expo 57 superata** con SDK 36, JDK 17 e NDK 27.1; APK debug generato correttamente.
 
 ## GitHub Actions
 
@@ -39,8 +40,8 @@ L’audit Claude ha riclassificato correttamente il blocco precedente come accou
 
 ## Supply chain
 
-`pnpm audit` segnala due advisory `high` su `image-size` 1.2.1, dipendenza di Metro usata in fase di build. Gli advisory indicano `2.0.3` come release corretta; un override diretto è stato provato e ha causato un errore riproducibile nell’export Metro 0.83. Il lockfile è stato quindi ripristinato alla versione compatibile. L’audit critico resta verde e l’aggiornamento deve attendere una release Expo/Metro compatibile.
+Expo 57 ha rimosso `image-size` dal grafo delle dipendenze. `pnpm audit --prod --audit-level high` non rileva vulnerabilità note e `pnpm peers check` passa dopo l’allineamento di `@react-native/metro-config` a React Native 0.86.3.
 
 ## Condizioni prima della release pubblica
 
-Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub interamente verde, la build iOS nativa su runner macOS o Mac reale, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.
+Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub interamente verde, l’esecuzione della build iOS nativa configurata su `macos-26` con Xcode 26.4.1, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.

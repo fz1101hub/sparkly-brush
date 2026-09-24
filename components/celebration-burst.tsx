@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
 const PARTICLES = Array.from({ length: 16 }, (_, index) => index);
 const COLORS = ["#FFD65A", "#58B9FF", "#7DD790", "#FF8B66", "#B9A8F3"];
 
 export function CelebrationBurst({ active }: { active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!active) {

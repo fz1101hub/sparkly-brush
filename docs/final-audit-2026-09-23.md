@@ -53,7 +53,7 @@ Le review indipendenti hanno riprodotto e fatto correggere i casi più rischiosi
 
 La validazione fisica richiede ancora un Philips Sonicare for Kids HX6322/04, un iPhone e un dispositivo Android. Il piano è documentato in `docs/hardware-test-plan.md` e il lavoro è tracciato nell’issue GitHub #3; ciò non blocca l’integrazione del codice, ma blocca una dichiarazione di compatibilità hardware definitiva.
 
-L’audit delle dipendenze produttive segnala due advisory di severità alta in `image-size`, dipendenza transitiva di Metro usata durante la build per formati immagine non accettati dall’app. Non esiste una release corretta upstream al momento dell’audit. La CI blocca nuove vulnerabilità critiche e il rischio deve essere rivalutato quando Expo/Metro pubblicheranno un aggiornamento compatibile.
+Al momento di questo audit le dipendenze produttive segnalavano due advisory di severità alta in `image-size`, dipendenza transitiva di Metro. Il successivo upgrade a Expo SDK 57 ha rimosso il pacchetto dal grafo; la CI blocca ora dalla severità `high` e l’audit non rileva vulnerabilità note.
 
 Il parental gate non è stato sviluppato. Se l’app verrà proposta nella categoria Kids o distribuirà funzioni riservate ai genitori, questo requisito dovrà essere riaperto prima della pubblicazione negli store.
 

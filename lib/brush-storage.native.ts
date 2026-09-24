@@ -956,7 +956,7 @@ async function openImportedDatabase(uri: string): Promise<{ database: SQLiteData
   assertSQLiteBackupFile(source);
   const fileName = `sparkly-import-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.sqlite`;
   const copied = new File(Paths.cache, fileName);
-  source.copy(copied);
+  await source.copy(copied);
   try {
     assertSQLiteBackupFile(copied);
     const database = await SQLite.openDatabaseAsync(

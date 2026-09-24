@@ -2,6 +2,8 @@
 
 **Sparkly Brush** è un’app mobile iOS/Android indipendente per il **Philips Sonicare for Kids HX6322/04**. Offre collegamento Bluetooth Low Energy, timer guidato di due minuti, quattro zone da trenta secondi, storico locale, diagnostica BLE, collaudo hardware guidato e un sistema di gioco chiamato **Brushlings**. Non richiede account e non usa un backend.
 
+Lo stack attivo usa **Expo SDK 57.0.24**, **React Native 0.86.3**, **React 19.2.3**, **Expo Router 57** e **TypeScript 6.0.3**. La New Architecture è obbligatoria da Expo 55; Sparkly Brush usa development build native perché il BLE non è disponibile in Expo Go.
+
 > Philips e Sonicare sono marchi dei rispettivi proprietari. Sparkly Brush è un progetto indipendente, non affiliato né approvato da Philips.
 
 ## Funzioni principali
@@ -47,13 +49,13 @@ La preview web consente di provare navigazione, timer manuale, demo, storico, Br
 `react-native-ble-plx` richiede una **development build**; Expo Go non è sufficiente.
 
 ```bash
-npx expo prebuild
-npx expo run:android
+pnpm exec expo prebuild
+pnpm exec expo run:android
 # oppure, su macOS con Xcode
-npx expo run:ios
+pnpm exec expo run:ios
 ```
 
-La procedura completa è in [docs/hardware-test-plan.md](docs/hardware-test-plan.md). In sintesi: accendere il manico, aprire **Spazzolino**, premere **Prova guidata e report**, collegare il dispositivo e compilare i tredici esiti sulla piattaforma in uso.
+La build iOS con Expo 57 richiede Xcode 26.4 o successivo e supporta iOS 16.4 o successivo. La procedura completa è in [docs/hardware-test-plan.md](docs/hardware-test-plan.md). In sintesi: accendere il manico, aprire **Spazzolino**, premere **Prova guidata e report**, collegare il dispositivo e compilare i tredici esiti sulla piattaforma in uso.
 
 ## Verifica automatica
 
@@ -70,9 +72,9 @@ CI=1 pnpm exec expo prebuild --platform android --clean --no-install
 (cd android && ./gradlew assembleDebug --no-daemon)
 ```
 
-La suite copre codec BLE, backfill multi-sessione e rollover, cancellazione e lifecycle del client con periferica finta, integrazione provider→BLE→storage, sync stale tra due manici, disconnessioni durante il brushing, code fallback e riconciliazione GATT, timer manuale persistente, race di idratazione del profilo, progressione oltre 120 sessioni, ledger premi e acquisti, alias BLE, migrazioni, backup manipolati e cross-timezone, allowlist dello schema SQLite, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. GitHub Actions usa il lockfile frozen, annulla run obsolete ed evita modifiche solo documentali. I pull request eseguono controlli, audit, bundle e build Gradle Android; la build Xcode su macOS è riservata a tag di release o avvio manuale.
+La suite copre codec BLE, backfill multi-sessione e rollover, cancellazione e lifecycle del client con periferica finta, integrazione provider→BLE→storage, sync stale tra due manici, disconnessioni durante il brushing, code fallback e riconciliazione GATT, timer manuale persistente, race di idratazione del profilo, progressione oltre 120 sessioni, ledger premi e acquisti, alias BLE, migrazioni, backup manipolati e cross-timezone, allowlist dello schema SQLite, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. GitHub Actions usa il lockfile frozen, annulla run obsolete ed evita modifiche solo documentali. I pull request eseguono controlli, audit bloccante da severità `high`, bundle e build Gradle Android; la build Xcode 26.4 su macOS è riservata a tag di release o avvio manuale.
 
-Gli override transitivi fissano le vulnerabilità compatibili con la toolchain. L’audit produttivo residuo riguarda `image-size` 1.2.1, dipendenza di Metro usata in fase di build, per due advisory DoS su file ICNS/JXL/HEIF appositamente malevoli. Gli advisory indicano `2.0.3` come release corretta, ma un override diretto è stato provato e rompe Metro 0.83 durante l’export; il progetto attende quindi un aggiornamento compatibile Expo/Metro. L’app non espone questa libreria né accetta tali formati a runtime.
+Gli override transitivi fissano le vulnerabilità compatibili con la toolchain. L’upgrade a Expo 57 ha rimosso `image-size` dal grafo delle dipendenze: `pnpm audit --prod --audit-level high` non segnala vulnerabilità note. Il lockfile mantiene inoltre una versione di `@react-native/metro-config` coerente con React Native 0.86.3, così `pnpm peers check` non segnala incompatibilità.
 
 ## Privacy, licenza e pubblicazione
 

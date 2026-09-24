@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     position: "relative",
   },
-  sky: { ...StyleSheet.absoluteFillObject },
+  sky: { ...StyleSheet.absoluteFill },
   skyIcon: { position: "absolute", top: 22, right: 25, opacity: 0.55 },
   cloudOne: {
     position: "absolute",

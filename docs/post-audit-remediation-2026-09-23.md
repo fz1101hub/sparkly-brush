@@ -68,7 +68,7 @@ Il salvataggio manuale è ora transazionale anche dal punto di vista dell’inte
 
 **Kids/Families.** Il parental gate è intenzionalmente escluso. Prima di pubblicare l’app come prodotto rivolto esclusivamente ai bambini occorre rivalutare Companion Device Manager su Android, accesso alle aree genitore, export/restore, privacy policy, Data Safety, target audience e requisiti Apple Kids.[1][2]
 
-**Supply chain.** `pnpm audit` segnala due advisory `high` in `image-size`, dipendenza transitiva di Metro usata in fase di build e non esposta dal runtime mobile. Gli advisory correnti indicano `2.0.3` come versione corretta. Un override alla major 2 è stato provato nel ciclo successivo, ma rompe l’export con Metro 0.83; il progetto attende quindi una combinazione Expo/Metro compatibile.[3] [4]
+**Supply chain.** Al momento di questo ciclo `pnpm audit` segnalava due advisory `high` in `image-size`, dipendenza transitiva di Metro. Il successivo upgrade a Expo SDK 57 ha rimosso il pacchetto dal grafo; l’audit produttivo passa ora con soglia `high`. I dettagli sono nel rapporto `docs/expo-57-upgrade-2026-09-24.md`.[3] [4]
 
 **Pubblicazione.** Prima degli store restano necessari privacy policy pubblica, dichiarazioni store accurate e revisione di naming/trademark. Il progetto dichiara già di essere indipendente e non affiliato a Philips.
 

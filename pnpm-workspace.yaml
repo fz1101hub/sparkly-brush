@@ -6,6 +6,7 @@ allowBuilds:
   unrs-resolver: true
 
 overrides:
+  "@react-native/metro-config": "0.86.3"
   "@babel/core@7.28.5": "7.29.6"
   "@xmldom/xmldom@0.8.11": "0.8.15"
   "ajv@8.17.1": "8.18.0"

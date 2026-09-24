@@ -87,7 +87,7 @@ const recoveryStyles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "700", textAlign: "center" },
   message: { marginTop: 8, textAlign: "center" },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
