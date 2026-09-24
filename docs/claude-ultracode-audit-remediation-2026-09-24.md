@@ -4,7 +4,8 @@
 **Data:** 24 settembre 2026  
 **Autore:** Manus AI  
 **Commit auditato:** `a7769e3` su `main`  
-**Ramo di rimedio:** `fix/claude-ultracode-audit`
+**Ramo di rimedio:** `fix/claude-ultracode-audit`  
+**Pull request:** #7, aperta e non unita
 
 ## Conclusione
 
@@ -24,7 +25,7 @@ Il candidato corrente corregge i major applicativi confermati. Una prima re-revi
 | M6 | Schema SQLite artigianale importabile | Confermato e rafforzato dopo re-review | L’ispezione rifiuta trigger, view, oggetti `sqlite_` non canonici, tabelle, indici, colonne e chiavi primarie estranei. Il validatore semantico rifiuta ID duplicati. Il restore non copia più le pagine del database importato: inserisce solo righe validate nelle tabelle fidate e verifica ogni inserimento. |
 | M7 | `NaN` e `Infinity` nel backup SQLite | Confermato | Sessioni e reward ledger richiedono stringhe bounded, interi safe, valori finiti e domini ammessi. La validazione è ripetuta dal validatore semantico prima del restore. |
 | M8 | Nessun collaudo fisico completo | Confermato e aperto | La checklist è stata estesa a 13 casi e include backfill, reset, orari ricostruiti e backup. L’esecuzione richiede HX6322/04, iPhone e Android reali; resta tracciata nell’issue #3. |
-| M9 | GitHub Actions senza runner | Confermato come blocco esterno | Il repository non può correggere quota o policy dell’account GitHub. La release e il merge richiedono un run remoto verde con runner assegnato. Non viene dichiarata una causa di billing non verificata. |
+| M9 | GitHub Actions senza runner | Confermato come blocco esterno | Il run PR #7 `35938089366` ha chiuso `verify` e `native-android` in circa tre secondi, con zero step. Il repository non può correggere quota o policy dell’account GitHub. La release e il merge richiedono un run remoto verde con runner assegnato; non viene dichiarata una causa di billing non verificata.[2] |
 | M10 | Workflow CI costoso e duplicato | Confermato | Rimossi i push sui branch PR, aggiunti `concurrency` e `paths-ignore`. Android resta nel PR gate; macOS viene eseguito soltanto su tag `v*` o `workflow_dispatch`. |
 
 ## Correzioni aggiuntive
@@ -55,7 +56,7 @@ Il filtro `autoVerify` è stato rimosso dallo scheme custom Android perché non 
 | Build Android nativa debug | **Superata** con SDK 36, JDK 17 e NDK 27.1 |
 | Build iOS nativa | Da eseguire su runner macOS o Mac reale |
 | Collaudo HX6322/04 | Da eseguire su hardware reale |
-| GitHub Actions | Bloccante finché non completa un run verde |
+| GitHub Actions | Run `35938089366` fallito a zero step; **merge bloccato** |
 
 ## Supply chain
 
@@ -68,7 +69,7 @@ Il candidato non è ancora pronto per una pubblicazione store. Le build native l
 ## References
 
 [1]: https://github.com/fz1101hub/sparkly-brush/blob/claude/repository-audit-pdq4ds/AUDIT-2026-09-23-post-remediation.md "Claude Ultracode post-remediation repository audit"
-[2]: https://github.com/fz1101hub/sparkly-brush/actions "Sparkly Brush GitHub Actions"
+[2]: https://github.com/fz1101hub/sparkly-brush/actions/runs/35938089366 "Sparkly Brush PR 7 GitHub Actions run"
 [3]: https://docs.expo.dev/guides/local-app-development/ "Expo local app development"
 [4]: https://github.com/advisories/GHSA-w3rx-r6r6-pgpr "image-size ICNS denial-of-service advisory"
 [5]: https://github.com/advisories/GHSA-5p2g-fcmc-qvqq "image-size JXL and HEIF denial-of-service advisory"

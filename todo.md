@@ -17,7 +17,7 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 11 | Privacy backup | Rafforzata | Alias BLE deterministici qualificati come pseudonimi; guardia runtime sugli ID portatili; nessun MAC/UUID grezzo ammesso. |
 | 12 | Collaudo hardware reale | Aperto | Checklist persistente di 13 casi; esecuzione fisica nell’issue #3 con HX6322/04, iPhone e Android. |
 | 13 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
-| 14 | Re-review e build finale | Completato localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa superati. Restano checkpoint, commit e PR; il merge richiede CI verde. |
+| 14 | Re-review e build finale | Completato localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
 
 ## Gate software già superati sul candidato
 
@@ -35,7 +35,7 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 
 ## GitHub Actions
 
-L’audit Claude ha riclassificato correttamente il blocco precedente come account-level: i job non ricevono runner e non producono step o log. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. Non verranno fatte nuove eccezioni di merge basate su una CI rossa.
+L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. Anche il run della PR #7 `35938089366` ha chiuso `verify` e `native-android` in circa tre secondi con zero step. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
 
 ## Supply chain
 
