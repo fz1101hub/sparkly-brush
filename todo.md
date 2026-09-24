@@ -21,7 +21,7 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
-| 18 | Accessibilità automatica | Completata | Contratti React Native e Playwright + axe su onboarding, starter, home, device e backup in tema chiaro/scuro; valori ARIA verificati nel DOM, zero violazioni WCAG selezionate. |
+| 18 | Accessibilità automatica | Completata e ampliata | Contratti React Native, 54 verifiche matematiche delle palette e Playwright + axe su 28 stati UI in tema chiaro/scuro; controlli nominati, valori ARIA verificati e zero violazioni WCAG selezionate. |
 | 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 
@@ -30,10 +30,10 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **36 file e 177 test**;
+- suite Vitest completa: **37 file e 231 test**;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su dieci checkpoint UI chiari/scuri, con contratti DOM ARIA espliciti: **3 test in 31,4 s** nel run definitivo;
+- Playwright + axe superato su **28 stati UI** chiari/scuri, con contratti DOM ARIA espliciti e report separati per pagina;
 - due percorsi Playwright funzionali superati in **26,1 s**, inclusa persistenza dopo reload;
 - contratto statico Maestro e re-review del percorso E2E superati;
 - `pnpm lint --max-warnings 0`;

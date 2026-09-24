@@ -3,6 +3,17 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+const ADDITIONAL_ROUTES = [
+  { name: "collection", path: "/collection", title: "La tua squadra" },
+  { name: "explore", path: "/explore", title: "Isola Sorridente" },
+  { name: "history", path: "/history", title: "Storico" },
+  { name: "missions", path: "/missions", title: "Missioni" },
+  { name: "rewards", path: "/rewards", title: "I tuoi premi" },
+  { name: "habitat", path: "/habitat", title: "La tana" },
+  { name: "parent", path: "/parent", title: "Area genitori" },
+  { name: "settings", path: "/settings", title: "Impostazioni" },
+  { name: "hardware-test", path: "/hardware-test", title: "Collaudo hardware" },
+] as const;
 
 async function scan(page: Page, testInfo: TestInfo, name: string) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
@@ -15,16 +26,11 @@ async function scan(page: Page, testInfo: TestInfo, name: string) {
     body: JSON.stringify(results, null, 2),
     contentType: "application/json",
   });
-  if (results.violations.length > 0) {
-    throw new Error(
-      results.violations
-        .map(
-          (violation) =>
-            `${violation.id}: ${violation.description} (${violation.nodes.length})`,
-        )
-        .join("\n"),
-    );
-  }
+  const violations = results.violations.map(
+    (violation) =>
+      `${violation.id}: ${violation.description} (${violation.nodes.length})`,
+  );
+  expect.soft(violations, `Violazioni axe in ${name}`).toEqual([]);
 }
 
 async function completeFirstRun(page: Page) {
@@ -43,6 +49,20 @@ async function waitForActiveModal(page: Page) {
   await expect(
     page.locator('[aria-modal="true"][role="dialog"]'),
   ).toBeVisible();
+}
+
+async function scanAdditionalRoutes(
+  page: Page,
+  testInfo: TestInfo,
+  prefix: string,
+) {
+  for (const route of ADDITIONAL_ROUTES) {
+    await page.goto(route.path);
+    await expect(
+      page.getByText(route.title, { exact: true }).first(),
+    ).toBeVisible();
+    await scan(page, testInfo, `${prefix}${route.name}`);
+  }
 }
 
 test.describe("WCAG automatic audit", () => {
@@ -67,7 +87,7 @@ test.describe("WCAG automatic audit", () => {
     await scan(page, testInfo, "starter");
   });
 
-  test("home, dispositivo e backup dopo il primo avvio", async ({
+  test("tutte le schermate principali dopo il primo avvio", async ({
     page,
   }, testInfo) => {
     await completeFirstRun(page);
@@ -89,13 +109,17 @@ test.describe("WCAG automatic audit", () => {
     await page.goto("/backup");
     await expect(page.getByTestId("backup-screen")).toBeVisible();
     await scan(page, testInfo, "backup");
+
+    await scanAdditionalRoutes(page, testInfo, "");
   });
 });
 
 test.describe("WCAG automatic audit in dark mode", () => {
   test.use({ colorScheme: "dark" });
 
-  test("onboarding, home, dispositivo e backup", async ({ page }, testInfo) => {
+  test("onboarding e tutte le schermate principali", async ({
+    page,
+  }, testInfo) => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(page.getByTestId("onboarding-overlay")).toBeVisible();
@@ -119,5 +143,7 @@ test.describe("WCAG automatic audit in dark mode", () => {
     await page.goto("/backup");
     await expect(page.getByTestId("backup-screen")).toBeVisible();
     await scan(page, testInfo, "dark-backup");
+
+    await scanAdditionalRoutes(page, testInfo, "dark-");
   });
 });

@@ -1,7 +1,8 @@
 import type { BrushSession } from "@/lib/brush-types";
 import { currentCompletedDayStreak, sameLocalDay } from "@/lib/day-progress";
 
-export type BrushlingId = "bloopi" | "spriggo" | "flarello" | "voltuff" | "moonbit";
+export type BrushlingId =
+  "bloopi" | "spriggo" | "flarello" | "voltuff" | "moonbit";
 
 export type BrushlingEvolution = {
   name: string;
@@ -14,6 +15,7 @@ export type BrushlingDefinition = {
   name: string;
   element: "Acqua" | "Natura" | "Fuoco" | "Energia" | "Notte";
   accent: string;
+  textAccent: string;
   soft: string;
   unlockAtCompletedSessions: number;
   tagline: string;
@@ -48,6 +50,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     name: "Bloopi",
     element: "Acqua",
     accent: "#2457D6",
+    textAccent: "#173F9F",
     soft: "#E7F1FF",
     unlockAtCompletedSessions: 0,
     tagline: "Trasforma ogni zona in una cascata di bolle pulite.",
@@ -62,6 +65,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     name: "Spriggo",
     element: "Natura",
     accent: "#2E9B67",
+    textAccent: "#17633F",
     soft: "#E6F7EE",
     unlockAtCompletedSessions: 0,
     tagline: "Cresce insieme alle tue buone abitudini.",
@@ -76,6 +80,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     name: "Flarello",
     element: "Fuoco",
     accent: "#E76A2C",
+    textAccent: "#A33E0A",
     soft: "#FFF0E7",
     unlockAtCompletedSessions: 0,
     tagline: "Accende l'energia quando mancano pochi secondi.",
@@ -90,6 +95,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     name: "Voltuff",
     element: "Energia",
     accent: "#B98A00",
+    textAccent: "#6F5100",
     soft: "#FFF8D9",
     unlockAtCompletedSessions: 5,
     tagline: "Si carica con le sessioni complete e le serie positive.",
@@ -102,6 +108,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     name: "Moonbit",
     element: "Notte",
     accent: "#7357C7",
+    textAccent: "#51369C",
     soft: "#F0ECFF",
     unlockAtCompletedSessions: 10,
     tagline: "Il compagno delle spazzolate della buonanotte.",
@@ -123,7 +130,10 @@ export function isBrushlingId(value: string): value is BrushlingId {
   return BRUSHLINGS.some((item) => item.id === value);
 }
 
-export function getEvolutionIndex(creature: BrushlingDefinition, level: number): number {
+export function getEvolutionIndex(
+  creature: BrushlingDefinition,
+  level: number,
+): number {
   let current = 0;
   creature.evolutions.forEach((evolution, index) => {
     if (level >= evolution.unlockLevel) current = index;
@@ -131,34 +141,58 @@ export function getEvolutionIndex(creature: BrushlingDefinition, level: number):
   return current;
 }
 
-export function getEvolution(creature: BrushlingDefinition, level: number): BrushlingEvolution {
+export function getEvolution(
+  creature: BrushlingDefinition,
+  level: number,
+): BrushlingEvolution {
   return creature.evolutions[getEvolutionIndex(creature, level)];
 }
 
-export function getNextEvolution(creature: BrushlingDefinition, level: number): BrushlingEvolution | null {
-  return creature.evolutions.find((evolution) => evolution.unlockLevel > level) ?? null;
+export function getNextEvolution(
+  creature: BrushlingDefinition,
+  level: number,
+): BrushlingEvolution | null {
+  return (
+    creature.evolutions.find((evolution) => evolution.unlockLevel > level) ??
+    null
+  );
 }
 
-export function computeBrushlingStats(history: BrushSession[]): BrushlingGameStats {
+export function computeBrushlingStats(
+  history: BrushSession[],
+): BrushlingGameStats {
   const completed = history.filter((session) => session.completed);
   const completedSessions = completed.length;
   const incompleteXp = history
-    .filter((session) => (
-      !session.completed
-      && session.rewardPolicy !== "completed-only"
-      && session.durationSeconds >= 5
-    ))
-    .reduce((total, session) => total + Math.min(20, Math.floor(session.durationSeconds / 6)), 0);
+    .filter(
+      (session) =>
+        !session.completed &&
+        session.rewardPolicy !== "completed-only" &&
+        session.durationSeconds >= 5,
+    )
+    .reduce(
+      (total, session) =>
+        total + Math.min(20, Math.floor(session.durationSeconds / 6)),
+      0,
+    );
   const xp = completedSessions * 60 + incompleteXp;
   const rewardedSeconds = history
-    .filter((session) => session.completed || session.rewardPolicy !== "completed-only")
-    .reduce((total, session) => total + Math.max(0, session.durationSeconds), 0);
+    .filter(
+      (session) =>
+        session.completed || session.rewardPolicy !== "completed-only",
+    )
+    .reduce(
+      (total, session) => total + Math.max(0, session.durationSeconds),
+      0,
+    );
   const level = 1 + Math.floor(xp / XP_PER_LEVEL);
   const levelProgress = (xp % XP_PER_LEVEL) / XP_PER_LEVEL;
-  const todayCompletedSessions = completed.filter((session) => sameLocalDay(session.startedAt, Date.now())).length;
-  const unlockedIds = BRUSHLINGS
-    .filter((brushling) => completedSessions >= brushling.unlockAtCompletedSessions)
-    .map((brushling) => brushling.id);
+  const todayCompletedSessions = completed.filter((session) =>
+    sameLocalDay(session.startedAt, Date.now()),
+  ).length;
+  const unlockedIds = BRUSHLINGS.filter(
+    (brushling) => completedSessions >= brushling.unlockAtCompletedSessions,
+  ).map((brushling) => brushling.id);
 
   return {
     xp,
