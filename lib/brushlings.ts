@@ -47,7 +47,7 @@ export const BRUSHLINGS: BrushlingDefinition[] = [
     id: "bloopi",
     name: "Bloopi",
     element: "Acqua",
-    accent: "#2D7FF9",
+    accent: "#2457D6",
     soft: "#E7F1FF",
     unlockAtCompletedSessions: 0,
     tagline: "Trasforma ogni zona in una cascata di bolle pulite.",

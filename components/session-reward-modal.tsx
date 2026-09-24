@@ -54,7 +54,14 @@ export function SessionRewardModal() {
       onRequestClose={dismissReward}
       statusBarTranslucent
     >
-      <View style={styles.backdrop}>
+      <View
+        testID="session-reward-modal"
+        role="dialog"
+        accessibilityViewIsModal={Platform.OS !== "web"}
+        aria-modal
+        accessibilityLabel={reward.completed ? "Sessione completata" : "Sessione interrotta"}
+        style={styles.backdrop}
+      >
         <View
           style={[
             styles.card,
@@ -194,7 +201,9 @@ export function SessionRewardModal() {
           </Text>
 
           <Pressable
+            testID="session-reward-dismiss"
             accessibilityRole="button"
+            accessibilityLabel="Chiudi ricompensa e continua"
             onPress={dismissReward}
             style={({ pressed }) => [
               styles.button,
@@ -235,11 +244,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 18,
     alignItems: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.28,
-    shadowRadius: 30,
-    elevation: 9,
+    ...Platform.select({
+      web: { boxShadow: "0 18px 30px rgba(0, 0, 0, 0.28)" },
+      default: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 18 },
+        shadowOpacity: 0.28,
+        shadowRadius: 30,
+        elevation: 9,
+      },
+    }),
   },
   stars: { flexDirection: "row", alignItems: "center", gap: 5 },
   eyebrow: { fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.4, marginTop: 6 },

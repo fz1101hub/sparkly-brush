@@ -33,6 +33,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Oggi",
+          tabBarButtonTestID: "tab-today",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
         }}
       />
@@ -40,6 +41,7 @@ export default function TabLayout() {
         name="collection"
         options={{
           title: "Creature",
+          tabBarButtonTestID: "tab-creatures",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="pawprint.fill" color={color} />,
         }}
       />
@@ -47,6 +49,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: "Esplora",
+          tabBarButtonTestID: "tab-explore",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="map.fill" color={color} />,
         }}
       />
@@ -96,6 +99,7 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "Storico",
+          tabBarButtonTestID: "tab-history",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="clock.arrow.circlepath" color={color} />,
         }}
       />
@@ -103,6 +107,7 @@ export default function TabLayout() {
         name="device"
         options={{
           title: "Spazzolino",
+          tabBarButtonTestID: "tab-device",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="antenna.radiowaves.left.and.right" color={color} />,
         }}
       />

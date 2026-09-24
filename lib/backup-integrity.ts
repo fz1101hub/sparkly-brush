@@ -173,7 +173,6 @@ export function progressForPortableBackup(
 export class BackupSemanticValidator {
   private replayedProgress = createEmptyLifetimeProgress();
   private sessionCount = 0;
-  private readonly seenSessionIds = new Set<string>();
   private active: ActiveSessionValidation | null = null;
   private dailyCoins = 0;
   private achievementCoins = 0;
@@ -186,10 +185,6 @@ export class BackupSemanticValidator {
   beginSession(session: BrushSession): void {
     this.endActiveSession();
     assertFiniteSession(session);
-    if (this.seenSessionIds.has(session.id)) {
-      throw new Error("Il backup contiene identificativi sessione duplicati");
-    }
-    this.seenSessionIds.add(session.id);
     const before = this.replayedProgress;
     const after = applySessionToLifetime(before, session);
     const expectedStable = new Map<string, PersistedRewardLedgerEntry>();
@@ -326,8 +321,14 @@ export function validateBackupSemanticState(input: {
 }): void {
   const validator = new BackupSemanticValidator(input.historyComplete, input.ledger !== null);
   const ledgerBySession = new Map<string, PersistedRewardLedgerEntry[]>();
+  const sessionIds = new Set<string>();
+  for (const session of input.sessions) {
+    if (sessionIds.has(session.id)) {
+      throw new Error("Il backup contiene identificativi sessione duplicati");
+    }
+    sessionIds.add(session.id);
+  }
   if (input.ledger) {
-    const sessionIds = new Set(input.sessions.map((session) => session.id));
     for (const entry of input.ledger) {
       if (!sessionIds.has(entry.sessionId)) {
         throw new Error("Il reward ledger del backup non è coerente con le sessioni");

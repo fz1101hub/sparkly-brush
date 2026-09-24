@@ -38,8 +38,12 @@ export default function HistoryScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: BrushSession }) => (
-    <View style={[styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+  const renderItem = ({ item, index }: { item: BrushSession; index: number }) => (
+    <View
+      testID={`history-session-${index}`}
+      accessibilityLabel={`${item.completed ? "Sessione completa" : "Sessione incompleta"}, ${formatDuration(item.durationSeconds)}, ${formatDate(item.startedAt)}`}
+      style={[styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    >
       <View style={[styles.sessionIcon, { backgroundColor: item.completed ? "#E1F7EF" : "#FFF0E4" }]}>
         <MaterialIcons name={item.completed ? "verified" : "timelapse"} size={24} color={item.completed ? colors.success : colors.warning} />
       </View>
@@ -59,6 +63,7 @@ export default function HistoryScreen() {
   return (
     <ScreenContainer>
       <FlatList
+        testID="history-screen"
         data={history}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}

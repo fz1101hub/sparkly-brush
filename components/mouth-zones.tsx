@@ -11,9 +11,26 @@ const ZONES = [
 
 export function MouthZones({ activeZone, isActive }: { activeZone: number; isActive: boolean }) {
   const colors = useColors();
+  const safeZone = Math.max(0, Math.min(activeZone, ZONES.length - 1));
+  const completedZones = isActive ? safeZone : 0;
 
   return (
-    <View accessibilityLabel={isActive ? `Zona attiva: ${ZONES[activeZone]}` : "Guida a quattro zone"}>
+    <View
+      testID="mouth-zones-progress"
+      accessibilityRole="progressbar"
+      accessibilityLabel="Avanzamento delle zone di spazzolamento"
+      accessibilityHint={isActive ? `Zona attiva: ${ZONES[safeZone]}` : "La sessione non è ancora iniziata"}
+      accessibilityValue={{
+        min: 0,
+        now: completedZones,
+        max: ZONES.length,
+        text: isActive ? `${completedZones} zone completate su ${ZONES.length}` : "0 zone completate su 4",
+      }}
+      aria-valuemin={0}
+      aria-valuenow={completedZones}
+      aria-valuemax={ZONES.length}
+      aria-valuetext={isActive ? `${completedZones} zone completate su ${ZONES.length}` : "0 zone completate su 4"}
+    >
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {ZONES.map((label, index) => {
           const selected = isActive && index === activeZone;

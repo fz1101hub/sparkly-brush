@@ -20,6 +20,7 @@ const env = {
   iosBundleId: bundleId,
   androidPackage: bundleId,
 };
+const e2eBuild = process.env.EXPO_PUBLIC_E2E === "1";
 
 const config: ExpoConfig = {
   name: env.appName,
@@ -107,7 +108,7 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
+          buildArchs: e2eBuild ? ["x86_64"] : ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
         },
       },

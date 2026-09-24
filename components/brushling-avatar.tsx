@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Ellipse, G, Path } from "react-native-svg";
 
 import {
@@ -200,11 +200,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    shadowColor: "#17213C",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 4,
+    ...Platform.select({
+      web: { boxShadow: "0 8px 18px rgba(23, 33, 60, 0.12)" },
+      default: {
+        shadowColor: "#17213C",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 4,
+      },
+    }),
     overflow: "hidden",
   },
   levelBadge: {

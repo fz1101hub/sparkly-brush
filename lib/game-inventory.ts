@@ -66,7 +66,7 @@ export const COLLECTIBLE_ITEMS: CollectibleItem[] = [
     description: "Una perla leggera trovata nella Baia delle Bolle.",
     zoneId: "bubble-bay",
     icon: "opacity",
-    accent: "#2D7FF9",
+    accent: "#2457D6",
     soft: "#E7F1FF",
   },
   {

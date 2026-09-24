@@ -1,0 +1,45 @@
+appId: com.app.sparklybrush
+name: Persistenza checklist hardware
+tags:
+  - regression
+  - android
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: starter-bloopi
+- tapOn:
+    id: starter-confirm
+- tapOn:
+    id: tab-device
+- tapOn:
+    id: device-hardware-test
+- assertVisible:
+    id: hardware-test-screen
+- tapOn:
+    id: hardware-status-scan-connect-passed
+- assertVisible:
+    id: hardware-status-scan-connect-passed-selected
+- extendedWaitUntil:
+    visible:
+      id: hardware-checklist-saved-1
+    timeout: 10000
+- stopApp
+- launchApp
+- tapOn:
+    id: tab-device
+- tapOn:
+    id: device-hardware-test
+- assertVisible:
+    id: hardware-test-screen
+- assertVisible:
+    id: hardware-status-scan-connect-passed-selected
+- takeScreenshot: hardware-checklist-restored

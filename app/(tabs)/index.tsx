@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { AnimatedBrushling } from "@/components/animated-brushling";
@@ -118,7 +118,7 @@ export default function TodayScreen() {
     <ScreenContainer>
       <ActiveWakeLock active={isActive} />
       <SessionRewardModal />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="today-screen" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader
           eyebrow="Brushlings"
           title={`Ciao, ${currentEvolution.name} è pronto!`}
@@ -138,6 +138,8 @@ export default function TodayScreen() {
               </Text>
             </View>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Esci dalla modalità demo"
               onPress={() => void setDemoMode(false)}
               style={({ pressed }) => [styles.demoExit, pressed && styles.pressed]}
             >
@@ -162,7 +164,12 @@ export default function TodayScreen() {
                 ? `A livello ${nextEvolution.unlockLevel} può evolvere in ${nextEvolution.name}.`
                 : selected.tagline}
             </Text>
-            <View style={[styles.xpTrack, { backgroundColor: "#FFFFFFAA" }]}>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel={`Progresso del livello ${stats.level}`}
+              accessibilityValue={{ min: 0, now: Math.round(stats.levelProgress * 100), max: 100 }}
+              style={[styles.xpTrack, { backgroundColor: "#FFFFFFAA" }]}
+            >
               <View style={[styles.xpFill, { width: levelProgress, backgroundColor: selected.accent }]} />
             </View>
             <Text style={[styles.xpText, { color: colors.muted }]}>
@@ -205,7 +212,12 @@ export default function TodayScreen() {
               </Text>
               <Text style={[styles.familyRewardTitle, { color: colors.foreground }]}>{familyReward.title}</Text>
               <View style={styles.familyRewardProgressRow}>
-                <View style={styles.familyRewardTrack}>
+                <View
+                  accessibilityRole="progressbar"
+                  accessibilityLabel={`Progresso premio di famiglia: ${familyReward.title}`}
+                  accessibilityValue={{ min: 0, now: familyReward.progress, max: familyReward.target }}
+                  style={styles.familyRewardTrack}
+                >
                   <View
                     style={[
                       styles.familyRewardFill,
@@ -243,8 +255,10 @@ export default function TodayScreen() {
           </View>
           {demoMode ? null : status !== "connected" ? (
             <Pressable
+              testID="connect-toothbrush"
               accessibilityRole="button"
               accessibilityLabel="Collega lo spazzolino"
+              accessibilityState={{ disabled: connecting, busy: connecting }}
               disabled={connecting}
               onPress={() => void connect()}
               style={({ pressed }) => [styles.smallButton, pressed && styles.pressed, connecting && styles.disabled]}
@@ -282,7 +296,13 @@ export default function TodayScreen() {
           <MouthZones activeZone={activeZone} isActive={isActive} />
 
           <Pressable
+            testID="manual-start-stop"
             accessibilityRole="button"
+            accessibilityLabel={manualActive ? "Termina timer manuale" : "Avvia timer manuale di due minuti"}
+            accessibilityState={{
+              disabled: liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession,
+              busy: isSavingManualSession,
+            }}
             onPress={manualActive ? () => void stopManual() : startManual}
             disabled={liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession}
             style={({ pressed }) => [
@@ -309,6 +329,8 @@ export default function TodayScreen() {
 
         {hasPendingManualSession ? (
           <View
+            testID="manual-save-error"
+            accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
             style={styles.saveErrorCard}
           >
@@ -345,6 +367,7 @@ export default function TodayScreen() {
         </View>
 
         <Pressable
+          accessibilityLabel={`Apri le missioni di oggi, ${missionCenter.today.completedCount} di 3 completate`}
           accessibilityRole="button"
           onPress={() => router.push("/(tabs)/missions")}
           style={({ pressed }) => [
@@ -491,13 +514,27 @@ const styles = StyleSheet.create({
   smallButtonText: { color: "#FFFFFF", fontSize: 13, lineHeight: 18, fontWeight: "800" },
   batteryBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   batteryText: { fontSize: 13, fontWeight: "800" },
-  timerCard: { borderRadius: 28, borderWidth: 1, padding: 18, shadowColor: "#142044", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 3 },
+  timerCard: {
+    borderRadius: 28,
+    borderWidth: 1,
+    padding: 18,
+    ...Platform.select({
+      web: { boxShadow: "0 8px 24px rgba(20, 32, 68, 0.08)" },
+      default: {
+        shadowColor: "#142044",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
+        elevation: 3,
+      },
+    }),
+  },
   timerHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
   timerHeadingCopy: { flex: 1 },
   sectionEyebrow: { fontSize: 11, lineHeight: 16, fontWeight: "900", letterSpacing: 1.2 },
   sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: "900", marginTop: 2 },
   modeBadge: { borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7 },
-  modeBadgeText: { color: "#BA4E13", fontSize: 12, lineHeight: 16, fontWeight: "900" },
+  modeBadgeText: { color: "#A84210", fontSize: 12, lineHeight: 16, fontWeight: "900" },
   timerCenter: { alignItems: "center", paddingVertical: 18 },
   zonePrompt: { fontSize: 15, lineHeight: 21, fontWeight: "800", textAlign: "center", marginBottom: 12 },
   primaryButton: { marginTop: 16, minHeight: 54, backgroundColor: "#2457D6", borderRadius: 18, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18 },

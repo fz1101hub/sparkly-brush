@@ -20,14 +20,20 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 14 | Re-review audit Claude | Completata localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa pre-upgrade superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
+| 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
+| 18 | Accessibilità automatica | Completata | Contratti React Native e Playwright + axe su onboarding, starter, home, device e backup; valori ARIA verificati nel DOM, zero violazioni WCAG selezionate. |
+| 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **30 file e 166 test**;
+- suite Vitest completa: **36 file e 177 test**;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
+- stress pluriennale e multi-timezone superato;
+- Playwright + axe superato su due scenari e cinque stati UI, con contratti DOM ARIA espliciti;
+- contratto statico Maestro e re-review del percorso E2E superati;
 - `pnpm lint --max-warnings 0`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
 - `pnpm exec expo-doctor`: **21/21** con Expo 57;
@@ -45,4 +51,4 @@ Expo 57 ha rimosso `image-size` dal grafo delle dipendenze. `pnpm audit --prod -
 
 ## Condizioni prima della release pubblica
 
-Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub interamente verde, l’esecuzione della build iOS nativa configurata su `macos-26` con Xcode 26.4.1, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.
+Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub interamente verde, l’esecuzione dei flow Maestro sul runner Android, la build iOS nativa configurata su `macos-26` con Xcode 26.4.1, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.

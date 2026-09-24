@@ -1,0 +1,49 @@
+appId: com.app.sparklybrush
+name: Percorso principale Sparkly Brush
+tags:
+  - smoke
+  - android
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: onboarding-overlay
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- assertVisible:
+    id: starter-chooser
+- tapOn:
+    id: starter-bloopi
+- tapOn:
+    id: starter-confirm
+- assertVisible:
+    id: today-screen
+- tapOn:
+    id: manual-start-stop
+- extendedWaitUntil:
+    visible:
+      id: session-reward-modal
+    timeout: 15000
+- tapOn:
+    id: session-reward-dismiss
+- tapOn:
+    id: tab-history
+- assertVisible:
+    id: history-screen
+- assertVisible:
+    id: history-session-0
+- tapOn:
+    id: tab-device
+- tapOn:
+    id: device-backup
+- assertVisible:
+    id: backup-screen
+- assertVisible:
+    id: backup-export
+- takeScreenshot: core-journey-complete

@@ -24,8 +24,19 @@ export function TimerRing({ elapsed, target, active }: TimerRingProps) {
 
   return (
     <View
-      accessibilityRole="timer"
-      accessibilityLabel={`${formatTime(elapsed)} su ${formatTime(target)}`}
+      testID="manual-timer"
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Timer di spazzolamento: ${formatTime(elapsed)} di ${formatTime(target)}`}
+      accessibilityValue={{
+        min: 0,
+        now: Math.max(0, Math.min(Math.round(elapsed), Math.round(target))),
+        max: Math.max(1, Math.round(target)),
+        text: `${formatTime(elapsed)} di ${formatTime(target)}`,
+      }}
+      aria-valuemin={0}
+      aria-valuenow={Math.max(0, Math.min(Math.round(elapsed), Math.round(target)))}
+      aria-valuemax={Math.max(1, Math.round(target))}
+      aria-valuetext={`${formatTime(elapsed)} di ${formatTime(target)}`}
       style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
     >
       <Svg width={size} height={size} style={{ position: "absolute" }}>

@@ -112,6 +112,7 @@ type PendingBleSync = {
 };
 
 const nowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const MANUAL_TARGET_SECONDS = process.env.EXPO_PUBLIC_E2E === "1" ? 5 : 120;
 
 function localDayId(timestamp: number): string {
   const date = new Date(timestamp);
@@ -448,7 +449,7 @@ export function BrushProvider({
   useEffect(() => {
     if (!manualActive) return;
     const refreshElapsed = () => {
-      setManualElapsed(Math.min(120, Math.max(0, Math.floor(
+      setManualElapsed(Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
         (Date.now() - manualStartRef.current) / 1_000,
       ))));
     };
@@ -458,7 +459,7 @@ export function BrushProvider({
   }, [manualActive]);
 
   useEffect(() => {
-    if (!manualActive || manualElapsed < 120 || manualSavedRef.current) return;
+    if (!manualActive || manualElapsed < MANUAL_TARGET_SECONDS || manualSavedRef.current) return;
     manualSavedRef.current = true;
     setManualActive(false);
     const sessionIsDemo = manualDemoModeRef.current;
@@ -467,7 +468,7 @@ export function BrushProvider({
       startedAt: manualStartRef.current,
       rewardPolicy: "completed-only",
       durationSeconds: manualElapsed,
-      targetSeconds: 120,
+      targetSeconds: MANUAL_TARGET_SECONDS,
       completed: true,
       source: sessionIsDemo ? "demo" : "manual",
     };
@@ -572,7 +573,7 @@ export function BrushProvider({
 
   const stopManual = useCallback(async () => {
     setManualActive(false);
-    const duration = Math.min(120, Math.max(0, Math.floor(
+    const duration = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
     )));
     if (duration >= 5 && !manualSavedRef.current) {
@@ -583,8 +584,8 @@ export function BrushProvider({
         startedAt: manualStartRef.current,
         rewardPolicy: "completed-only",
         durationSeconds: duration,
-        targetSeconds: 120,
-        completed: duration >= 108,
+        targetSeconds: MANUAL_TARGET_SECONDS,
+        completed: duration >= Math.ceil(MANUAL_TARGET_SECONDS * 0.9),
         source: sessionIsDemo ? "demo" : "manual",
       };
       await persistManualSession(session);
@@ -682,7 +683,7 @@ export function BrushProvider({
 
   const isActive = live.isBrushing || manualActive;
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
-  const activeTarget = live.isBrushing ? live.routineSeconds : 120;
+  const activeTarget = live.isBrushing ? live.routineSeconds : MANUAL_TARGET_SECONDS;
   const activeZone = Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30));
 
   const value = useMemo<BrushContextValue>(() => ({

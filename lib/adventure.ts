@@ -20,7 +20,7 @@ export const ADVENTURE_ZONES: AdventureZone[] = [
     name: "Baia delle Bolle",
     subtitle: "Il primo approdo, pieno di schiuma brillante.",
     unlockAtSessions: 0,
-    accent: "#2D7FF9",
+    accent: "#2457D6",
     soft: "#E7F1FF",
   },
   {

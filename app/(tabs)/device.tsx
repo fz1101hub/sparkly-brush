@@ -69,6 +69,7 @@ export default function DeviceScreen() {
   return (
     <ScreenContainer>
       <FlatList
+        testID="device-screen"
         data={logs}
         keyExtractor={(item) => item.id}
         renderItem={renderLog}
@@ -100,6 +101,10 @@ export default function DeviceScreen() {
 
             <View style={styles.actions}>
               <Pressable
+                testID="device-connect-disconnect"
+                accessibilityRole="button"
+                accessibilityLabel={connected ? "Disconnetti lo spazzolino" : "Collega lo spazzolino"}
+                accessibilityState={{ disabled: busy || demoMode, busy }}
                 onPress={connected ? () => void disconnect() : () => void connect()}
                 disabled={busy || demoMode}
                 style={({ pressed }) => [styles.primaryButton, connected && styles.disconnectButton, (busy || demoMode) && styles.disabled, pressed && styles.pressed]}
@@ -108,6 +113,10 @@ export default function DeviceScreen() {
                 <Text style={styles.primaryText}>{demoMode ? "Demo attiva" : connected ? "Disconnetti" : busy ? "Ricerca…" : "Cerca e collega"}</Text>
               </Pressable>
               <Pressable
+                testID="device-sync"
+                accessibilityRole="button"
+                accessibilityLabel="Sincronizza le sessioni dallo spazzolino"
+                accessibilityState={{ disabled: !connected || demoMode || isForgettingToothbrush }}
                 onPress={() => void syncLatest()}
                 disabled={!connected || demoMode || isForgettingToothbrush}
                 style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode || isForgettingToothbrush) && styles.disabled, pressed && styles.pressed]}
@@ -128,8 +137,11 @@ export default function DeviceScreen() {
             </View>
 
             <Pressable
+              testID="device-forget-reset"
               accessibilityRole="button"
+              accessibilityLabel="Dimentica manico resettato"
               accessibilityHint="Da usare solo dopo il reset di fabbrica dello stesso manico; conserva tutti i progressi"
+              accessibilityState={{ disabled: !connected || demoMode || isForgettingToothbrush, busy: isForgettingToothbrush }}
               disabled={!connected || demoMode || isForgettingToothbrush}
               onPress={confirmForgetToothbrush}
               style={({ pressed }) => [
@@ -165,8 +177,11 @@ export default function DeviceScreen() {
                   </View>
                 </View>
                 <Pressable
+                  testID="device-demo-switch"
                   accessibilityRole="switch"
+                  accessibilityLabel="Modalità demo"
                   accessibilityState={{ checked: demoMode }}
+                  aria-checked={demoMode}
                   onPress={() => void setDemoMode(!demoMode)}
                   style={({ pressed }) => [
                     styles.demoToggle,
@@ -180,19 +195,19 @@ export default function DeviceScreen() {
 
               {demoMode ? (
                 <View style={styles.demoActions}>
-                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Registra una sessione demo del mattino" onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
                   </Pressable>
-                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Registra una sessione demo della sera" onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
                   </Pressable>
-                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Genera una settimana di dati demo" onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
                   </Pressable>
-                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Azzera dati demo" onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
                   </Pressable>
@@ -200,7 +215,9 @@ export default function DeviceScreen() {
               ) : null}
             </View>
             <Pressable
+              testID="device-hardware-test"
               accessibilityRole="button"
+              accessibilityLabel="Apri collaudo hardware"
               onPress={() => router.push("/(tabs)/hardware-test")}
               style={({ pressed }) => [
                 styles.hardwareCard,
@@ -219,7 +236,9 @@ export default function DeviceScreen() {
               <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
             </Pressable>
             <Pressable
+              testID="device-backup"
               accessibilityRole="button"
+              accessibilityLabel="Apri backup e ripristino"
               onPress={() => router.push("/(tabs)/backup")}
               style={({ pressed }) => [
                 styles.backupCard,

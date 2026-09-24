@@ -457,7 +457,7 @@ async function readLastRestoreId(
 }
 
 async function readProgress(
-  db: Pick<SQLiteDatabase, "getFirstAsync" | "getAllAsync">,
+  db: Pick<SQLiteDatabase, "getFirstAsync" | "getEachAsync">,
 ): Promise<LifetimeProgress> {
   const row = await db.getFirstAsync<MetadataRow>(
     "SELECT value FROM metadata WHERE key = ?",
@@ -471,8 +471,13 @@ async function readProgress(
       // Rebuilds from the canonical session rows below.
     }
   }
-  const rows = await db.getAllAsync<SessionRow>("SELECT * FROM sessions ORDER BY started_at ASC, id ASC");
-  return createLifetimeProgress(rows.map(rowToSession));
+  let progress = createEmptyLifetimeProgress();
+  for await (const sessionRow of db.getEachAsync<SessionRow>(
+    "SELECT * FROM sessions ORDER BY started_at ASC, id ASC",
+  )) {
+    progress = applySessionToLifetime(progress, rowToSession(sessionRow));
+  }
+  return progress;
 }
 
 async function recentHistory(
@@ -615,26 +620,21 @@ async function saveNewSession(
     if (changes === 0) return;
 
     let after: LifetimeProgress;
-    let replayedHistory: BrushSession[] | null = null;
+    let ledgerRebuilt = false;
     if (maxRow?.max_started_at === null || session.startedAt >= (maxRow?.max_started_at ?? 0)) {
       after = applySessionToLifetime(before, session);
     } else if (historyComplete) {
-      const rows = await txn.getAllAsync<SessionRow>(
-        "SELECT * FROM sessions ORDER BY started_at ASC, id ASC",
-      );
-      replayedHistory = rows.map(rowToSession);
-      after = createLifetimeProgress(replayedHistory);
+      after = await rebuildRewardLedgerFromDatabase(txn);
       after.deviceCursors = before.deviceCursors;
       after.pendingDeviceFallbacks = before.pendingDeviceFallbacks;
+      ledgerRebuilt = true;
     } else {
       after = applySessionToStoredLifetime(before, session, false);
     }
     after = transformProgress ? transformProgress(after) : after;
     await writeProgress(txn, after);
     event = { session, before, after };
-    if (replayedHistory) {
-      await rebuildRewardLedger(txn, replayedHistory);
-    } else {
+    if (!ledgerRebuilt) {
       await insertRewardLedgerEntries(txn, createRewardLedgerEntries(event));
     }
   });

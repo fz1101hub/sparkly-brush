@@ -47,7 +47,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
     description: "La casetta iniziale, luminosa e piena di bollicine.",
     cost: 0,
     icon: "opacity",
-    accent: "#2D7FF9",
+    accent: "#2457D6",
     soft: "#E7F1FF",
   },
   {
@@ -87,7 +87,7 @@ export const CUSTOMIZATION_ITEMS: CustomizationItem[] = [
     description: "Un piccolo foulard da esploratore.",
     cost: 18,
     icon: "waves",
-    accent: "#2D7FF9",
+    accent: "#2457D6",
     soft: "#E7F1FF",
   },
   {

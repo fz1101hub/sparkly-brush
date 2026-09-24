@@ -116,6 +116,12 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    document.title = "Sparkly Brush";
+    document.documentElement.lang = "it";
+  }, []);
+
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
     setInsets(metrics.insets);
     setFrame(metrics.frame);

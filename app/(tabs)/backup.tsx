@@ -252,7 +252,7 @@ export default function BackupScreen() {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="backup-screen" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
@@ -294,13 +294,13 @@ export default function BackupScreen() {
           </View>
         ) : null}
         {!demoMode && !backupReady ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="hourglass-top" size={20} color="#2457D6" />
             <Text style={[styles.messageText, { color: colors.foreground }]}>Caricamento dei dati in corso…</Text>
           </View>
         ) : null}
         {message ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View testID="backup-status" accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
             <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
           </View>
@@ -322,7 +322,10 @@ export default function BackupScreen() {
           </View>
 
           <Pressable
+            testID="backup-export"
             accessibilityRole="button"
+            accessibilityLabel="Salva il file di backup completo"
+            accessibilityState={{ disabled: demoMode || busy || !backupReady || !nativeBackupAvailable, busy }}
             onPress={() => void shareBackup()}
             disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
             style={({ pressed }) => [styles.primaryButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
@@ -344,7 +347,10 @@ export default function BackupScreen() {
           </View>
 
           <Pressable
+            testID="backup-pick-file"
             accessibilityRole="button"
+            accessibilityLabel="Scegli un file .brushlings per il ripristino"
+            accessibilityState={{ disabled: demoMode || busy || !backupReady || !nativeBackupAvailable, busy }}
             disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
             onPress={() => void pickBackupFile()}
             style={({ pressed }) => [styles.checkButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
@@ -354,7 +360,7 @@ export default function BackupScreen() {
           </Pressable>
 
           {filePreview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+            <View testID="backup-file-preview" style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
               <MaterialIcons name="verified-user" size={27} color="#2E8A60" />
               <View style={styles.previewCopy}>
                 <Text style={[styles.previewEyebrow, { color: "#2E8A60" }]}>
@@ -375,7 +381,11 @@ export default function BackupScreen() {
                   Il ripristino sostituirà integralmente l’archivio reale di questo telefono.
                 </Text>
                 <Pressable
+                  testID="backup-restore-file"
                   accessibilityRole="button"
+                  accessibilityLabel="Ripristina archivio completo dal file selezionato"
+                  accessibilityHint="Sostituisce integralmente lo storico, i progressi e le impostazioni reali di questo telefono"
+                  accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
                   onPress={() => void restoreFile()}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
@@ -392,6 +402,8 @@ export default function BackupScreen() {
             <Text style={[styles.previewText, { color: colors.muted }]}>I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.</Text>
 
             <TextInput
+              testID="backup-import-code"
+              accessibilityLabel="Codice backup legacy"
               value={importCode}
               onChangeText={(value) => {
                 setImportCode(value);
@@ -409,7 +421,10 @@ export default function BackupScreen() {
             />
 
             <Pressable
+              testID="backup-inspect-code"
               accessibilityRole="button"
+              accessibilityLabel="Controlla codice backup"
+              accessibilityState={{ disabled: !importCode.trim() }}
               disabled={!importCode.trim()}
               onPress={inspectImport}
               style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, !importCode.trim() && styles.disabled, pressed && styles.pressed]}
@@ -420,14 +435,14 @@ export default function BackupScreen() {
           </View>
 
           {error ? (
-            <View style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
+            <View testID="backup-error" accessibilityRole="alert" accessibilityLiveRegion="assertive" style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
               <MaterialIcons name="error-outline" size={20} color="#C43D58" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
           {preview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+            <View testID="backup-legacy-preview" style={[styles.previewCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
               <MaterialIcons name="inventory-2" size={27} color="#B98A00" />
               <View style={styles.previewCopy}>
                 <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>BACKUP VALIDO</Text>
@@ -441,7 +456,11 @@ export default function BackupScreen() {
                   Il ripristino sostituirà i progressi reali presenti su questo telefono.
                 </Text>
                 <Pressable
+                  testID="backup-restore-legacy"
                   accessibilityRole="button"
+                  accessibilityLabel="Ripristina archivio dal codice backup controllato"
+                  accessibilityHint="Sostituisce i progressi reali presenti su questo telefono"
+                  accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
                   onPress={() => void restoreLegacy()}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}

@@ -81,7 +81,6 @@ export default function HardwareTestScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const saveRevisionRef = useRef(0);
-  const persistenceEnabledRef = useRef(false);
 
   const persistRun = useCallback((next: HardwareValidationRun) => {
     const revision = saveRevisionRef.current + 1;
@@ -105,7 +104,6 @@ export default function HardwareTestScreen() {
       .then(async (stored) => {
         const initial = stored ?? newRun();
         if (active) {
-          persistenceEnabledRef.current = true;
           setRun(initial);
         }
       })
@@ -118,20 +116,16 @@ export default function HardwareTestScreen() {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (run && persistenceEnabledRef.current) persistRun(run);
-  }, [persistRun, run]);
-
   const summary = useMemo(() => run ? hardwareValidationSummary(run) : null, [run]);
   const progress = summary ? summary.completed / summary.total : 0;
 
   const updateResult = (test: HardwareTestCase, patch: Parameters<typeof updateHardwareTestResult>[2]) => {
-    persistenceEnabledRef.current = true;
+    if (!run) return;
     setMessage(null);
     setError(null);
-    setRun((current) => current
-      ? updateHardwareTestResult(current, test.id, patch)
-      : current);
+    const next = updateHardwareTestResult(run, test.id, patch);
+    setRun(next);
+    persistRun(next);
   };
 
   const shareReport = async () => {
@@ -166,9 +160,9 @@ export default function HardwareTestScreen() {
 
   const resetRun = () => {
     const performReset = () => {
-      persistenceEnabledRef.current = true;
       const next = newRun();
       setRun(next);
+      persistRun(next);
       setMessage(null);
       setError(null);
     };
@@ -196,7 +190,7 @@ export default function HardwareTestScreen() {
     if (!run) return null;
     const result = run.results[item.id];
     return (
-      <View style={[styles.testCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View testID={`hardware-test-${item.id}`} style={[styles.testCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.testHeading}>
           <View style={[styles.testNumber, { backgroundColor: result.status === "passed" ? "#14845B" : colors.primary }]}>
             <Text style={styles.testNumberText}>{index + 1}</Text>
@@ -222,9 +216,11 @@ export default function HardwareTestScreen() {
             return (
               <Pressable
                 key={option.status}
+                testID={`hardware-status-${item.id}-${option.status}${selected ? "-selected" : ""}`}
                 accessibilityRole="radio"
                 accessibilityLabel={`${item.title}: ${option.label}`}
                 accessibilityState={{ checked: selected }}
+                aria-checked={selected}
                 onPress={() => updateResult(item, { status: option.status })}
                 style={({ pressed }) => [
                   styles.statusButton,
@@ -257,6 +253,7 @@ export default function HardwareTestScreen() {
   return (
     <ScreenContainer>
       <FlatList
+        testID="hardware-test-screen"
         data={HARDWARE_TEST_CASES as readonly HardwareTestCase[]}
         keyExtractor={(item) => item.id}
         renderItem={renderTest}
@@ -297,7 +294,10 @@ export default function HardwareTestScreen() {
               </View>
             ) : null}
 
-            <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View
+              testID={persistenceError ? "hardware-checklist-error" : saving ? "hardware-checklist-saving" : `hardware-checklist-saved-${summary?.completed ?? 0}`}
+              style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
               <View style={styles.summaryTop}>
                 <View>
                   <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Avanzamento</Text>

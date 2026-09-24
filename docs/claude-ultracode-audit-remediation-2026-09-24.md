@@ -45,7 +45,7 @@ Il filtro `autoVerify` è stato rimosso dallo scheme custom Android perché non 
 | Installazione pnpm 12 frozen | Superata |
 | Peer dependencies | Superate |
 | TypeScript | Superato |
-| Vitest | **30 file, 166 test superati** |
+| Vitest | **36 file, 177 test superati** dopo i gate qualità successivi |
 | ESLint | Superato con zero warning |
 | Audit produttivo da severità `high` | **Superato; nessuna vulnerabilità nota** |
 | Expo Doctor | **21/21** con Expo 57 |

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { Animated, Platform, StyleSheet, View } from "react-native";
 
 const PARTICLES = Array.from({ length: 16 }, (_, index) => index);
 const COLORS = ["#FFD65A", "#58B9FF", "#7DD790", "#FF8B66", "#B9A8F3"];
@@ -16,7 +16,7 @@ export function CelebrationBurst({ active }: { active: boolean }) {
     Animated.timing(progress, {
       toValue: 1,
       duration: 1200,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [active, progress]);
 

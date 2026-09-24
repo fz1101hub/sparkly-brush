@@ -62,6 +62,9 @@ La build iOS con Expo 57 richiede Xcode 26.4 o successivo e supporta iOS 16.4 o 
 ```bash
 pnpm check
 pnpm test
+pnpm test:stress
+pnpm test:a11y:semantic
+pnpm test:a11y:web
 pnpm lint
 pnpm exec expo-doctor
 pnpm exec expo export --platform web --output-dir /tmp/sparkly-web
@@ -72,7 +75,11 @@ CI=1 pnpm exec expo prebuild --platform android --clean --no-install
 (cd android && ./gradlew assembleDebug --no-daemon)
 ```
 
-La suite copre codec BLE, backfill multi-sessione e rollover, cancellazione e lifecycle del client con periferica finta, integrazione provider→BLE→storage, sync stale tra due manici, disconnessioni durante il brushing, code fallback e riconciliazione GATT, timer manuale persistente, race di idratazione del profilo, progressione oltre 120 sessioni, ledger premi e acquisti, alias BLE, migrazioni, backup manipolati e cross-timezone, allowlist dello schema SQLite, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. I test component-level usano Test Renderer 1.2, compatibile con React 19.2, al posto di `react-test-renderer` deprecato. GitHub Actions usa il lockfile frozen, annulla run obsolete ed evita modifiche solo documentali. I pull request eseguono controlli, audit bloccante da severità `high`, bundle e build Gradle Android; la build Xcode 26.4 su macOS è riservata a tag di release o avvio manuale.
+La suite copre codec BLE, backfill multi-sessione e rollover, cancellazione e lifecycle del client con periferica finta, integrazione provider→BLE→storage, sync stale tra due manici, disconnessioni durante il brushing, code fallback e riconciliazione GATT, timer manuale persistente, race di idratazione del profilo, progressione oltre 120 sessioni, ledger premi e acquisti, alias BLE, migrazioni, backup manipolati e cross-timezone, allowlist dello schema SQLite, concorrenza, missioni, serie, calendario locale, dashboard e personalizzazioni. Gli stress test simulano 14.610 sessioni in vent’anni, 20.000 righe di backup streaming, quaranta dispositivi e i fusi `America/New_York`, `Europe/Rome` e `Pacific/Kiritimati`; lo stato serializzato del validatore resta sotto 4 KiB e non cresce con l’archivio. I test component-level usano Test Renderer 1.2, compatibile con React 19.2, al posto di `react-test-renderer` deprecato.
+
+L’accessibilità è verificata su due livelli: contratti semantici React Native e scansione Playwright + axe WCAG 2 A/AA e 2.1 A/AA su onboarding, scelta starter, home, dispositivo e backup. Playwright verifica inoltre nel DOM `role`, `aria-modal` e i valori numerici delle progressbar. I flussi Maestro in `.maestro/flows` coprono il primo avvio, il timer accelerato **solo nella build E2E dedicata**, ricompensa, storico, accesso al backup e persistenza della checklist hardware dopo il riavvio. Per eseguirli serve l’APK release E2E installato su emulatore Android e Maestro 2.10.0 nel `PATH`; il comando è `pnpm test:e2e:android`.
+
+GitHub Actions usa il lockfile frozen, annulla run obsolete ed evita modifiche solo documentali. I pull request eseguono controlli, audit bloccante da severità `high`, axe, bundle e build Gradle Android; la build Xcode 26.4 e i flow Maestro su emulatore sono riservati a tag di release o avvio manuale.
 
 Gli override transitivi fissano le vulnerabilità compatibili con la toolchain. L’upgrade a Expo 57 ha rimosso `image-size` dal grafo delle dipendenze: `pnpm audit --prod --audit-level high` non segnala vulnerabilità note. Il lockfile mantiene inoltre una versione di `@react-native/metro-config` coerente con React Native 0.86.3, così `pnpm peers check` non segnala incompatibilità.
 

@@ -32,7 +32,7 @@ Expo SDK 55 rende obbligatoria la New Architecture e rimuove le relative opzioni
 | Installazione frozen pnpm 12.5.1 | Superata |
 | Peer dependencies | Superate |
 | TypeScript 6 | Superato |
-| Vitest | **30 file, 166 test superati** |
+| Vitest | **36 file, 177 test superati** |
 | ESLint | Superato con zero warning |
 | Expo dependency check | Superato |
 | Expo Doctor | **21/21** |
@@ -57,7 +57,7 @@ L’upgrade software è completo. Il run GitHub Actions `35942257161`, creato su
 
 Restano invariati gli altri limiti di release già documentati: CI GitHub effettivamente verde, build iOS su runner macOS, collaudo fisico con HX6322/04 su iPhone e Android, privacy policy, dichiarazioni store e decisione Kids/Families. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
-La suite provider è stata migrata da `react-test-renderer` deprecato a **Test Renderer 1.2**, la linea raccomandata per React 19.2. I 15 casi component-level passano senza i precedenti messaggi di deprecazione; l’intera suite conserva 166 test.
+La suite provider è stata migrata da `react-test-renderer` deprecato a **Test Renderer 1.2**, la linea raccomandata per React 19.2. I 15 casi component-level passano senza i precedenti messaggi di deprecazione; i successivi gate stress, accessibilità e Maestro portano l’intera suite a 177 test.
 
 ## References
 

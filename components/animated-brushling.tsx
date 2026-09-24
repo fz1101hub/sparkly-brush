@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import type { BrushlingDefinition } from "@/lib/brushlings";
@@ -30,13 +30,13 @@ export function AnimatedBrushling({
           toValue: 1,
           duration: 460,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(bounce, {
           toValue: 0,
           duration: 460,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]),
     );

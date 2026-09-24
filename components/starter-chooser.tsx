@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { useBrushling } from "@/contexts/brushling-context";
@@ -31,20 +31,28 @@ export function StarterChooser() {
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
       </View>
 
-      <Text style={styles.title}>Scegli il tuo primo Brushling!</Text>
+      <Text accessibilityRole="header" style={styles.title}>Scegli il tuo primo Brushling!</Text>
       <Text style={styles.copy}>
         Ogni grande avventura inizia con un piccolo compagno. Potrai cambiare squadra più avanti.
       </Text>
 
-      <View style={styles.starterRow}>
+      <View
+        testID="starter-chooser"
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Scegli il tuo primo Brushling"
+        style={styles.starterRow}
+      >
         {STARTER_IDS.map((id) => {
           const creature = getBrushling(id);
           const selected = candidate === id;
           return (
             <Pressable
               key={id}
-              accessibilityRole="button"
-              accessibilityLabel={`Scegli ${creature.name}, tipo ${creature.element}`}
+              testID={`starter-${id}`}
+              accessibilityRole="radio"
+              accessibilityLabel={`${creature.name}, tipo ${creature.element}`}
+              accessibilityState={{ checked: selected }}
+              aria-checked={selected}
               onPress={() => setCandidate(id)}
               style={({ pressed }) => [
                 styles.starterCard,
@@ -81,7 +89,10 @@ export function StarterChooser() {
       </View>
 
       <Pressable
+        testID="starter-confirm"
         accessibilityRole="button"
+        accessibilityLabel={`Conferma ${chosen.name} come primo Brushling`}
+        accessibilityState={{ disabled: saving, busy: saving }}
         disabled={saving}
         onPress={() => void confirm()}
         style={({ pressed }) => [
@@ -103,11 +114,16 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 20,
     overflow: "hidden",
-    shadowColor: "#092A56",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.22,
-    shadowRadius: 26,
-    elevation: 5,
+    ...Platform.select({
+      web: { boxShadow: "0 12px 26px rgba(9, 42, 86, 0.22)" },
+      default: {
+        shadowColor: "#092A56",
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.22,
+        shadowRadius: 26,
+        elevation: 5,
+      },
+    }),
   },
   sparkleRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
   eyebrow: { color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },
