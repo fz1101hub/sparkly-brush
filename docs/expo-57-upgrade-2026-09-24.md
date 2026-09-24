@@ -57,7 +57,7 @@ L’upgrade software è completo. Il run GitHub Actions `35942257161`, creato su
 
 Restano invariati gli altri limiti di release già documentati: CI GitHub effettivamente verde, build iOS su runner macOS, collaudo fisico con HX6322/04 su iPhone e Android, privacy policy, dichiarazioni store e decisione Kids/Families. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
-La suite usa ancora `react-test-renderer`, che React 19.2 dichiara deprecato. I test passano, ma producono messaggi informativi; la futura migrazione a una libreria di test mantenuta è un intervento separato e non blocca Expo 57.
+La suite provider è stata migrata da `react-test-renderer` deprecato a **Test Renderer 1.2**, la linea raccomandata per React 19.2. I 15 casi component-level passano senza i precedenti messaggi di deprecazione; l’intera suite conserva 166 test.
 
 ## References
 

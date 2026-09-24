@@ -1,5 +1,5 @@
-import React from "react";
-import TestRenderer, { act } from "react-test-renderer";
+import React, { act } from "react";
+import { createRoot } from "test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
@@ -57,9 +57,9 @@ async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: Brushling
     return null;
   }
 
-  let renderer!: TestRenderer.ReactTestRenderer;
+  const renderer = createRoot();
   await act(async () => {
-    renderer = TestRenderer.create(
+    renderer.render(
       <BrushlingProvider><Probe /></BrushlingProvider>,
     );
   });
@@ -79,7 +79,7 @@ async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: Brushling
   };
   mocks.brushState.historyReady = true;
   await act(async () => {
-    renderer.update(<BrushlingProvider><Probe /></BrushlingProvider>);
+    renderer.render(<BrushlingProvider><Probe /></BrushlingProvider>);
   });
 
   expect(observed.selectedId).toBe(selectedId);

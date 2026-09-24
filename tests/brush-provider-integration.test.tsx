@@ -1,5 +1,5 @@
-import React from "react";
-import TestRenderer, { act } from "react-test-renderer";
+import React, { act } from "react";
+import { createRoot } from "test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BleClientEvents, BrushSession, SonicareClient, StoredDeviceSession } from "@/lib/brush-types";
@@ -136,9 +136,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -203,9 +203,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -262,9 +262,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -327,9 +327,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -387,9 +387,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -460,9 +460,9 @@ describe("BrushProvider BLE integration", () => {
       importedCount: 1,
     });
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory} syncDelayMs={450}>{null}</BrushProvider>,
       );
       await Promise.resolve();
@@ -556,9 +556,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -610,9 +610,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -665,9 +665,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -707,9 +707,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -747,9 +747,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -776,9 +776,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
@@ -819,9 +819,9 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer.render(
         <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
       );
       await Promise.resolve();
