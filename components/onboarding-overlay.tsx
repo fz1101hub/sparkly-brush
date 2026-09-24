@@ -54,7 +54,6 @@ export function OnboardingOverlay() {
         testID="onboarding-overlay"
         role="dialog"
         accessibilityViewIsModal={Platform.OS !== "web"}
-        aria-modal
         accessibilityLabel={`Onboarding Sparkly Brush, pagina ${index + 1} di ${SLIDES.length}`}
         style={styles.backdrop}
       >

@@ -67,12 +67,17 @@ jobs:
       - name: Accessibility audit
         run: pnpm test:a11y:web
 
-      - name: Upload accessibility artifacts
+      - name: Web functional journey
+        run: pnpm test:e2e:web
+
+      - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: accessibility-playwright
-          path: artifacts/playwright
+          name: browser-quality-playwright
+          path: |
+            artifacts/playwright
+            artifacts/playwright-functional
 
       - name: Bundle web
         run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-web

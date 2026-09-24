@@ -30,6 +30,9 @@ import {
   type RestoreSnapshot,
 } from "@/lib/restore-journal";
 
+const LIGHT_CARD_FOREGROUND = "#17213A";
+const LIGHT_CARD_MUTED = "#56617D";
+
 function formatBytes(bytes: number): string {
   if (bytes < 1_024) return `${bytes} B`;
   if (bytes < 1_048_576) return `${(bytes / 1_024).toFixed(1)} KB`;
@@ -272,8 +275,8 @@ export default function BackupScreen() {
             <MaterialIcons name="cloud-done" size={31} color="#2E8A60" />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroTitle, { color: colors.foreground }]}>Ogni progresso segue il Brushling</Text>
-            <Text style={[styles.heroText, { color: colors.muted }]}>
+            <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>Ogni progresso segue il Brushling</Text>
+            <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
               Un solo file contiene tutte le sessioni, senza tagli, più date, durate, progressi, compagno, tana, premi e preferenze. Gli identificatori Bluetooth del manico vengono sostituiti da alias non leggibili.
             </Text>
           </View>
@@ -283,8 +286,8 @@ export default function BackupScreen() {
           <View style={[styles.demoWarning, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
             <MaterialIcons name="science" size={22} color="#9A7200" />
             <View style={styles.demoWarningCopy}>
-              <Text style={[styles.demoWarningTitle, { color: colors.foreground }]}>Modalità demo attiva</Text>
-              <Text style={[styles.demoWarningText, { color: colors.muted }]}>
+              <Text style={[styles.demoWarningTitle, { color: LIGHT_CARD_FOREGROUND }]}>Modalità demo attiva</Text>
+              <Text style={[styles.demoWarningText, { color: LIGHT_CARD_MUTED }]}>
                 I backup usano solo i dati reali. Esci dalla demo prima di esportare o ripristinare.
               </Text>
             </View>
@@ -296,13 +299,13 @@ export default function BackupScreen() {
         {!demoMode && !backupReady ? (
           <View accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="hourglass-top" size={20} color="#2457D6" />
-            <Text style={[styles.messageText, { color: colors.foreground }]}>Caricamento dei dati in corso…</Text>
+            <Text style={[styles.messageText, { color: LIGHT_CARD_FOREGROUND }]}>Caricamento dei dati in corso…</Text>
           </View>
         ) : null}
         {message ? (
           <View testID="backup-status" accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
-            <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
+            <Text style={[styles.messageText, { color: LIGHT_CARD_FOREGROUND }]}>{message}</Text>
           </View>
         ) : null}
 
@@ -366,10 +369,10 @@ export default function BackupScreen() {
                 <Text style={[styles.previewEyebrow, { color: "#2E8A60" }]}>
                   {filePreview.manifest.historyComplete ? "FILE COMPLETO VERIFICATO" : "BACKUP LEGACY VERIFICATO"}
                 </Text>
-                <Text style={[styles.previewTitle, { color: colors.foreground }]}>
+                <Text style={[styles.previewTitle, { color: LIGHT_CARD_FOREGROUND }]}>
                   {filePreview.manifest.profile.selectedId} · {filePreview.sessionCount} sessioni
                 </Text>
-                <Text style={[styles.previewText, { color: colors.muted }]}>
+                <Text style={[styles.previewText, { color: LIGHT_CARD_MUTED }]}>
                   {formatBytes(filePreview.size)} · creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(filePreview.manifest.createdAt))}.
                 </Text>
                 {!filePreview.manifest.historyComplete ? (
@@ -446,10 +449,10 @@ export default function BackupScreen() {
               <MaterialIcons name="inventory-2" size={27} color="#B98A00" />
               <View style={styles.previewCopy}>
                 <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>BACKUP VALIDO</Text>
-                <Text style={[styles.previewTitle, { color: colors.foreground }]}>
+                <Text style={[styles.previewTitle, { color: LIGHT_CARD_FOREGROUND }]}>
                   {preview.profile.selectedId} · {preview.lifetimeProgress.completedSessions} sessioni
                 </Text>
-                <Text style={[styles.previewText, { color: colors.muted }]}>
+                <Text style={[styles.previewText, { color: LIGHT_CARD_MUTED }]}>
                   Creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(preview.createdAt))}.
                 </Text>
                 <Text style={[styles.warningText, { color: "#8A5B00" }]}>
@@ -474,8 +477,8 @@ export default function BackupScreen() {
         </View>
 
         <View style={[styles.privacyCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
-          <MaterialIcons name="privacy-tip" size={21} color={colors.muted} />
-          <Text style={[styles.privacyText, { color: colors.muted }]}>
+          <MaterialIcons name="privacy-tip" size={21} color={LIGHT_CARD_MUTED} />
+          <Text style={[styles.privacyText, { color: LIGHT_CARD_MUTED }]}>
             Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.
           </Text>
         </View>

@@ -21,8 +21,9 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
-| 18 | Accessibilità automatica | Completata | Contratti React Native e Playwright + axe su onboarding, starter, home, device e backup; valori ARIA verificati nel DOM, zero violazioni WCAG selezionate. |
+| 18 | Accessibilità automatica | Completata | Contratti React Native e Playwright + axe su onboarding, starter, home, device e backup in tema chiaro/scuro; valori ARIA verificati nel DOM, zero violazioni WCAG selezionate. |
 | 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
+| 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 
 ## Gate software già superati sul candidato
 
@@ -32,14 +33,15 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 - suite Vitest completa: **36 file e 177 test**;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su due scenari e cinque stati UI, con contratti DOM ARIA espliciti;
+- Playwright + axe superato su dieci checkpoint UI chiari/scuri, con contratti DOM ARIA espliciti: **3 test in 31,4 s** nel run definitivo;
+- due percorsi Playwright funzionali superati in **26,1 s**, inclusa persistenza dopo reload;
 - contratto statico Maestro e re-review del percorso E2E superati;
 - `pnpm lint --max-warnings 0`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
 - `pnpm exec expo-doctor`: **21/21** con Expo 57;
 - `pnpm exec expo install --check`;
-- export Expo web, iOS e Android.
-- build Android nativa debug **Expo 57 superata** con SDK 36, JDK 17 e NDK 27.1; APK debug generato correttamente.
+- export Expo web, iOS e Android;
+- build Android nativa debug **Expo 57 superata sul checkpoint precedente** con SDK 36, JDK 17 e NDK 27.1; il sandbox ripristinato non contiene più JDK 17 né Android SDK, quindi non viene dichiarata una nuova compilazione nativa dell’esatto checkout di questo ciclo.
 
 ## GitHub Actions
 

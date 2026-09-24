@@ -4,11 +4,9 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { useBrushling } from "@/contexts/brushling-context";
-import { useColors } from "@/hooks/use-colors";
 import { STARTER_IDS, getBrushling, type BrushlingId } from "@/lib/brushlings";
 
 export function StarterChooser() {
-  const colors = useColors();
   const { selectedId, chooseStarter } = useBrushling();
   const [candidate, setCandidate] = useState<BrushlingId>(
     STARTER_IDS.includes(selectedId) ? selectedId : STARTER_IDS[0],
@@ -64,7 +62,7 @@ export function StarterChooser() {
               ]}
             >
               <BrushlingAvatar creature={creature} size={82} level={1} />
-              <Text style={[styles.starterName, { color: selected ? colors.foreground : "#FFFFFF" }]}>
+              <Text style={[styles.starterName, { color: selected ? "#17213A" : "#FFFFFF" }]}>
                 {creature.name}
               </Text>
               <Text style={[styles.starterType, { color: selected ? creature.accent : "#DDEBFF" }]}>
@@ -83,8 +81,8 @@ export function StarterChooser() {
       <View style={[styles.choiceNote, { backgroundColor: chosen.soft }]}>
         <BrushlingAvatar creature={chosen} size={62} level={1} />
         <View style={styles.choiceCopy}>
-          <Text style={[styles.choiceName, { color: colors.foreground }]}>{chosen.name}</Text>
-          <Text style={[styles.choiceTagline, { color: colors.muted }]}>{chosen.tagline}</Text>
+          <Text style={[styles.choiceName, { color: "#17213A" }]}>{chosen.name}</Text>
+          <Text style={[styles.choiceTagline, { color: "#56617D" }]}>{chosen.tagline}</Text>
         </View>
       </View>
 

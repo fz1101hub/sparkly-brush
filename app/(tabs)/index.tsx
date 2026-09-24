@@ -17,8 +17,11 @@ import { useColors } from "@/hooks/use-colors";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
 import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
 
+const PASTEL_FOREGROUND = "#17213A";
+const PASTEL_MUTED = "#56617D";
+
 function ActiveWakeLock({ active }: { active: boolean }) {
-  if (active) return <KeepAwake />;
+  if (active && Platform.OS !== "web") return <KeepAwake />;
   return null;
 }
 
@@ -157,9 +160,9 @@ export default function TodayScreen() {
           <AnimatedBrushling creature={selected} size={118} level={stats.level} active={isActive} />
           <View style={styles.companionCopy}>
             <Text style={[styles.companionEyebrow, { color: selected.accent }]}>IL TUO COMPAGNO</Text>
-            <Text style={[styles.companionName, { color: colors.foreground }]}>{currentEvolution.name}</Text>
+            <Text style={[styles.companionName, { color: PASTEL_FOREGROUND }]}>{currentEvolution.name}</Text>
             <Text style={[styles.companionTitle, { color: selected.accent }]}>{currentEvolution.title}</Text>
-            <Text style={[styles.companionTagline, { color: colors.muted }]} numberOfLines={2}>
+            <Text style={[styles.companionTagline, { color: PASTEL_MUTED }]} numberOfLines={2}>
               {nextEvolution
                 ? `A livello ${nextEvolution.unlockLevel} può evolvere in ${nextEvolution.name}.`
                 : selected.tagline}
@@ -172,7 +175,7 @@ export default function TodayScreen() {
             >
               <View style={[styles.xpFill, { width: levelProgress, backgroundColor: selected.accent }]} />
             </View>
-            <Text style={[styles.xpText, { color: colors.muted }]}>
+            <Text style={[styles.xpText, { color: PASTEL_MUTED }]}>
               Livello {stats.level} · {stats.xp} XP · {walletCoins} monete sorriso
             </Text>
           </View>
@@ -184,7 +187,7 @@ export default function TodayScreen() {
           </View>
           <View style={styles.speechCopy}>
             <Text style={[styles.speechName, { color: selected.accent }]}>{currentEvolution.name} dice:</Text>
-            <Text style={[styles.speechText, { color: colors.foreground }]}>{dialogue}</Text>
+            <Text style={[styles.speechText, { color: PASTEL_FOREGROUND }]}>{dialogue}</Text>
           </View>
         </View>
 

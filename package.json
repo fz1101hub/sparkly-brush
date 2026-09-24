@@ -16,6 +16,7 @@
     "test:stress": "vitest run tests/lifetime-stress.test.ts tests/device-lifetime-stress.test.ts tests/backup-semantic-streaming.test.ts && TZ=America/New_York vitest run tests/timezone-lifetime.test.ts && TZ=Europe/Rome vitest run tests/timezone-lifetime.test.ts && TZ=Pacific/Kiritimati vitest run tests/timezone-lifetime.test.ts",
     "test:a11y:semantic": "vitest run tests/a11y",
     "test:a11y:web": "playwright test",
+    "test:e2e:web": "playwright test --config playwright.functional.config.ts",
     "test:e2e:android": "mkdir -p artifacts/maestro && MAESTRO_CLI_NO_ANALYTICS=1 MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/flows --format JUNIT --output artifacts/maestro/results.xml --test-output-dir artifacts/maestro/debug",
     "android": "expo run:android",
     "ios": "expo run:ios",

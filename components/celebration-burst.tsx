@@ -30,7 +30,7 @@ export function CelebrationBurst({ active }: { active: boolean }) {
   if (!active) return null;
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, styles.container]}>
       {particles.map((particle) => {
         const x = Math.cos(particle.angle) * particle.distance;
         const y = Math.sin(particle.angle) * particle.distance;
@@ -57,6 +57,9 @@ export function CelebrationBurst({ active }: { active: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    pointerEvents: "none",
+  },
   particle: {
     position: "absolute",
     left: "50%",

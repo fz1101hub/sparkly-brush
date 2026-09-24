@@ -9,6 +9,9 @@ import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
 import { HANDLE_STATE_LABELS } from "@/lib/sonicare-uuids";
 
+const LIGHT_CARD_FOREGROUND = "#17213A";
+const LIGHT_CARD_MUTED = "#56617D";
+
 export default function DeviceScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -90,8 +93,8 @@ export default function DeviceScreen() {
                 </View>
               </View>
               <View style={styles.heroCopy}>
-                <Text style={[styles.heroModel, { color: colors.foreground }]}>{device?.model ?? "Philips Sonicare for Kids"}</Text>
-                <Text style={[styles.heroStatus, { color: colors.muted }]}>{statusMessage}</Text>
+                <Text style={[styles.heroModel, { color: LIGHT_CARD_FOREGROUND }]}>{device?.model ?? "Philips Sonicare for Kids"}</Text>
+                <Text style={[styles.heroStatus, { color: LIGHT_CARD_MUTED }]}>{statusMessage}</Text>
                 <View style={styles.badges}>
                   <View style={styles.protocolBadge}><Text style={styles.protocolText}>HX63xx · GATT aperto</Text></View>
                   {device?.battery !== undefined ? <View style={styles.batteryBadge}><Text style={styles.batteryText}>{device.battery}%</Text></View> : null}
@@ -167,9 +170,9 @@ export default function DeviceScreen() {
                     <MaterialIcons name="science" size={25} color="#FFFFFF" />
                   </View>
                   <View style={styles.demoCopy}>
-                    <Text style={[styles.demoEyebrow, { color: demoMode ? "#9A7200" : colors.primary }]}>LABORATORIO SENZA SPAZZOLINO</Text>
-                    <Text style={[styles.demoTitle, { color: colors.foreground }]}>Modalità demo</Text>
-                    <Text style={[styles.demoText, { color: colors.muted }]}>
+                    <Text style={[styles.demoEyebrow, { color: demoMode ? "#765600" : "#2457D6" }]}>LABORATORIO SENZA SPAZZOLINO</Text>
+                    <Text style={[styles.demoTitle, { color: LIGHT_CARD_FOREGROUND }]}>Modalità demo</Text>
+                    <Text style={[styles.demoText, { color: LIGHT_CARD_MUTED }]}>
                       {demoMode
                         ? `${demoSessionCount} sessioni simulate · i dati reali restano intatti`
                         : "Prova evoluzioni, uova, missioni e dashboard senza toccare lo storico reale."}
@@ -197,19 +200,19 @@ export default function DeviceScreen() {
                 <View style={styles.demoActions}>
                   <Pressable accessibilityRole="button" accessibilityLabel="Registra una sessione demo del mattino" onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
+                    <Text style={[styles.demoActionText, { color: LIGHT_CARD_FOREGROUND }]}>Mattina</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel="Registra una sessione demo della sera" onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
+                    <Text style={[styles.demoActionText, { color: LIGHT_CARD_FOREGROUND }]}>Sera</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel="Genera una settimana di dati demo" onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
+                    <Text style={[styles.demoActionText, { color: LIGHT_CARD_FOREGROUND }]}>7 giorni</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel="Azzera dati demo" onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
                     <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
+                    <Text style={[styles.demoActionText, { color: LIGHT_CARD_FOREGROUND }]}>Azzera</Text>
                   </Pressable>
                 </View>
               ) : null}

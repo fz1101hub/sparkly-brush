@@ -58,7 +58,6 @@ export function SessionRewardModal() {
         testID="session-reward-modal"
         role="dialog"
         accessibilityViewIsModal={Platform.OS !== "web"}
-        aria-modal
         accessibilityLabel={reward.completed ? "Sessione completata" : "Sessione interrotta"}
         style={styles.backdrop}
       >
