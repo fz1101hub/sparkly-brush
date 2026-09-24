@@ -6,6 +6,7 @@ export async function exportHardwareValidationReport(
   content: string,
 ): Promise<void> {
   const file = new File(Paths.cache, fileName);
+  let handedToShareSheet = false;
   try {
     file.create({ overwrite: true, intermediates: true });
     file.write(content);
@@ -17,7 +18,8 @@ export async function exportHardwareValidationReport(
       mimeType: "text/markdown",
       UTI: "net.daringfireball.markdown",
     });
+    handedToShareSheet = true;
   } finally {
-    if (file.exists) file.delete();
+    if (!handedToShareSheet && file.exists) file.delete();
   }
 }

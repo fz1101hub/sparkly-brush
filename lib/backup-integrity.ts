@@ -20,6 +20,28 @@ export type PersistedRewardLedgerEntry = {
   createdAt: number;
 };
 
+function assertValidPersistedLedgerEntry(entry: PersistedRewardLedgerEntry): void {
+  if (
+    typeof entry.id !== "string"
+    || entry.id.length === 0
+    || entry.id.length > 1_024
+    || typeof entry.sessionId !== "string"
+    || entry.sessionId.length === 0
+    || entry.sessionId.length > 512
+    || !["session", "daily-missions", "achievements"].includes(entry.kind)
+    || !Number.isSafeInteger(entry.coins)
+    || entry.coins < 0
+    || !Number.isSafeInteger(entry.xp)
+    || entry.xp < 0
+    || !Number.isSafeInteger(entry.createdAt)
+    || entry.createdAt < 0
+    || !Array.isArray(entry.details)
+    || !entry.details.every((detail) => typeof detail === "string")
+  ) {
+    throw new Error("Il reward ledger del backup contiene valori non validi");
+  }
+}
+
 function derivedProgressSnapshot(progress: LifetimeProgress) {
   return {
     version: progress.version,
@@ -81,6 +103,68 @@ type ActiveSessionValidation = {
   seenStable: Set<string>;
 };
 
+const FINITE_PROGRESS_FIELDS = [
+  "attemptedSessions",
+  "completedSessions",
+  "totalBrushingSeconds",
+  "rewardedBrushingSeconds",
+  "xp",
+  "dailyBonusCoins",
+  "perfectDays",
+  "currentStreakDays",
+  "longestStreakDays",
+  "activeDay",
+] as const satisfies readonly (keyof LifetimeProgress)[];
+
+function assertFiniteSession(session: BrushSession): void {
+  if (
+    typeof session.id !== "string"
+    || session.id.length === 0
+    || !Number.isFinite(session.startedAt)
+    || !Number.isSafeInteger(session.startedAt)
+    || session.startedAt < 0
+    || !Number.isFinite(session.durationSeconds)
+    || !Number.isSafeInteger(session.durationSeconds)
+    || session.durationSeconds < 0
+    || !Number.isFinite(session.targetSeconds)
+    || !Number.isSafeInteger(session.targetSeconds)
+    || session.targetSeconds <= 0
+    || typeof session.completed !== "boolean"
+    || !["manual", "device", "demo"].includes(session.source)
+    || (session.deviceSessionId !== undefined && (
+      !Number.isSafeInteger(session.deviceSessionId)
+      || session.deviceSessionId < 0
+      || session.deviceSessionId > 65_535
+    ))
+  ) {
+    throw new Error("La sessione del backup contiene valori numerici o campi non validi");
+  }
+}
+
+function assertFiniteProgress(progress: LifetimeProgress): void {
+  if (FINITE_PROGRESS_FIELDS.some((field) => !Number.isFinite(progress[field]))) {
+    throw new Error("Gli aggregati lifetime del backup contengono valori non finiti");
+  }
+}
+
+export function progressForPortableBackup(
+  sourceProgress: LifetimeProgress,
+  replayedProgress: LifetimeProgress,
+  historyComplete: boolean,
+): LifetimeProgress {
+  const accounting = historyComplete ? replayedProgress : sourceProgress;
+  return {
+    ...accounting,
+    itemCounts: { ...accounting.itemCounts },
+    deviceCursors: Object.fromEntries(
+      Object.entries(sourceProgress.deviceCursors).map(([key, cursor]) => [key, { ...cursor }]),
+    ),
+    pendingDeviceFallbacks: Object.fromEntries(
+      Object.entries(sourceProgress.pendingDeviceFallbacks).map(([key, fallback]) => [key, { ...fallback }]),
+    ),
+  };
+}
+
 /**
  * Incrementally verifies a backup while keeping only one session and its small
  * expected reward set in memory. Callers may therefore stream an unlimited
@@ -89,6 +173,7 @@ type ActiveSessionValidation = {
 export class BackupSemanticValidator {
   private replayedProgress = createEmptyLifetimeProgress();
   private sessionCount = 0;
+  private readonly seenSessionIds = new Set<string>();
   private active: ActiveSessionValidation | null = null;
   private dailyCoins = 0;
   private achievementCoins = 0;
@@ -100,6 +185,11 @@ export class BackupSemanticValidator {
 
   beginSession(session: BrushSession): void {
     this.endActiveSession();
+    assertFiniteSession(session);
+    if (this.seenSessionIds.has(session.id)) {
+      throw new Error("Il backup contiene identificativi sessione duplicati");
+    }
+    this.seenSessionIds.add(session.id);
     const before = this.replayedProgress;
     const after = applySessionToLifetime(before, session);
     const expectedStable = new Map<string, PersistedRewardLedgerEntry>();
@@ -120,6 +210,7 @@ export class BackupSemanticValidator {
   }
 
   addLedgerEntry(entry: PersistedRewardLedgerEntry): void {
+    assertValidPersistedLedgerEntry(entry);
     const active = this.active;
     if (!active || entry.sessionId !== active.session.id) {
       throw new Error("Il reward ledger del backup non è coerente con le sessioni");
@@ -170,6 +261,8 @@ export class BackupSemanticValidator {
 
   finish(progress: LifetimeProgress): void {
     this.endActiveSession();
+    assertFiniteProgress(this.replayedProgress);
+    assertFiniteProgress(progress);
     if (
       this.historyComplete
       && JSON.stringify(derivedProgressSnapshot(this.replayedProgress))

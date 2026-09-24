@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   saveDemo: vi.fn(),
   saveSession: vi.fn(),
   saveLastDevice: vi.fn(),
+  loadPendingManual: vi.fn(),
+  savePendingManual: vi.fn(),
+  clearPendingManual: vi.fn(),
 }));
 
 vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
@@ -42,6 +45,11 @@ vi.mock("@/lib/brush-storage", async () => {
     saveSessionWithLifetime: mocks.saveSession,
   };
 });
+vi.mock("@/lib/manual-session-storage", () => ({
+  loadPendingManualSession: mocks.loadPendingManual,
+  savePendingManualSession: mocks.savePendingManual,
+  clearPendingManualSession: mocks.clearPendingManual,
+}));
 
 import { BrushProvider, useBrush } from "@/contexts/brush-context";
 
@@ -76,6 +84,9 @@ describe("BrushProvider BLE integration", () => {
     mocks.saveDemo.mockReset().mockResolvedValue([]);
     mocks.saveSession.mockReset().mockResolvedValue({ recentHistory: [], lifetimeProgress: empty, event: null });
     mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
+    mocks.loadPendingManual.mockReset().mockResolvedValue(null);
+    mocks.savePendingManual.mockReset().mockResolvedValue(undefined);
+    mocks.clearPendingManual.mockReset().mockResolvedValue(undefined);
   });
 
   it("salva una sessione terminata dal manico e aggiorna storico e progressione", async () => {
@@ -355,6 +366,71 @@ describe("BrushProvider BLE integration", () => {
     vi.useRealTimers();
   });
 
+  it("attende il teardown BLE prima del flush e non duplica un fallback già salvabile", async () => {
+    vi.useFakeTimers();
+    const endedAt = new Date(2026, 8, 23, 9, 50).getTime();
+    vi.setSystemTime(endedAt);
+    const holder: { client?: FakeClient } = {};
+    const factory = (events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    };
+    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => ({
+      recentHistory: [session],
+      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
+      event: null,
+    }));
+
+    let disconnect: () => Promise<void> = async () => undefined;
+    function Probe() {
+      disconnect = useBrush().disconnect;
+      return null;
+    }
+
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = holder.client!;
+    client.disconnect.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 0,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onDevice(null);
+    });
+
+    act(() => {
+      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 30,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+    });
+    let operation!: Promise<void>;
+    await act(async () => {
+      operation = disconnect();
+      await vi.advanceTimersByTimeAsync(1_000);
+      await operation;
+    });
+
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
   it("serializza due stop ravvicinati senza sovrascrivere la prima sessione pendente", async () => {
     vi.useFakeTimers();
     const firstEndedAt = new Date(2026, 8, 23, 10).getTime();
@@ -548,14 +624,62 @@ describe("BrushProvider BLE integration", () => {
     expect(pending).toBe(true);
     expect(error).toBe("storage non disponibile");
     expect(history).toEqual([]);
+    expect(mocks.savePendingManual).toHaveBeenCalledTimes(1);
+    expect(mocks.clearPendingManual).not.toHaveBeenCalled();
 
     await act(async () => retryManualSession());
     expect(mocks.saveSession).toHaveBeenCalledTimes(2);
     expect(pending).toBe(false);
     expect(error).toBeNull();
     expect(history).toHaveLength(1);
+    expect(mocks.clearPendingManual).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
     vi.useRealTimers();
+  });
+
+  it("ripristina al mount una sessione manuale rimasta da salvare", async () => {
+    const pendingSession: BrushSession = {
+      id: "manual-recovered",
+      startedAt: new Date(2026, 8, 23, 11, 45).getTime(),
+      rewardPolicy: "completed-only",
+      durationSeconds: 45,
+      targetSeconds: 120,
+      completed: false,
+      source: "manual",
+    };
+    mocks.loadPendingManual.mockResolvedValue(pendingSession);
+    mocks.saveSession.mockImplementation(async (session: BrushSession) => ({
+      recentHistory: [session],
+      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
+      event: null,
+    }));
+
+    let retryManualSession: () => Promise<void> = async () => undefined;
+    let pending = false;
+    let error: string | null = null;
+    function Probe() {
+      const value = useBrush();
+      retryManualSession = value.retryManualSession;
+      pending = value.hasPendingManualSession;
+      error = value.manualSaveError;
+      return null;
+    }
+
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    expect(pending).toBe(true);
+    expect(error).toContain("sessione precedente");
+
+    await act(async () => retryManualSession());
+    expect(mocks.saveSession).toHaveBeenCalledWith(pendingSession);
+    expect(mocks.clearPendingManual).toHaveBeenCalledTimes(1);
+    expect(pending).toBe(false);
+    await act(async () => renderer.unmount());
   });
 
   it("conserva e riprova una sessione demo completata automaticamente", async () => {

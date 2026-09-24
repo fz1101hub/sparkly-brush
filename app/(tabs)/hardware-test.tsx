@@ -81,6 +81,7 @@ export default function HardwareTestScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const saveRevisionRef = useRef(0);
+  const persistenceEnabledRef = useRef(false);
 
   const persistRun = useCallback((next: HardwareValidationRun) => {
     const revision = saveRevisionRef.current + 1;
@@ -103,7 +104,10 @@ export default function HardwareTestScreen() {
     void loadHardwareValidationRun()
       .then(async (stored) => {
         const initial = stored ?? newRun();
-        if (active) setRun(initial);
+        if (active) {
+          persistenceEnabledRef.current = true;
+          setRun(initial);
+        }
       })
       .catch((caught) => {
         if (!active) return;
@@ -115,13 +119,14 @@ export default function HardwareTestScreen() {
   }, []);
 
   useEffect(() => {
-    if (run) persistRun(run);
+    if (run && persistenceEnabledRef.current) persistRun(run);
   }, [persistRun, run]);
 
   const summary = useMemo(() => run ? hardwareValidationSummary(run) : null, [run]);
   const progress = summary ? summary.completed / summary.total : 0;
 
   const updateResult = (test: HardwareTestCase, patch: Parameters<typeof updateHardwareTestResult>[2]) => {
+    persistenceEnabledRef.current = true;
     setMessage(null);
     setError(null);
     setRun((current) => current
@@ -161,6 +166,7 @@ export default function HardwareTestScreen() {
 
   const resetRun = () => {
     const performReset = () => {
+      persistenceEnabledRef.current = true;
       const next = newRun();
       setRun(next);
       setMessage(null);

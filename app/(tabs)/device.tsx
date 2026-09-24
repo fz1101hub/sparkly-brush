@@ -37,7 +37,7 @@ export default function DeviceScreen() {
   const confirmForgetToothbrush = () => {
     Alert.alert(
       "Dimenticare questo manico?",
-      "Usalo dopo un reset di fabbrica o prima di collegare un manico sostitutivo. Storico, Brushling, XP, monete e backup non verranno cancellati.",
+      "Usalo solo dopo il reset di fabbrica di questo stesso manico. Se il contatore non risulta azzerato, l’app rifiuterà lo storico per evitare doppi accrediti. Storico, Brushling, XP, monete e backup non verranno cancellati.",
       [
         { text: "Annulla", style: "cancel" },
         {
@@ -129,7 +129,7 @@ export default function DeviceScreen() {
 
             <Pressable
               accessibilityRole="button"
-              accessibilityHint="Conserva tutti i progressi e prepara una nuova generazione del contatore Bluetooth"
+              accessibilityHint="Da usare solo dopo il reset di fabbrica dello stesso manico; conserva tutti i progressi"
               disabled={!connected || demoMode || isForgettingToothbrush}
               onPress={confirmForgetToothbrush}
               style={({ pressed }) => [
@@ -144,7 +144,7 @@ export default function DeviceScreen() {
                 <Text style={[styles.forgetTitle, { color: colors.foreground }]}>
                   {isForgettingToothbrush ? "Rimozione in corso…" : "Dimentica manico resettato"}
                 </Text>
-                <Text style={[styles.forgetText, { color: colors.muted }]}>Non elimina storico, progressi o backup.</Text>
+                <Text style={[styles.forgetText, { color: colors.muted }]}>Solo dopo il reset di fabbrica; non elimina storico, progressi o backup.</Text>
               </View>
             </Pressable>
 

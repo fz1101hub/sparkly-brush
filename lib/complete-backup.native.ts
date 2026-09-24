@@ -33,6 +33,7 @@ export async function exportAndShareCompleteBackup(
   manifest: BrushlingsBackupManifest,
 ): Promise<{ sessionCount: number; size: number }> {
   const file = await createCompleteBackupDatabase(JSON.stringify(manifest), fileName(manifest));
+  let handedToShareSheet = false;
   try {
     if (!(await Sharing.isAvailableAsync())) {
       throw new Error("La condivisione file non è disponibile su questo dispositivo");
@@ -42,10 +43,11 @@ export async function exportAndShareCompleteBackup(
       mimeType: "application/vnd.sqlite3",
       UTI: "public.database",
     });
+    handedToShareSheet = true;
     return { sessionCount: file.sessionCount, size: file.size };
   } finally {
     const temporary = new File(file.uri);
-    if (temporary.exists) temporary.delete();
+    if (!handedToShareSheet && temporary.exists) temporary.delete();
   }
 }
 

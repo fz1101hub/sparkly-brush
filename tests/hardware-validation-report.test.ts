@@ -45,7 +45,7 @@ describe("hardware validation report export", () => {
     vi.unstubAllGlobals();
   });
 
-  it("crea, condivide e cancella il file temporaneo nativo", async () => {
+  it("crea, condivide e mantiene il file disponibile allo share sheet nativo", async () => {
     await exportNative("report.md", "# report");
 
     expect(native.created).toHaveBeenCalledWith({ overwrite: true, intermediates: true });
@@ -53,7 +53,7 @@ describe("hardware validation report export", () => {
     expect(native.shared).toHaveBeenCalledWith("file:///cache/report.md", expect.objectContaining({
       mimeType: "text/markdown",
     }));
-    expect(native.deleted).toHaveBeenCalledWith("file:///cache/report.md");
+    expect(native.deleted).not.toHaveBeenCalled();
   });
 
   it("cancella il file nativo anche quando la condivisione non è disponibile", async () => {

@@ -20,6 +20,7 @@ import {
   reconstructSessionStart,
   uint32LE,
 } from "@/lib/sonicare-codec";
+import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
 const SCAN_TIMEOUT_MS = 14_000;
@@ -422,7 +423,7 @@ export class NativeSonicareClient implements SonicareClient {
     sessionCount: number | null,
     cursor?: DeviceSyncCursor | null,
   ): number[] {
-    if (!cursor || cursor.acceptNextSession) {
+    if (!cursor) {
       if (sessionCount === 0) return [];
       if (sessionCount === null) {
         throw new Error("Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse");
@@ -435,6 +436,26 @@ export class NativeSonicareClient implements SonicareClient {
         { length: available },
         (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
       );
+    }
+
+    if (cursor.acceptNextSession) {
+      if (sessionCount === 0) return [];
+      if (sessionCount === null) {
+        throw new Error("Conteggio storico BLE non disponibile: il reset non può essere verificato");
+      }
+      const available = sessionCount;
+      if (available > MAX_SYNC_BATCH) {
+        throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+      }
+      const sessionIds = Array.from(
+        { length: available },
+        (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
+      );
+      assertSafePostResetSessions({
+        resetBaselineSessionId: cursor.resetBaselineSessionId,
+        sessionIds,
+      });
+      return sessionIds;
     }
 
     if (latest === cursor.lastSessionId) return [];

@@ -27,6 +27,17 @@ describe("device identity privacy", () => {
     expect(sanitized).not.toContain("AA");
   });
 
+  it("elimina MAC e UUID anche dagli ID sessione legacy non prefissati", () => {
+    for (const raw of [
+      "session-AA:BB:CC:DD:EE:FF-42",
+      "session-123e4567-e89b-12d3-a456-426614174000-42",
+    ]) {
+      const sanitized = sanitizeDeviceSessionId(raw);
+      expect(sanitized).not.toBe(raw);
+      expect(containsLikelyRawDeviceId(sanitized)).toBe(false);
+    }
+  });
+
   it("migra cursori e fallback legacy senza conservare la chiave MAC", () => {
     const mac = "AA:BB:CC:DD:EE:FF";
     const base = createEmptyLifetimeProgress();
@@ -52,6 +63,7 @@ describe("device identity privacy", () => {
 
     expect(normalized).not.toBeNull();
     expect(Object.keys(normalized?.deviceCursors ?? {})).toEqual([deviceAlias(mac)]);
-    expect(Object.keys(normalized?.pendingDeviceFallbacks ?? {})).toEqual([deviceAlias(mac)]);
+    expect(Object.values(normalized?.pendingDeviceFallbacks ?? {})).toHaveLength(1);
+    expect(Object.values(normalized?.pendingDeviceFallbacks ?? {})[0]?.deviceKey).toBe(deviceAlias(mac));
   });
 });

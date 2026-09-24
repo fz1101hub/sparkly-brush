@@ -1,6 +1,8 @@
-# Fonti esterne verificate per l’audit del 23 settembre 2026
+# Fonti esterne verificate per gli audit del 23–24 settembre 2026
 
 Queste note raccolgono le fonti esterne usate per verificare i rilievi degli audit indipendenti. Servono come base documentale per il rapporto finale.
+
+- Audit Claude Ultracode sul commit `a7769e3`: branch privato `claude/repository-audit-pdq4ds`, report `AUDIT-2026-09-23-post-remediation.md` nel repository https://github.com/fz1101hub/sparkly-brush.
 
 ## CI e build native
 
@@ -24,7 +26,7 @@ Queste note raccolgono le fonti esterne usate per verificare i rilievi degli aud
 
 ## Advisory dipendenza image-size
 
-- GitHub Advisory `GHSA-w3rx-r6r6-pgpr`: https://github.com/advisories/GHSA-w3rx-r6r6-pgpr. Denial of service nel parser ICNS di `image-size`; la pagina GitHub, aggiornata il 7 agosto 2026 e ricontrollata il 23 settembre 2026, indica versioni affette `<=2.0.2` e **nessuna versione corretta disponibile**.
-- GitHub Advisory `GHSA-5p2g-fcmc-qvqq`: https://github.com/advisories/GHSA-5p2g-fcmc-qvqq. Denial of service nei parser JXL/HEIF di `image-size`; la pagina GitHub, aggiornata il 7 agosto 2026 e ricontrollata il 23 settembre 2026, indica versioni affette `<=2.0.2` e **nessuna versione corretta disponibile**.
+- GitHub Advisory `GHSA-w3rx-r6r6-pgpr`: https://github.com/advisories/GHSA-w3rx-r6r6-pgpr. Denial of service nel parser ICNS di `image-size`; la pagina corrente indica versioni affette `<=2.0.2` e versione corretta `2.0.3`.
+- GitHub Advisory `GHSA-5p2g-fcmc-qvqq`: https://github.com/advisories/GHSA-5p2g-fcmc-qvqq. Denial of service nei parser JXL/HEIF di `image-size`; la pagina corrente indica versioni affette `<=2.0.2` e versione corretta `2.0.3`.
 
-Il pacchetto arriva transitivamente da Metro/Expo ed è usato durante il tooling di build, non dal runtime mobile distribuito. `pnpm audit` può mostrare un campo macchina `patched_versions >=2.0.3`, ma questo contraddice le due pagine GitHub Reviewed, che dichiarano ancora “Patched versions: None”; non viene quindi applicato un override major non pubblicato o non supportato. La CI mantiene il gate bloccante sulle vulnerabilità `critical`; i due advisory `high` devono restare documentati e monitorati fino a una correzione upstream compatibile.
+Il pacchetto arriva transitivamente da Metro/Expo ed è usato durante il tooling di build, non dal runtime mobile distribuito. Un override diretto a `image-size@2.0.3` è stato provato il 24 settembre 2026: Metro 0.83 fallisce l’export perché usa l’API CommonJS della major 1. Il lockfile è stato ripristinato alla versione compatibile 1.2.1. La CI mantiene il gate bloccante sulle vulnerabilità `critical`; i due advisory `high` devono restare documentati e monitorati fino a una release Expo/Metro compatibile.

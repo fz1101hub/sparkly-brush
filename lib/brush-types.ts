@@ -58,6 +58,7 @@ export interface StoredDeviceSession {
 export interface DeviceSyncCursor {
   lastSessionId: number;
   acceptNextSession: boolean;
+  resetBaselineSessionId?: number | null;
 }
 
 export interface BleClientEvents {

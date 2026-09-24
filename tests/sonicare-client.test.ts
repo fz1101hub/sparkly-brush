@@ -362,6 +362,27 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 
+  it("rifiuta lo storico di un manico non azzerato dopo Dimentica manico", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 101,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 100: 800, 101: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince({
+      lastSessionId: 101,
+      acceptNextSession: true,
+      resetBaselineSessionId: 101,
+    })).rejects.toThrow("reset di fabbrica");
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
   it.each([
     ["vuoto", ""],
     ["overlong", "AgAA"],

@@ -77,6 +77,12 @@ describe("hardware validation assistant", () => {
 
   it("non altera stati diagnostici ordinari privi di identificatori", () => {
     const messages = [
+      "Bluetooth: PoweredOn",
+      "Bluetooth: PoweredOff",
+      "Bluetooth: Unauthorized",
+      "Bluetooth: Resetting",
+      "Connessione Bluetooth terminata",
+      "Connessione Bluetooth annullata",
       "Nessuna peripheral trovata durante la scansione",
       "Il peripheral è disconnesso",
       "MAC address non disponibile",

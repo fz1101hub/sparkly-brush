@@ -78,14 +78,17 @@ export async function loadCustomizationState(): Promise<CustomizationState> {
     const parsed = JSON.parse(raw) as Partial<CustomizationState>;
     const ownedIds = validOwnedIds(parsed.ownedIds);
     const habitat = validEquipped(parsed.equippedHabitatId, ownedIds, "habitat") ?? "bubble-room";
-
-    return {
+    const normalized: CustomizationState = {
       ownedIds,
       purchaseLedger: normalizePurchaseLedger(parsed.purchaseLedger, ownedIds),
       equippedHabitatId: habitat,
       equippedAccessoryId: validEquipped(parsed.equippedAccessoryId, ownedIds, "accessory"),
       equippedDecorId: validEquipped(parsed.equippedDecorId, ownedIds, "decor"),
     };
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      await AsyncStorage.setItem(CUSTOMIZATION_KEY, JSON.stringify(normalized)).catch(() => undefined);
+    }
+    return normalized;
   } catch {
     return DEFAULT_CUSTOMIZATION_STATE;
   }

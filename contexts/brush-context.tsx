@@ -45,6 +45,11 @@ import {
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
+import {
+  clearPendingManualSession,
+  loadPendingManualSession,
+  savePendingManualSession,
+} from "@/lib/manual-session-storage";
 
 export type DemoSessionPeriod = "morning" | "evening" | "now";
 
@@ -192,16 +197,27 @@ export function BrushProvider({
     setRealHistory(next.recentHistory);
     setLifetimeProgress(next.lifetimeProgress);
     if (next.event) setProgressEvent(next.event);
+    return next;
   }, []);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([loadHistoryBundle(), loadDemoHistory(), loadDemoMode()])
-      .then(([savedHistory, savedDemoHistory, savedDemoMode]) => {
+    void Promise.all([
+      loadHistoryBundle(),
+      loadDemoHistory(),
+      loadDemoMode(),
+      loadPendingManualSession(),
+    ])
+      .then(([savedHistory, savedDemoHistory, savedDemoMode, savedPendingManualSession]) => {
         setRealHistory(savedHistory.recentHistory);
         setLifetimeProgress(savedHistory.lifetimeProgress);
         setDemoHistory(savedDemoHistory);
         setDemoModeState(savedDemoMode);
+        if (savedPendingManualSession) {
+          setPendingManualSession(savedPendingManualSession);
+          setManualSaveError("Una sessione precedente deve ancora essere salvata");
+          manualSavedRef.current = false;
+        }
       })
       .finally(() => setHistoryReady(true));
 
@@ -392,6 +408,7 @@ export function BrushProvider({
     const sessionIsDemo = session.source === "demo";
     const operation = (async () => {
       try {
+        await savePendingManualSession(session);
         if (sessionIsDemo) {
           const next = await saveDemoSession(session);
           setDemoHistory(next);
@@ -401,6 +418,7 @@ export function BrushProvider({
           setLifetimeProgress(next.lifetimeProgress);
           if (next.event) setProgressEvent(next.event);
         }
+        await clearPendingManualSession();
         setPendingManualSession(null);
         setManualSaveError(null);
         setManualElapsed(0);
@@ -472,9 +490,8 @@ export function BrushProvider({
   }, [appendLog, demoMode]);
 
   const disconnect = useCallback(async () => {
-    const closeConnection = clientRef.current?.disconnect() ?? Promise.resolve();
-    const savePending = flushPendingBleSyncRef.current?.() ?? Promise.resolve();
-    await Promise.all([closeConnection, savePending]);
+    await (clientRef.current?.disconnect() ?? Promise.resolve());
+    await (flushPendingBleSyncRef.current?.() ?? Promise.resolve());
   }, []);
 
   const forgetToothbrush = useCallback(async () => {
@@ -522,8 +539,13 @@ export function BrushProvider({
       const cursor = lifetimeProgressRef.current.deviceCursors[deviceKey(deviceId)] ?? null;
       const stored = await clientRef.current?.syncStoredSessionsSince(cursor);
       if (stored?.length) {
-        await persistDeviceSessions(stored, deviceId);
-        appendLog("success", `${stored.length} sessioni sincronizzate`);
+        const persisted = await persistDeviceSessions(stored, deviceId);
+        appendLog(
+          persisted.importedCount > 0 ? "success" : "warning",
+          persisted.importedCount > 0
+            ? `${persisted.importedCount} sessioni sincronizzate`
+            : "Nessuna nuova sessione disponibile",
+        );
       } else {
         appendLog("warning", "Nessuna nuova sessione disponibile");
       }
@@ -579,9 +601,8 @@ export function BrushProvider({
 
   const setDemoMode = useCallback(async (enabled: boolean) => {
     if (enabled) {
-      const closeConnection = clientRef.current?.disconnect() ?? Promise.resolve();
-      const savePending = flushPendingBleSyncRef.current?.() ?? Promise.resolve();
-      await Promise.all([closeConnection, savePending]);
+      await (clientRef.current?.disconnect() ?? Promise.resolve());
+      await (flushPendingBleSyncRef.current?.() ?? Promise.resolve());
     }
     setDemoModeState(enabled);
     await saveDemoMode(enabled);

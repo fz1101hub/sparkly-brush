@@ -280,7 +280,7 @@ export function redactDiagnosticMessage(message: string): string {
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[device-id]")
     .replace(/\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b/gi, "[device-id]")
     .replace(
-      /\b(?:device[\s_-]?(?:id|identifier)|peripheral(?:[\s_-]?(?:id|identifier))?|id\s+dispositivo|serial(?:\s+number)?|mac(?:\s+address)?|bluetooth(?:\s+address)?)(?:\s*[:=]\s*|\s+)([^\s,;]+)/gi,
+      /\b(?:device[\s_-]?(?:id|identifier)|peripheral(?:[\s_-]?(?:id|identifier))?|id\s+dispositivo|serial(?:\s+number)?|mac(?:\s+address)?|bluetooth\s+address)(?:\s*[:=]\s*|\s+)([^\s,;]+)/gi,
       (match, value: string) => {
         const normalized = value
           .replace(/^[\[({"']+|[\])}"'.!?]+$/g, "")
