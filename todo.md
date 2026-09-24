@@ -36,7 +36,7 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 
 ## GitHub Actions
 
-L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. Anche il run della PR #7 `35938089366` ha chiuso `verify` e `native-android` in circa tre secondi con zero step. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
+L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. Anche il run Expo 57 della PR #7 `35942257161`, sul commit `dbbac49`, ha chiuso `verify` e `native-android` con zero step; `native-ios` è stato correttamente saltato. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
 
 ## Supply chain
 

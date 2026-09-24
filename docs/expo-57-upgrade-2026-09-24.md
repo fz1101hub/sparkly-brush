@@ -53,7 +53,9 @@ La build iOS nativa non è stata eseguita nel sandbox Linux. Resta un gate separ
 
 ## Limiti rimasti
 
-L’upgrade software è completo. Restano invariati i limiti di release già documentati: CI GitHub effettivamente verde, build iOS su runner macOS, collaudo fisico con HX6322/04 su iPhone e Android, privacy policy, dichiarazioni store e decisione Kids/Families. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
+L’upgrade software è completo. Il run GitHub Actions `35942257161`, creato sul commit Expo 57 `dbbac49`, ha però chiuso `verify` e `native-android` in errore con `steps: []`; `native-ios` è stato correttamente saltato sul pull request. Non è stato quindi eseguito alcun comando del workflow e la PR resta aperta senza merge.
+
+Restano invariati gli altri limiti di release già documentati: CI GitHub effettivamente verde, build iOS su runner macOS, collaudo fisico con HX6322/04 su iPhone e Android, privacy policy, dichiarazioni store e decisione Kids/Families. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
 
 La suite usa ancora `react-test-renderer`, che React 19.2 dichiara deprecato. I test passano, ma producono messaggi informativi; la futura migrazione a una libreria di test mantenuta è un intervento separato e non blocca Expo 57.
 
@@ -64,3 +66,4 @@ La suite usa ancora `react-test-renderer`, che React 19.2 dichiara deprecato. I 
 [3]: https://expo.dev/changelog/sdk-56 "Expo SDK 56 release notes"
 [4]: https://expo.dev/changelog/sdk-57 "Expo SDK 57 release notes"
 [5]: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md "GitHub Actions macOS 26 runner image inventory"
+[6]: https://github.com/fz1101hub/sparkly-brush/actions/runs/35942257161 "Sparkly Brush Expo 57 GitHub Actions run"
