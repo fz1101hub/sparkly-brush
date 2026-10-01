@@ -20,30 +20,55 @@ tags:
     id: starter-chooser
 - tapOn:
     id: starter-bloopi
+- scrollUntilVisible:
+    element:
+      id: starter-confirm
+    direction: DOWN
+    timeout: 15000
 - tapOn:
     id: starter-confirm
 - assertVisible:
     id: today-screen
+- scrollUntilVisible:
+    element:
+      id: manual-start-stop
+    direction: DOWN
 - tapOn:
     id: manual-start-stop
 - extendedWaitUntil:
     visible:
       id: session-reward-modal
     timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: session-reward-dismiss
+    direction: DOWN
 - tapOn:
     id: session-reward-dismiss
 - tapOn:
     id: tab-history
 - assertVisible:
     id: history-screen
+- scrollUntilVisible:
+    element:
+      id: history-session-0
+    direction: DOWN
 - assertVisible:
     id: history-session-0
 - tapOn:
     id: tab-device
+- scrollUntilVisible:
+    element:
+      id: device-backup
+    direction: DOWN
 - tapOn:
     id: device-backup
 - assertVisible:
     id: backup-screen
+- scrollUntilVisible:
+    element:
+      id: backup-export
+    direction: DOWN
 - assertVisible:
     id: backup-export
 - takeScreenshot: core-journey-complete

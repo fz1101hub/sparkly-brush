@@ -3,11 +3,19 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { STARTER_IDS } from "@/lib/brushlings";
-import { HARDWARE_TEST_CASES, type HardwareTestStatus } from "@/lib/hardware-validation";
+import {
+  HARDWARE_TEST_CASES,
+  type HardwareTestStatus,
+} from "@/lib/hardware-validation";
 
 const ROOT = process.cwd();
 const SOURCE_ROOTS = ["app", "components"];
-const HARDWARE_STATUSES: HardwareTestStatus[] = ["pending", "passed", "failed", "blocked"];
+const HARDWARE_STATUSES: HardwareTestStatus[] = [
+  "pending",
+  "passed",
+  "failed",
+  "blocked",
+];
 
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -22,7 +30,9 @@ function declaredTestIds(): Set<string> {
   for (const root of SOURCE_ROOTS) {
     for (const path of sourceFiles(join(ROOT, root))) {
       const source = readFileSync(path, "utf8");
-      for (const match of source.matchAll(/(?:testID|tabBarButtonTestID)\s*[:=]\s*["']([^"']+)["']/g)) {
+      for (const match of source.matchAll(
+        /(?:testID|tabBarButtonTestID)\s*[:=]\s*["']([^"']+)["']/g,
+      )) {
         ids.add(match[1]);
       }
     }
@@ -35,7 +45,11 @@ function declaredTestIds(): Set<string> {
       ids.add(`hardware-status-${test.id}-${status}-selected`);
     }
   }
-  for (let completed = 0; completed <= HARDWARE_TEST_CASES.length; completed += 1) {
+  for (
+    let completed = 0;
+    completed <= HARDWARE_TEST_CASES.length;
+    completed += 1
+  ) {
     ids.add(`hardware-checklist-saved-${completed}`);
   }
   ids.add("hardware-checklist-saving");
@@ -49,7 +63,9 @@ function referencedFlowIds(): string[] {
     .filter((name) => name.endsWith(".yaml"))
     .flatMap((name) => {
       const source = readFileSync(join(flowDirectory, name), "utf8");
-      return [...source.matchAll(/^\s+id:\s*([^\s#]+)\s*$/gm)].map((match) => match[1]);
+      return [...source.matchAll(/^\s+id:\s*([^\s#]+)\s*$/gm)].map(
+        (match) => match[1],
+      );
     });
 }
 
@@ -58,5 +74,17 @@ describe("Maestro selector contract", () => {
     const declared = declaredTestIds();
     const missing = referencedFlowIds().filter((id) => !declared.has(id));
     expect(missing).toEqual([]);
+  });
+
+  it("scorre fino alla conferma starter prima del tap su schermi compatti", () => {
+    const flowDirectory = join(ROOT, ".maestro", "flows");
+    for (const name of readdirSync(flowDirectory).filter((entry) =>
+      entry.endsWith(".yaml"),
+    )) {
+      const source = readFileSync(join(flowDirectory, name), "utf8");
+      expect(source).toMatch(
+        /- scrollUntilVisible:\n\s+element:\n\s+id: starter-confirm\n\s+direction: DOWN\n\s+timeout: \d+\n- tapOn:\n\s+id: starter-confirm/,
+      );
+    }
   });
 });

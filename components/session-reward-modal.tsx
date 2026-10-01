@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { CelebrationBurst } from "@/components/celebration-burst";
@@ -57,7 +57,7 @@ export function SessionRewardModal() {
       onRequestClose={dismissReward}
       statusBarTranslucent
     >
-      <View
+      <ScrollView
         testID="session-reward-modal"
         role="dialog"
         accessibilityViewIsModal={Platform.OS !== "web"}
@@ -67,6 +67,8 @@ export function SessionRewardModal() {
             : "sessionReward.interruptedLabel",
         )}
         style={styles.backdrop}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         <View
           style={[
@@ -300,7 +302,7 @@ export function SessionRewardModal() {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
@@ -309,10 +311,9 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: "#07162ECC",
-    alignItems: "center",
-    justifyContent: "center",
     padding: 20,
   },
+  scrollContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 8 },
   card: {
     width: "100%",
     maxWidth: 420,

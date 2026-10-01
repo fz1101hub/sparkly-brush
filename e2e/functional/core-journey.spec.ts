@@ -39,6 +39,22 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByTestId("history-session-0")).toContainText("0:05");
   });
 
+  test("rende raggiungibile la chiusura della ricompensa su schermo compatto", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await completeFirstRun(page);
+    await page.getByTestId("manual-start-stop").click();
+
+    const reward = page.getByTestId("session-reward-modal");
+    await expect(reward).toBeVisible({ timeout: 15_000 });
+    const dismiss = page.getByTestId("session-reward-dismiss");
+    await dismiss.scrollIntoViewIfNeeded();
+    await expect(dismiss).toBeInViewport();
+    await dismiss.click();
+    await expect(reward).not.toBeVisible();
+  });
+
   test("conserva la checklist hardware e valida il fallback backup web", async ({
     page,
   }) => {
