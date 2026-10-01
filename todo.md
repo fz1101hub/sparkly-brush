@@ -26,7 +26,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 | 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 856 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
 | 22 | Audit Claude Opus 5.5 | Correzioni software verificate localmente, PR da pubblicare | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
-| 23 | Build/permessi APK sul candidato | Da eseguire | Prebuild iOS/Android e risorse localizzate verificati. Manca Android SDK nel sandbox: Gradle/merged manifest e prova restore dopo crash vanno eseguiti su Android reale/runner. |
+| 23 | Build/permessi APK sul candidato | Build CI superata; gate APK aggiunto | `assembleDebug` del commit `f1639fd` riuscito su GitHub Actions. Il nuovo step decodifica con `apkanalyzer` il manifest dell'APK e valida location scoped, Bluetooth e assenza del servizio audio; sei test del validatore sono verdi localmente. L'esito del gate va ancora verificato sul prossimo run; manca Android SDK nel sandbox. |
 
 ## Gate software già superati sul candidato
 
@@ -46,11 +46,12 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
 - prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
-- build Android nativa debug **Expo 57 superata sul checkpoint precedente** con SDK 36, JDK 17 e NDK 27.1; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una nuova compilazione nativa dell’esatto checkout multilingua.
+- build Android nativa debug **Expo 57.0.26 superata per `f1639fd` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale. Il nuovo gate APK dovrà essere verificato nel prossimo run;
+- sei test Python locali sul validatore fail-closed del manifest APK compilato: permessi location legacy con `maxSdkVersion ≤ 30`, flag BLE, servizio audio e input mancanti/malformati.
 
 ## GitHub Actions
 
-L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. I run della PR #7 continuano a chiudere `verify` e `native-android` con zero step; `native-ios` è correttamente riservato a release/manuale. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
+Il blocco storico zero-step è cessato: [Verify 36814653403](https://github.com/fz1101hub/sparkly-brush/actions/runs/36814653403) ha completato `verify` e `native-android` realmente e con esito verde sul commit `f1639fd`. `native-ios` e `e2e-android` sono stati **saltati per condizione**, non dichiarati testati. La PR resta aperta: prima del merge occorre anche il run verde del nuovo gate APK e la decisione sul collaudo fisico dell'issue #3.
 
 ## Supply chain
 
