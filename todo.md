@@ -22,11 +22,12 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
 | 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward, Playwright + axe su **34 stati UI** (anche due starter alternativi e reward reale chiaro/scuro); non sostituisce l'audit con screen reader. |
-| 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
+| 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; APK release E2E compilato in GitHub Actions. Il primo dispatch non ha installato l'emulatore per **ENOSPC sul runner**, quindi nessun flow è partito. Workflow aggiornato per liberare disco, ridurre l'AVD e abilitare KVM se disponibile; serve un nuovo dispatch. |
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 | 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 856 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
-| 22 | Audit Claude Opus 5.5 | Correzioni software verificate localmente, PR da pubblicare | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
-| 23 | Build/permessi APK sul candidato | Build CI superata; gate APK da rivalidare | `assembleDebug` riuscito su GitHub Actions. Nel run `36817159597` il gate APK ha fallito sulla stringa simbolica del flag `neverForLocation` senza esporre il valore grezzo; il parser ora accetta anche il valore numerico AOSP `0x00010000` e mostra le dichiarazioni reali se fallisce. Otto test del validatore sono verdi localmente; il prossimo run deve stabilire se il permesso reale è corretto. |
+| 22 | Audit Claude Opus 5.5 | Correzioni software pubblicate nella PR #7 | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
+| 23 | Build/permessi APK sul candidato | Completata in CI | `assembleDebug`, otto test parser e verifica del manifest dell'APK con `apkanalyzer` riusciti nel [run 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631). Il parser riconosce `neverForLocation` sia simbolico sia come bitmask AOSP `0x00010000`. |
+| 24 | Build iOS per simulatore | Completata in CI manuale | Prebuild, CocoaPods e `xcodebuild` riusciti nel [run 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) su macOS/Xcode; non è un test BLE su iPhone fisico. |
 
 ## Gate software già superati sul candidato
 
@@ -46,12 +47,13 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
 - prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
-- build Android nativa debug **Expo 57.0.26 superata per `f1639fd` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale. Il nuovo gate APK dovrà essere verificato nel prossimo run;
+- build Android nativa debug e controllo del manifest APK **Expo 57.0.26 superati per `1cb2ca7` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale;
+- build iOS per simulatore con Xcode riuscita nel dispatch `36821117795`; il test Maestro è fermo all'installazione della system image per ENOSPC, non ha eseguito alcun flow;
 - otto test Python locali sul validatore fail-closed del manifest APK compilato: permessi location legacy con `maxSdkVersion ≤ 30`, bitmask numerica/simbolica del flag BLE, servizio audio e input mancanti/malformati.
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36814653403](https://github.com/fz1101hub/sparkly-brush/actions/runs/36814653403) ha completato `verify` e `native-android` realmente e con esito verde sul commit `f1639fd`. `native-ios` e `e2e-android` sono stati **saltati per condizione**, non dichiarati testati. La PR resta aperta: prima del merge occorre anche il run verde del nuovo gate APK e la decisione sul collaudo fisico dell'issue #3.
+Il blocco storico zero-step è cessato: [Verify 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631) ha completato `verify` e `native-android` realmente e con esito verde sul commit `1cb2ca7`, incluso il gate APK. Il [dispatch 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) ha compilato iOS ma non ha avviato Maestro per ENOSPC; la mitigazione CI è da verificare. La PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
 
 ## Supply chain
 
@@ -59,4 +61,4 @@ Expo 57 ha rimosso `image-size` dal grafo delle dipendenze. `pnpm audit --prod -
 
 ## Condizioni prima della release pubblica
 
-Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub interamente verde, l’esecuzione dei flow Maestro sul runner Android, la build iOS nativa configurata su `macos-26` con Xcode 26.4.1, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.
+Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, la conferma dei flow Maestro dopo correzione del runner, una CI GitHub verde sul candidato finale, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate. La build iOS per simulatore è riuscita ma non sostituisce i test su iPhone reale.
