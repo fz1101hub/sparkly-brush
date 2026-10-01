@@ -31,6 +31,18 @@ class PackagedManifestTests(unittest.TestCase):
     def test_scoped_legacy_location_and_modern_ble_pass(self):
         self.assertEqual(self.check(VALID), [])
 
+    def test_decoded_apk_numeric_never_for_location_passes(self):
+        for encoded in ("0x00010000", "65536"):
+            with self.subTest(encoded=encoded):
+                xml = VALID.replace('android:usesPermissionFlags="neverForLocation"',
+                                    f'android:usesPermissionFlags="{encoded}"')
+                self.assertEqual(self.check(xml), [])
+
+    def test_numeric_scan_without_never_for_location_fails(self):
+        xml = VALID.replace('android:usesPermissionFlags="neverForLocation"',
+                            'android:usesPermissionFlags="0x00000000"')
+        self.assertTrue(any("neverForLocation" in err for err in self.check(xml)))
+
     def test_unscoped_location_fails_even_if_scoped_declaration_exists(self):
         extra = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />'
         xml = VALID.replace("  <application />", f"  {extra}\n  <application />")

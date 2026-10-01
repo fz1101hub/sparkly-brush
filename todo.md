@@ -26,7 +26,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 | 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 856 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
 | 22 | Audit Claude Opus 5.5 | Correzioni software verificate localmente, PR da pubblicare | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
-| 23 | Build/permessi APK sul candidato | Build CI superata; gate APK aggiunto | `assembleDebug` del commit `f1639fd` riuscito su GitHub Actions. Il nuovo step decodifica con `apkanalyzer` il manifest dell'APK e valida location scoped, Bluetooth e assenza del servizio audio; sei test del validatore sono verdi localmente. L'esito del gate va ancora verificato sul prossimo run; manca Android SDK nel sandbox. |
+| 23 | Build/permessi APK sul candidato | Build CI superata; gate APK da rivalidare | `assembleDebug` riuscito su GitHub Actions. Nel run `36817159597` il gate APK ha fallito sulla stringa simbolica del flag `neverForLocation` senza esporre il valore grezzo; il parser ora accetta anche il valore numerico AOSP `0x00010000` e mostra le dichiarazioni reali se fallisce. Otto test del validatore sono verdi localmente; il prossimo run deve stabilire se il permesso reale è corretto. |
 
 ## Gate software già superati sul candidato
 
@@ -47,7 +47,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 - export Expo web, iOS e Android;
 - prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
 - build Android nativa debug **Expo 57.0.26 superata per `f1639fd` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale. Il nuovo gate APK dovrà essere verificato nel prossimo run;
-- sei test Python locali sul validatore fail-closed del manifest APK compilato: permessi location legacy con `maxSdkVersion ≤ 30`, flag BLE, servizio audio e input mancanti/malformati.
+- otto test Python locali sul validatore fail-closed del manifest APK compilato: permessi location legacy con `maxSdkVersion ≤ 30`, bitmask numerica/simbolica del flag BLE, servizio audio e input mancanti/malformati.
 
 ## GitHub Actions
 

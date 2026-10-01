@@ -20,6 +20,19 @@ NO_BACKGROUND_SERVICE = {
     "android.permission.FOREGROUND_SERVICE",
     "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
 }
+NEVER_FOR_LOCATION = 0x00010000  # AOSP attrs_manifest.xml: usesPermissionFlags
+
+
+def has_never_for_location(raw: str | None) -> bool:
+    if raw is None:
+        return False
+    if "neverForLocation" in raw.split("|"):
+        return True
+    try:
+        # apkanalyzer manifest print may decode flags as 0x10000 or 65536.
+        return bool(int(raw, 0) & NEVER_FOR_LOCATION)
+    except ValueError:
+        return False
 
 
 def validate_manifest(path: Path) -> list[str]:
@@ -53,8 +66,12 @@ def validate_manifest(path: Path) -> list[str]:
         errors.append("ACCESS_BACKGROUND_LOCATION non utilizzato dall'app")
 
     scan = permissions.get("android.permission.BLUETOOTH_SCAN", [])
-    if len(scan) != 1 or scan[0].get(f"{ANDROID}usesPermissionFlags") != "neverForLocation":
-        errors.append("BLUETOOTH_SCAN deve essere unico e dichiarare neverForLocation")
+    scan_flags = [element.get(f"{ANDROID}usesPermissionFlags") for element in scan]
+    if len(scan) != 1 or not has_never_for_location(scan_flags[0]):
+        errors.append(
+            f"BLUETOOTH_SCAN deve essere unico e dichiarare neverForLocation: "
+            f"declarations={len(scan)}, flags={scan_flags!r}"
+        )
     if "android.permission.BLUETOOTH_CONNECT" not in permissions:
         errors.append("BLUETOOTH_CONNECT mancante")
 
