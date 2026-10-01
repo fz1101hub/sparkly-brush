@@ -431,6 +431,7 @@ export default function BackupScreen() {
               icon="history"
               label={t("backup.summarySessions")}
               value={String(lifetimeProgress.attemptedSessions)}
+              testID="backup-current-sessions"
             />
             <Summary
               icon="home"
@@ -830,12 +831,12 @@ function RestoreConfirmation({
   );
 }
 
-function Summary({ icon, label, value }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; label: string; value: string }) {
+function Summary({ icon, label, value, testID }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; label: string; value: string; testID?: string }) {
   const colors = useColors();
   return (
     <View style={styles.summaryItem}>
       <MaterialIcons name={icon} size={20} color={colors.primary} />
-      <Text style={[styles.summaryValue, { color: colors.foreground }]}>{value}</Text>
+      <Text testID={testID} style={[styles.summaryValue, { color: colors.foreground }]}>{value}</Text>
       <Text style={[styles.summaryLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );

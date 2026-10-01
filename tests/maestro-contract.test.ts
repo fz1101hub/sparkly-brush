@@ -54,6 +54,10 @@ function declaredTestIds(): Set<string> {
   }
   ids.add("hardware-checklist-saving");
   ids.add("hardware-checklist-error");
+  ids.add("backup-comparison-file");
+  ids.add("backup-confirm-file-card");
+  ids.add("backup-cancel-file");
+  ids.add("backup-confirm-file");
   return ids;
 }
 

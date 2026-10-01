@@ -258,6 +258,13 @@ jobs:
           fi
           df -h /
 
+      - name: Generate synthetic native backup fixture
+        env:
+          SPARKLY_FIXTURE_OUT: ${{ runner.temp }}/sparkly-ci-archive.sqlite
+        run: |
+          pnpm exec vite-node --config vitest.config.ts scripts/generate-native-backup-fixture.ts
+          test -s "$SPARKLY_FIXTURE_OUT"
+
       - name: Run Maestro flows
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -269,6 +276,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             adb install -r android/app/build/outputs/apk/release/app-release.apk
+            adb push "$RUNNER_TEMP/sparkly-ci-archive.sqlite" /sdcard/Download/sparkly-ci-archive.sqlite
+            adb shell ls -l /sdcard/Download/sparkly-ci-archive.sqlite
+            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/sparkly-ci-archive.sqlite
             pnpm test:e2e:android
 
       - name: Upload Maestro artifacts

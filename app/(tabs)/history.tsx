@@ -181,7 +181,7 @@ export default function HistoryScreen() {
               <View
                 style={[styles.summaryCard, { backgroundColor: "#E7EEFF" }]}
               >
-                <Text style={[styles.summaryValue, { color: "#173F9F" }]}>
+                <Text testID="history-recent-sessions" style={[styles.summaryValue, { color: "#173F9F" }]}>
                   {formatNumber(history.length)}
                 </Text>
                 <Text
