@@ -29,14 +29,15 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 23 | Build/permessi APK sul candidato | Completata in CI | `assembleDebug`, otto test parser e verifica del manifest dell'APK con `apkanalyzer` riusciti nel [run 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631). Il parser riconosce `neverForLocation` sia simbolico sia come bitmask AOSP `0x00010000`. |
 | 24 | Build iOS per simulatore | Completata in CI manuale | Prebuild, CocoaPods e `xcodebuild` riusciti nel [run 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) su macOS/Xcode; non è un test BLE su iPhone fisico. |
 | 25 | Conferma ripristino locale | Pubblicata, CI reale verde | File completo nativo e codice legacy richiedono una seconda azione annullabile; selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
-| 26 | Confronto prima del ripristino | Validato localmente, nuovo run PR da attendere | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
+| 26 | Confronto prima del ripristino | Pubblicato, CI reale verde | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
+| 27 | Cleanup backup SQLite temporanei | Verificato con mock nativo, nuovo run PR da attendere | In caso di ENOSPC durante la copia, SQLite open o close falliti, elimina il file temporaneo incompleto in cache. Una review indipendente ha fatto ripristinare la semantica precedente per il file passato al restore: su close fallita non viene eliminato. Sei test con fault injection; il comportamento va verificato sul file system iOS/Android reale. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **48 file e 313 test**;
+- suite Vitest completa: **49 file e 319 test** (sei nuove fault injection nativa);
 - gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
@@ -55,7 +56,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36876487684](https://github.com/fz1101hub/sparkly-brush/actions/runs/36876487684) ha completato `verify` e `native-android` realmente verdi sul commit `ca03f99` (conferma restore). Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. Il nuovo confronto richiede CI sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
+Il blocco storico zero-step è cessato: [Verify 36912000766](https://github.com/fz1101hub/sparkly-brush/actions/runs/36912000766) ha completato `verify` (23 step) e `native-android` (14 step) realmente verdi sul commit `df4a8d7` (confronto backup). Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. Il cleanup delle copie SQLite richiede CI sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
 
 ## Supply chain
 

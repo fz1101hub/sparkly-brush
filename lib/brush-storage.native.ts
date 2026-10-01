@@ -929,11 +929,18 @@ export async function createCompleteBackupDatabase(
     await source.execAsync("PRAGMA wal_checkpoint(FULL)");
     const destinationFile = new File(Paths.cache, fileName);
     if (destinationFile.exists) destinationFile.delete();
-    const destination = await SQLite.openDatabaseAsync(
-      fileName,
-      { useNewConnection: true },
-      Paths.cache.uri,
-    );
+    let destination: SQLiteDatabase;
+    try {
+      destination = await SQLite.openDatabaseAsync(
+        fileName,
+        { useNewConnection: true },
+        Paths.cache.uri,
+      );
+    } catch (error) {
+      // Opening may create a partial database before failing. It must never be shared.
+      if (destinationFile.exists) destinationFile.delete();
+      throw error;
+    }
     let completed = false;
     let exportedProgress = portableProgress;
     try {
@@ -980,8 +987,13 @@ export async function createCompleteBackupDatabase(
       await destination.execAsync("PRAGMA wal_checkpoint(TRUNCATE)");
       completed = true;
     } finally {
-      await destination.closeAsync();
-      if (!completed && destinationFile.exists) destinationFile.delete();
+      let closed = false;
+      try {
+        await destination.closeAsync();
+        closed = true;
+      } finally {
+        if ((!completed || !closed) && destinationFile.exists) destinationFile.delete();
+      }
     }
     return {
       uri: destinationFile.uri,
@@ -1007,8 +1019,9 @@ async function openImportedDatabase(uri: string): Promise<{ database: SQLiteData
   assertSQLiteBackupFile(source);
   const fileName = `sparkly-import-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.sqlite`;
   const copied = new File(Paths.cache, fileName);
-  await source.copy(copied);
   try {
+    // A large backup may leave a partial cache file when copying fails (e.g. no free space).
+    await source.copy(copied);
     assertSQLiteBackupFile(copied);
     const database = await SQLite.openDatabaseAsync(
       copied.name,
@@ -1324,8 +1337,13 @@ export async function inspectCompleteBackupDatabase(uri: string): Promise<Comple
       size: opened.file.size,
     };
   } finally {
-    await opened.database.closeAsync();
-    if (!valid && opened.file.exists) opened.file.delete();
+    let closed = false;
+    try {
+      await opened.database.closeAsync();
+      closed = true;
+    } finally {
+      if ((!valid || !closed) && opened.file.exists) opened.file.delete();
+    }
   }
 }
 
