@@ -37,6 +37,7 @@ vi.mock("react-native", async () => {
     };
   return {
     Modal: host("Modal"),
+    ScrollView: host("ScrollView"),
     View: host("View"),
     Text: host("Text"),
     Pressable: host("Pressable"),
@@ -250,6 +251,8 @@ describe("starter and session reward contrast contracts", () => {
       );
 
       expect(modal.props.role).toBe("dialog");
+      expect(modal.type).toBe("ScrollView");
+      expect(modal.props.contentContainerStyle).toMatchObject({ flexGrow: 1 });
       expect(buttonBackground).toBe(creature.textAccent);
       expect(
         contrastRatio("#FFFFFF", buttonBackground!),
