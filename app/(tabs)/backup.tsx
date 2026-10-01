@@ -102,6 +102,7 @@ export default function BackupScreen() {
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
   const [filePreview, setFilePreview] = useState<CompleteBackupPreview | null>(null);
+  const [pendingRestore, setPendingRestore] = useState<"file" | "legacy" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -155,12 +156,14 @@ export default function BackupScreen() {
     try {
       const inspected = await pickAndInspectCompleteBackup();
       if (inspected) {
+        setPendingRestore(null);
         if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
         setFilePreview(inspected);
         setPreview(null);
         setMessage(null);
       }
     } catch {
+      setPendingRestore(null);
       if (filePreviewRef.current)
         discardCompleteBackupPreview(filePreviewRef.current);
       setFilePreview(null);
@@ -171,6 +174,7 @@ export default function BackupScreen() {
   };
 
   const inspectImport = () => {
+    setPendingRestore(null);
     try {
       const parsed = parseBackup(importCode);
       setPreview(parsed);
@@ -185,7 +189,8 @@ export default function BackupScreen() {
   };
 
   const restoreLegacy = async () => {
-    if (!preview || demoMode || !backupReady) return;
+    if (!preview || pendingRestore !== "legacy" || demoMode || !backupReady || busy) return;
+    setPendingRestore(null);
     const previous: RestoreSnapshot = {
       profile: { selectedId, hasChosenStarter },
       customization,
@@ -203,27 +208,29 @@ export default function BackupScreen() {
     try {
       await runRestoreOperation(async () => {
         setRestoreInProgress(true);
-        const restoreId = await beginApplicationRestore(previous, next);
-        let databaseCommitted = false;
         try {
-          await restoreFromBackup(next.profile, next.customization);
-          await restorePreferences(next.preferences);
-          await restoreRewards(next.parentRewards);
-          await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
-          databaseCommitted = true;
-          await completeApplicationRestore(restoreId);
-        } catch (caught) {
-          if (!databaseCommitted) {
-            const rollback = await Promise.allSettled([
-              restoreFromBackup(previous.profile, previous.customization),
-              restorePreferences(previous.preferences),
-              restoreRewards(previous.parentRewards),
-            ]);
-            if (rollback.every((result) => result.status === "fulfilled")) {
-              await completeApplicationRestore(restoreId);
+          const restoreId = await beginApplicationRestore(previous, next);
+          let databaseCommitted = false;
+          try {
+            await restoreFromBackup(next.profile, next.customization);
+            await restorePreferences(next.preferences);
+            await restoreRewards(next.parentRewards);
+            await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
+            databaseCommitted = true;
+            await completeApplicationRestore(restoreId);
+          } catch (caught) {
+            if (!databaseCommitted) {
+              const rollback = await Promise.allSettled([
+                restoreFromBackup(previous.profile, previous.customization),
+                restorePreferences(previous.preferences),
+                restoreRewards(previous.parentRewards),
+              ]);
+              if (rollback.every((result) => result.status === "fulfilled")) {
+                await completeApplicationRestore(restoreId);
+              }
             }
+            throw caught;
           }
-          throw caught;
         } finally {
           setRestoreInProgress(false);
         }
@@ -239,7 +246,8 @@ export default function BackupScreen() {
   };
 
   const restoreFile = async () => {
-    if (!filePreview || demoMode || !backupReady) return;
+    if (!filePreview || pendingRestore !== "file" || demoMode || !backupReady || busy) return;
+    setPendingRestore(null);
     const selectedPreview = filePreview;
     const previous: RestoreSnapshot = {
       profile: { selectedId, hasChosenStarter },
@@ -258,28 +266,30 @@ export default function BackupScreen() {
     try {
       await runRestoreOperation(async () => {
         setRestoreInProgress(true);
-        const restoreId = await beginApplicationRestore(previous, next);
-        let databaseCommitted = false;
         try {
-          await restoreFromBackup(next.profile, next.customization);
-          await restorePreferences(next.preferences);
-          await restoreRewards(next.parentRewards);
-          const restored = await restoreCompleteBackup(selectedPreview, restoreId);
-          databaseCommitted = true;
-          adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
-          await completeApplicationRestore(restoreId);
-        } catch (caught) {
-          if (!databaseCommitted) {
-            const rollback = await Promise.allSettled([
-              restoreFromBackup(previous.profile, previous.customization),
-              restorePreferences(previous.preferences),
-              restoreRewards(previous.parentRewards),
-            ]);
-            if (rollback.every((result) => result.status === "fulfilled")) {
-              await completeApplicationRestore(restoreId);
+          const restoreId = await beginApplicationRestore(previous, next);
+          let databaseCommitted = false;
+          try {
+            await restoreFromBackup(next.profile, next.customization);
+            await restorePreferences(next.preferences);
+            await restoreRewards(next.parentRewards);
+            const restored = await restoreCompleteBackup(selectedPreview, restoreId);
+            databaseCommitted = true;
+            adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
+            await completeApplicationRestore(restoreId);
+          } catch (caught) {
+            if (!databaseCommitted) {
+              const rollback = await Promise.allSettled([
+                restoreFromBackup(previous.profile, previous.customization),
+                restorePreferences(previous.preferences),
+                restoreRewards(previous.parentRewards),
+              ]);
+              if (rollback.every((result) => result.status === "fulfilled")) {
+                await completeApplicationRestore(restoreId);
+              }
             }
+            throw caught;
           }
-          throw caught;
         } finally {
           setRestoreInProgress(false);
         }
@@ -524,7 +534,7 @@ export default function BackupScreen() {
                   accessibilityHint={t("backup.restoreFileHint")}
                   accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
-                  onPress={() => void restoreFile()}
+                  onPress={() => setPendingRestore("file")}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
                 >
                   <MaterialIcons
@@ -536,6 +546,15 @@ export default function BackupScreen() {
                     {t("backup.restoreComplete")}
                   </Text>
                 </Pressable>
+                {pendingRestore === "file" ? (
+                  <RestoreConfirmation
+                    kind="file"
+                    warning={t("backup.replaceCompleteWarning")}
+                    disabled={busy || !backupReady}
+                    onCancel={() => setPendingRestore(null)}
+                    onConfirm={() => void restoreFile()}
+                  />
+                ) : null}
               </View>
             </View>
           ) : null}
@@ -555,6 +574,7 @@ export default function BackupScreen() {
               onChangeText={(value) => {
                 setImportCode(value);
                 setPreview(null);
+                setPendingRestore(null);
                 if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
                 setFilePreview(null);
                 setError(null);
@@ -630,7 +650,7 @@ export default function BackupScreen() {
                   accessibilityHint={t("backup.restoreLegacyHint")}
                   accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
-                  onPress={() => void restoreLegacy()}
+                  onPress={() => setPendingRestore("legacy")}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
                 >
                   <MaterialIcons
@@ -642,6 +662,15 @@ export default function BackupScreen() {
                     {t("backup.restoreBrushling")}
                   </Text>
                 </Pressable>
+                {pendingRestore === "legacy" ? (
+                  <RestoreConfirmation
+                    kind="legacy"
+                    warning={t("backup.replaceWarning")}
+                    disabled={busy || !backupReady}
+                    onCancel={() => setPendingRestore(null)}
+                    onConfirm={() => void restoreLegacy()}
+                  />
+                ) : null}
               </View>
             </View>
           ) : null}
@@ -655,6 +684,57 @@ export default function BackupScreen() {
         </View>
       </ScrollView>
     </ScreenContainer>
+  );
+}
+
+function RestoreConfirmation({
+  kind,
+  warning,
+  disabled,
+  onCancel,
+  onConfirm,
+}: {
+  kind: "file" | "legacy";
+  warning: string;
+  disabled: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useI18n();
+  const confirmLabel = t(kind === "file" ? "backup.confirmFile" : "backup.confirmLegacy");
+  return (
+    <View
+      testID={`backup-confirm-${kind}-card`}
+      accessibilityLiveRegion="assertive"
+      style={styles.confirmCard}
+    >
+      <Text style={styles.confirmTitle}>{t("backup.confirmTitle")}</Text>
+      <Text style={styles.confirmWarning}>{warning}</Text>
+      <View style={styles.confirmActions}>
+        <Pressable
+          testID={`backup-cancel-${kind}`}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.cancel")}
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={onCancel}
+          style={({ pressed }) => [styles.confirmCancel, disabled && styles.disabled, pressed && styles.pressed]}
+        >
+          <Text style={styles.confirmCancelText}>{t("common.cancel")}</Text>
+        </Pressable>
+        <Pressable
+          testID={`backup-confirm-${kind}`}
+          accessibilityRole="button"
+          accessibilityLabel={confirmLabel}
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={onConfirm}
+          style={({ pressed }) => [styles.confirmProceed, disabled && styles.disabled, pressed && styles.pressed]}
+        >
+          <Text style={styles.confirmProceedText}>{confirmLabel}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -716,6 +796,14 @@ const styles = StyleSheet.create({
   previewText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   warningText: { fontSize: 10, lineHeight: 15, fontWeight: "800", marginTop: 7 },
   restoreButton: { minHeight: 46, marginTop: 10, borderRadius: 15, backgroundColor: "#B07D00", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  confirmCard: { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8", borderWidth: 1, borderRadius: 16, padding: 12, gap: 8, marginTop: 10 },
+  confirmTitle: { color: "#651C2F", fontSize: 14, lineHeight: 20, fontWeight: "900" },
+  confirmWarning: { color: "#651C2F", fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  confirmActions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  confirmCancel: { flexGrow: 1, minWidth: 100, minHeight: 44, borderWidth: 1, borderColor: "#A92E46", borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  confirmCancelText: { color: "#8A253A", fontSize: 11, lineHeight: 16, fontWeight: "800", textAlign: "center" },
+  confirmProceed: { flexGrow: 1, minWidth: 130, minHeight: 44, backgroundColor: "#A92E46", borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  confirmProceedText: { color: "#FFFFFF", fontSize: 11, lineHeight: 16, fontWeight: "800", textAlign: "center" },
   privacyCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 },
   privacyText: { flex: 1, fontSize: 10, lineHeight: 15 },
   pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },

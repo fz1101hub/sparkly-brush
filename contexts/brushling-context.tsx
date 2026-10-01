@@ -191,7 +191,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   }, [demoMode, hasChosenStarter, history, historyReady, selectedId]);
 
   useEffect(() => {
-    if (demoMode || !historyReady || !progressEvent) return;
+    if (demoMode || !historyReady || restoreInProgress || !progressEvent) return;
     if (lastHandledProgressEventIdRef.current === progressEvent.session.id) return;
     lastHandledProgressEventIdRef.current = progressEvent.session.id;
     if (progressEvent.session.durationSeconds < 5 || !hasChosenStarter) return;
@@ -203,7 +203,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     setReward(nextReward);
     setDiscovery(computeLifetimeDiscovery(progressEvent));
     setProgressReward(computeLifetimeProgressRewardDelta(progressEvent));
-  }, [demoMode, hasChosenStarter, historyReady, progressEvent, selectedId]);
+  }, [demoMode, hasChosenStarter, historyReady, progressEvent, restoreInProgress, selectedId]);
 
   const chooseStarter = useCallback(async (id: BrushlingId) => {
     if (!STARTER_IDS.includes(id)) return false;
@@ -246,7 +246,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     restoredCustomization: CustomizationState,
   ) => {
     rewardTrackerReadyRef.current = false;
-    lastHandledProgressEventIdRef.current = null;
+    // A restore replaces history but is not a newly completed session. Keep
+    // the last handled event until BrushProvider clears its in-memory event.
     setSelectedId(profile.selectedId);
     setHasChosenStarter(profile.hasChosenStarter);
     setCustomization(restoredCustomization);

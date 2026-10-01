@@ -23,23 +23,24 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
 | 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward, Playwright + axe su **34 stati UI** (anche due starter alternativi e reward reale chiaro/scuro); non sostituisce l'audit con screen reader. |
 | 19 | Maestro Android | **Due flow riusciti** su emulatore | [Dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328): APK release installato, percorso principale e checklist persistente passati su emulatore API 36 con KVM. Non è test BLE del manico reale. |
-| 20 | E2E web funzionale | Completato e ampliato | Quattro percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente, backup, lingue e CTA del modal su viewport 320×640. Il gate ha rilevato e chiuso una race reale del wake lock web; il modal scrollabile è passato anche in Maestro Android. |
-| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 862 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
+| 20 | E2E web funzionale | Completato e ampliato | Cinque percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente, conferma/annullamento del restore legacy, lingue e CTA del modal su viewport 320×640. Il nuovo test ha rilevato e chiuso la riapertura di un premio già gestito dopo restore. |
+| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 865 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
 | 22 | Audit Claude Opus 5.5 | Correzioni software pubblicate nella PR #7 | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
 | 23 | Build/permessi APK sul candidato | Completata in CI | `assembleDebug`, otto test parser e verifica del manifest dell'APK con `apkanalyzer` riusciti nel [run 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631). Il parser riconosce `neverForLocation` sia simbolico sia come bitmask AOSP `0x00010000`. |
 | 24 | Build iOS per simulatore | Completata in CI manuale | Prebuild, CocoaPods e `xcodebuild` riusciti nel [run 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) su macOS/Xcode; non è un test BLE su iPhone fisico. |
+| 25 | Conferma ripristino locale | Verificata localmente, in attesa della CI del nuovo commit | File completo nativo e codice legacy richiedono una seconda azione annullabile; la selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza del dato originale, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **47 file e 307 test**;
-- gate i18n dedicato: **74 test** su cataloghi (almeno 862 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- suite Vitest completa: **47 file e 308 test**;
+- gate i18n dedicato: **74 test** su cataloghi (almeno 862 chiavi, ora 865), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
 - Playwright + axe superato su **34 stati UI** chiari/scuri con starter alternativi e modal ricompensa reale, report separati per stato;
-- quattro percorsi Playwright funzionali superati in **57,0 s**, incluso viewport 320×640, cinque lingue, modalità Sistema e persistenza dopo reload;
+- cinque percorsi Playwright funzionali superati, incluso annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
@@ -53,7 +54,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36823542921](https://github.com/fz1101hub/sparkly-brush/actions/runs/36823542921) ha completato `verify` e `native-android` realmente con esito verde sul commit `748f2ff`, incluso il gate APK. Il [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) ha compilato iOS/Android e superato **entrambi** i flow Maestro, ma il job `verify` è fallito per un mock React Native incompleto (`ScrollView`) nel test contrasto. Il mock è stato corretto; i 307 test passano localmente e occorre un nuovo run PR verde. La PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
+Il blocco storico zero-step è cessato: [Verify 36832979922](https://github.com/fz1101hub/sparkly-brush/actions/runs/36832979922) ha completato `verify` e `native-android` realmente con esito verde sul commit `beb35ff`, incluso il gate APK. Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. La conferma restore richiede un nuovo run PR sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
 
 ## Supply chain
 

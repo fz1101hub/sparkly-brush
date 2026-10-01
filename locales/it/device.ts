@@ -128,6 +128,9 @@ export const itDevice = {
   "backup.restoreFileHint":
     "Sostituisce integralmente lo storico, i progressi e le impostazioni reali di questo telefono",
   "backup.restoreComplete": "Ripristina archivio completo",
+  "backup.confirmTitle": "Confermare il ripristino?",
+  "backup.confirmFile": "Sì, sostituisci l’archivio",
+  "backup.confirmLegacy": "Sì, sostituisci i progressi",
   "backup.legacyTitle": "Hai un vecchio codice backup?",
   "backup.legacyDescription":
     "I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.",

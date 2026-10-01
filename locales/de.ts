@@ -320,6 +320,9 @@ export const de = {
   "backup.restoreFileHint":
     "Ersetzt den gesamten echten Verlauf, Fortschritt und die Einstellungen auf diesem Telefon",
   "backup.restoreComplete": "Komplettes Archiv wiederherstellen",
+  "backup.confirmTitle": "Wiederherstellung bestätigen?",
+  "backup.confirmFile": "Ja, Archiv ersetzen",
+  "backup.confirmLegacy": "Ja, Fortschritt ersetzen",
   "backup.legacyTitle": "Haben Sie einen alten Backup-Code?",
   "backup.legacyDescription":
     "Die Codes v1 und v2 können weiterhin importiert werden, damit Daten aus früheren Versionen nicht verloren gehen.",

@@ -3,17 +3,24 @@ import { createRoot } from "test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
-import { createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
+import type { BrushSession } from "@/lib/brush-types";
+import {
+  applySessionToLifetime,
+  createEmptyLifetimeProgress,
+  type LifetimeProgressEvent,
+} from "@/lib/lifetime-progress";
 import type { BrushlingId } from "@/lib/brushlings";
 import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => ({
   brushState: {
-    history: [],
+    history: [] as BrushSession[],
     lifetimeProgress: null as unknown,
-    progressEvent: null,
+    progressEvent: null as LifetimeProgressEvent | null,
     historyReady: false,
     demoMode: false,
   },
@@ -22,7 +29,9 @@ const mocks = vi.hoisted(() => ({
   saveSelected: vi.fn(),
 }));
 
-vi.mock("@/contexts/brush-context", () => ({ useBrush: () => mocks.brushState }));
+vi.mock("@/contexts/brush-context", () => ({
+  useBrush: () => mocks.brushState,
+}));
 vi.mock("@/lib/brushling-storage", () => ({
   loadBrushlingProfile: mocks.loadProfile,
   loadCustomizationState: mocks.loadCustomization,
@@ -36,12 +45,20 @@ import { BrushlingProvider, useBrushling } from "@/contexts/brushling-context";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((done) => { resolve = done; });
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 }
 
-async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: BrushlingId, completedSessions: number) {
-  const profile = deferred<{ selectedId: BrushlingId; hasChosenStarter: boolean }>();
+async function verifyUnlockedSelectionSurvivesProfileFirst(
+  selectedId: BrushlingId,
+  completedSessions: number,
+) {
+  const profile = deferred<{
+    selectedId: BrushlingId;
+    hasChosenStarter: boolean;
+  }>();
   mocks.loadProfile.mockReturnValue(profile.promise);
   mocks.loadCustomization.mockResolvedValue(DEFAULT_CUSTOMIZATION_STATE);
   const initialProgress = createEmptyLifetimeProgress();
@@ -54,7 +71,10 @@ async function verifyUnlockedSelectionSurvivesProfileFirst(selectedId: Brushling
   };
   function Probe() {
     const value = useBrushling();
-    observed = { selectedId: value.selectedId, profileReady: value.profileReady };
+    observed = {
+      selectedId: value.selectedId,
+      profileReady: value.profileReady,
+    };
     return null;
   }
 
@@ -112,5 +132,78 @@ describe("BrushlingProvider hydration race", () => {
 
   it("non sostituisce Moonbit quando il profilo arriva prima dello storico", async () => {
     await verifyUnlockedSelectionSurvivesProfileFirst("moonbit", 10);
+  });
+
+  it("non riapre un premio già gestito durante il restore; accredita la sessione successiva", async () => {
+    mocks.loadProfile.mockResolvedValue({
+      selectedId: "bloopi",
+      hasChosenStarter: true,
+    });
+    mocks.loadCustomization.mockResolvedValue(DEFAULT_CUSTOMIZATION_STATE);
+    const before = createEmptyLifetimeProgress();
+    mocks.brushState.historyReady = true;
+    mocks.brushState.lifetimeProgress = before;
+    const first: BrushSession = {
+      id: "manual-before-restore",
+      startedAt: Date.now() - 120_000,
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "manual",
+    };
+    const second: BrushSession = {
+      ...first,
+      id: "manual-after-restore",
+      startedAt: Date.now(),
+    };
+    let current!: ReturnType<typeof useBrushling>;
+    function Probe() {
+      current = useBrushling();
+      return null;
+    }
+    const renderer = createRoot();
+    const render = async () =>
+      act(async () =>
+        renderer.render(
+          <TestLocaleProvider>
+            <BrushlingProvider>
+              <Probe />
+            </BrushlingProvider>
+          </TestLocaleProvider>,
+        ),
+      );
+
+    await render();
+    mocks.brushState.progressEvent = {
+      session: first,
+      before,
+      after: applySessionToLifetime(before, first),
+    };
+    await render();
+    expect(current.reward).not.toBeNull();
+    await act(async () => current.dismissReward());
+    expect(current.reward).toBeNull();
+
+    await act(async () => current.setRestoreInProgress(true));
+    await act(async () =>
+      current.restoreFromBackup(
+        { selectedId: "spriggo", hasChosenStarter: true },
+        DEFAULT_CUSTOMIZATION_STATE,
+      ),
+    );
+    expect(current.reward).toBeNull();
+    mocks.brushState.progressEvent = null;
+    await render();
+    await act(async () => current.setRestoreInProgress(false));
+    expect(current.reward).toBeNull();
+
+    mocks.brushState.progressEvent = {
+      session: second,
+      before,
+      after: applySessionToLifetime(before, second),
+    };
+    await render();
+    expect(current.reward).not.toBeNull();
+    await act(async () => renderer.unmount());
   });
 });

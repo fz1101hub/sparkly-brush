@@ -316,6 +316,9 @@ export const es = {
   "backup.restoreFileHint":
     "Sustituye íntegramente el historial, los progresos y los ajustes reales de este teléfono",
   "backup.restoreComplete": "Restaurar archivo completo",
+  "backup.confirmTitle": "¿Confirmas la restauración?",
+  "backup.confirmFile": "Sí, sustituir el archivo",
+  "backup.confirmLegacy": "Sí, sustituir los progresos",
   "backup.legacyTitle": "¿Tienes un código de copia de seguridad antiguo?",
   "backup.legacyDescription":
     "Los códigos v1 y v2 siguen siendo importables para no perder datos creados por versiones anteriores.",

@@ -80,6 +80,73 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByTestId("backup-error")).toBeVisible();
   });
 
+  test("annulla un restore legacy senza perdere dati e importa solo dopo conferma", async ({
+    page,
+  }) => {
+    await completeFirstRun(page);
+    await page.getByTestId("manual-start-stop").click();
+    await expect(page.getByTestId("session-reward-modal")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("session-reward-dismiss").click();
+
+    const legacyCode = `BRUSHLINGS-BACKUP-1:${JSON.stringify({
+      format: "brushlings-backup",
+      version: 1,
+      createdAt: Date.now(),
+      profile: { selectedId: "spriggo", hasChosenStarter: true },
+      customization: { ownedIds: ["bubble-room"] },
+      preferences: {
+        onboardingCompleted: true,
+        soundsEnabled: true,
+        musicEnabled: false,
+        hapticsEnabled: true,
+        language: "system",
+      },
+      history: [
+        {
+          id: "legacy-imported-session",
+          startedAt: Date.now() - 60_000,
+          durationSeconds: 120,
+          targetSeconds: 120,
+          completed: true,
+          source: "manual",
+        },
+      ],
+    })}`;
+
+    await page.getByTestId("tab-device").click();
+    await page.getByTestId("device-backup").click();
+    await page.getByTestId("backup-import-code").fill(legacyCode);
+    await page.getByTestId("backup-inspect-code").click();
+    await expect(page.getByTestId("backup-legacy-preview")).toBeVisible();
+    await page.getByTestId("backup-restore-legacy").click();
+    await expect(page.getByTestId("backup-confirm-legacy-card")).toBeVisible();
+    await page.getByTestId("backup-cancel-legacy").click();
+    await expect(page.getByTestId("backup-confirm-legacy-card")).toHaveCount(0);
+    await page.getByTestId("tab-history").click();
+    await expect(page.getByTestId("history-session-0")).toContainText("0:05");
+    await page.reload();
+    await expect(page.getByTestId("history-session-0")).toContainText("0:05");
+
+    await page.getByTestId("tab-device").click();
+    await page.getByTestId("device-backup").click();
+    await page.getByTestId("backup-import-code").fill(legacyCode);
+    await page.getByTestId("backup-inspect-code").click();
+    await page.getByTestId("backup-restore-legacy").click();
+    await page.getByTestId("backup-import-code").fill(`${legacyCode}invalid`);
+    await expect(page.getByTestId("backup-confirm-legacy-card")).toHaveCount(0);
+    await page.getByTestId("backup-import-code").fill(legacyCode);
+    await page.getByTestId("backup-inspect-code").click();
+    await page.getByTestId("backup-restore-legacy").click();
+    await page.getByTestId("backup-confirm-legacy").click();
+    await expect(page.getByTestId("backup-status")).toBeVisible();
+    await page.getByTestId("tab-history").click();
+    await expect(page.getByTestId("history-session-0")).toContainText("2:00");
+    await page.reload();
+    await expect(page.getByTestId("history-session-0")).toContainText("2:00");
+  });
+
   test("cambia lingua immediatamente e conserva la scelta dopo reload", async ({
     page,
   }) => {
