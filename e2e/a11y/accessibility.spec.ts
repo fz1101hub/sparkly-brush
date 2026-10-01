@@ -78,6 +78,27 @@ async function scanAdditionalRoutes(
   }
 }
 
+async function scanBackupComparison(
+  page: Page,
+  testInfo: TestInfo,
+  prefix: string,
+) {
+  const legacyCode = `BRUSHLINGS-BACKUP-1:${JSON.stringify({
+    format: "brushlings-backup",
+    version: 1,
+    createdAt: Date.now(),
+    profile: { selectedId: "bloopi", hasChosenStarter: true },
+    customization: { ownedIds: ["bubble-room"] },
+    history: [],
+  })}`;
+  await page.getByTestId("backup-import-code").fill(legacyCode);
+  await page.getByTestId("backup-inspect-code").click();
+  await expect(page.getByTestId("backup-comparison-legacy")).toBeVisible();
+  await page.getByTestId("backup-restore-legacy").click();
+  await expect(page.getByTestId("backup-confirm-legacy-card")).toBeVisible();
+  await scan(page, testInfo, `${prefix}backup-comparison-confirm`);
+}
+
 test.describe("WCAG automatic audit", () => {
   test.beforeEach(async ({ context }) => {
     await context.clearCookies();
@@ -126,6 +147,7 @@ test.describe("WCAG automatic audit", () => {
     await page.goto("/backup");
     await expect(page.getByTestId("backup-screen")).toBeVisible();
     await scan(page, testInfo, "backup");
+    await scanBackupComparison(page, testInfo, "");
 
     await scanAdditionalRoutes(page, testInfo, "");
   });
@@ -161,6 +183,7 @@ test.describe("WCAG automatic audit in dark mode", () => {
     await page.goto("/backup");
     await expect(page.getByTestId("backup-screen")).toBeVisible();
     await scan(page, testInfo, "dark-backup");
+    await scanBackupComparison(page, testInfo, "dark-");
 
     await scanAdditionalRoutes(page, testInfo, "dark-");
   });

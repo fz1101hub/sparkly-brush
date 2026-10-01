@@ -316,6 +316,18 @@ export const en = {
   "backup.confirmTitle": "Confirm the restore?",
   "backup.confirmFile": "Yes, replace the archive",
   "backup.confirmLegacy": "Yes, replace progress",
+  "backup.compareTitle": "Compare before restoring",
+  "backup.compareCurrent": "On this phone",
+  "backup.compareIncoming": "In the backup",
+  "backup.compareLifetime": "Total sessions",
+  "backup.compareCompleted": "Completed",
+  "backup.compareCompleteRows": "Verified sessions in the file: {count}.",
+  "backup.comparePartialRows":
+    "Viewable sessions: {count}. Lifetime progress may include more.",
+  "backup.compareOlder":
+    "The backup has fewer total or completed sessions than this phone.",
+  "backup.compareNoMerge":
+    "Restoring does not merge data: even if the counts match, this phone’s sessions will be replaced.",
   "backup.legacyTitle": "Do you have an old backup code?",
   "backup.legacyDescription":
     "v1 and v2 codes can still be imported so that data created with earlier versions is not lost.",

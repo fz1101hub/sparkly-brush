@@ -20,8 +20,8 @@ function placeholders(value: string): string[] {
 describe("translation catalogs", () => {
   const sourceKeys = Object.keys(itCatalog).sort();
 
-  it("preserva almeno le 862 chiavi localizzate del candidato", () => {
-    expect(sourceKeys.length).toBeGreaterThanOrEqual(862);
+  it("preserva almeno le 874 chiavi localizzate del candidato", () => {
+    expect(sourceKeys.length).toBeGreaterThanOrEqual(874);
   });
 
   it.each(Object.entries(catalogs))(

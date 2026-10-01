@@ -319,6 +319,18 @@ export const es = {
   "backup.confirmTitle": "¿Confirmas la restauración?",
   "backup.confirmFile": "Sí, sustituir el archivo",
   "backup.confirmLegacy": "Sí, sustituir los progresos",
+  "backup.compareTitle": "Compara antes de restaurar",
+  "backup.compareCurrent": "En este teléfono",
+  "backup.compareIncoming": "En la copia",
+  "backup.compareLifetime": "Sesiones totales",
+  "backup.compareCompleted": "Completadas",
+  "backup.compareCompleteRows": "Sesiones verificadas en el archivo: {count}.",
+  "backup.comparePartialRows":
+    "Sesiones consultables: {count}. El progreso total puede incluir más.",
+  "backup.compareOlder":
+    "La copia contiene menos sesiones totales o completadas que este teléfono.",
+  "backup.compareNoMerge":
+    "La restauración no combina datos: aunque las cifras coincidan, se sustituirán las sesiones de este teléfono.",
   "backup.legacyTitle": "¿Tienes un código de copia de seguridad antiguo?",
   "backup.legacyDescription":
     "Los códigos v1 y v2 siguen siendo importables para no perder datos creados por versiones anteriores.",

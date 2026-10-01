@@ -323,6 +323,18 @@ export const de = {
   "backup.confirmTitle": "Wiederherstellung bestätigen?",
   "backup.confirmFile": "Ja, Archiv ersetzen",
   "backup.confirmLegacy": "Ja, Fortschritt ersetzen",
+  "backup.compareTitle": "Vor der Wiederherstellung vergleichen",
+  "backup.compareCurrent": "Auf diesem Telefon",
+  "backup.compareIncoming": "Im Backup",
+  "backup.compareLifetime": "Sitzungen insgesamt",
+  "backup.compareCompleted": "Abgeschlossen",
+  "backup.compareCompleteRows": "Geprüfte Sitzungen in der Datei: {count}.",
+  "backup.comparePartialRows":
+    "Einsehbare Sitzungen: {count}. Der gesamte Fortschritt kann weitere umfassen.",
+  "backup.compareOlder":
+    "Das Backup enthält weniger Sitzungen insgesamt oder weniger abgeschlossene Sitzungen als dieses Telefon.",
+  "backup.compareNoMerge":
+    "Beim Wiederherstellen werden Daten nicht zusammengeführt: Auch bei gleicher Anzahl werden die Sitzungen auf diesem Telefon ersetzt.",
   "backup.legacyTitle": "Haben Sie einen alten Backup-Code?",
   "backup.legacyDescription":
     "Die Codes v1 und v2 können weiterhin importiert werden, damit Daten aus früheren Versionen nicht verloren gehen.",

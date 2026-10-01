@@ -1,6 +1,7 @@
 export const LIGHT_CARD_FOREGROUND = "#17213C";
 export const LIGHT_CARD_MUTED = "#4B5563";
 export const GOLD_TEXT = "#6F5100";
+export const GOLD_BUTTON_BACKGROUND = "#825A00";
 
 const READABLE_ACCENTS: Record<string, string> = {
   "#2457D6": "#173F9F",

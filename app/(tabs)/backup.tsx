@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
+import { GOLD_BUTTON_BACKGROUND } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useBrushling } from "@/contexts/brushling-context";
@@ -23,6 +24,10 @@ import {
   parseBackup,
   type BrushlingsBackup,
 } from "@/lib/backup";
+import {
+  compareBackupContents,
+  type BackupComparison,
+} from "@/lib/backup-comparison";
 import {
   discardCompleteBackupPreview,
   exportAndShareCompleteBackup,
@@ -129,6 +134,17 @@ export default function BackupScreen() {
     ),
     [customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId],
   );
+  const fileComparison = filePreview
+    ? compareBackupContents(
+      currentManifest,
+      filePreview.manifest,
+      filePreview.sessionCount,
+      filePreview.manifest.historyComplete,
+    )
+    : null;
+  const legacyComparison = preview
+    ? compareBackupContents(currentManifest, preview, preview.history.length, false)
+    : null;
 
   const shareBackup = async () => {
     if (demoMode || !backupReady) return;
@@ -524,6 +540,7 @@ export default function BackupScreen() {
                     })}
                   </Text>
                 ) : null}
+                {fileComparison ? <BackupComparisonCard kind="file" comparison={fileComparison} /> : null}
                 <Text style={[styles.warningText, { color: "#246A4B" }]}>
                   {t("backup.replaceCompleteWarning")}
                 </Text>
@@ -640,6 +657,7 @@ export default function BackupScreen() {
                     }),
                   })}
                 </Text>
+                {legacyComparison ? <BackupComparisonCard kind="legacy" comparison={legacyComparison} /> : null}
                 <Text style={[styles.warningText, { color: "#8A5B00" }]}>
                   {t("backup.replaceWarning")}
                 </Text>
@@ -684,6 +702,80 @@ export default function BackupScreen() {
         </View>
       </ScrollView>
     </ScreenContainer>
+  );
+}
+
+function BackupComparisonCard({
+  kind,
+  comparison,
+}: {
+  kind: "file" | "legacy";
+  comparison: BackupComparison;
+}) {
+  const { t, formatNumber } = useI18n();
+  return (
+    <View testID={`backup-comparison-${kind}`} style={styles.comparisonCard}>
+      <Text style={styles.comparisonTitle}>{t("backup.compareTitle")}</Text>
+      <View style={styles.comparisonRow}>
+        <Text style={styles.comparisonMetric} />
+        <Text style={styles.comparisonValue}>{t("backup.compareCurrent")}</Text>
+        <Text style={styles.comparisonValue}>{t("backup.compareIncoming")}</Text>
+      </View>
+      <ComparisonRow
+        label={t("backup.summaryBrushling")}
+        current={comparison.current.brushling}
+        incoming={comparison.incoming.brushling}
+      />
+      <ComparisonRow
+        label={t("backup.compareLifetime")}
+        current={formatNumber(comparison.current.attemptedSessions)}
+        incoming={formatNumber(comparison.incoming.attemptedSessions)}
+      />
+      <ComparisonRow
+        label={t("backup.compareCompleted")}
+        current={formatNumber(comparison.current.completedSessions)}
+        incoming={formatNumber(comparison.incoming.completedSessions)}
+      />
+      <ComparisonRow
+        label={t("backup.summaryDenItems")}
+        current={formatNumber(comparison.current.denItems)}
+        incoming={formatNumber(comparison.incoming.denItems)}
+      />
+      <ComparisonRow
+        label={t("backup.summaryFamilyRewards")}
+        current={formatNumber(comparison.current.familyRewards)}
+        incoming={formatNumber(comparison.incoming.familyRewards)}
+      />
+      <Text style={styles.comparisonNote}>
+        {comparison.historyComplete
+          ? t("backup.compareCompleteRows", { count: formatNumber(comparison.incomingRows) })
+          : t("backup.comparePartialRows", { count: formatNumber(comparison.incomingRows) })}
+      </Text>
+      {comparison.lowerLifetimeProgress ? (
+        <Text testID={`backup-comparison-${kind}-older`} style={styles.comparisonWarning}>
+          {t("backup.compareOlder")}
+        </Text>
+      ) : null}
+      <Text style={styles.comparisonWarning}>{t("backup.compareNoMerge")}</Text>
+    </View>
+  );
+}
+
+function ComparisonRow({
+  label,
+  current,
+  incoming,
+}: {
+  label: string;
+  current: string;
+  incoming: string;
+}) {
+  return (
+    <View style={styles.comparisonRow}>
+      <Text style={styles.comparisonMetric}>{label}</Text>
+      <Text style={styles.comparisonValue}>{current}</Text>
+      <Text style={styles.comparisonValue}>{incoming}</Text>
+    </View>
   );
 }
 
@@ -763,7 +855,7 @@ const styles = StyleSheet.create({
   demoWarningCopy: { flex: 1 },
   demoWarningTitle: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
   demoWarningText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
-  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
+  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: GOLD_BUTTON_BACKGROUND, alignItems: "center", justifyContent: "center" },
   demoWarningButtonText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   messageCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
   messageText: { flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
@@ -795,7 +887,14 @@ const styles = StyleSheet.create({
   previewTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900" },
   previewText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   warningText: { fontSize: 10, lineHeight: 15, fontWeight: "800", marginTop: 7 },
-  restoreButton: { minHeight: 46, marginTop: 10, borderRadius: 15, backgroundColor: "#B07D00", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  comparisonCard: { borderWidth: 1, borderColor: "#C4D1D9", backgroundColor: "#FFFFFF", borderRadius: 14, padding: 10, gap: 5, marginTop: 10 },
+  comparisonTitle: { color: LIGHT_CARD_FOREGROUND, fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  comparisonRow: { flexDirection: "row", alignItems: "flex-start", gap: 4 },
+  comparisonMetric: { width: "42%", color: LIGHT_CARD_FOREGROUND, fontSize: 10, lineHeight: 15, fontWeight: "700" },
+  comparisonValue: { width: "27%", color: LIGHT_CARD_FOREGROUND, fontSize: 10, lineHeight: 15, fontWeight: "800", textAlign: "center" },
+  comparisonNote: { color: LIGHT_CARD_MUTED, fontSize: 10, lineHeight: 15, marginTop: 4 },
+  comparisonWarning: { color: "#651C2F", fontSize: 10, lineHeight: 15, fontWeight: "700", marginTop: 3 },
+  restoreButton: { minHeight: 46, marginTop: 10, borderRadius: 15, backgroundColor: GOLD_BUTTON_BACKGROUND, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   confirmCard: { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8", borderWidth: 1, borderRadius: 16, padding: 12, gap: 8, marginTop: 10 },
   confirmTitle: { color: "#651C2F", fontSize: 14, lineHeight: 20, fontWeight: "900" },
   confirmWarning: { color: "#651C2F", fontSize: 11, lineHeight: 16, fontWeight: "700" },

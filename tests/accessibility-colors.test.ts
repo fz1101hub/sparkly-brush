@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readableAccent } from "@/constants/accessibility-colors";
+import { GOLD_BUTTON_BACKGROUND, readableAccent } from "@/constants/accessibility-colors";
 import { ADVENTURE_ZONES } from "@/lib/adventure";
 import { BRUSHLINGS } from "@/lib/brushlings";
 import { CUSTOMIZATION_ITEMS } from "@/lib/customization";
@@ -55,6 +55,10 @@ const PALETTES = [
 ];
 
 describe("accessible pastel colors", () => {
+  it("keeps restore button text AA-readable on the gold background", () => {
+    expect(contrastRatio("#FFFFFF", GOLD_BUTTON_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it.each(BRUSHLINGS)("uses AA text accent for $id on white and pastel", ({ textAccent, soft }) => {
     expect(contrastRatio(textAccent, "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(textAccent, soft)).toBeGreaterThanOrEqual(4.5);

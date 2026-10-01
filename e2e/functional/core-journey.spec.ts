@@ -117,9 +117,24 @@ test.describe("percorso funzionale web", () => {
 
     await page.getByTestId("tab-device").click();
     await page.getByTestId("device-backup").click();
+    const olderCode = `BRUSHLINGS-BACKUP-1:${JSON.stringify({
+      ...JSON.parse(legacyCode.slice("BRUSHLINGS-BACKUP-1:".length)),
+      history: [],
+    })}`;
+    await page.getByTestId("backup-import-code").fill(olderCode);
+    await page.getByTestId("backup-inspect-code").click();
+    await expect(
+      page.getByTestId("backup-comparison-legacy-older"),
+    ).toBeVisible();
     await page.getByTestId("backup-import-code").fill(legacyCode);
     await page.getByTestId("backup-inspect-code").click();
     await expect(page.getByTestId("backup-legacy-preview")).toBeVisible();
+    const comparison = page.getByTestId("backup-comparison-legacy");
+    await expect(comparison).toContainText("Su questo telefono");
+    await expect(comparison).toContainText("Nel backup");
+    await expect(comparison).toContainText("Sessioni totali");
+    await expect(comparison).toContainText("Sessioni consultabili: 1");
+    await expect(comparison).toContainText("Il ripristino non unisce i dati");
     await page.getByTestId("backup-restore-legacy").click();
     await expect(page.getByTestId("backup-confirm-legacy-card")).toBeVisible();
     await page.getByTestId("backup-cancel-legacy").click();
@@ -133,6 +148,9 @@ test.describe("percorso funzionale web", () => {
     await page.getByTestId("device-backup").click();
     await page.getByTestId("backup-import-code").fill(legacyCode);
     await page.getByTestId("backup-inspect-code").click();
+    await expect(
+      page.getByTestId("backup-comparison-legacy-older"),
+    ).toHaveCount(0);
     await page.getByTestId("backup-restore-legacy").click();
     await page.getByTestId("backup-import-code").fill(`${legacyCode}invalid`);
     await expect(page.getByTestId("backup-confirm-legacy-card")).toHaveCount(0);

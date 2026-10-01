@@ -321,6 +321,18 @@ export const fr = {
   "backup.confirmTitle": "Confirmer la restauration ?",
   "backup.confirmFile": "Oui, remplacer l’archive",
   "backup.confirmLegacy": "Oui, remplacer les progrès",
+  "backup.compareTitle": "Comparer avant de restaurer",
+  "backup.compareCurrent": "Sur ce téléphone",
+  "backup.compareIncoming": "Dans la sauvegarde",
+  "backup.compareLifetime": "Sessions au total",
+  "backup.compareCompleted": "Terminées",
+  "backup.compareCompleteRows": "Sessions vérifiées dans le fichier : {count}.",
+  "backup.comparePartialRows":
+    "Sessions consultables : {count}. La progression totale peut en inclure davantage.",
+  "backup.compareOlder":
+    "La sauvegarde comporte moins de sessions au total ou terminées que ce téléphone.",
+  "backup.compareNoMerge":
+    "La restauration ne fusionne pas les données : même à nombre égal, les sessions de ce téléphone seront remplacées.",
   "backup.legacyTitle": "Vous avez un ancien code de sauvegarde ?",
   "backup.legacyDescription":
     "Les codes v1 et v2 restent importables pour ne pas perdre les données créées par les versions précédentes.",

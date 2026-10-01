@@ -131,6 +131,18 @@ export const itDevice = {
   "backup.confirmTitle": "Confermare il ripristino?",
   "backup.confirmFile": "Sì, sostituisci l’archivio",
   "backup.confirmLegacy": "Sì, sostituisci i progressi",
+  "backup.compareTitle": "Confronta prima del ripristino",
+  "backup.compareCurrent": "Su questo telefono",
+  "backup.compareIncoming": "Nel backup",
+  "backup.compareLifetime": "Sessioni totali",
+  "backup.compareCompleted": "Completate",
+  "backup.compareCompleteRows": "Sessioni verificate nel file: {count}.",
+  "backup.comparePartialRows":
+    "Sessioni consultabili: {count}. I progressi totali possono includerne altre.",
+  "backup.compareOlder":
+    "Il backup ha meno sessioni totali o completate rispetto a questo telefono.",
+  "backup.compareNoMerge":
+    "Il ripristino non unisce i dati: anche con numeri uguali, le sessioni di questo telefono saranno sostituite.",
   "backup.legacyTitle": "Hai un vecchio codice backup?",
   "backup.legacyDescription":
     "I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.",

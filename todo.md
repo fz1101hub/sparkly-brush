@@ -21,26 +21,27 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
-| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward, Playwright + axe su **34 stati UI** (anche due starter alternativi e reward reale chiaro/scuro); non sostituisce l'audit con screen reader. |
+| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward/backup, Playwright + axe su **36 stati UI**, inclusa la conferma restore chiara/scura; non sostituisce l'audit con screen reader. |
 | 19 | Maestro Android | **Due flow riusciti** su emulatore | [Dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328): APK release installato, percorso principale e checklist persistente passati su emulatore API 36 con KVM. Non è test BLE del manico reale. |
 | 20 | E2E web funzionale | Completato e ampliato | Cinque percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente, conferma/annullamento del restore legacy, lingue e CTA del modal su viewport 320×640. Il nuovo test ha rilevato e chiuso la riapertura di un premio già gestito dopo restore. |
-| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 865 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
+| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 874 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
 | 22 | Audit Claude Opus 5.5 | Correzioni software pubblicate nella PR #7 | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
 | 23 | Build/permessi APK sul candidato | Completata in CI | `assembleDebug`, otto test parser e verifica del manifest dell'APK con `apkanalyzer` riusciti nel [run 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631). Il parser riconosce `neverForLocation` sia simbolico sia come bitmask AOSP `0x00010000`. |
 | 24 | Build iOS per simulatore | Completata in CI manuale | Prebuild, CocoaPods e `xcodebuild` riusciti nel [run 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) su macOS/Xcode; non è un test BLE su iPhone fisico. |
-| 25 | Conferma ripristino locale | Verificata localmente, in attesa della CI del nuovo commit | File completo nativo e codice legacy richiedono una seconda azione annullabile; la selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza del dato originale, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
+| 25 | Conferma ripristino locale | Pubblicata, CI reale verde | File completo nativo e codice legacy richiedono una seconda azione annullabile; selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
+| 26 | Confronto prima del ripristino | Validato localmente, nuovo run PR da attendere | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **47 file e 308 test**;
-- gate i18n dedicato: **74 test** su cataloghi (almeno 862 chiavi, ora 865), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- suite Vitest completa: **48 file e 313 test**;
+- gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su **34 stati UI** chiari/scuri con starter alternativi e modal ricompensa reale, report separati per stato;
-- cinque percorsi Playwright funzionali superati, incluso annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
+- Playwright + axe superato su **36 stati UI** chiari/scuri con starter alternativi, reward reale e confronto backup prima della conferma, report separati per stato;
+- cinque percorsi Playwright funzionali superati, incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
@@ -54,7 +55,7 @@ Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, 
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36832979922](https://github.com/fz1101hub/sparkly-brush/actions/runs/36832979922) ha completato `verify` e `native-android` realmente con esito verde sul commit `beb35ff`, incluso il gate APK. Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. La conferma restore richiede un nuovo run PR sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
+Il blocco storico zero-step è cessato: [Verify 36876487684](https://github.com/fz1101hub/sparkly-brush/actions/runs/36876487684) ha completato `verify` e `native-android` realmente verdi sul commit `ca03f99` (conferma restore). Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. Il nuovo confronto richiede CI sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
 
 ## Supply chain
 
