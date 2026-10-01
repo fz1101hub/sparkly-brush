@@ -6,6 +6,7 @@ import { runHistoryOperation } from "@/lib/history-operation";
 import { recoverApplicationRestore } from "@/lib/restore-journal";
 import {
   allocateDeviceSessionIdentity,
+  advancePendingDeviceFallbackExpectationsForEarlierSession,
   applySessionToLifetime,
   clearPendingDeviceFallback,
   createLifetimeProgress,
@@ -256,6 +257,38 @@ export async function saveDeviceSessionsWithLifetime(
           ? storedSessions.slice(-initialFallbackCount).map((stored) => stored.sessionId)
           : [],
       );
+      const fallbackAssignments = new Map<number, ReturnType<typeof matchesPendingDeviceFallback>>();
+      const assignedFallbackSessionIds = new Set<string>();
+      const plannedSessionIds = new Set<number>();
+      let assignmentProgress = progress;
+      for (const stored of storedSessions) {
+        if (plannedSessionIds.has(stored.sessionId)) continue;
+        plannedSessionIds.add(stored.sessionId);
+        const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
+        const observedTimeConfidence = stored.timeConfidence ?? "approximate";
+        const fallback = matchesPendingDeviceFallback(
+          assignmentProgress,
+          deviceId,
+          stored.sessionId,
+          stored.durationSeconds,
+          stored.targetSeconds,
+          observedStartedAt,
+          observedTimeConfidence,
+          initialFallbackSessionIds.has(stored.sessionId),
+          assignedFallbackSessionIds,
+        );
+        if (fallback) assignedFallbackSessionIds.add(fallback.sessionId);
+        if (!fallback) {
+          assignmentProgress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+            assignmentProgress,
+            deviceId,
+            stored.sessionId,
+            observedStartedAt,
+            stored.durationSeconds,
+          );
+        }
+        fallbackAssignments.set(stored.sessionId, fallback);
+      }
       if (resetCursor?.acceptNextSession) {
         assertSafePostResetSessions({
           resetBaselineSessionId: resetCursor.resetBaselineSessionId,
@@ -270,16 +303,7 @@ export async function saveDeviceSessionsWithLifetime(
     for (const stored of storedSessions) {
       const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
       const observedTimeConfidence = stored.timeConfidence ?? "approximate";
-      const fallback = matchesPendingDeviceFallback(
-        progress,
-        deviceId,
-        stored.sessionId,
-        stored.durationSeconds,
-        stored.targetSeconds,
-        observedStartedAt,
-        observedTimeConfidence,
-        initialFallbackSessionIds.has(stored.sessionId),
-      );
+      const fallback = fallbackAssignments.get(stored.sessionId) ?? null;
       const allocation = allocateDeviceSessionIdentity(progress, deviceId, stored.sessionId);
       if (allocation.duplicate) continue;
       const session: BrushSession = {
@@ -302,6 +326,14 @@ export async function saveDeviceSessionsWithLifetime(
         progress = clearPendingDeviceFallback(progress, deviceId, fallback.sessionId);
         recentHistory = recentHistory.filter((item) => item.id !== fallback.sessionId);
         reconciledAny = true;
+      } else {
+        progress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+          progress,
+          deviceId,
+          stored.sessionId,
+          observedStartedAt,
+          stored.durationSeconds,
+        );
       }
       recentHistory = [session, ...recentHistory.filter((item) => item.id !== session.id)];
       event = { session, before, after: progress };

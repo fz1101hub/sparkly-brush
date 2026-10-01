@@ -55,6 +55,11 @@ const PALETTES = [
 ];
 
 describe("accessible pastel colors", () => {
+  it.each(BRUSHLINGS)("uses AA text accent for $id on white and pastel", ({ textAccent, soft }) => {
+    expect(contrastRatio(textAccent, "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(textAccent, soft)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it.each(PALETTES)(
     "keeps $id readable on its pastel surface",
     ({ accent, soft }) => {

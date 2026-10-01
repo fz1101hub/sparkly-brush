@@ -91,7 +91,6 @@ const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 export function BrushlingProvider({ children }: PropsWithChildren) {
   const { history, lifetimeProgress, progressEvent, historyReady, demoMode } =
     useBrush();
-  const { t } = useI18n();
   const [selectedId, setSelectedId] =
     useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
   const [customization, setCustomization] = useState<CustomizationState>(
@@ -159,6 +158,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!profileReady || !historyReady || restoreInProgress) return;
     if (stats.unlockedIds.includes(selectedId)) return;
+    // Reconcile a persisted selection only after the separate history is hydrated.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedId(DEFAULT_BRUSHLING_ID);
     if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
   }, [demoMode, historyReady, profileReady, restoreInProgress, selectedId, stats.unlockedIds]);
@@ -197,6 +198,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     const nextReward = computeLifetimeSessionReward(progressEvent, selectedId);
     if (nextReward.xpEarned <= 0 && nextReward.coinsEarned <= 0) return;
+    // Consume this new durable session exactly once; the event is external state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReward(nextReward);
     setDiscovery(computeLifetimeDiscovery(progressEvent));
     setProgressReward(computeLifetimeProgressRewardDelta(progressEvent));

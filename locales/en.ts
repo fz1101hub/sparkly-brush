@@ -526,6 +526,7 @@ export const en = {
   "brush.log.handleForgotten":
     "Handle forgotten: the next BLE counter will start a new generation",
   "brush.error.handleRemovalFailed": "Could not remove handle",
+  "brush.error.noCounterToReset": "There is no previous Bluetooth counter to reset for this handle.",
   "brush.log.syncDisabledInDemo": "BLE sync is disabled in demo mode",
   "brush.error.connectFirst": "Connect the toothbrush first",
   "brush.log.sessionsSynced": "{count} sessions synchronized",
@@ -534,6 +535,8 @@ export const en = {
   "brush.log.retryPreviousSave": "Try saving the previous session first",
   "brush.log.demoTimerStarted": "Demo timer started",
   "brush.log.guidedTimerStarted": "Guided timer started",
+  "brush.log.manualReplacedByHandle": "The toothbrush started: the manual timer was cancelled without awarding a second session.",
+  "brush.log.liveSessionInProgress": "A session is already in progress: use the toothbrush or finish the active timer.",
   "brush.log.demoModeEnabled": "Demo mode enabled",
   "brush.log.demoModeDisabled": "Demo mode disabled",
   "brush.log.demoSessionAdded": "Demo {period} session added",
@@ -959,6 +962,8 @@ export const en = {
   "family.parent.rewardsTitle": "Family rewards",
   "family.parent.rewardsDescription":
     "Create real rewards chosen by a parent. The app only keeps track of progress; the promise stays a family matter.",
+  "family.parent.rewardsLifetimeNote":
+    "Goals count your entire recorded history (for streaks, your best-ever run). A newly added reward may unlock immediately.",
   "family.parent.newReward": "NEW REWARD",
   "family.parent.rewardNameLabel": "Reward name",
   "family.parent.rewardNamePlaceholder": "For example, choose tonight’s movie",
@@ -1023,6 +1028,10 @@ export const en = {
   "brush.client.optionalReadUnavailable": "Optional read unavailable: {code}",
   "brush.client.historyCountUnavailable":
     "BLE history count unavailable; using cautious synchronization",
+  "brush.client.firstSyncLimited":
+    "First connection: at most the handle's latest session was recovered; earlier sessions cannot be verified.",
+  "brush.client.invalidCountPayload":
+    "Invalid Bluetooth session count: synchronization stopped without moving the cursor.",
   "brush.client.clockUnavailable":
     "Handle clock unavailable: session date is approximate",
   "brush.client.sessionRead": "Session {id} read ({duration}s)",

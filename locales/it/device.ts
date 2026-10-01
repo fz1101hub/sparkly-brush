@@ -347,6 +347,7 @@ export const itDevice = {
   "brush.log.handleForgotten":
     "Manico dimenticato: il prossimo contatore BLE partirà da una nuova generazione",
   "brush.error.handleRemovalFailed": "Rimozione del manico non riuscita",
+  "brush.error.noCounterToReset": "Nessun contatore Bluetooth precedente da reimpostare per questo manico.",
   "brush.log.syncDisabledInDemo":
     "La sincronizzazione BLE è disattivata in modalità demo",
   "brush.error.connectFirst": "Collega prima lo spazzolino",
@@ -357,6 +358,8 @@ export const itDevice = {
     "Riprova prima il salvataggio della sessione precedente",
   "brush.log.demoTimerStarted": "Timer demo avviato",
   "brush.log.guidedTimerStarted": "Timer guidato avviato",
+  "brush.log.manualReplacedByHandle": "Il manico si è avviato: il timer manuale è stato annullato senza un secondo accredito.",
+  "brush.log.liveSessionInProgress": "Una sessione è già in corso: usa il manico oppure termina il timer attivo.",
   "brush.log.demoModeEnabled": "Modalità demo attivata",
   "brush.log.demoModeDisabled": "Modalità demo disattivata",
   "brush.log.demoSessionAdded": "Sessione demo {period} aggiunta",
@@ -388,6 +391,10 @@ export const itDevice = {
     "Lettura opzionale non disponibile: {code}",
   "brush.client.historyCountUnavailable":
     "Conteggio storico BLE non disponibile; sincronizzazione prudente",
+  "brush.client.firstSyncLimited":
+    "Primo contatto: recuperata al massimo l'ultima sessione del manico; le precedenti non sono verificabili.",
+  "brush.client.invalidCountPayload":
+    "Conteggio sessioni Bluetooth non valido: nessuna sincronizzazione, cursore invariato.",
   "brush.client.clockUnavailable":
     "Clock del manico non disponibile: data sessione approssimata",
   "brush.client.sessionRead": "Sessione {id} letta ({duration}s)",

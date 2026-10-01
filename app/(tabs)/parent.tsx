@@ -353,6 +353,9 @@ export default function ParentDashboardScreen() {
           <Text style={[styles.sectionCopy, { color: colors.muted }]}>
             {t("family.parent.rewardsDescription")}
           </Text>
+          <Text style={[styles.sectionCopy, { color: colors.muted }]}>
+            {t("family.parent.rewardsLifetimeNote")}
+          </Text>
         </View>
 
         <View

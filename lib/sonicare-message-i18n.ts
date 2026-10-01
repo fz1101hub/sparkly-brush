@@ -12,6 +12,12 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Connessione Bluetooth terminata": "brush.client.connectionEnded",
   "Conteggio storico BLE non disponibile; sincronizzazione prudente":
     "brush.client.historyCountUnavailable",
+  "Impossibile leggere sessionCount BLE; sincronizzazione prudente":
+    "brush.client.historyCountUnavailable",
+  "Prima sincronizzazione limitata all'ultima sessione: le sessioni precedenti non vengono recuperate":
+    "brush.client.firstSyncLimited",
+  "Payload sessionCount BLE non valido; cursore invariato":
+    "brush.client.invalidCountPayload",
   "Clock del manico non disponibile: data sessione approssimata":
     "brush.client.clockUnavailable",
   Disconnesso: "brush.client.disconnectedShort",
@@ -42,6 +48,8 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Lo storico del manico non contiene più tutte le sessioni mancanti":
     "brush.client.incompleteHistory",
   "Collega prima lo spazzolino": "brush.error.connectFirst",
+  "Nessun contatore BLE precedente da reimpostare per questo manico":
+    "brush.error.noCounterToReset",
 };
 
 const HANDLE_STATES: Record<string, TranslationKey> = {
@@ -53,6 +61,13 @@ const HANDLE_STATES: Record<string, TranslationKey> = {
   verifica: "device.handleState.verifying",
   background: "device.handleState.background",
 };
+
+/** Only known protocol messages may be promoted to primary user feedback. */
+export function isKnownSonicareMessage(message: string): boolean {
+  return Object.prototype.hasOwnProperty.call(EXACT_MESSAGES, message)
+    || /^(?:Il manico espone \d+ sessioni: sincronizzazione oltre il limite sicuro|Intervallo BLE non sicuro \(\d+ sessioni\): il cursore non è stato avanzato|Record BLE \d+ mancante o non riconosciuto; cursore invariato)$/.test(message)
+    || /^(?:\d+ servizi GATT rilevati|\d+ sessioni BLE pronte per il salvataggio atomico)$/.test(message);
+}
 
 export function localizeSonicareMessage(
   message: string,

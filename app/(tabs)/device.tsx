@@ -8,7 +8,7 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
-import { localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
 
 const LIGHT_CARD_FOREGROUND = "#17213A";
 const LIGHT_CARD_MUTED = "#56617D";
@@ -46,8 +46,14 @@ export default function DeviceScreen() {
         text: t("device.forgetAction"),
         style: "destructive",
         onPress: () =>
-          void forgetToothbrush().catch(() => {
-            Alert.alert(t("device.forgetFailureTitle"), t("device.retryLater"));
+          void forgetToothbrush().catch((error: unknown) => {
+            const detail = error instanceof Error ? error.message : "";
+            Alert.alert(
+              t("device.forgetFailureTitle"),
+              isKnownSonicareMessage(detail)
+                ? localizeSonicareMessage(detail, t)
+                : t("device.retryLater"),
+            );
           }),
       },
     ]);

@@ -533,6 +533,7 @@ export const fr = {
   "brush.log.handleForgotten":
     "Manche oublié : le prochain compteur BLE repartira à partir d'une nouvelle génération",
   "brush.error.handleRemovalFailed": "Échec de la suppression du manche",
+  "brush.error.noCounterToReset": "Aucun ancien compteur Bluetooth à réinitialiser pour ce manche.",
   "brush.log.syncDisabledInDemo":
     "La synchronisation BLE est désactivée en mode démo",
   "brush.error.connectFirst": "Connectez d'abord la brosse à dents",
@@ -543,6 +544,8 @@ export const fr = {
     "Réessayez d'abord la sauvegarde de la session précédente",
   "brush.log.demoTimerStarted": "Minuteur démo démarré",
   "brush.log.guidedTimerStarted": "Minuteur guidé démarré",
+  "brush.log.manualReplacedByHandle": "La brosse à dents a démarré : le minuteur manuel a été annulé sans créditer une deuxième séance.",
+  "brush.log.liveSessionInProgress": "Une séance est déjà en cours : utilise la brosse à dents ou termine le minuteur actif.",
   "brush.log.demoModeEnabled": "Mode démo activé",
   "brush.log.demoModeDisabled": "Mode démo désactivé",
   "brush.log.demoSessionAdded": "Session de démo {period} ajoutée",
@@ -974,6 +977,8 @@ export const fr = {
   "family.parent.rewardsTitle": "Récompenses familiales",
   "family.parent.rewardsDescription":
     "Crée des récompenses réelles choisies par le parent. L'application ne garde que la progression ; la promesse reste une affaire de famille.",
+  "family.parent.rewardsLifetimeNote":
+    "Les objectifs comptent tout l'historique enregistré (pour les séries, ton meilleur record). Une nouvelle récompense peut se débloquer aussitôt.",
   "family.parent.newReward": "NOUVELLE RÉCOMPENSE",
   "family.parent.rewardNameLabel": "Nom de la récompense",
   "family.parent.rewardNamePlaceholder": "Ex. : choisissez le film de ce soir",
@@ -1040,6 +1045,10 @@ export const fr = {
     "Lecture facultative indisponible : {code}",
   "brush.client.historyCountUnavailable":
     "Nombre d’éléments de l’historique BLE indisponible ; synchronisation prudente",
+  "brush.client.firstSyncLimited":
+    "Première connexion : au plus la dernière séance du manche a été récupérée ; les précédentes ne sont pas vérifiables.",
+  "brush.client.invalidCountPayload":
+    "Nombre de séances Bluetooth invalide : synchronisation arrêtée sans déplacer le curseur.",
   "brush.client.clockUnavailable":
     "Horloge du manche indisponible : date de session approximative",
   "brush.client.sessionRead": "Session {id} lue ({duration}s)",

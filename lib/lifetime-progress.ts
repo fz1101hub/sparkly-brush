@@ -197,7 +197,11 @@ export function applySessionToLifetime(
 ): LifetimeProgress {
   const next = cloneProgress(progress);
   Object.values(next.pendingDeviceFallbacks).forEach((fallback) => {
-    fallback.hasInterveningProgress = true;
+    // A historical BLE record can arrive after a live fallback even though it
+    // predates that brushing. It must not make the fallback unreconcilable.
+    if (!sessionDefinitelyPrecedesFallback(session.startedAt, session.durationSeconds, fallback)) {
+      fallback.hasInterveningProgress = true;
+    }
   });
   next.attemptedSessions += 1;
   next.totalBrushingSeconds += Math.max(0, session.durationSeconds);
@@ -508,6 +512,7 @@ export function matchesPendingDeviceFallback(
   observedStartedAt: number,
   timeConfidence: BrushSession["timeConfidence"] = "exact",
   allowInitialApproximateMatch = false,
+  excludedFallbackSessionIds?: ReadonlySet<string>,
 ): PendingDeviceFallback | null {
   return pendingFallbacksForDevice(progress, deviceId)
     .map((pending) => {
@@ -516,17 +521,64 @@ export function matchesPendingDeviceFallback(
       const expectedSuccessor = pending.expectedSessionId !== null
         && pending.expectedSessionId === sessionId;
       const drift = Math.abs(pending.startedAt - observedStartedAt);
+      const definitelyBeforeFallback = sessionDefinitelyPrecedesFallback(
+        observedStartedAt,
+        durationSeconds,
+        pending,
+      );
       const correlated = expectedSuccessor
-        ? timeConfidence === "approximate" || drift <= 30_000
+        ? !definitelyBeforeFallback && (timeConfidence === "approximate" || drift <= 30_000)
         : (timeConfidence === "approximate" && allowInitialApproximateMatch)
-          || (!pending.hasInterveningProgress && drift <= 5_000);
-      return { pending, sameShape, expectedSuccessor, correlated, drift };
+          || (!pending.hasInterveningProgress && !definitelyBeforeFallback && drift <= 5_000);
+      return {
+        pending,
+        sameShape,
+        expectedSuccessor,
+        correlated,
+        drift,
+        excluded: excludedFallbackSessionIds?.has(pending.sessionId) === true,
+      };
     })
-    .filter((candidate) => candidate.sameShape && candidate.correlated)
+    .filter((candidate) => candidate.sameShape && candidate.correlated && !candidate.excluded)
     .sort((first, second) => (
       Number(second.expectedSuccessor) - Number(first.expectedSuccessor)
       || first.drift - second.drift
     ))[0]?.pending ?? null;
+}
+
+/**
+ * A late sync can reveal an older counter value before a live fallback. When
+ * that older value had been predicted as the fallback's successor, advance the
+ * prediction instead of leaving the fallback permanently tied to that value.
+ */
+export function advancePendingDeviceFallbackExpectationsForEarlierSession(
+  progress: LifetimeProgress,
+  deviceId: string,
+  sessionId: number,
+  startedAt: number,
+  durationSeconds: number,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  const key = deviceKey(deviceId);
+  Object.values(next.pendingDeviceFallbacks).forEach((fallback) => {
+    if (
+      fallback.deviceKey === key
+      && !fallback.hasInterveningProgress
+      && fallback.expectedSessionId === sessionId
+      && sessionDefinitelyPrecedesFallback(startedAt, durationSeconds, fallback)
+    ) {
+      fallback.expectedSessionId = (sessionId + 1) & 0xffff;
+    }
+  });
+  return next;
+}
+
+function sessionDefinitelyPrecedesFallback(
+  startedAt: number,
+  durationSeconds: number,
+  fallback: PendingDeviceFallback,
+): boolean {
+  return startedAt + Math.max(0, durationSeconds) * 1_000 <= fallback.startedAt;
 }
 
 export function clearPendingDeviceFallback(
@@ -645,11 +697,17 @@ export function replacePendingDeviceFallbackProgress(
     .find((candidate) => candidate.sessionId === fallbackSessionId);
   if (!pending) return null;
 
-  const rewound = !pending.hasInterveningProgress
+  // The pending snapshot is safe to rewind only while the fallback is still
+  // the sole session added after it. A late GATT record can be older by clock
+  // time yet already be materialized in this batch (or a previous one).
+  const hasAdditionalMaterializedProgress = pending.progressBeforeSession !== null
+    && progress.attemptedSessions > pending.progressBeforeSession.attemptedSessions + 1;
+  const canRewind = !pending.hasInterveningProgress && !hasAdditionalMaterializedProgress;
+  const rewound = canRewind
     ? rewindPendingDeviceFallbackProgress(progress, deviceId, fallbackSessionId)
     : null;
   const before = rewound ?? removePendingFallbackAccounting(progress, pending);
-  const after = pending.hasInterveningProgress || !historyComplete
+  const after = !canRewind || !historyComplete
     ? applySessionToPartialLifetime(before, authoritativeSession)
     : applySessionToLifetime(before, authoritativeSession);
   return { before, after };

@@ -4,6 +4,8 @@
 **Data:** 24 settembre 2026  
 **Ramo:** `fix/claude-ultracode-audit`
 
+> **Nota del 1° ottobre 2026:** i conteggi e le versioni sotto documentano il checkpoint di settembre, non il candidato più recente. L'[audit Opus e la risposta tecnica](audit-opus-2026-10-01.md) coprono il fallback GATT Kids senza `40d2`, la riconciliazione BLE/storage, il lint esteso e il contrasto degli starter/modal. La PR #7 resta non unita finché la CI GitHub non esegue effettivamente i job e passa.
+
 ## Sintesi
 
 Questo intervento aggiunge quattro livelli complementari di verifica: **stress pluriennale della progressione e dei backup**, **accessibilità automatica web e contratti semantici React Native**, **flussi end-to-end Android con Maestro** e **localizzazione completa in cinque lingue**. Nessuno di questi gate sostituisce la prova Bluetooth sul Philips Sonicare for Kids HX6322/04 reale; riducono però in modo sostanziale le regressioni rilevabili prima del collaudo fisico.

@@ -39,6 +39,7 @@ import {
   saveSessionWithLifetime,
 } from "@/lib/brush-storage";
 import { useI18n } from "@/contexts/locale-context";
+import { useOptionalPreferences } from "@/contexts/preferences-context";
 import {
   translateDynamic,
   type TranslationKey,
@@ -46,10 +47,11 @@ import {
 } from "@/lib/i18n";
 import { DEFAULT_LOCALE } from "@/lib/locale-types";
 import { createSonicareClient } from "@/lib/sonicare-client";
-import { localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
 import {
   createEmptyLifetimeProgress,
   deviceKey,
+  pendingDeviceFallbacks,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -175,16 +177,17 @@ export function BrushProvider({
   syncDelayMs = 450,
 }: BrushProviderProps) {
   const activeTranslate = useBrushTranslation();
+  const hapticsEnabled = useOptionalPreferences()?.preferences.hapticsEnabled ?? true;
   const translateRef = useRef(activeTranslate);
-  translateRef.current = activeTranslate;
+  useEffect(() => {
+    translateRef.current = activeTranslate;
+  }, [activeTranslate]);
   const t = useCallback<BrushTranslate>(
     (key, params) => translateRef.current(key, params),
     [],
   );
   const [status, setStatus] = useState<ConnectionStatus>("idle");
-  const [statusMessage, setStatusMessage] = useState(() =>
-    t("brush.status.ready"),
-  );
+  const [statusDetail, setStatusDetail] = useState<string | null>(null);
   const [adapterState, setAdapterState] = useState("Unknown");
   const [device, setDevice] = useState<ToothbrushDevice | null>(null);
   const [live, setLive] = useState<BrushLiveData>(DEFAULT_LIVE_DATA);
@@ -207,8 +210,10 @@ export function BrushProvider({
   const clientRef = useRef<SonicareClient | null>(null);
   const deviceRef = useRef<ToothbrushDevice | null>(null);
   const liveRef = useRef<BrushLiveData>(DEFAULT_LIVE_DATA);
+  const liveSessionPeakRef = useRef<BrushLiveData | null>(null);
   const lifetimeProgressRef = useRef<LifetimeProgress>(createEmptyLifetimeProgress());
-  const manualStartRef = useRef<number>(Date.now());
+  const manualStartRef = useRef<number>(0);
+  const manualActiveRef = useRef(false);
   const manualDemoModeRef = useRef(false);
   const manualSavedRef = useRef(false);
   const manualSavePromiseRef = useRef<Promise<boolean> | null>(null);
@@ -217,7 +222,18 @@ export function BrushProvider({
   const forgettingToothbrushRef = useRef(false);
 
   const history = demoMode ? demoHistory : realHistory;
-  const manualSaveError = manualSaveErrorKey ? t(manualSaveErrorKey) : null;
+  const manualSaveError = manualSaveErrorKey ? activeTranslate(manualSaveErrorKey) : null;
+  const statusKeyByStatus: Record<ConnectionStatus, TranslationKey> = {
+    idle: device ? "brush.client.disconnectedShort" : "brush.status.ready",
+    scanning: "brush.client.scanPrompt",
+    connecting: "brush.client.connecting",
+    connected: "brush.client.ready",
+    unsupported: "brush.client.unsupported",
+    error: "brush.client.connectionFailed",
+  };
+  const statusMessage = statusDetail
+    ? localizeSonicareMessage(statusDetail, activeTranslate)
+    : activeTranslate(statusKeyByStatus[status]);
 
   useEffect(() => {
     lifetimeProgressRef.current = lifetimeProgress;
@@ -268,19 +284,6 @@ export function BrushProvider({
   );
 
   useEffect(() => {
-    const keyByStatus: Partial<Record<ConnectionStatus, TranslationKey>> = {
-      idle: device ? "brush.client.disconnectedShort" : "brush.status.ready",
-      scanning: "brush.client.scanPrompt",
-      connecting: "brush.client.connecting",
-      connected: "brush.client.ready",
-      unsupported: "brush.client.unsupported",
-      error: "brush.client.connectionFailed",
-    };
-    const key = keyByStatus[status];
-    if (key) setStatusMessage(activeTranslate(key));
-  }, [activeTranslate, device, status]);
-
-  useEffect(() => {
     let active = true;
     void Promise.all([
       loadHistoryBundle(),
@@ -326,8 +329,8 @@ export function BrushProvider({
           pending.previous.elapsedSeconds >= Math.min(pending.previous.routineSeconds, 120) * 0.9,
         source: "device",
       });
+      lifetimeProgressRef.current = next.lifetimeProgress;
       applySavedSession(next);
-      appendTranslatedLog("warning", "brush.log.liveFallback");
     };
 
     const pendingFromLiveData = (
@@ -335,12 +338,13 @@ export function BrushProvider({
       deviceId: string | undefined,
     ): PendingBleSync | null => {
       const snapshot = liveRef.current;
-      if (!deviceId || !snapshot.isBrushing || snapshot.elapsedSeconds < 5) return null;
+      const peak = liveSessionPeakRef.current ?? snapshot;
+      if (!deviceId || !snapshot.isBrushing || peak.elapsedSeconds < 5) return null;
       return {
         client: syncClient,
         deviceId,
-        previous: snapshot,
-        startedAt: Date.now() - snapshot.elapsedSeconds * 1000,
+        previous: peak,
+        startedAt: Date.now() - peak.elapsedSeconds * 1000,
         timer: null,
         running: null,
         forceFallback: false,
@@ -378,6 +382,9 @@ export function BrushProvider({
         for (const predecessor of predecessors) {
           await runPendingBleSync(predecessor, fallbackOnly);
         }
+        // The live session must be durable even if the handle still exposes only
+        // older records at this stop. Storage reconciles its eventual record.
+        await saveLiveFallback(pending);
         let stored: StoredDeviceSession[] | null = null;
         if (!pending.forceFallback) {
           try {
@@ -389,16 +396,24 @@ export function BrushProvider({
               }),
             ]);
           } catch (error) {
-            appendTranslatedLog("warning", "brush.error.bleRecordUnavailable");
+            const detail = error instanceof Error ? error.message : "";
+            if (isKnownSonicareMessage(detail)) appendLog("warning", detail);
+            else appendTranslatedLog("warning", "brush.error.bleRecordUnavailable");
           } finally {
             pending.cancelSync = null;
           }
         }
         if (stored?.length) await persistDeviceSessions(stored, pending.deviceId);
-        else await saveLiveFallback(pending);
+        const fallbackId = `ble-live:${pending.deviceId}:${pending.startedAt}`;
+        if (pendingDeviceFallbacks(lifetimeProgressRef.current, pending.deviceId)
+          .some((fallback) => fallback.sessionId === fallbackId)) {
+          appendTranslatedLog("warning", "brush.log.liveFallback");
+        }
       })()
         .catch((error) => {
-          appendTranslatedLog("error", "brush.error.bleSessionNotSaved");
+          const detail = error instanceof Error ? error.message : "";
+          if (isKnownSonicareMessage(detail)) appendLog("error", detail);
+          else appendTranslatedLog("error", "brush.error.bleSessionNotSaved");
         })
         .finally(() => {
           pendingBleSyncQueueRef.current = pendingBleSyncQueueRef.current.filter(
@@ -412,7 +427,7 @@ export function BrushProvider({
       onAdapterState: setAdapterState,
       onStatus: (next, message) => {
         setStatus(next);
-        if (message) setStatusMessage(localizeSonicareMessage(message, t));
+        setStatusDetail(message && isKnownSonicareMessage(message) ? message : null);
       },
       onDevice: (next) => {
         if (!next) {
@@ -424,7 +439,9 @@ export function BrushProvider({
           }
           deviceRef.current = null;
           setDevice(null);
+          setStatusDetail(null);
           liveRef.current = { ...DEFAULT_LIVE_DATA };
+          liveSessionPeakRef.current = null;
           setLive({ ...DEFAULT_LIVE_DATA });
           return;
         }
@@ -437,10 +454,29 @@ export function BrushProvider({
       },
       onLiveData: (next) => {
         const previous = liveRef.current;
+        if (next.isBrushing) {
+          liveSessionPeakRef.current = {
+            ...next,
+            elapsedSeconds: Math.max(
+              previous.isBrushing ? (liveSessionPeakRef.current?.elapsedSeconds ?? 0) : 0,
+              next.elapsedSeconds,
+            ),
+          };
+          if (!previous.isBrushing && manualActiveRef.current) {
+            manualActiveRef.current = false;
+            manualSavedRef.current = true;
+            setManualActive(false);
+            setManualElapsed(0);
+            appendTranslatedLog("info", "brush.log.manualReplacedByHandle");
+          }
+        }
         liveRef.current = next;
         setLive(next);
 
-        if (previous.isBrushing && !next.isBrushing && previous.elapsedSeconds >= 5) {
+        if (previous.isBrushing && !next.isBrushing) {
+          const peak = liveSessionPeakRef.current ?? previous;
+          liveSessionPeakRef.current = null;
+          if (peak.elapsedSeconds < 5) return;
           const deviceId = deviceRef.current?.id;
           if (!deviceId) {
             appendTranslatedLog("error", "brush.error.bleSessionNoIdentity");
@@ -449,8 +485,8 @@ export function BrushProvider({
           const pending: PendingBleSync = {
             client,
             deviceId,
-            previous,
-            startedAt: Date.now() - previous.elapsedSeconds * 1000,
+            previous: peak,
+            startedAt: Date.now() - peak.elapsedSeconds * 1000,
             timer: null,
             running: null,
             forceFallback: false,
@@ -485,7 +521,7 @@ export function BrushProvider({
       client.destroy();
       clientRef.current = null;
     };
-  }, [appendLog, clientFactory, persistDeviceSessions, syncDelayMs, t]);
+  }, [appendLog, appendTranslatedLog, clientFactory, persistDeviceSessions, syncDelayMs, t]);
 
   const persistManualSession = useCallback(
     (session: BrushSession): Promise<boolean> => {
@@ -517,13 +553,13 @@ export function BrushProvider({
               : "brush.log.realSessionSaved",
             { duration: session.durationSeconds },
           );
-          if (session.completed && Platform.OS !== "web") {
+          if (session.completed && Platform.OS !== "web" && hapticsEnabled) {
             void Haptics.notificationAsync(
               Haptics.NotificationFeedbackType.Success,
             );
           }
           return true;
-        } catch (error) {
+        } catch {
           manualSavedRef.current = false;
           setManualSaveErrorKey("brush.error.guidedSessionNotSaved");
           appendTranslatedLog("error", "brush.error.guidedSessionNotSaved");
@@ -536,7 +572,7 @@ export function BrushProvider({
       manualSavePromiseRef.current = operation;
       return operation;
     },
-    [appendLog, t],
+    [appendTranslatedLog, hapticsEnabled],
   );
 
   useEffect(() => {
@@ -552,8 +588,9 @@ export function BrushProvider({
   }, [manualActive]);
 
   useEffect(() => {
-    if (!manualActive || manualElapsed < MANUAL_TARGET_SECONDS || manualSavedRef.current) return;
+    if (!manualActive || !manualActiveRef.current || manualElapsed < MANUAL_TARGET_SECONDS || manualSavedRef.current) return;
     manualSavedRef.current = true;
+    manualActiveRef.current = false;
     setManualActive(false);
     const sessionIsDemo = manualDemoModeRef.current;
     const session: BrushSession = {
@@ -567,21 +604,6 @@ export function BrushProvider({
     };
     void persistManualSession(session);
   }, [manualActive, manualElapsed, persistManualSession]);
-
-  const connect = useCallback(async () => {
-    if (forgettingToothbrushRef.current) {
-      appendTranslatedLog("warning", "brush.log.waitForForget");
-      return;
-    }
-    if (demoMode) {
-      appendTranslatedLog("warning", "brush.log.disableDemoToConnect");
-      return;
-    }
-    if (Platform.OS !== "web") {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    await clientRef.current?.scanAndConnect().catch(() => undefined);
-  }, [appendLog, demoMode, t]);
 
   const disconnect = useCallback(async () => {
     await (clientRef.current?.disconnect() ?? Promise.resolve());
@@ -610,13 +632,15 @@ export function BrushProvider({
       setProgressEvent(null);
       appendTranslatedLog("success", "brush.log.handleForgotten");
     } catch (error) {
-      appendTranslatedLog("error", "brush.error.handleRemovalFailed");
+      const detail = error instanceof Error ? error.message : "";
+      if (isKnownSonicareMessage(detail)) appendLog("error", detail);
+      else appendTranslatedLog("error", "brush.error.handleRemovalFailed");
       throw error;
     } finally {
       forgettingToothbrushRef.current = false;
       setIsForgettingToothbrush(false);
     }
-  }, [appendLog, disconnect, t]);
+  }, [appendLog, appendTranslatedLog, disconnect, t]);
 
   const syncLatest = useCallback(async () => {
     if (forgettingToothbrushRef.current) {
@@ -629,7 +653,11 @@ export function BrushProvider({
     }
     try {
       const deviceId = deviceRef.current?.id;
-      if (!deviceId) throw new Error(t("brush.error.connectFirst"));
+      if (!deviceId) {
+        appendTranslatedLog("warning", "brush.error.connectFirst");
+        return;
+      }
+      setStatusDetail(null);
       const cursor =
         lifetimeProgressRef.current.deviceCursors[deviceKey(deviceId)] ?? null;
       const stored = await clientRef.current?.syncStoredSessionsSince(cursor);
@@ -648,11 +676,42 @@ export function BrushProvider({
         appendTranslatedLog("warning", "brush.log.noNewSessions");
       }
     } catch (error) {
-      appendTranslatedLog("error", "brush.error.syncFailed");
+      const detail = error instanceof Error ? error.message : "";
+      if (isKnownSonicareMessage(detail)) {
+        appendLog("error", detail);
+        setStatusDetail(detail);
+      } else appendTranslatedLog("error", "brush.error.syncFailed");
     }
-  }, [appendLog, demoMode, persistDeviceSessions, t]);
+  }, [appendLog, appendTranslatedLog, demoMode, persistDeviceSessions]);
+
+  const connect = useCallback(async () => {
+    if (forgettingToothbrushRef.current) {
+      appendTranslatedLog("warning", "brush.log.waitForForget");
+      return;
+    }
+    if (demoMode) {
+      appendTranslatedLog("warning", "brush.log.disableDemoToConnect");
+      return;
+    }
+    if (Platform.OS !== "web" && hapticsEnabled) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const client = clientRef.current;
+    if (!client) return;
+    try {
+      await client.scanAndConnect();
+    } catch {
+      // The client already reports the connection error to the user and log.
+      return;
+    }
+    if (deviceRef.current?.id) await syncLatest();
+  }, [appendTranslatedLog, demoMode, hapticsEnabled, syncLatest]);
 
   const startManual = useCallback(() => {
+    if (liveRef.current.isBrushing || manualActiveRef.current) {
+      appendTranslatedLog("warning", "brush.log.liveSessionInProgress");
+      return;
+    }
     if (pendingManualSession || isSavingManualSession) {
       appendTranslatedLog("warning", "brush.log.retryPreviousSave");
       return;
@@ -660,18 +719,21 @@ export function BrushProvider({
     manualStartRef.current = Date.now();
     manualDemoModeRef.current = demoMode;
     manualSavedRef.current = false;
+    manualActiveRef.current = true;
     setManualElapsed(0);
     setManualActive(true);
     appendTranslatedLog(
       "info",
       demoMode ? "brush.log.demoTimerStarted" : "brush.log.guidedTimerStarted",
     );
-    if (Platform.OS !== "web") {
+    if (Platform.OS !== "web" && hapticsEnabled) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [appendLog, demoMode, isSavingManualSession, pendingManualSession, t]);
+  }, [appendTranslatedLog, demoMode, hapticsEnabled, isSavingManualSession, pendingManualSession]);
 
   const stopManual = useCallback(async () => {
+    if (!manualActiveRef.current) return;
+    manualActiveRef.current = false;
     setManualActive(false);
     const duration = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
@@ -713,7 +775,7 @@ export function BrushProvider({
         enabled ? "brush.log.demoModeEnabled" : "brush.log.demoModeDisabled",
       );
     },
-    [appendLog, t],
+    [appendTranslatedLog],
   );
 
   const addDemoSession = useCallback(
@@ -729,7 +791,7 @@ export function BrushProvider({
       };
       appendTranslatedLog("success", keyByPeriod[period]);
     },
-    [appendLog, t],
+    [appendTranslatedLog],
   );
 
   const generateDemoWeek = useCallback(async () => {
@@ -746,13 +808,13 @@ export function BrushProvider({
     const next = await replaceDemoHistory(sessions);
     setDemoHistory(next);
     appendTranslatedLog("success", "brush.log.demoWeekGenerated");
-  }, [appendLog, t]);
+  }, [appendTranslatedLog]);
 
   const clearDemoData = useCallback(async () => {
     await clearDemoHistory();
     setDemoHistory([]);
     appendTranslatedLog("info", "brush.log.demoDataDeleted");
-  }, [appendLog, t]);
+  }, [appendTranslatedLog]);
 
   const restoreRealHistory = useCallback(
     async (
@@ -770,7 +832,7 @@ export function BrushProvider({
       setProgressEvent(null);
       appendTranslatedLog("success", "brush.log.historyRestored");
     },
-    [appendLog, t],
+    [appendTranslatedLog],
   );
 
   const reloadRealHistory = useCallback(async () => {
@@ -779,7 +841,7 @@ export function BrushProvider({
     setLifetimeProgress(next.lifetimeProgress);
     setProgressEvent(null);
     appendTranslatedLog("success", "brush.log.archiveRestored");
-  }, [appendLog, t]);
+  }, [appendTranslatedLog]);
 
   const adoptRestoredHistory = useCallback(
     (history: BrushSession[], progress: LifetimeProgress) => {
@@ -788,7 +850,7 @@ export function BrushProvider({
       setProgressEvent(null);
       appendTranslatedLog("success", "brush.log.archiveRestored");
     },
-    [appendLog, t],
+    [appendTranslatedLog],
   );
 
   const clearAllHistory = useCallback(async () => {
@@ -803,7 +865,7 @@ export function BrushProvider({
     setLifetimeProgress(createEmptyLifetimeProgress());
     setProgressEvent(null);
     appendTranslatedLog("info", "brush.log.localHistoryDeleted");
-  }, [appendLog, demoMode, t]);
+  }, [appendTranslatedLog, demoMode]);
 
   const isActive = live.isBrushing || manualActive;
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
@@ -888,7 +950,6 @@ export function BrushProvider({
       statusMessage,
       stopManual,
       syncLatest,
-      t,
     ],
   );
 

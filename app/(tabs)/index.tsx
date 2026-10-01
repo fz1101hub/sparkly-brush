@@ -205,13 +205,13 @@ export default function TodayScreen() {
         >
           <AnimatedBrushling creature={selected} size={118} level={stats.level} active={isActive} />
           <View style={styles.companionCopy}>
-            <Text style={[styles.companionEyebrow, { color: selected.accent }]}>
+            <Text style={[styles.companionEyebrow, { color: selected.textAccent }]}>
               {t("home.companion.eyebrow")}
             </Text>
             <Text style={[styles.companionName, { color: PASTEL_FOREGROUND }]}>
               {currentEvolution.name}
             </Text>
-            <Text style={[styles.companionTitle, { color: selected.accent }]}>
+            <Text style={[styles.companionTitle, { color: selected.textAccent }]}>
               {currentEvolution.title}
             </Text>
             <Text
@@ -251,10 +251,10 @@ export default function TodayScreen() {
 
         <View style={[styles.speechCard, { backgroundColor: "#FFFFFF", borderColor: selected.accent }]}>
           <View style={[styles.speechIcon, { backgroundColor: selected.soft }]}>
-            <MaterialIcons name="chat-bubble-outline" size={21} color={selected.accent} />
+            <MaterialIcons name="chat-bubble-outline" size={21} color={selected.textAccent} />
           </View>
           <View style={styles.speechCopy}>
-            <Text style={[styles.speechName, { color: selected.accent }]}>
+            <Text style={[styles.speechName, { color: selected.textAccent }]}>
               {t("home.companion.speechAttribution", {
                 name: currentEvolution.name,
               })}
@@ -278,7 +278,7 @@ export default function TodayScreen() {
             <View
               style={[
                 styles.familyRewardIcon,
-                { backgroundColor: familyReward.unlocked ? "#55B987" : "#E8BE38" },
+                { backgroundColor: familyReward.unlocked ? "#17633F" : "#6F5100" },
               ]}
             >
               <MaterialIcons name={familyReward.unlocked ? "redeem" : "family-restroom"} size={23} color="#FFFFFF" />
@@ -287,12 +287,12 @@ export default function TodayScreen() {
               <Text
                 style={[
                   styles.familyRewardEyebrow,
-                  { color: familyReward.unlocked ? "#2E8A60" : "#8A6900" },
+                  { color: familyReward.unlocked ? "#17633F" : "#6F5100" },
                 ]}
               >
                 {t("home.familyReward.eyebrow")}
               </Text>
-              <Text style={[styles.familyRewardTitle, { color: colors.foreground }]}>{familyReward.title}</Text>
+              <Text style={[styles.familyRewardTitle, { color: PASTEL_FOREGROUND }]}>{familyReward.title}</Text>
               <View style={styles.familyRewardProgressRow}>
                 <View
                   accessibilityRole="progressbar"
@@ -316,11 +316,11 @@ export default function TodayScreen() {
                     ]}
                   />
                 </View>
-                <Text style={[styles.familyRewardCount, { color: colors.muted }]}>
+                <Text style={[styles.familyRewardCount, { color: PASTEL_MUTED }]}>
                   {familyReward.progress}/{familyReward.target}
                 </Text>
               </View>
-              <Text style={[styles.familyRewardText, { color: colors.muted }]}>
+              <Text style={[styles.familyRewardText, { color: PASTEL_MUTED }]}>
                 {familyReward.unlocked
                   ? t("home.familyReward.unlockedMessage")
                   : t("home.familyReward.lockedMessage")}
@@ -334,7 +334,7 @@ export default function TodayScreen() {
             <MaterialIcons
               name={demoMode ? "science" : status === "connected" ? "bluetooth-connected" : "bluetooth-searching"}
               size={23}
-              color={demoMode ? "#9A7200" : status === "connected" ? colors.success : colors.primary}
+              color={demoMode ? "#6F5100" : status === "connected" ? "#17633F" : "#173F9F"}
             />
           </View>
           <View style={styles.statusCopy}>
@@ -367,7 +367,7 @@ export default function TodayScreen() {
           ) : device?.battery !== undefined ? (
             <View style={styles.batteryBadge}>
               <MaterialIcons name="battery-5-bar" size={17} color={colors.success} />
-              <Text style={[styles.batteryText, { color: colors.success }]}>{device.battery}%</Text>
+              <Text style={[styles.batteryText, { color: colors.foreground }]}>{device.battery}%</Text>
             </View>
           ) : null}
         </View>
@@ -474,22 +474,22 @@ export default function TodayScreen() {
 
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
-            <MaterialIcons name="done-all" size={24} color={colors.success} />
-            <Text style={[styles.statValue, { color: colors.foreground }]}>
+            <MaterialIcons name="done-all" size={24} color="#17633F" />
+            <Text style={[styles.statValue, { color: PASTEL_FOREGROUND }]}>
               {todaySessions}
             </Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>
+            <Text style={[styles.statLabel, { color: PASTEL_MUTED }]}>
               {t("home.stats.sessionsToday")}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#FFF0E4" }]}>
-            <MaterialIcons name="schedule" size={24} color={colors.warning} />
-            <Text style={[styles.statValue, { color: colors.foreground }]}>
+            <MaterialIcons name="schedule" size={24} color="#9A3F0D" />
+            <Text style={[styles.statValue, { color: PASTEL_FOREGROUND }]}>
               {t("home.stats.minutesValue", {
                 minutes: Math.round(todaySeconds / 60),
               })}
             </Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>
+            <Text style={[styles.statLabel, { color: PASTEL_MUTED }]}>
               {t("home.stats.minutesToday")}
             </Text>
           </View>
@@ -514,7 +514,7 @@ export default function TodayScreen() {
           <View
             style={[
               styles.missionIcon,
-              { backgroundColor: missionCenter.today.allCompleted ? "#E8BE38" : "#2457D6" },
+              { backgroundColor: missionCenter.today.allCompleted ? "#6F5100" : "#2457D6" },
             ]}
           >
             <MaterialIcons
@@ -529,26 +529,26 @@ export default function TodayScreen() {
                 styles.missionEyebrow,
                 {
                   color: missionCenter.today.allCompleted
-                    ? "#9A7200"
-                    : colors.primary,
+                    ? "#6F5100"
+                    : "#173F9F",
                 },
               ]}
             >
               {t("home.missions.eyebrow")}
             </Text>
-            <Text style={[styles.missionTitle, { color: colors.foreground }]}>
+            <Text style={[styles.missionTitle, { color: PASTEL_FOREGROUND }]}>
               {t("home.missions.progress", {
                 completed: missionCenter.today.completedCount,
                 total: 3,
               })}
             </Text>
-            <Text style={[styles.missionText, { color: colors.muted }]}>
+            <Text style={[styles.missionText, { color: PASTEL_MUTED }]}>
               {missionCenter.today.allCompleted
                 ? t("home.missions.completedMessage")
                 : t("home.missions.incompleteMessage")}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+          <MaterialIcons name="chevron-right" size={24} color={PASTEL_MUTED} />
         </Pressable>
 
         <View style={[styles.rewardStrip, { backgroundColor: colors.surface, borderColor: colors.border }]}>

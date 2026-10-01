@@ -1,4 +1,4 @@
-import { useAudioPlayer } from "expo-audio";
+import { useAudioPlayer, type AudioPlayer } from "expo-audio";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo } from "react";
 
 import { usePreferences } from "@/contexts/preferences-context";
@@ -10,30 +10,36 @@ type AudioFeedbackContextValue = {
 
 const AudioFeedbackContext = createContext<AudioFeedbackContextValue | null>(null);
 
+function playBackgroundMusic(player: AudioPlayer): void {
+  player.replace(BRUSHLINGS_MUSIC_URI);
+  player.loop = true;
+  player.volume = 0.08;
+  player.play();
+}
+
+function playRewardChime(player: AudioPlayer): void {
+  player.replace(REWARD_CHIME_URI);
+  player.volume = 0.32;
+  player.play();
+}
+
 export function AudioFeedbackProvider({ children }: PropsWithChildren) {
   const { preferences, ready } = usePreferences();
   const effectPlayer = useAudioPlayer(null);
   const musicPlayer = useAudioPlayer(null);
 
   useEffect(() => {
-    musicPlayer.volume = 0.08;
-    musicPlayer.loop = true;
     if (!ready || !preferences.musicEnabled) {
       musicPlayer.pause();
       return;
     }
-    musicPlayer.replace(BRUSHLINGS_MUSIC_URI);
-    musicPlayer.loop = true;
-    musicPlayer.volume = 0.08;
-    musicPlayer.play();
+    playBackgroundMusic(musicPlayer);
     return () => musicPlayer.pause();
   }, [musicPlayer, preferences.musicEnabled, ready]);
 
   const playSuccess = useCallback(() => {
     if (!preferences.soundsEnabled) return;
-    effectPlayer.replace(REWARD_CHIME_URI);
-    effectPlayer.volume = 0.32;
-    effectPlayer.play();
+    playRewardChime(effectPlayer);
   }, [effectPlayer, preferences.soundsEnabled]);
 
   const value = useMemo(() => ({ playSuccess }), [playSuccess]);

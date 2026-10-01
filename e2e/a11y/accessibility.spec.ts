@@ -33,16 +33,29 @@ async function scan(page: Page, testInfo: TestInfo, name: string) {
   expect.soft(violations, `Violazioni axe in ${name}`).toEqual([]);
 }
 
-async function completeFirstRun(page: Page) {
+async function completeFirstRun(page: Page, starter = "bloopi") {
   await page.goto("/");
   await expect(page.getByTestId("onboarding-overlay")).toBeVisible();
   for (let pageIndex = 0; pageIndex < 4; pageIndex += 1) {
     await page.getByTestId("onboarding-next").click();
   }
   await expect(page.getByTestId("starter-chooser")).toBeVisible();
-  await page.getByTestId("starter-bloopi").click();
+  await page.getByTestId(`starter-${starter}`).click();
   await page.getByTestId("starter-confirm").click();
   await expect(page.getByTestId("today-screen")).toBeVisible();
+}
+
+async function scanSelectedStarters(
+  page: Page,
+  testInfo: TestInfo,
+  prefix = "",
+) {
+  for (const starter of ["spriggo", "flarello"]) {
+    const option = page.getByTestId(`starter-${starter}`);
+    await option.click();
+    await expect(option).toHaveAttribute("aria-checked", "true");
+    await scan(page, testInfo, `${prefix}starter-${starter}`);
+  }
 }
 
 async function waitForActiveModal(page: Page) {
@@ -85,6 +98,7 @@ test.describe("WCAG automatic audit", () => {
     await expect(starter).toHaveAttribute("role", "radio");
     await expect(starter).toHaveAttribute("aria-checked", "true");
     await scan(page, testInfo, "starter");
+    await scanSelectedStarters(page, testInfo);
   });
 
   test("tutte le schermate principali dopo il primo avvio", async ({
@@ -134,6 +148,7 @@ test.describe("WCAG automatic audit in dark mode", () => {
     }
     await expect(page.getByTestId("starter-chooser")).toBeVisible();
     await scan(page, testInfo, "dark-starter");
+    await scanSelectedStarters(page, testInfo, "dark-");
     await page.getByTestId("starter-bloopi").click();
     await page.getByTestId("starter-confirm").click();
     await expect(page.getByTestId("today-screen")).toBeVisible();
@@ -149,4 +164,21 @@ test.describe("WCAG automatic audit in dark mode", () => {
 
     await scanAdditionalRoutes(page, testInfo, "dark-");
   });
+});
+
+test.describe("WCAG automatic audit of reward states", () => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`completed Flarello reward in ${colorScheme}`, async ({
+      page,
+    }, testInfo) => {
+      await page.emulateMedia({ colorScheme });
+      await page.clock.install();
+      await completeFirstRun(page, "flarello");
+      await page.getByTestId("manual-start-stop").click();
+      await page.clock.fastForward(120_000);
+      await expect(page.getByTestId("session-reward-modal")).toBeVisible();
+      await waitForActiveModal(page);
+      await scan(page, testInfo, `${colorScheme}-reward-flarello`);
+    });
+  }
 });

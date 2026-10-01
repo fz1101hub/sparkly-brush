@@ -1,3 +1,5 @@
+import type { TranslationKey, TranslationParams } from "@/lib/i18n";
+
 export type ConnectionStatus =
   | "idle"
   | "scanning"
@@ -87,4 +89,3 @@ export const DEFAULT_LIVE_DATA: BrushLiveData = {
   mode: "clean",
   intensity: "media",
 };
-import type { TranslationKey, TranslationParams } from "@/lib/i18n";

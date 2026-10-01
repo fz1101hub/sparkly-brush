@@ -21,6 +21,7 @@ import { recoverApplicationRestore } from "@/lib/restore-journal";
 import { createRewardLedgerEntries, type RewardLedgerEntry } from "@/lib/reward-ledger";
 import {
   allocateDeviceSessionIdentity,
+  advancePendingDeviceFallbackExpectationsForEarlierSession,
   applySessionToLifetime,
   applySessionToStoredLifetime,
   clearPendingDeviceFallback,
@@ -169,7 +170,7 @@ function queueDeviceWrite<T>(operation: () => Promise<T>): Promise<T> {
   return result;
 }
 
-function isBrushSession(value: unknown): value is BrushSession {
+function isBrushSession(value: unknown, allowDemo = false): value is BrushSession {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<BrushSession>;
   return typeof item.id === "string"
@@ -186,23 +187,23 @@ function isBrushSession(value: unknown): value is BrushSession {
     && typeof item.targetSeconds === "number"
     && item.targetSeconds > 0
     && typeof item.completed === "boolean"
-    && (item.source === "manual" || item.source === "device");
+    && (item.source === "manual" || item.source === "device" || (allowDemo && item.source === "demo"));
 }
 
-function normalizeHistory(value: unknown, limit?: number): BrushSession[] {
+function normalizeHistory(value: unknown, limit?: number, allowDemo = false): BrushSession[] {
   if (!Array.isArray(value)) return [];
   const byId = new Map<string, BrushSession>();
   value.forEach((item) => {
-    if (isBrushSession(item)) byId.set(item.id, item);
+    if (isBrushSession(item, allowDemo)) byId.set(item.id, item);
   });
   const sorted = [...byId.values()].sort((first, second) => second.startedAt - first.startedAt);
   return typeof limit === "number" ? sorted.slice(0, limit) : sorted;
 }
 
-function parseStoredHistory(raw: string | null, limit?: number): BrushSession[] {
+function parseStoredHistory(raw: string | null, limit?: number, allowDemo = false): BrushSession[] {
   if (!raw) return [];
   try {
-    return normalizeHistory(JSON.parse(raw), limit);
+    return normalizeHistory(JSON.parse(raw), limit, allowDemo);
   } catch {
     return [];
   }
@@ -301,7 +302,7 @@ async function createSchema(db: SQLiteDatabase): Promise<void> {
 
 async function recoverInterruptedRestore(db: SQLiteDatabase): Promise<void> {
   if ((await AsyncStorage.getItem(RESTORE_JOURNAL_KEY)) !== "true") return;
-  const rollbackFile = new File(SQLite.defaultDatabaseDirectory, RESTORE_ROLLBACK_DATABASE_NAME);
+  const rollbackFile = new File(databaseDirectoryUri(), RESTORE_ROLLBACK_DATABASE_NAME);
   if (!rollbackFile.exists) {
     throw new Error("Ripristino interrotto: copia di sicurezza non disponibile");
   }
@@ -316,6 +317,12 @@ async function recoverInterruptedRestore(db: SQLiteDatabase): Promise<void> {
   }
   await AsyncStorage.removeItem(RESTORE_JOURNAL_KEY);
   await SQLite.deleteDatabaseAsync(RESTORE_ROLLBACK_DATABASE_NAME).catch(() => undefined);
+}
+
+function databaseDirectoryUri(): string {
+  const directory = SQLite.defaultDatabaseDirectory;
+  if (directory.startsWith("file://")) return directory;
+  return `file://${directory.startsWith("/") ? "" : "/"}${directory}`;
 }
 
 async function insertSession(
@@ -559,26 +566,41 @@ async function backfillRewardLedger(db: SQLiteDatabase): Promise<void> {
 }
 
 async function openDatabase(): Promise<SQLiteDatabase> {
-  const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-  await recoverInterruptedRestore(db);
-  await createSchema(db);
-  await migrateLegacyData(db);
-  await backfillRewardLedger(db);
-  const progressRow = await db.getFirstAsync<MetadataRow>(
-    "SELECT value FROM metadata WHERE key = ?",
-    PROGRESS_META_KEY,
-  );
-  if (!progressRow) {
-    await db.withExclusiveTransactionAsync(async (txn) => {
-      await writeProgress(txn, createEmptyLifetimeProgress());
-      await writeHistoryComplete(txn, true);
-    });
+  let db: SQLiteDatabase | null = null;
+  try {
+    db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+    await recoverInterruptedRestore(db);
+    await createSchema(db);
+    await migrateLegacyData(db);
+    await backfillRewardLedger(db);
+    const progressRow = await db.getFirstAsync<MetadataRow>(
+      "SELECT value FROM metadata WHERE key = ?",
+      PROGRESS_META_KEY,
+    );
+    if (!progressRow) {
+      await db.withExclusiveTransactionAsync(async (txn) => {
+        await writeProgress(txn, createEmptyLifetimeProgress());
+        await writeHistoryComplete(txn, true);
+      });
+    }
+    return db;
+  } catch (error) {
+    await db?.closeAsync().catch(() => undefined);
+    throw error;
   }
-  return db;
 }
 
 async function getDatabase(): Promise<SQLiteDatabase> {
-  databasePromise ??= openDatabase();
+  if (!databasePromise) {
+    const opening = openDatabase();
+    databasePromise = opening;
+    try {
+      return await opening;
+    } catch (error) {
+      if (databasePromise === opening) databasePromise = null;
+      throw error;
+    }
+  }
   return databasePromise;
 }
 
@@ -707,6 +729,38 @@ export async function saveDeviceSessionsWithLifetime(
           ? storedSessions.slice(-initialFallbackCount).map((stored) => stored.sessionId)
           : [],
       );
+      const fallbackAssignments = new Map<number, ReturnType<typeof matchesPendingDeviceFallback>>();
+      const assignedFallbackSessionIds = new Set<string>();
+      const plannedSessionIds = new Set<number>();
+      let assignmentProgress = progress;
+      for (const stored of storedSessions) {
+        if (plannedSessionIds.has(stored.sessionId)) continue;
+        plannedSessionIds.add(stored.sessionId);
+        const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
+        const observedTimeConfidence = stored.timeConfidence ?? "approximate";
+        const fallback = matchesPendingDeviceFallback(
+          assignmentProgress,
+          deviceId,
+          stored.sessionId,
+          stored.durationSeconds,
+          stored.targetSeconds,
+          observedStartedAt,
+          observedTimeConfidence,
+          initialFallbackSessionIds.has(stored.sessionId),
+          assignedFallbackSessionIds,
+        );
+        if (fallback) assignedFallbackSessionIds.add(fallback.sessionId);
+        if (!fallback) {
+          assignmentProgress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+            assignmentProgress,
+            deviceId,
+            stored.sessionId,
+            observedStartedAt,
+            stored.durationSeconds,
+          );
+        }
+        fallbackAssignments.set(stored.sessionId, fallback);
+      }
       if (resetCursor?.acceptNextSession) {
         assertSafePostResetSessions({
           resetBaselineSessionId: resetCursor.resetBaselineSessionId,
@@ -718,16 +772,7 @@ export async function saveDeviceSessionsWithLifetime(
       for (const stored of storedSessions) {
         const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
         const observedTimeConfidence = stored.timeConfidence ?? "approximate";
-        const fallback = matchesPendingDeviceFallback(
-          progress,
-          deviceId,
-          stored.sessionId,
-          stored.durationSeconds,
-          stored.targetSeconds,
-          observedStartedAt,
-          observedTimeConfidence,
-          initialFallbackSessionIds.has(stored.sessionId),
-        );
+        const fallback = fallbackAssignments.get(stored.sessionId) ?? null;
         const allocation = allocateDeviceSessionIdentity(progress, deviceId, stored.sessionId);
         if (allocation.duplicate) continue;
         const session: BrushSession = {
@@ -763,7 +808,13 @@ export async function saveDeviceSessionsWithLifetime(
         const after = replacement?.after ?? applySessionToStoredLifetime(before, session, historyComplete);
         progress = fallback
           ? clearPendingDeviceFallback(after, deviceId, fallback.sessionId)
-          : after;
+          : advancePendingDeviceFallbackExpectationsForEarlierSession(
+            after,
+            deviceId,
+            stored.sessionId,
+            observedStartedAt,
+            stored.durationSeconds,
+          );
         importedCount += 1;
         lastEvent = { session, before, after: progress };
         reconciledAny = reconciledAny || fallback !== null;
@@ -1367,18 +1418,22 @@ export async function restoreCompleteBackupDatabase(uri: string, restoreId: stri
 }
 
 export async function loadDemoHistory(): Promise<BrushSession[]> {
-  return parseStoredHistory(await AsyncStorage.getItem(DEMO_HISTORY_KEY), MAX_RECENT_HISTORY);
+  return parseStoredHistory(await AsyncStorage.getItem(DEMO_HISTORY_KEY), MAX_RECENT_HISTORY, true);
 }
 
 export async function saveDemoSession(session: BrushSession): Promise<BrushSession[]> {
   const current = await loadDemoHistory();
-  const next = normalizeHistory([session, ...current.filter((item) => item.id !== session.id)], MAX_RECENT_HISTORY);
+  const next = normalizeHistory(
+    [session, ...current.filter((item) => item.id !== session.id)],
+    MAX_RECENT_HISTORY,
+    true,
+  );
   await AsyncStorage.setItem(DEMO_HISTORY_KEY, JSON.stringify(next));
   return next;
 }
 
 export async function replaceDemoHistory(history: BrushSession[]): Promise<BrushSession[]> {
-  const next = normalizeHistory(history, MAX_RECENT_HISTORY);
+  const next = normalizeHistory(history, MAX_RECENT_HISTORY, true);
   await AsyncStorage.setItem(DEMO_HISTORY_KEY, JSON.stringify(next));
   return next;
 }

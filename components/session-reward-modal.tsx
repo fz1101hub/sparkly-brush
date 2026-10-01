@@ -124,7 +124,7 @@ export function SessionRewardModal() {
           <Text style={[styles.creatureName, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
             {displayEvolution.name}
           </Text>
-          <Text style={[styles.creatureTitle, { color: celebration ? "#BFE3FF" : displayCreature.accent }]}>
+          <Text style={[styles.creatureTitle, { color: celebration ? "#BFE3FF" : displayCreature.textAccent }]}>
             {displayEvolution.title}
           </Text>
 
@@ -285,7 +285,7 @@ export function SessionRewardModal() {
             onPress={dismissReward}
             style={({ pressed }) => [
               styles.button,
-              { backgroundColor: celebration ? "#2C97F4" : selected.accent },
+              { backgroundColor: celebration ? "#006ABF" : selected.textAccent },
               pressed && styles.pressed,
             ]}
           >

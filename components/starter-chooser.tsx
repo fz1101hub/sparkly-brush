@@ -70,7 +70,7 @@ export function StarterChooser() {
               <Text style={[styles.starterName, { color: selected ? "#17213A" : "#FFFFFF" }]}>
                 {creature.name}
               </Text>
-              <Text style={[styles.starterType, { color: selected ? creature.accent : "#DDEBFF" }]}>
+              <Text style={[styles.starterType, { color: selected ? creature.textAccent : "#DDEBFF" }]}>
                 {creature.element}
               </Text>
               {selected ? (
@@ -100,7 +100,7 @@ export function StarterChooser() {
         onPress={() => void confirm()}
         style={({ pressed }) => [
           styles.confirmButton,
-          { backgroundColor: chosen.accent },
+          { backgroundColor: chosen.textAccent },
           pressed && styles.pressed,
           saving && styles.disabled,
         ]}

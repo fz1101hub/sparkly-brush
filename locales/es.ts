@@ -530,6 +530,7 @@ export const es = {
   "brush.log.handleForgotten":
     "Mango olvidado: el próximo contador BLE empezará desde una nueva generación",
   "brush.error.handleRemovalFailed": "No se pudo eliminar el mango",
+  "brush.error.noCounterToReset": "No hay ningún contador Bluetooth anterior que restablecer para este mango.",
   "brush.log.syncDisabledInDemo":
     "La sincronización BLE está desactivada en modo demo",
   "brush.error.connectFirst": "Conecta primero el cepillo",
@@ -540,6 +541,8 @@ export const es = {
     "Vuelve a intentar guardar primero la sesión anterior",
   "brush.log.demoTimerStarted": "Temporizador demo iniciado",
   "brush.log.guidedTimerStarted": "Temporizador guiado iniciado",
+  "brush.log.manualReplacedByHandle": "Se ha encendido el cepillo: el temporizador manual se canceló sin contar otra sesión.",
+  "brush.log.liveSessionInProgress": "Ya hay una sesión en curso: usa el cepillo o termina el temporizador activo.",
   "brush.log.demoModeEnabled": "Modo demo activado",
   "brush.log.demoModeDisabled": "Modo demo desactivado",
   "brush.log.demoSessionAdded": "Sesión demo {period} añadida",
@@ -967,6 +970,8 @@ export const es = {
   "family.parent.rewardsTitle": "Recompensas familiares",
   "family.parent.rewardsDescription":
     "Crea recompensas reales elegidas por el padre o la madre. La app solo guarda el progreso; la promesa sigue siendo cosa de la familia.",
+  "family.parent.rewardsLifetimeNote":
+    "Los objetivos cuentan todo el historial registrado (para las rachas, el récord histórico). Una recompensa nueva puede desbloquearse de inmediato.",
   "family.parent.newReward": "NUEVA RECOMPENSA",
   "family.parent.rewardNameLabel": "Nombre de la recompensa",
   "family.parent.rewardNamePlaceholder": "Ej. elige la película de esta noche",
@@ -1032,6 +1037,10 @@ export const es = {
     "Lectura opcional no disponible: {code}",
   "brush.client.historyCountUnavailable":
     "Recuento del historial BLE no disponible; se usa sincronización prudente",
+  "brush.client.firstSyncLimited":
+    "Primera conexión: se recuperó como máximo la última sesión del mango; las anteriores no se pueden verificar.",
+  "brush.client.invalidCountPayload":
+    "Recuento de sesiones Bluetooth no válido: sincronización detenida sin avanzar el cursor.",
   "brush.client.clockUnavailable":
     "Reloj del mango no disponible: la fecha de la sesión es aproximada",
   "brush.client.sessionRead": "Sesión {id} leída ({duration}s)",

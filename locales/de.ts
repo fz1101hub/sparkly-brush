@@ -537,6 +537,7 @@ export const de = {
     "Handgriff entfernt: Der nächste BLE-Zähler beginnt mit einer neuen Generation",
   "brush.error.handleRemovalFailed":
     "Das Entfernen des Griffs ist fehlgeschlagen",
+  "brush.error.noCounterToReset": "Für diesen Handgriff gibt es noch keinen Bluetooth-Zähler zum Zurücksetzen.",
   "brush.log.syncDisabledInDemo":
     "Die BLE-Synchronisierung ist im Demomodus deaktiviert",
   "brush.error.connectFirst": "Verbinde zuerst deine Zahnbürste",
@@ -547,6 +548,8 @@ export const de = {
     "Versuche zuerst erneut, die vorherige Sitzung zu speichern",
   "brush.log.demoTimerStarted": "Demo-Timer gestartet",
   "brush.log.guidedTimerStarted": "Geführter Timer gestartet",
+  "brush.log.manualReplacedByHandle": "Die Zahnbürste wurde gestartet: Der manuelle Timer wurde ohne doppelte Gutschrift abgebrochen.",
+  "brush.log.liveSessionInProgress": "Eine Sitzung läuft bereits: Verwende die Zahnbürste oder beende den aktiven Timer.",
   "brush.log.demoModeEnabled": "Demomodus aktiviert",
   "brush.log.demoModeDisabled": "Demomodus deaktiviert",
   "brush.log.demoSessionAdded": "{period} Demositzung hinzugefügt",
@@ -985,6 +988,8 @@ export const de = {
   "family.parent.rewardsTitle": "Familienbelohnungen",
   "family.parent.rewardsDescription":
     "Erstelle echte Belohnungen, die ein Elternteil auswählt. Die App hält nur den Fortschritt fest; das Versprechen bleibt Familiensache.",
+  "family.parent.rewardsLifetimeNote":
+    "Ziele zählen den gesamten bisherigen Verlauf (bei Serien den bisherigen Rekord). Eine neu angelegte Belohnung kann sofort freigeschaltet sein.",
   "family.parent.newReward": "NEUE BELOHNUNG",
   "family.parent.rewardNameLabel": "Name der Belohnung",
   "family.parent.rewardNamePlaceholder":
@@ -1055,6 +1060,10 @@ export const de = {
     "Optionales Lesen nicht verfügbar: {code}",
   "brush.client.historyCountUnavailable":
     "BLE-Verlaufsanzahl nicht verfügbar; vorsichtige Synchronisierung wird verwendet",
+  "brush.client.firstSyncLimited":
+    "Erste Verbindung: höchstens die letzte Sitzung vom Handgriff übernommen; frühere Sitzungen lassen sich nicht prüfen.",
+  "brush.client.invalidCountPayload":
+    "Ungültige Bluetooth-Sitzungsanzahl: Synchronisierung gestoppt, Zähler unverändert.",
   "brush.client.clockUnavailable":
     "Uhr des Handstücks nicht verfügbar: Sitzungsdatum ist ungefähr",
   "brush.client.sessionRead": "Sitzung {id} gelesen ({duration}s)",

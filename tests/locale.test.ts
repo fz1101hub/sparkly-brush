@@ -12,7 +12,7 @@ import {
   normalizeLocale,
   resolveLocale,
 } from "@/lib/locale-types";
-import { localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
 
 if (false) {
   // @ts-expect-error La chiave richiede il placeholder `error`.
@@ -91,5 +91,9 @@ describe("translation runtime", () => {
     expect(
       localizeSonicareMessage("Errore Bluetooth sconosciuto", english),
     ).toBe("Unknown Bluetooth error");
+    const resetFailure = "Nessun contatore BLE precedente da reimpostare per questo manico";
+    expect(isKnownSonicareMessage(resetFailure)).toBe(true);
+    expect(localizeSonicareMessage(resetFailure, english)).toContain("no previous Bluetooth counter");
+    expect(isKnownSonicareMessage("system-native-error Bluetooth 01:02:03:04")).toBe(false);
   });
 });

@@ -52,6 +52,8 @@ export const itFamily = {
   "family.parent.rewardsTitle": "Premi di famiglia",
   "family.parent.rewardsDescription":
     "Crea ricompense reali scelte dal genitore. L’app tiene solo il progresso; la promessa resta una cosa di famiglia.",
+  "family.parent.rewardsLifetimeNote":
+    "Gli obiettivi considerano tutto lo storico già registrato (per la serie, il record migliore): un nuovo premio può risultare subito sbloccato.",
   "family.parent.newReward": "NUOVO PREMIO",
   "family.parent.rewardNameLabel": "Nome del premio",
   "family.parent.rewardNamePlaceholder": "Es. scegli il film di stasera",

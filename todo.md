@@ -1,6 +1,6 @@
-# Stato del candidato Claude Ultracode ed Expo 57
+# Stato del candidato Sparkly Brush — audit Claude Opus ed Expo 57
 
-Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
+Aggiornato il 1° ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
@@ -21,34 +21,36 @@ Aggiornato il 24 settembre 2026. Il ramo attivo è `fix/claude-ultracode-audit`,
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
-| 18 | Accessibilità automatica | Completata e ampliata | Contratti React Native, 54 verifiche matematiche delle palette e Playwright + axe su 28 stati UI in tema chiaro/scuro; controlli nominati, valori ARIA verificati e zero violazioni WCAG selezionate. |
+| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward, Playwright + axe su **34 stati UI** (anche due starter alternativi e reward reale chiaro/scuro); non sostituisce l'audit con screen reader. |
 | 19 | Maestro Android | Implementato, esecuzione device pendente | Due flow per percorso principale e checklist persistente; selettori coperti da Vitest e re-review verde. APK release E2E x86_64 da 53 MiB compilato; il sandbox non espone KVM, quindi l'esecuzione completa resta al runner Android o a una workstation. |
 | 20 | E2E web funzionale | Completato e re-reviewato | Due percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente e fallback backup. Il gate ha rilevato e chiuso una race reale del wake lock web; la review finale non ha trovato blocker sorgente o CI. |
 | 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 856 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
+| 22 | Audit Claude Opus 5.5 | Correzioni software verificate localmente, PR da pubblicare | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
+| 23 | Build/permessi APK sul candidato | Da eseguire | Prebuild iOS/Android e risorse localizzate verificati. Manca Android SDK nel sandbox: Gradle/merged manifest e prova restore dopo crash vanno eseguiti su Android reale/runner. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **42 file e 275 test**;
-- gate i18n dedicato: **68 test** su cataloghi, placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- suite Vitest completa: **47 file e 305 test**;
+- gate i18n dedicato: **73 test** su cataloghi, placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su **28 stati UI** chiari/scuri, con contratti DOM ARIA espliciti e report separati per pagina;
-- tre percorsi Playwright funzionali superati in **54,1 s**, incluso cambio tra cinque lingue, modalità Sistema e persistenza dopo reload;
+- Playwright + axe superato su **34 stati UI** chiari/scuri con starter alternativi e modal ricompensa reale, report separati per stato;
+- tre percorsi Playwright funzionali superati in **46,8 s**, incluso cambio tra cinque lingue, modalità Sistema e persistenza dopo reload;
 - contratto statico Maestro e re-review del percorso E2E superati;
-- `pnpm lint --max-warnings 0`;
+- `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
 - `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
-- `pnpm exec expo-doctor`: **21/21** con Expo 57;
+- `pnpm exec expo-doctor`: **21/21** con Expo 57.0.26;
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
-- prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e `locales_config.xml`;
+- prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
 - build Android nativa debug **Expo 57 superata sul checkpoint precedente** con SDK 36, JDK 17 e NDK 27.1; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una nuova compilazione nativa dell’esatto checkout multilingua.
 
 ## GitHub Actions
 
-L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. Anche il run Expo 57 della PR #7 `35942257161`, sul commit `dbbac49`, ha chiuso `verify` e `native-android` con zero step; `native-ios` è stato correttamente saltato. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
+L’audit Claude ha riclassificato correttamente il blocco precedente come account-level. I run della PR #7 continuano a chiudere `verify` e `native-android` con zero step; `native-ios` è correttamente riservato a release/manuale. Il workflow repository è stato ridimensionato per evitare sprechi quando l’esecuzione tornerà disponibile, ma la quota o policy dell’account GitHub deve essere verificata dal proprietario nelle impostazioni GitHub. La PR resta aperta e non verranno fatte nuove eccezioni di merge basate su una CI rossa.
 
 ## Supply chain
 

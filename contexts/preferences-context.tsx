@@ -96,3 +96,8 @@ export function usePreferences(): PreferencesContextValue {
   if (!value) throw new Error("usePreferences deve essere usato dentro PreferencesProvider");
   return value;
 }
+
+/** Infrastructure providers can still be mounted alone in integration tests. */
+export function useOptionalPreferences(): PreferencesContextValue | null {
+  return useContext(PreferencesContext);
+}
