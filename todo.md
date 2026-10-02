@@ -31,14 +31,14 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 | 25 | Conferma ripristino locale | Pubblicata, CI reale verde | File completo nativo e codice legacy richiedono una seconda azione annullabile; selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
 | 26 | Confronto prima del ripristino | Pubblicato, CI reale verde | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
 | 27 | Cleanup backup SQLite temporanei | Pubblicato, CI reale verde | In caso di ENOSPC durante la copia, SQLite open o close falliti, elimina il file temporaneo incompleto in cache. Una review indipendente ha fatto ripristinare la semantica precedente per il file passato al restore: su close fallita non viene eliminato. Sei test con fault injection; il comportamento va verificato sul file system iOS/Android reale. |
-| 28 | Import file SQLite su emulatore Android | Nuovo flow pronto, dispatch da eseguire | Fixture sintetica di 125 sessioni generata dalla logica lifetime/reward reale: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Il terzo flow Maestro prova picker di sistema, anteprima, annullamento, conferma e persistenza dopo riavvio; non è ancora un test eseguito finché il workflow manuale non passa. Non contiene dati dell'utente. |
+| 28 | Import file SQLite su emulatore Android | Gate fixture corretto, nuovo dispatch da eseguire | Fixture sintetica di 125 sessioni: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Nel dispatch `36942108179` verify, APK e iOS sono verdi; il nuovo flow non è partito perché `vite-node` non è esposto da pnpm frozen. La generazione ora usa `pnpm exec vitest` (testata col file in `/tmp`). Il terzo flow deve ancora provare picker, anteprima, annullamento, conferma e persistenza; nessun dato dell'utente. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **50 file e 321 test** (sei fault injection native e due regressioni fixture sintetica);
+- suite Vitest completa: **50 file e 322 test** (sei fault injection native e tre regressioni fixture sintetica, inclusa la generazione per CI);
 - gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
@@ -57,7 +57,7 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36917122348](https://github.com/fz1101hub/sparkly-brush/actions/runs/36917122348) ha completato `verify` e `native-android` realmente verdi sul commit `9c2d783` (cleanup SQLite). Nel [dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328) le build iOS/Android e **entrambi** i flow Maestro precedenti sono passati; il job `verify` di quel dispatch è fallito per un mock `ScrollView` poi corretto nel run PR verde. Il terzo flow di import SQLite richiede CI e dispatch manuale sul proprio commit; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
+Il blocco storico zero-step è cessato: [Verify 36940477890](https://github.com/fz1101hub/sparkly-brush/actions/runs/36940477890) ha completato `verify` (23 step) e `native-android` (14 step) realmente verdi sul commit `a00ae4e`. Nel [dispatch 36942108179](https://github.com/fz1101hub/sparkly-brush/actions/runs/36942108179), `verify`, `native-android` e `native-ios` sono riusciti; `e2e-android` è stato fermato **prima di Maestro** dal CLI di fixture non esposto, ora sostituito con Vitest. I due flow precedenti hanno avuto un esito verde nel dispatch `36829538328`. Il terzo flow richiede un nuovo dispatch sul commit aggiornato; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
 
 ## Supply chain
 

@@ -262,7 +262,7 @@ jobs:
         env:
           SPARKLY_FIXTURE_OUT: ${{ runner.temp }}/sparkly-ci-archive.sqlite
         run: |
-          pnpm exec vite-node --config vitest.config.ts scripts/generate-native-backup-fixture.ts
+          pnpm exec vitest run tests/native-backup-fixture.test.ts
           test -s "$SPARKLY_FIXTURE_OUT"
 
       - name: Run Maestro flows

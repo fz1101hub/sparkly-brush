@@ -1,6 +1,6 @@
 /**
  * Synthetic, non-user backup for the Android document-picker regression.
- * Generate with: SPARKLY_FIXTURE_OUT=artifacts/fixtures/sparkly-ci-archive.sqlite pnpm exec vite-node --config vitest.config.ts scripts/generate-native-backup-fixture.ts
+ * Generate with: SPARKLY_FIXTURE_OUT=artifacts/fixtures/sparkly-ci-archive.sqlite pnpm exec vitest run tests/native-backup-fixture.test.ts
  * The file is intentionally generated (never committed or uploaded).
  */
 import { mkdirSync } from "node:fs";
@@ -185,11 +185,4 @@ export function writeNativeBackupFixture(output: string): void {
   } finally {
     db.close();
   }
-}
-
-if (process.env.SPARKLY_FIXTURE_OUT) {
-  writeNativeBackupFixture(process.env.SPARKLY_FIXTURE_OUT);
-  console.log(
-    `Fixture SQLite sintetica generata: ${process.env.SPARKLY_FIXTURE_OUT} (${FIXTURE_SESSION_COUNT} sessioni)`,
-  );
 }

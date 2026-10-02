@@ -17,6 +17,26 @@ afterEach(() => {
 });
 
 describe("synthetic native SQLite backup fixture", () => {
+  it("emits a synthetic archive to the CI path when explicitly requested", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sparkly-fixture-output-"));
+    temporary.push(directory);
+    const output =
+      process.env.SPARKLY_FIXTURE_OUT ??
+      join(directory, "sparkly-ci-archive.sqlite");
+    writeNativeBackupFixture(output);
+    const db = new DatabaseSync(output, { readOnly: true });
+    try {
+      expect(db.prepare("PRAGMA integrity_check").get()).toEqual({
+        integrity_check: "ok",
+      });
+      expect(
+        db.prepare("SELECT COUNT(*) AS count FROM sessions").get(),
+      ).toEqual({ count: FIXTURE_SESSION_COUNT });
+    } finally {
+      db.close();
+    }
+  });
+
   it("keeps all sessions in the archive although a recent-history query returns 120", () => {
     const directory = mkdtempSync(join(tmpdir(), "sparkly-native-fixture-"));
     temporary.push(directory);
