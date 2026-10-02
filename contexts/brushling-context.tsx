@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import {
   DEFAULT_BRUSHLING_ID,
   STARTER_IDS,
@@ -88,9 +89,13 @@ type BrushlingContextValue = {
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
-  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } = useBrush();
-  const [selectedId, setSelectedId] = useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
-  const [customization, setCustomization] = useState<CustomizationState>(DEFAULT_CUSTOMIZATION_STATE);
+  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } =
+    useBrush();
+  const [selectedId, setSelectedId] =
+    useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
+  const [customization, setCustomization] = useState<CustomizationState>(
+    DEFAULT_CUSTOMIZATION_STATE,
+  );
   const [profileReady, setProfileReady] = useState(false);
   const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [hasChosenStarter, setHasChosenStarter] = useState(false);
@@ -153,6 +158,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!profileReady || !historyReady || restoreInProgress) return;
     if (stats.unlockedIds.includes(selectedId)) return;
+    // Reconcile a persisted selection only after the separate history is hydrated.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedId(DEFAULT_BRUSHLING_ID);
     if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
   }, [demoMode, historyReady, profileReady, restoreInProgress, selectedId, stats.unlockedIds]);
@@ -184,17 +191,19 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   }, [demoMode, hasChosenStarter, history, historyReady, selectedId]);
 
   useEffect(() => {
-    if (demoMode || !historyReady || !progressEvent) return;
+    if (demoMode || !historyReady || restoreInProgress || !progressEvent) return;
     if (lastHandledProgressEventIdRef.current === progressEvent.session.id) return;
     lastHandledProgressEventIdRef.current = progressEvent.session.id;
     if (progressEvent.session.durationSeconds < 5 || !hasChosenStarter) return;
 
     const nextReward = computeLifetimeSessionReward(progressEvent, selectedId);
     if (nextReward.xpEarned <= 0 && nextReward.coinsEarned <= 0) return;
+    // Consume this new durable session exactly once; the event is external state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReward(nextReward);
     setDiscovery(computeLifetimeDiscovery(progressEvent));
     setProgressReward(computeLifetimeProgressRewardDelta(progressEvent));
-  }, [demoMode, hasChosenStarter, historyReady, progressEvent, selectedId]);
+  }, [demoMode, hasChosenStarter, historyReady, progressEvent, restoreInProgress, selectedId]);
 
   const chooseStarter = useCallback(async (id: BrushlingId) => {
     if (!STARTER_IDS.includes(id)) return false;
@@ -237,7 +246,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     restoredCustomization: CustomizationState,
   ) => {
     rewardTrackerReadyRef.current = false;
-    lastHandledProgressEventIdRef.current = null;
+    // A restore replaces history but is not a newly completed session. Keep
+    // the last handled event until BrushProvider clears its in-memory event.
     setSelectedId(profile.selectedId);
     setHasChosenStarter(profile.hasChosenStarter);
     setCustomization(restoredCustomization);
@@ -301,7 +311,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 }
 
 export function useBrushling(): BrushlingContextValue {
+  const { t } = useI18n();
   const value = useContext(BrushlingContext);
-  if (!value) throw new Error("useBrushling deve essere usato dentro BrushlingProvider");
+  if (!value) throw new Error(t("context.brushling.missingProvider"));
   return value;
 }

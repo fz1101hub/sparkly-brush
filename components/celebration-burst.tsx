@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Animated, Platform, StyleSheet, View } from "react-native";
 
 const PARTICLES = Array.from({ length: 16 }, (_, index) => index);
 const COLORS = ["#FFD65A", "#58B9FF", "#7DD790", "#FF8B66", "#B9A8F3"];
 
 export function CelebrationBurst({ active }: { active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!active) {
@@ -16,7 +16,7 @@ export function CelebrationBurst({ active }: { active: boolean }) {
     Animated.timing(progress, {
       toValue: 1,
       duration: 1200,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [active, progress]);
 
@@ -30,7 +30,7 @@ export function CelebrationBurst({ active }: { active: boolean }) {
   if (!active) return null;
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, styles.container]}>
       {particles.map((particle) => {
         const x = Math.cos(particle.angle) * particle.distance;
         const y = Math.sin(particle.angle) * particle.distance;
@@ -57,6 +57,9 @@ export function CelebrationBurst({ active }: { active: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    pointerEvents: "none",
+  },
   particle: {
     position: "absolute",
     left: "50%",

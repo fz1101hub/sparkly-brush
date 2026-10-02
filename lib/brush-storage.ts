@@ -1,18 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { BrushSession, StoredDeviceSession, ToothbrushDevice } from "@/lib/brush-types";
+import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
 import { runHistoryOperation } from "@/lib/history-operation";
 import { recoverApplicationRestore } from "@/lib/restore-journal";
 import {
   allocateDeviceSessionIdentity,
+  advancePendingDeviceFallbackExpectationsForEarlierSession,
   applySessionToLifetime,
   clearPendingDeviceFallback,
   createLifetimeProgress,
+  deviceKey,
   forgetDeviceSessionState,
   markPendingDeviceFallback,
   matchesPendingDeviceFallback,
   normalizeLifetimeProgress,
-  rewindPendingDeviceFallbackProgress,
+  pendingDeviceFallbacks,
+  replacePendingDeviceFallbackProgress,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -242,56 +246,101 @@ export async function saveDeviceSessionsWithLifetime(
   storedSessions: StoredDeviceSession[],
 ): Promise<HistoryBatchSaveResult> {
   return runHistoryOperation(() => queueHistoryWrite(async () => {
-    const bundle = await loadProgressStateUnlocked();
-    let progress = bundle.lifetimeProgress;
-    let recentHistory = [...bundle.recentHistory];
+      const bundle = await loadProgressStateUnlocked();
+      let progress = bundle.lifetimeProgress;
+      const resetCursor = progress.deviceCursors[deviceKey(deviceId)];
+      const initialFallbackCount = resetCursor
+        ? 0
+        : pendingDeviceFallbacks(progress, deviceId).length;
+      const initialFallbackSessionIds = new Set(
+        initialFallbackCount > 0
+          ? storedSessions.slice(-initialFallbackCount).map((stored) => stored.sessionId)
+          : [],
+      );
+      const fallbackAssignments = new Map<number, ReturnType<typeof matchesPendingDeviceFallback>>();
+      const assignedFallbackSessionIds = new Set<string>();
+      const plannedSessionIds = new Set<number>();
+      let assignmentProgress = progress;
+      for (const stored of storedSessions) {
+        if (plannedSessionIds.has(stored.sessionId)) continue;
+        plannedSessionIds.add(stored.sessionId);
+        const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
+        const observedTimeConfidence = stored.timeConfidence ?? "approximate";
+        const fallback = matchesPendingDeviceFallback(
+          assignmentProgress,
+          deviceId,
+          stored.sessionId,
+          stored.durationSeconds,
+          stored.targetSeconds,
+          observedStartedAt,
+          observedTimeConfidence,
+          initialFallbackSessionIds.has(stored.sessionId),
+          assignedFallbackSessionIds,
+        );
+        if (fallback) assignedFallbackSessionIds.add(fallback.sessionId);
+        if (!fallback) {
+          assignmentProgress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+            assignmentProgress,
+            deviceId,
+            stored.sessionId,
+            observedStartedAt,
+            stored.durationSeconds,
+          );
+        }
+        fallbackAssignments.set(stored.sessionId, fallback);
+      }
+      if (resetCursor?.acceptNextSession) {
+        assertSafePostResetSessions({
+          resetBaselineSessionId: resetCursor.resetBaselineSessionId,
+          sessionIds: storedSessions.map((stored) => stored.sessionId),
+        });
+      }
+      let recentHistory = [...bundle.recentHistory];
     let event: LifetimeProgressEvent | null = null;
     let importedCount = 0;
-    const pendingStored = storedSessions.find((stored) => matchesPendingDeviceFallback(
-      progress,
-      deviceId,
-      stored.sessionId,
-      stored.durationSeconds,
-      stored.targetSeconds,
-      stored.startedAt ?? Date.now() - stored.durationSeconds * 1000,
-    ));
-    if (pendingStored) {
-      const fallback = matchesPendingDeviceFallback(
-        progress,
-        deviceId,
-        pendingStored.sessionId,
-        pendingStored.durationSeconds,
-        pendingStored.targetSeconds,
-        pendingStored.startedAt ?? Date.now() - pendingStored.durationSeconds * 1000,
-      );
-      if (fallback) {
-        recentHistory = recentHistory.filter((item) => item.id !== fallback.sessionId);
-        progress = rewindPendingDeviceFallbackProgress(progress, deviceId) ?? progress;
-      }
-    }
+    let reconciledAny = false;
 
     for (const stored of storedSessions) {
+      const observedStartedAt = stored.startedAt ?? Date.now() - stored.durationSeconds * 1000;
+      const observedTimeConfidence = stored.timeConfidence ?? "approximate";
+      const fallback = fallbackAssignments.get(stored.sessionId) ?? null;
       const allocation = allocateDeviceSessionIdentity(progress, deviceId, stored.sessionId);
       if (allocation.duplicate) continue;
       const session: BrushSession = {
         id: allocation.id,
         deviceSessionId: stored.sessionId,
-        startedAt: stored.startedAt ?? Date.now() - stored.durationSeconds * 1000,
-        timeConfidence: stored.timeConfidence ?? "approximate",
+        startedAt: fallback?.startedAt ?? observedStartedAt,
+        timeConfidence: fallback?.timeConfidence ?? observedTimeConfidence,
         rewardPolicy: "completed-only",
         durationSeconds: stored.durationSeconds,
         targetSeconds: stored.targetSeconds,
         completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
         source: "device",
       };
-      const before = allocation.progress;
-      progress = clearPendingDeviceFallback(applySessionToLifetime(before, session), deviceId);
+      const replacement = fallback
+        ? replacePendingDeviceFallbackProgress(allocation.progress, deviceId, fallback.sessionId, session)
+        : null;
+      const before = replacement?.before ?? allocation.progress;
+      progress = replacement?.after ?? applySessionToLifetime(before, session);
+      if (fallback) {
+        progress = clearPendingDeviceFallback(progress, deviceId, fallback.sessionId);
+        recentHistory = recentHistory.filter((item) => item.id !== fallback.sessionId);
+        reconciledAny = true;
+      } else {
+        progress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+          progress,
+          deviceId,
+          stored.sessionId,
+          observedStartedAt,
+          stored.durationSeconds,
+        );
+      }
       recentHistory = [session, ...recentHistory.filter((item) => item.id !== session.id)];
       event = { session, before, after: progress };
       importedCount += 1;
     }
     const persisted = await persistProgressState({ recentHistory, lifetimeProgress: progress });
-    return { ...persisted, event: pendingStored ? null : event, importedCount };
+    return { ...persisted, event: reconciledAny ? null : event, importedCount };
   }));
 }
 
@@ -302,6 +351,9 @@ export async function saveSession(session: BrushSession): Promise<BrushSession[]
 export async function forgetDeviceWithLifetime(deviceId: string): Promise<HistoryBundle> {
   return runHistoryOperation(() => queueHistoryWrite(async () => {
     const bundle = await loadProgressStateUnlocked();
+    if (!bundle.lifetimeProgress.deviceCursors[deviceKey(deviceId)]) {
+      throw new Error("Nessun contatore BLE precedente da reimpostare per questo manico");
+    }
     const next = await persistProgressState({
       recentHistory: bundle.recentHistory,
       lifetimeProgress: forgetDeviceSessionState(bundle.lifetimeProgress, deviceId),

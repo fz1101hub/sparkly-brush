@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { AnimatedBrushling } from "@/components/animated-brushling";
@@ -12,13 +12,17 @@ import { ScreenContainer } from "@/components/screen-container";
 import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
 import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
 
+const PASTEL_FOREGROUND = "#17213A";
+const PASTEL_MUTED = "#56617D";
+
 function ActiveWakeLock({ active }: { active: boolean }) {
-  if (active) return <KeepAwake />;
+  if (active && Platform.OS !== "web") return <KeepAwake />;
   return null;
 }
 
@@ -38,7 +42,15 @@ function sameDay(timestamp: number) {
 export default function TodayScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { selected, stats, walletCoins, missionCenter, profileReady, hasChosenStarter } = useBrushling();
+  const { t } = useI18n();
+  const {
+    selected,
+    stats,
+    walletCoins,
+    missionCenter,
+    profileReady,
+    hasChosenStarter,
+  } = useBrushling();
   const { nextReward: familyReward } = useParentRewards();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
@@ -77,19 +89,43 @@ export default function TodayScreen() {
     stats.level,
   );
   const familyRewardProgress = familyReward
-    ? `${Math.min(100, Math.round((familyReward.progress / familyReward.target) * 100))}%` as `${number}%`
-    : "0%" as `${number}%`;
+    ? (`${Math.min(100, Math.round((familyReward.progress / familyReward.target) * 100))}%` as `${number}%`)
+    : ("0%" as `${number}%`);
+  const zoneNames = [
+    t("timer.zone.upperRight"),
+    t("timer.zone.upperLeft"),
+    t("timer.zone.lowerLeft"),
+    t("timer.zone.lowerRight"),
+  ];
 
   if (!profileReady) {
     return (
       <ScreenContainer>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader eyebrow="Brushlings" title="Preparo l'avventura..." connected={status === "connected"} />
-          <View style={[styles.loadingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <MaterialIcons name="auto-awesome" size={30} color={colors.primary} />
-            <Text style={[styles.loadingTitle, { color: colors.foreground }]}>Carico il tuo mondo</Text>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <AppHeader
+            eyebrow={t("app.brand")}
+            title={t("home.loading.headerTitle")}
+            connected={status === "connected"}
+          />
+          <View
+            style={[
+              styles.loadingCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <MaterialIcons
+              name="auto-awesome"
+              size={30}
+              color={colors.primary}
+            />
+            <Text style={[styles.loadingTitle, { color: colors.foreground }]}>
+              {t("home.loading.title")}
+            </Text>
             <Text style={[styles.loadingCopy, { color: colors.muted }]}>
-              Un attimo: sto preparando creature e progressi salvati su questo telefono.
+              {t("home.loading.description")}
             </Text>
           </View>
         </ScrollView>
@@ -100,13 +136,20 @@ export default function TodayScreen() {
   if (!hasChosenStarter) {
     return (
       <ScreenContainer>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader eyebrow="Brushlings" title="La tua avventura inizia qui" connected={status === "connected"} />
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <AppHeader
+            eyebrow={t("app.brand")}
+            title={t("home.starter.headerTitle")}
+            connected={status === "connected"}
+          />
           <StarterChooser />
           <View style={styles.privacyNote}>
             <MaterialIcons name="lock-outline" size={18} color={colors.muted} />
             <Text style={[styles.privacyText, { color: colors.muted }]}>
-              La scelta del compagno resta salvata solo su questo telefono.
+              {t("home.starter.privacyNote")}
             </Text>
           </View>
         </ScrollView>
@@ -118,10 +161,10 @@ export default function TodayScreen() {
     <ScreenContainer>
       <ActiveWakeLock active={isActive} />
       <SessionRewardModal />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="today-screen" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader
-          eyebrow="Brushlings"
-          title={`Ciao, ${currentEvolution.name} è pronto!`}
+          eyebrow={t("app.brand")}
+          title={t("home.greeting", { name: currentEvolution.name })}
           connected={!demoMode && status === "connected"}
         />
 
@@ -131,17 +174,25 @@ export default function TodayScreen() {
               <MaterialIcons name="science" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.demoBannerCopy}>
-              <Text style={styles.demoBannerEyebrow}>LABORATORIO DEMO</Text>
-              <Text style={[styles.demoBannerTitle, { color: colors.foreground }]}>Dati simulati attivi</Text>
+              <Text style={styles.demoBannerEyebrow}>
+                {t("home.demo.eyebrow")}
+              </Text>
+              <Text
+                style={[styles.demoBannerTitle, { color: colors.foreground }]}
+              >
+                {t("home.demo.title")}
+              </Text>
               <Text style={[styles.demoBannerText, { color: colors.muted }]}>
-                Storico reale e backup restano separati e intatti.
+                {t("home.demo.description")}
               </Text>
             </View>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("home.demo.exitLabel")}
               onPress={() => void setDemoMode(false)}
               style={({ pressed }) => [styles.demoExit, pressed && styles.pressed]}
             >
-              <Text style={styles.demoExitText}>Esci</Text>
+              <Text style={styles.demoExitText}>{t("home.demo.exit")}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -154,30 +205,63 @@ export default function TodayScreen() {
         >
           <AnimatedBrushling creature={selected} size={118} level={stats.level} active={isActive} />
           <View style={styles.companionCopy}>
-            <Text style={[styles.companionEyebrow, { color: selected.accent }]}>IL TUO COMPAGNO</Text>
-            <Text style={[styles.companionName, { color: colors.foreground }]}>{currentEvolution.name}</Text>
-            <Text style={[styles.companionTitle, { color: selected.accent }]}>{currentEvolution.title}</Text>
-            <Text style={[styles.companionTagline, { color: colors.muted }]} numberOfLines={2}>
+            <Text style={[styles.companionEyebrow, { color: selected.textAccent }]}>
+              {t("home.companion.eyebrow")}
+            </Text>
+            <Text style={[styles.companionName, { color: PASTEL_FOREGROUND }]}>
+              {currentEvolution.name}
+            </Text>
+            <Text style={[styles.companionTitle, { color: selected.textAccent }]}>
+              {currentEvolution.title}
+            </Text>
+            <Text
+              style={[styles.companionTagline, { color: PASTEL_MUTED }]}
+              numberOfLines={2}
+            >
               {nextEvolution
-                ? `A livello ${nextEvolution.unlockLevel} può evolvere in ${nextEvolution.name}.`
+                ? t("home.companion.evolutionNotice", {
+                    level: nextEvolution.unlockLevel,
+                    name: nextEvolution.name,
+                  })
                 : selected.tagline}
             </Text>
-            <View style={[styles.xpTrack, { backgroundColor: "#FFFFFFAA" }]}>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel={t("home.companion.levelProgressLabel", {
+                level: stats.level,
+              })}
+              accessibilityValue={{
+                min: 0,
+                now: Math.round(stats.levelProgress * 100),
+                max: 100,
+              }}
+              style={[styles.xpTrack, { backgroundColor: "#FFFFFFAA" }]}
+            >
               <View style={[styles.xpFill, { width: levelProgress, backgroundColor: selected.accent }]} />
             </View>
-            <Text style={[styles.xpText, { color: colors.muted }]}>
-              Livello {stats.level} · {stats.xp} XP · {walletCoins} monete sorriso
+            <Text style={[styles.xpText, { color: PASTEL_MUTED }]}>
+              {t("home.companion.stats", {
+                level: stats.level,
+                xp: stats.xp,
+                coins: walletCoins,
+              })}
             </Text>
           </View>
         </View>
 
         <View style={[styles.speechCard, { backgroundColor: "#FFFFFF", borderColor: selected.accent }]}>
           <View style={[styles.speechIcon, { backgroundColor: selected.soft }]}>
-            <MaterialIcons name="chat-bubble-outline" size={21} color={selected.accent} />
+            <MaterialIcons name="chat-bubble-outline" size={21} color={selected.textAccent} />
           </View>
           <View style={styles.speechCopy}>
-            <Text style={[styles.speechName, { color: selected.accent }]}>{currentEvolution.name} dice:</Text>
-            <Text style={[styles.speechText, { color: colors.foreground }]}>{dialogue}</Text>
+            <Text style={[styles.speechName, { color: selected.textAccent }]}>
+              {t("home.companion.speechAttribution", {
+                name: currentEvolution.name,
+              })}
+            </Text>
+            <Text style={[styles.speechText, { color: PASTEL_FOREGROUND }]}>
+              {dialogue}
+            </Text>
           </View>
         </View>
 
@@ -194,18 +278,34 @@ export default function TodayScreen() {
             <View
               style={[
                 styles.familyRewardIcon,
-                { backgroundColor: familyReward.unlocked ? "#55B987" : "#E8BE38" },
+                { backgroundColor: familyReward.unlocked ? "#17633F" : "#6F5100" },
               ]}
             >
               <MaterialIcons name={familyReward.unlocked ? "redeem" : "family-restroom"} size={23} color="#FFFFFF" />
             </View>
             <View style={styles.familyRewardCopy}>
-              <Text style={[styles.familyRewardEyebrow, { color: familyReward.unlocked ? "#2E8A60" : "#8A6900" }]}>
-                PREMIO DI FAMIGLIA
+              <Text
+                style={[
+                  styles.familyRewardEyebrow,
+                  { color: familyReward.unlocked ? "#17633F" : "#6F5100" },
+                ]}
+              >
+                {t("home.familyReward.eyebrow")}
               </Text>
-              <Text style={[styles.familyRewardTitle, { color: colors.foreground }]}>{familyReward.title}</Text>
+              <Text style={[styles.familyRewardTitle, { color: PASTEL_FOREGROUND }]}>{familyReward.title}</Text>
               <View style={styles.familyRewardProgressRow}>
-                <View style={styles.familyRewardTrack}>
+                <View
+                  accessibilityRole="progressbar"
+                  accessibilityLabel={t("home.familyReward.progressLabel", {
+                    title: familyReward.title,
+                  })}
+                  accessibilityValue={{
+                    min: 0,
+                    now: familyReward.progress,
+                    max: familyReward.target,
+                  }}
+                  style={styles.familyRewardTrack}
+                >
                   <View
                     style={[
                       styles.familyRewardFill,
@@ -216,12 +316,14 @@ export default function TodayScreen() {
                     ]}
                   />
                 </View>
-                <Text style={[styles.familyRewardCount, { color: colors.muted }]}>
+                <Text style={[styles.familyRewardCount, { color: PASTEL_MUTED }]}>
                   {familyReward.progress}/{familyReward.target}
                 </Text>
               </View>
-              <Text style={[styles.familyRewardText, { color: colors.muted }]}>
-                {familyReward.unlocked ? "Obiettivo raggiunto! Parlane con un genitore." : "Continua la routine per sbloccarlo."}
+              <Text style={[styles.familyRewardText, { color: PASTEL_MUTED }]}>
+                {familyReward.unlocked
+                  ? t("home.familyReward.unlockedMessage")
+                  : t("home.familyReward.lockedMessage")}
               </Text>
             </View>
           </View>
@@ -232,29 +334,40 @@ export default function TodayScreen() {
             <MaterialIcons
               name={demoMode ? "science" : status === "connected" ? "bluetooth-connected" : "bluetooth-searching"}
               size={23}
-              color={demoMode ? "#9A7200" : status === "connected" ? colors.success : colors.primary}
+              color={demoMode ? "#6F5100" : status === "connected" ? "#17633F" : "#173F9F"}
             />
           </View>
           <View style={styles.statusCopy}>
             <Text style={[styles.statusTitle, { color: colors.foreground }]}>
-              {demoMode ? "Modalità demo" : device?.name ?? (connecting ? "Cerco Sonicare…" : "HX6322/04")}
+              {demoMode
+                ? t("home.device.demoMode")
+                : (device?.name ??
+                  (connecting
+                    ? t("home.device.searching")
+                    : t("home.device.defaultModel")))}
             </Text>
-            <Text style={[styles.statusText, { color: colors.muted }]}>{demoMode ? "Le sessioni simulate non modificano lo storico reale." : statusMessage}</Text>
+            <Text style={[styles.statusText, { color: colors.muted }]}>
+              {demoMode ? t("home.device.demoDescription") : statusMessage}
+            </Text>
           </View>
           {demoMode ? null : status !== "connected" ? (
             <Pressable
+              testID="connect-toothbrush"
               accessibilityRole="button"
-              accessibilityLabel="Collega lo spazzolino"
+              accessibilityLabel={t("home.device.connectLabel")}
+              accessibilityState={{ disabled: connecting, busy: connecting }}
               disabled={connecting}
               onPress={() => void connect()}
               style={({ pressed }) => [styles.smallButton, pressed && styles.pressed, connecting && styles.disabled]}
             >
-              <Text style={styles.smallButtonText}>{connecting ? "Attendi" : "Collega"}</Text>
+              <Text style={styles.smallButtonText}>
+                {connecting ? t("home.device.wait") : t("home.device.connect")}
+              </Text>
             </Pressable>
           ) : device?.battery !== undefined ? (
             <View style={styles.batteryBadge}>
               <MaterialIcons name="battery-5-bar" size={17} color={colors.success} />
-              <Text style={[styles.batteryText, { color: colors.success }]}>{device.battery}%</Text>
+              <Text style={[styles.batteryText, { color: colors.foreground }]}>{device.battery}%</Text>
             </View>
           ) : null}
         </View>
@@ -262,13 +375,19 @@ export default function TodayScreen() {
         <View style={[styles.timerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.timerHeading}>
             <View style={styles.timerHeadingCopy}>
-              <Text style={[styles.sectionEyebrow, { color: colors.primary }]}>SESSIONE GUIDATA</Text>
+              <Text style={[styles.sectionEyebrow, { color: colors.primary }]}>
+                {t("home.timer.eyebrow")}
+              </Text>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                {isActive ? `${currentEvolution.name} fa il tifo per te!` : "Pronto a spazzolare?"}
+                {isActive
+                  ? t("home.timer.activeTitle", { name: currentEvolution.name })
+                  : t("home.timer.inactiveTitle")}
               </Text>
             </View>
             <View style={[styles.modeBadge, { backgroundColor: "#FFF0E4" }]}>
-              <Text style={styles.modeBadgeText}>{device ? liveMode(device.model) : "Kids"}</Text>
+              <Text style={styles.modeBadgeText}>
+                {device ? liveMode(device.model, t) : t("home.device.modeKids")}
+              </Text>
             </View>
           </View>
 
@@ -277,12 +396,26 @@ export default function TodayScreen() {
           </View>
 
           <Text style={[styles.zonePrompt, { color: colors.foreground }]}>
-            {isActive ? `Spazzola: ${["alto a destra", "alto a sinistra", "basso a sinistra", "basso a destra"][activeZone]}` : "Ogni zona riceve la stessa attenzione"}
+            {isActive
+              ? t("home.timer.activeZonePrompt", {
+                  zone: zoneNames[activeZone] ?? zoneNames[0],
+                })
+              : t("home.timer.inactiveZonePrompt")}
           </Text>
           <MouthZones activeZone={activeZone} isActive={isActive} />
 
           <Pressable
+            testID="manual-start-stop"
             accessibilityRole="button"
+            accessibilityLabel={t(
+              manualActive
+                ? "home.timer.stopManualLabel"
+                : "home.timer.startManualLabel",
+            )}
+            accessibilityState={{
+              disabled: liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession,
+              busy: isSavingManualSession,
+            }}
             onPress={manualActive ? () => void stopManual() : startManual}
             disabled={liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession}
             style={({ pressed }) => [
@@ -295,56 +428,78 @@ export default function TodayScreen() {
             <MaterialIcons name={manualActive ? "stop-circle" : "play-arrow"} size={24} color="#FFFFFF" />
             <Text style={styles.primaryButtonText}>
               {manualActive
-                ? "Termina sessione"
+                ? t("home.timer.stopSession")
                 : isSavingManualSession
-                  ? "Salvataggio in corso…"
+                  ? t("home.timer.saving")
                   : hasPendingManualSession
-                    ? "Salva prima la sessione precedente"
+                    ? t("home.timer.savePrevious")
                     : isActive
-                      ? "Sessione dallo spazzolino"
-                      : "Avvia anche senza Bluetooth"}
+                      ? t("home.timer.fromToothbrush")
+                      : t("home.timer.startWithoutBluetooth")}
             </Text>
           </Pressable>
         </View>
 
         {hasPendingManualSession ? (
           <View
+            testID="manual-save-error"
+            accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
             style={styles.saveErrorCard}
           >
             <MaterialIcons name="error-outline" size={24} color="#B42318" />
             <View style={styles.saveErrorCopy}>
-              <Text style={styles.saveErrorTitle}>Sessione non ancora salvata</Text>
+              <Text style={styles.saveErrorTitle}>
+                {t("home.saveError.title")}
+              </Text>
               <Text style={styles.saveErrorText}>
-                {manualSaveError ?? "Conserviamo la sessione in memoria finché il salvataggio non termina."}
+                {manualSaveError ?? t("home.saveError.fallback")}
               </Text>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Riprova il salvataggio della sessione"
+              accessibilityLabel={t("home.saveError.retryLabel")}
               disabled={isSavingManualSession}
               onPress={() => void retryManualSession()}
               style={({ pressed }) => [styles.retryButton, isSavingManualSession && styles.disabled, pressed && styles.pressed]}
             >
-              <Text style={styles.retryButtonText}>{isSavingManualSession ? "Attendi" : "Riprova"}</Text>
+              <Text style={styles.retryButtonText}>
+                {isSavingManualSession
+                  ? t("home.device.wait")
+                  : t("home.saveError.retry")}
+              </Text>
             </Pressable>
           </View>
         ) : null}
 
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
-            <MaterialIcons name="done-all" size={24} color={colors.success} />
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{todaySessions}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>sessioni oggi</Text>
+            <MaterialIcons name="done-all" size={24} color="#17633F" />
+            <Text style={[styles.statValue, { color: PASTEL_FOREGROUND }]}>
+              {todaySessions}
+            </Text>
+            <Text style={[styles.statLabel, { color: PASTEL_MUTED }]}>
+              {t("home.stats.sessionsToday")}
+            </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#FFF0E4" }]}>
-            <MaterialIcons name="schedule" size={24} color={colors.warning} />
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{Math.round(todaySeconds / 60)} min</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>spazzolati oggi</Text>
+            <MaterialIcons name="schedule" size={24} color="#9A3F0D" />
+            <Text style={[styles.statValue, { color: PASTEL_FOREGROUND }]}>
+              {t("home.stats.minutesValue", {
+                minutes: Math.round(todaySeconds / 60),
+              })}
+            </Text>
+            <Text style={[styles.statLabel, { color: PASTEL_MUTED }]}>
+              {t("home.stats.minutesToday")}
+            </Text>
           </View>
         </View>
 
         <Pressable
+          accessibilityLabel={t("home.missions.label", {
+            completed: missionCenter.today.completedCount,
+            total: 3,
+          })}
           accessibilityRole="button"
           onPress={() => router.push("/(tabs)/missions")}
           style={({ pressed }) => [
@@ -359,7 +514,7 @@ export default function TodayScreen() {
           <View
             style={[
               styles.missionIcon,
-              { backgroundColor: missionCenter.today.allCompleted ? "#E8BE38" : "#2457D6" },
+              { backgroundColor: missionCenter.today.allCompleted ? "#6F5100" : "#2457D6" },
             ]}
           >
             <MaterialIcons
@@ -369,39 +524,63 @@ export default function TodayScreen() {
             />
           </View>
           <View style={styles.missionCopy}>
-            <Text style={[styles.missionEyebrow, { color: missionCenter.today.allCompleted ? "#9A7200" : colors.primary }]}>
-              MISSIONI DI OGGI
+            <Text
+              style={[
+                styles.missionEyebrow,
+                {
+                  color: missionCenter.today.allCompleted
+                    ? "#6F5100"
+                    : "#173F9F",
+                },
+              ]}
+            >
+              {t("home.missions.eyebrow")}
             </Text>
-            <Text style={[styles.missionTitle, { color: colors.foreground }]}>
-              {missionCenter.today.completedCount}/3 completate
+            <Text style={[styles.missionTitle, { color: PASTEL_FOREGROUND }]}>
+              {t("home.missions.progress", {
+                completed: missionCenter.today.completedCount,
+                total: 3,
+              })}
             </Text>
-            <Text style={[styles.missionText, { color: colors.muted }]}>
+            <Text style={[styles.missionText, { color: PASTEL_MUTED }]}>
               {missionCenter.today.allCompleted
-                ? "Scrigno del Sorriso aperto!"
-                : "Mattina, sera e doppio sorriso: completa la routine per il bonus."}
+                ? t("home.missions.completedMessage")
+                : t("home.missions.incompleteMessage")}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
+          <MaterialIcons name="chevron-right" size={24} color={PASTEL_MUTED} />
         </Pressable>
 
         <View style={[styles.rewardStrip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rewardItem}>
-            <MaterialIcons name="local-fire-department" size={21} color="#E76A2C" />
-            <Text style={[styles.rewardValue, { color: colors.foreground }]}>{stats.currentStreakDays}</Text>
-            <Text style={[styles.rewardLabel, { color: colors.muted }]}>giorni di fila (serie attuale)</Text>
+            <MaterialIcons
+              name="local-fire-department"
+              size={21}
+              color="#E76A2C"
+            />
+            <Text style={[styles.rewardValue, { color: colors.foreground }]}>
+              {stats.currentStreakDays}
+            </Text>
+            <Text style={[styles.rewardLabel, { color: colors.muted }]}>
+              {t("home.rewards.currentStreak")}
+            </Text>
           </View>
           <View style={[styles.rewardDivider, { backgroundColor: colors.border }]} />
           <View style={styles.rewardItem}>
             <MaterialIcons name="stars" size={21} color="#B98A00" />
-            <Text style={[styles.rewardValue, { color: colors.foreground }]}>{stats.todayCompletedSessions}</Text>
-            <Text style={[styles.rewardLabel, { color: colors.muted }]}>sessioni complete oggi</Text>
+            <Text style={[styles.rewardValue, { color: colors.foreground }]}>
+              {stats.todayCompletedSessions}
+            </Text>
+            <Text style={[styles.rewardLabel, { color: colors.muted }]}>
+              {t("home.rewards.completedToday")}
+            </Text>
           </View>
         </View>
 
         <View style={styles.privacyNote}>
           <MaterialIcons name="lock-outline" size={18} color={colors.muted} />
           <Text style={[styles.privacyText, { color: colors.muted }]}>
-            Nessun account: storico e progressi restano su questo telefono.
+            {t("home.privacyNote")}
           </Text>
         </View>
       </ScrollView>
@@ -413,8 +592,13 @@ function liveIsActive(isActive: boolean, manualActive: boolean) {
   return isActive && !manualActive;
 }
 
-function liveMode(model: string) {
-  return model.includes("HX6322") ? "Kids" : "Clean";
+function liveMode(
+  model: string,
+  t: (key: "home.device.modeKids" | "home.device.modeClean") => string,
+) {
+  return model.includes("HX6322")
+    ? t("home.device.modeKids")
+    : t("home.device.modeClean");
 }
 
 const styles = StyleSheet.create({
@@ -491,13 +675,27 @@ const styles = StyleSheet.create({
   smallButtonText: { color: "#FFFFFF", fontSize: 13, lineHeight: 18, fontWeight: "800" },
   batteryBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   batteryText: { fontSize: 13, fontWeight: "800" },
-  timerCard: { borderRadius: 28, borderWidth: 1, padding: 18, shadowColor: "#142044", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 3 },
+  timerCard: {
+    borderRadius: 28,
+    borderWidth: 1,
+    padding: 18,
+    ...Platform.select({
+      web: { boxShadow: "0 8px 24px rgba(20, 32, 68, 0.08)" },
+      default: {
+        shadowColor: "#142044",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
+        elevation: 3,
+      },
+    }),
+  },
   timerHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
   timerHeadingCopy: { flex: 1 },
   sectionEyebrow: { fontSize: 11, lineHeight: 16, fontWeight: "900", letterSpacing: 1.2 },
   sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: "900", marginTop: 2 },
   modeBadge: { borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7 },
-  modeBadgeText: { color: "#BA4E13", fontSize: 12, lineHeight: 16, fontWeight: "900" },
+  modeBadgeText: { color: "#A84210", fontSize: 12, lineHeight: 16, fontWeight: "900" },
   timerCenter: { alignItems: "center", paddingVertical: 18 },
   zonePrompt: { fontSize: 15, lineHeight: 21, fontWeight: "800", textAlign: "center", marginBottom: 12 },
   primaryButton: { marginTop: 16, minHeight: 54, backgroundColor: "#2457D6", borderRadius: 18, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18 },

@@ -1,5 +1,7 @@
 # Rapporto di rimedio post-audit — Sparkly Brush
 
+> **Documento storico.** Il successivo audit Claude Ultracode sul commit `a7769e3` ha trovato interazioni non coperte da questo ciclo. La valutazione corrente e i rimedi ulteriori sono documentati in `docs/claude-ultracode-audit-remediation-2026-09-24.md`.
+
 **Data:** 23 settembre 2026  
 **Ramo di sviluppo:** `fix/post-audit-device-reset-import-hardening`
 
@@ -66,7 +68,7 @@ Il salvataggio manuale è ora transazionale anche dal punto di vista dell’inte
 
 **Kids/Families.** Il parental gate è intenzionalmente escluso. Prima di pubblicare l’app come prodotto rivolto esclusivamente ai bambini occorre rivalutare Companion Device Manager su Android, accesso alle aree genitore, export/restore, privacy policy, Data Safety, target audience e requisiti Apple Kids.[1][2]
 
-**Supply chain.** `pnpm audit` segnala due advisory `high` in `image-size`, dipendenza transitiva di Metro usata in fase di build e non esposta dal runtime mobile. Le pagine GitHub Reviewed indicano ancora “Patched versions: None”; il candidato non forza quindi un override major non supportato. La CI blocca gli advisory critici e il rischio resta documentato e da rivalutare a ogni aggiornamento Expo/Metro.[3][4]
+**Supply chain.** Al momento di questo ciclo `pnpm audit` segnalava due advisory `high` in `image-size`, dipendenza transitiva di Metro. Il successivo upgrade a Expo SDK 57 ha rimosso il pacchetto dal grafo; l’audit produttivo passa ora con soglia `high`. I dettagli sono nel rapporto `docs/expo-57-upgrade-2026-09-24.md`.[3] [4]
 
 **Pubblicazione.** Prima degli store restano necessari privacy policy pubblica, dichiarazioni store accurate e revisione di naming/trademark. Il progetto dichiara già di essere indipendente e non affiliato a Philips.
 

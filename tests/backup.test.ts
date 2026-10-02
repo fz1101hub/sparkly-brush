@@ -10,6 +10,7 @@ import {
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
 import type { BrushSession } from "@/lib/brush-types";
 import { createLifetimeProgress } from "@/lib/lifetime-progress";
+import { DEFAULT_APP_PREFERENCES } from "@/lib/preferences";
 
 const session: BrushSession = {
   id: "real-1",
@@ -73,6 +74,7 @@ describe("portable Brushlings backup", () => {
     const restored = parseBackup(legacyCode);
     expect(restored.version).toBe(2);
     expect(restored.lifetimeProgress.completedSessions).toBe(1);
+    expect(restored.preferences.language).toBe("system");
   });
 
   it("round-trip del manifest v3 per il database completo", () => {
@@ -82,6 +84,10 @@ describe("portable Brushlings backup", () => {
       DEFAULT_CUSTOMIZATION_STATE,
       progress,
       123456,
+      {
+        preferences: { ...DEFAULT_APP_PREFERENCES, language: "de" },
+        parentRewards: [],
+      },
     );
 
     const restored = parseBackupManifest(JSON.stringify(manifest));
@@ -90,6 +96,7 @@ describe("portable Brushlings backup", () => {
     expect(restored.historyComplete).toBe(true);
     expect(restored.archivedSessionCount).toBe(1);
     expect(restored.lifetimeProgress.attemptedSessions).toBe(1);
+    expect(restored.preferences.language).toBe("de");
   });
 
   it("preserva nel manifest v3 una baseline legacy dichiarata come parziale", () => {

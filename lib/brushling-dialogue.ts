@@ -1,44 +1,126 @@
 import type { BrushlingId } from "@/lib/brushlings";
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
 
-export type DialogueContext = "idle" | "morning" | "evening" | "brushing" | "reward";
+export type DialogueContext =
+  "idle" | "morning" | "evening" | "brushing" | "reward";
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
 
-const LINES: Record<BrushlingId, Record<DialogueContext, string[]>> = {
+type DialogueKeyMap = Record<
+  BrushlingId,
+  Record<DialogueContext, readonly [TranslationKey, TranslationKey]>
+>;
+
+export const BRUSHLING_DIALOGUE_KEYS: DialogueKeyMap = {
   bloopi: {
-    idle: ["Secondo me oggi troviamo qualcosa di luccicante.", "Le bolle migliori arrivano dopo una bella spazzolata."],
-    morning: ["Splash! Facciamo brillare il sorriso prima dell’avventura.", "Buongiorno! Ho già preparato le bolle."],
-    evening: ["Una spazzolata e poi sogni di mare.", "Puliamo tutto prima che arrivi la luna."],
-    brushing: ["Vai così! Una zona alla volta.", "Splash splash, stai facendo benissimo!"],
-    reward: ["Lo sapevo! C’era un premio nascosto.", "Ogni sorriso pulito fa crescere la nostra isola."],
+    idle: ["game.dialogue.bloopi.idle.0", "game.dialogue.bloopi.idle.1"],
+    morning: [
+      "game.dialogue.bloopi.morning.0",
+      "game.dialogue.bloopi.morning.1",
+    ],
+    evening: [
+      "game.dialogue.bloopi.evening.0",
+      "game.dialogue.bloopi.evening.1",
+    ],
+    brushing: [
+      "game.dialogue.bloopi.brushing.0",
+      "game.dialogue.bloopi.brushing.1",
+    ],
+    reward: ["game.dialogue.bloopi.reward.0", "game.dialogue.bloopi.reward.1"],
   },
   spriggo: {
-    idle: ["Ogni piccola abitudine fa crescere qualcosa di grande.", "Oggi possiamo far spuntare un nuovo germoglio."],
-    morning: ["Buongiorno! Facciamo crescere il sorriso.", "Foglie su, spazzolino pronto!"],
-    evening: ["Le radici riposano meglio con i denti puliti.", "Ultima missione e poi nanna nel giardino."],
-    brushing: ["Costante e delicato, proprio così.", "Stai coltivando un super sorriso!"],
-    reward: ["Che crescita! Sono fiero di noi.", "Un altro passo e il giardino diventa più grande."],
+    idle: ["game.dialogue.spriggo.idle.0", "game.dialogue.spriggo.idle.1"],
+    morning: [
+      "game.dialogue.spriggo.morning.0",
+      "game.dialogue.spriggo.morning.1",
+    ],
+    evening: [
+      "game.dialogue.spriggo.evening.0",
+      "game.dialogue.spriggo.evening.1",
+    ],
+    brushing: [
+      "game.dialogue.spriggo.brushing.0",
+      "game.dialogue.spriggo.brushing.1",
+    ],
+    reward: [
+      "game.dialogue.spriggo.reward.0",
+      "game.dialogue.spriggo.reward.1",
+    ],
   },
   flarello: {
-    idle: ["Accendiamo una nuova missione?", "Ho energia da vendere. Tu hai lo spazzolino?"],
-    morning: ["Scintille del mattino! Si parte!", "Sorriso acceso prima di uscire."],
-    evening: ["Ultima fiammata della giornata!", "Facciamo brillare tutto e poi riposo."],
-    brushing: ["Forza! Mancano solo poche scintille.", "Fiamma costante, sorriso potente!"],
-    reward: ["Boom! Ricompensa conquistata.", "Che fiammata! Abbiamo spaccato."],
+    idle: ["game.dialogue.flarello.idle.0", "game.dialogue.flarello.idle.1"],
+    morning: [
+      "game.dialogue.flarello.morning.0",
+      "game.dialogue.flarello.morning.1",
+    ],
+    evening: [
+      "game.dialogue.flarello.evening.0",
+      "game.dialogue.flarello.evening.1",
+    ],
+    brushing: [
+      "game.dialogue.flarello.brushing.0",
+      "game.dialogue.flarello.brushing.1",
+    ],
+    reward: [
+      "game.dialogue.flarello.reward.0",
+      "game.dialogue.flarello.reward.1",
+    ],
   },
   voltuff: {
-    idle: ["Bzzzt! Ho captato una missione vicina.", "Batterie cariche. Sorriso pronto?"],
-    morning: ["Carica mattutina al massimo!", "Zap! Due minuti e partiamo."],
-    evening: ["Ultima ricarica prima della notte.", "Scarichiamo le ultime briciole dai denti."],
-    brushing: ["Bzzzt! Ritmo perfetto.", "Energia stabile: continua così!"],
-    reward: ["ZAP! Premio sbloccato.", "Segnale fortissimo: missione riuscita!"],
+    idle: ["game.dialogue.voltuff.idle.0", "game.dialogue.voltuff.idle.1"],
+    morning: [
+      "game.dialogue.voltuff.morning.0",
+      "game.dialogue.voltuff.morning.1",
+    ],
+    evening: [
+      "game.dialogue.voltuff.evening.0",
+      "game.dialogue.voltuff.evening.1",
+    ],
+    brushing: [
+      "game.dialogue.voltuff.brushing.0",
+      "game.dialogue.voltuff.brushing.1",
+    ],
+    reward: [
+      "game.dialogue.voltuff.reward.0",
+      "game.dialogue.voltuff.reward.1",
+    ],
   },
   moonbit: {
-    idle: ["Anche le avventure tranquille fanno crescere.", "La luna dice che oggi possiamo fare un piccolo passo."],
-    morning: ["Un buongiorno morbido e un sorriso pulito.", "Piano piano, iniziamo bene la giornata."],
-    evening: ["La luna è pronta. Facciamo l’ultima missione.", "Denti puliti, pensieri leggeri, buonanotte."],
-    brushing: ["Respira e continua, stai andando benissimo.", "Calma e costanza: manca poco."],
-    reward: ["Una piccola luce nuova nella notte.", "Che bello: abbiamo guadagnato un altro ricordo."],
+    idle: ["game.dialogue.moonbit.idle.0", "game.dialogue.moonbit.idle.1"],
+    morning: [
+      "game.dialogue.moonbit.morning.0",
+      "game.dialogue.moonbit.morning.1",
+    ],
+    evening: [
+      "game.dialogue.moonbit.evening.0",
+      "game.dialogue.moonbit.evening.1",
+    ],
+    brushing: [
+      "game.dialogue.moonbit.brushing.0",
+      "game.dialogue.moonbit.brushing.1",
+    ],
+    reward: [
+      "game.dialogue.moonbit.reward.0",
+      "game.dialogue.moonbit.reward.1",
+    ],
   },
 };
+
+export function getBrushlingDialogueKey(
+  id: BrushlingId,
+  context: DialogueContext,
+  completedSessions: number,
+  level: number,
+  timestamp: number = Date.now(),
+): TranslationKey {
+  const lines = BRUSHLING_DIALOGUE_KEYS[id][context];
+  const date = new Date(timestamp);
+  const seed = date.getDate() + date.getMonth() * 31 + completedSessions * 3 + level;
+  return lines[Math.abs(seed) % lines.length];
+}
 
 export function getBrushlingDialogue(
   id: BrushlingId,
@@ -46,14 +128,22 @@ export function getBrushlingDialogue(
   completedSessions: number,
   level: number,
   timestamp: number = Date.now(),
+  t?: Translator,
 ): string {
-  const lines = LINES[id][context];
-  const date = new Date(timestamp);
-  const seed = date.getDate() + date.getMonth() * 31 + completedSessions * 3 + level;
-  return lines[Math.abs(seed) % lines.length];
+  const key = getBrushlingDialogueKey(
+    id,
+    context,
+    completedSessions,
+    level,
+    timestamp,
+  );
+  return t ? t(key) : translateDynamic("it", key);
 }
 
-export function inferDialogueContext(isActive: boolean, timestamp: number = Date.now()): DialogueContext {
+export function inferDialogueContext(
+  isActive: boolean,
+  timestamp: number = Date.now(),
+): DialogueContext {
   if (isActive) return "brushing";
   const hour = new Date(timestamp).getHours();
   if (hour >= 5 && hour < 12) return "morning";

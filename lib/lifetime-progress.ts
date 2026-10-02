@@ -31,16 +31,21 @@ export type DeviceSessionCursor = {
   lastSessionId: number;
   epoch: number;
   acceptNextSession: boolean;
+  resetBaselineSessionId: number | null;
   previousEpochRecentSessionIds: number[];
   recentIdentities: string[];
   updatedAt: number;
 };
 
 export type PendingDeviceFallback = {
+  deviceKey: string;
   sessionId: string;
   startedAt: number;
+  timeConfidence: BrushSession["timeConfidence"];
+  rewardPolicy: BrushSession["rewardPolicy"];
   durationSeconds: number;
   targetSeconds: number;
+  completed: boolean;
   expectedSessionId: number | null;
   hasInterveningProgress: boolean;
   progressBeforeSession: LifetimeAccountingSnapshot | null;
@@ -192,7 +197,11 @@ export function applySessionToLifetime(
 ): LifetimeProgress {
   const next = cloneProgress(progress);
   Object.values(next.pendingDeviceFallbacks).forEach((fallback) => {
-    fallback.hasInterveningProgress = true;
+    // A historical BLE record can arrive after a live fallback even though it
+    // predates that brushing. It must not make the fallback unreconcilable.
+    if (!sessionDefinitelyPrecedesFallback(session.startedAt, session.durationSeconds, fallback)) {
+      fallback.hasInterveningProgress = true;
+    }
   });
   next.attemptedSessions += 1;
   next.totalBrushingSeconds += Math.max(0, session.durationSeconds);
@@ -313,6 +322,9 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
         lastSessionId: Math.min(65_535, nonNegativeInteger(candidate.lastSessionId)),
         epoch: nonNegativeInteger(candidate.epoch),
         acceptNextSession: candidate.acceptNextSession === true,
+        resetBaselineSessionId: typeof candidate.resetBaselineSessionId === "number"
+          ? Math.min(65_535, nonNegativeInteger(candidate.resetBaselineSessionId))
+          : null,
         previousEpochRecentSessionIds: Array.isArray(candidate.previousEpochRecentSessionIds)
           ? candidate.previousEpochRecentSessionIds
             .map((sessionId) => Math.min(65_535, nonNegativeInteger(sessionId)))
@@ -349,11 +361,24 @@ export function normalizeLifetimeProgress(value: unknown): LifetimeProgress | nu
         || typeof candidate.durationSeconds !== "number"
         || typeof candidate.targetSeconds !== "number"
       ) return;
-      pendingDeviceFallbacks[deviceKey(key)] = {
+      const normalizedDeviceKey = typeof candidate.deviceKey === "string"
+        ? deviceKey(candidate.deviceKey)
+        : deviceKey(key.split(":")[0] ?? key);
+      const normalizedSessionId = candidate.sessionId;
+      pendingDeviceFallbacks[pendingFallbackKey(normalizedDeviceKey, normalizedSessionId)] = {
+        deviceKey: normalizedDeviceKey,
         sessionId: candidate.sessionId,
         startedAt: Math.max(0, Math.floor(candidate.startedAt)),
+        timeConfidence: candidate.timeConfidence === "approximate"
+          || candidate.timeConfidence === "reconstructed"
+          ? candidate.timeConfidence
+          : "exact",
+        rewardPolicy: candidate.rewardPolicy === "legacy" ? "legacy" : "completed-only",
         durationSeconds: Math.max(0, Math.floor(candidate.durationSeconds)),
         targetSeconds: Math.max(1, Math.floor(candidate.targetSeconds)),
+        completed: typeof candidate.completed === "boolean"
+          ? candidate.completed
+          : candidate.durationSeconds >= Math.min(candidate.targetSeconds, 120) * 0.9,
         expectedSessionId: typeof candidate.expectedSessionId === "number"
           ? Math.min(65_535, nonNegativeInteger(candidate.expectedSessionId))
           : null,
@@ -410,6 +435,27 @@ export function deviceKey(deviceId: string): string {
   return deviceAlias(decoded);
 }
 
+function pendingFallbackKey(normalizedDeviceKey: string, sessionId: string): string {
+  return `${normalizedDeviceKey}:${deviceAlias(sessionId).slice(4)}`;
+}
+
+function pendingFallbacksForDevice(
+  progress: LifetimeProgress,
+  deviceId: string,
+): PendingDeviceFallback[] {
+  const key = deviceKey(deviceId);
+  return Object.values(progress.pendingDeviceFallbacks)
+    .filter((pending) => pending.deviceKey === key)
+    .sort((first, second) => first.startedAt - second.startedAt || first.sessionId.localeCompare(second.sessionId));
+}
+
+export function pendingDeviceFallbacks(
+  progress: LifetimeProgress,
+  deviceId: string,
+): PendingDeviceFallback[] {
+  return pendingFallbacksForDevice(progress, deviceId);
+}
+
 export function markPendingDeviceFallback(
   progress: LifetimeProgress,
   deviceId: string,
@@ -417,13 +463,24 @@ export function markPendingDeviceFallback(
   progressBeforeSession: LifetimeProgress = progress,
 ): LifetimeProgress {
   const next = cloneProgress(progress);
-  const cursor = next.deviceCursors[deviceKey(deviceId)];
-  next.pendingDeviceFallbacks[deviceKey(deviceId)] = {
+  const normalizedDeviceKey = deviceKey(deviceId);
+  const cursor = next.deviceCursors[normalizedDeviceKey];
+  const previousPending = pendingFallbacksForDevice(next, normalizedDeviceKey).at(-1);
+  next.pendingDeviceFallbacks[pendingFallbackKey(normalizedDeviceKey, session.id)] = {
+    deviceKey: normalizedDeviceKey,
     sessionId: session.id,
     startedAt: session.startedAt,
+    timeConfidence: session.timeConfidence ?? "exact",
+    rewardPolicy: session.rewardPolicy ?? "completed-only",
     durationSeconds: session.durationSeconds,
     targetSeconds: session.targetSeconds,
-    expectedSessionId: cursor ? (cursor.lastSessionId + 1) & 0xffff : null,
+    completed: session.completed,
+    expectedSessionId: previousPending?.expectedSessionId !== null
+      && previousPending?.expectedSessionId !== undefined
+      ? (previousPending.expectedSessionId + 1) & 0xffff
+      : cursor
+        ? (cursor.lastSessionId + 1) & 0xffff
+        : null,
     hasInterveningProgress: false,
     progressBeforeSession: accountingSnapshot(progressBeforeSession),
   };
@@ -443,7 +500,7 @@ export function pendingDeviceFallback(
   progress: LifetimeProgress,
   deviceId: string,
 ): PendingDeviceFallback | null {
-  return progress.pendingDeviceFallbacks[deviceKey(deviceId)] ?? null;
+  return pendingFallbacksForDevice(progress, deviceId).at(-1) ?? null;
 }
 
 export function matchesPendingDeviceFallback(
@@ -453,26 +510,89 @@ export function matchesPendingDeviceFallback(
   durationSeconds: number,
   targetSeconds: number,
   observedStartedAt: number,
+  timeConfidence: BrushSession["timeConfidence"] = "exact",
+  allowInitialApproximateMatch = false,
+  excludedFallbackSessionIds?: ReadonlySet<string>,
 ): PendingDeviceFallback | null {
+  return pendingFallbacksForDevice(progress, deviceId)
+    .map((pending) => {
+      const sameShape = Math.abs(pending.durationSeconds - durationSeconds) <= 3
+        && Math.abs(pending.targetSeconds - targetSeconds) <= 3;
+      const expectedSuccessor = pending.expectedSessionId !== null
+        && pending.expectedSessionId === sessionId;
+      const drift = Math.abs(pending.startedAt - observedStartedAt);
+      const definitelyBeforeFallback = sessionDefinitelyPrecedesFallback(
+        observedStartedAt,
+        durationSeconds,
+        pending,
+      );
+      const correlated = expectedSuccessor
+        ? !definitelyBeforeFallback && (timeConfidence === "approximate" || drift <= 30_000)
+        : (timeConfidence === "approximate" && allowInitialApproximateMatch)
+          || (!pending.hasInterveningProgress && !definitelyBeforeFallback && drift <= 5_000);
+      return {
+        pending,
+        sameShape,
+        expectedSuccessor,
+        correlated,
+        drift,
+        excluded: excludedFallbackSessionIds?.has(pending.sessionId) === true,
+      };
+    })
+    .filter((candidate) => candidate.sameShape && candidate.correlated && !candidate.excluded)
+    .sort((first, second) => (
+      Number(second.expectedSuccessor) - Number(first.expectedSuccessor)
+      || first.drift - second.drift
+    ))[0]?.pending ?? null;
+}
+
+/**
+ * A late sync can reveal an older counter value before a live fallback. When
+ * that older value had been predicted as the fallback's successor, advance the
+ * prediction instead of leaving the fallback permanently tied to that value.
+ */
+export function advancePendingDeviceFallbackExpectationsForEarlierSession(
+  progress: LifetimeProgress,
+  deviceId: string,
+  sessionId: number,
+  startedAt: number,
+  durationSeconds: number,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
   const key = deviceKey(deviceId);
-  const pending = progress.pendingDeviceFallbacks[key];
-  if (!pending) return null;
-  const sameShape = Math.abs(pending.durationSeconds - durationSeconds) <= 3
-    && Math.abs(pending.targetSeconds - targetSeconds) <= 3;
-  const expectedSuccessor = pending.expectedSessionId !== null
-    && pending.expectedSessionId === sessionId;
-  const maximumDrift = expectedSuccessor ? 30_000 : 5_000;
-  const tightlyCorrelatedInTime = Math.abs(pending.startedAt - observedStartedAt) <= maximumDrift;
-  const noInterveningProgress = !pending.hasInterveningProgress;
-  return sameShape && tightlyCorrelatedInTime && noInterveningProgress ? pending : null;
+  Object.values(next.pendingDeviceFallbacks).forEach((fallback) => {
+    if (
+      fallback.deviceKey === key
+      && !fallback.hasInterveningProgress
+      && fallback.expectedSessionId === sessionId
+      && sessionDefinitelyPrecedesFallback(startedAt, durationSeconds, fallback)
+    ) {
+      fallback.expectedSessionId = (sessionId + 1) & 0xffff;
+    }
+  });
+  return next;
+}
+
+function sessionDefinitelyPrecedesFallback(
+  startedAt: number,
+  durationSeconds: number,
+  fallback: PendingDeviceFallback,
+): boolean {
+  return startedAt + Math.max(0, durationSeconds) * 1_000 <= fallback.startedAt;
 }
 
 export function clearPendingDeviceFallback(
   progress: LifetimeProgress,
   deviceId: string,
+  sessionId?: string,
 ): LifetimeProgress {
   const next = cloneProgress(progress);
-  delete next.pendingDeviceFallbacks[deviceKey(deviceId)];
+  const key = deviceKey(deviceId);
+  Object.entries(next.pendingDeviceFallbacks).forEach(([fallbackKey, fallback]) => {
+    if (fallback.deviceKey === key && (sessionId === undefined || fallback.sessionId === sessionId)) {
+      delete next.pendingDeviceFallbacks[fallbackKey];
+    }
+  });
   return next;
 }
 
@@ -487,33 +607,32 @@ export function forgetDeviceSessionState(
   const next = cloneProgress(progress);
   const key = deviceKey(deviceId);
   const previous = next.deviceCursors[key];
+  if (!previous) return clearPendingDeviceFallback(next, deviceId);
   next.deviceCursors[key] = {
-    lastSessionId: previous?.lastSessionId ?? 0,
-    epoch: (previous?.epoch ?? 0) + 1,
+    lastSessionId: previous.lastSessionId,
+    epoch: previous.epoch + 1,
     acceptNextSession: true,
-    previousEpochRecentSessionIds: [],
+    resetBaselineSessionId: previous.lastSessionId,
+    previousEpochRecentSessionIds: Array.from(new Set([
+      previous.lastSessionId,
+      ...previous.recentIdentities
+        .map((identity) => Number(identity.split(":").at(-1)))
+        .filter((sessionId) => Number.isInteger(sessionId)),
+    ])).slice(-32),
     recentIdentities: [],
     updatedAt: Date.now(),
   };
-  delete next.pendingDeviceFallbacks[key];
-  return next;
-}
-
-export function reconcilePendingDeviceFallbackProgress(
-  progress: LifetimeProgress,
-  deviceId: string,
-  authoritativeSession: BrushSession,
-): LifetimeProgress | null {
-  const rebuilt = rewindPendingDeviceFallbackProgress(progress, deviceId);
-  return rebuilt ? applySessionToLifetime(rebuilt, authoritativeSession) : null;
+  return clearPendingDeviceFallback(next, deviceId);
 }
 
 export function rewindPendingDeviceFallbackProgress(
   progress: LifetimeProgress,
   deviceId: string,
+  sessionId?: string,
 ): LifetimeProgress | null {
-  const key = deviceKey(deviceId);
-  const pending = progress.pendingDeviceFallbacks[key];
+  const pending = sessionId
+    ? pendingFallbacksForDevice(progress, deviceId).find((candidate) => candidate.sessionId === sessionId)
+    : pendingDeviceFallback(progress, deviceId);
   if (!pending?.progressBeforeSession) return null;
 
   return {
@@ -523,9 +642,75 @@ export function rewindPendingDeviceFallbackProgress(
       Object.entries(progress.deviceCursors).map(([cursorKey, cursor]) => [cursorKey, { ...cursor }]),
     ),
     pendingDeviceFallbacks: Object.fromEntries(
-      Object.entries(progress.pendingDeviceFallbacks).filter(([fallbackKey]) => fallbackKey !== key),
+      Object.entries(progress.pendingDeviceFallbacks).filter(([, fallback]) => fallback !== pending),
     ),
   };
+}
+
+function rewardedSecondsForSession(session: Pick<BrushSession, "completed" | "durationSeconds" | "rewardPolicy">): number {
+  return session.completed || session.rewardPolicy !== "completed-only"
+    ? Math.max(0, session.durationSeconds)
+    : 0;
+}
+
+function xpForSession(session: Pick<BrushSession, "completed" | "durationSeconds" | "rewardPolicy">): number {
+  if (session.completed) return 60;
+  if (session.rewardPolicy === "completed-only" || session.durationSeconds < 5) return 0;
+  return Math.min(20, Math.floor(session.durationSeconds / 6));
+}
+
+function itemCountsForCompletedSessions(completedSessions: number): Record<CollectibleItemId, number> {
+  const counts = emptyItemCounts();
+  for (let completed = 1; completed <= completedSessions; completed += 1) {
+    counts[getItemForCompletedSessionNumber(completed).id] += 1;
+  }
+  return counts;
+}
+
+function removePendingFallbackAccounting(
+  progress: LifetimeProgress,
+  pending: PendingDeviceFallback,
+): LifetimeProgress {
+  const next = clearPendingDeviceFallback(progress, pending.deviceKey, pending.sessionId);
+  next.attemptedSessions = Math.max(0, next.attemptedSessions - 1);
+  next.totalBrushingSeconds = Math.max(0, next.totalBrushingSeconds - pending.durationSeconds);
+  next.rewardedBrushingSeconds = Math.max(
+    0,
+    next.rewardedBrushingSeconds - rewardedSecondsForSession(pending),
+  );
+  next.xp = Math.max(0, next.xp - xpForSession(pending));
+  if (pending.completed) {
+    next.completedSessions = Math.max(0, next.completedSessions - 1);
+    next.itemCounts = itemCountsForCompletedSessions(next.completedSessions);
+  }
+  return next;
+}
+
+export function replacePendingDeviceFallbackProgress(
+  progress: LifetimeProgress,
+  deviceId: string,
+  fallbackSessionId: string,
+  authoritativeSession: BrushSession,
+  historyComplete = true,
+): { before: LifetimeProgress; after: LifetimeProgress } | null {
+  const pending = pendingFallbacksForDevice(progress, deviceId)
+    .find((candidate) => candidate.sessionId === fallbackSessionId);
+  if (!pending) return null;
+
+  // The pending snapshot is safe to rewind only while the fallback is still
+  // the sole session added after it. A late GATT record can be older by clock
+  // time yet already be materialized in this batch (or a previous one).
+  const hasAdditionalMaterializedProgress = pending.progressBeforeSession !== null
+    && progress.attemptedSessions > pending.progressBeforeSession.attemptedSessions + 1;
+  const canRewind = !pending.hasInterveningProgress && !hasAdditionalMaterializedProgress;
+  const rewound = canRewind
+    ? rewindPendingDeviceFallbackProgress(progress, deviceId, fallbackSessionId)
+    : null;
+  const before = rewound ?? removePendingFallbackAccounting(progress, pending);
+  const after = !canRewind || !historyComplete
+    ? applySessionToPartialLifetime(before, authoritativeSession)
+    : applySessionToLifetime(before, authoritativeSession);
+  return { before, after };
 }
 
 export function allocateDeviceSessionIdentity(
@@ -574,6 +759,7 @@ export function allocateDeviceSessionIdentity(
       lastSessionId: sessionId,
       epoch,
       acceptNextSession: false,
+      resetBaselineSessionId: null,
       previousEpochRecentSessionIds: previousEpochRecentSessionIds
         .filter((previousSessionId) => previousSessionId !== sessionId)
         .slice(-32),

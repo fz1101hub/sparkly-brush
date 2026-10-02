@@ -20,9 +20,12 @@ import {
   reconstructSessionStart,
   uint32LE,
 } from "@/lib/sonicare-codec";
+import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
-const SCAN_TIMEOUT_MS = 14_000;
+// The Kids handle can advertise only every 10–30 seconds; fourteen seconds
+// can time out before a single advertisement even when the handle is nearby.
+const SCAN_TIMEOUT_MS = 45_000;
 const MAX_SYNC_BATCH = 128;
 
 function bytesFromBase64(value?: string | null): Uint8Array {
@@ -51,6 +54,15 @@ function ascii(bytes: Uint8Array): string {
     .join("")
     .replace(/\0/g, "")
     .trim();
+}
+
+function isCharacteristicNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object"
+    && error !== null
+    && "errorCode" in error
+    && (error as { errorCode?: unknown }).errorCode === 404
+  );
 }
 
 function isSonicare(device: Device): boolean {
@@ -209,7 +221,7 @@ export class NativeSonicareClient implements SonicareClient {
       this.deviceInfo = {
         id: this.device.id,
         name: this.device.name ?? this.device.localName ?? "Sonicare4Kids",
-        model: model ? `HX6322/04 · ${model}` : "HX6322/04",
+        model: model || "Sonicare4Kids",
         firmware: firmware || undefined,
         battery: battery ?? undefined,
       };
@@ -224,7 +236,7 @@ export class NativeSonicareClient implements SonicareClient {
       }));
 
       this.events.onStatus("connected", "Sonicare pronto");
-      this.events.onLog("success", "Connessione completata: GATT aperto HX63xx");
+      this.events.onLog("success", "Connessione completata: GATT Sonicare aperto");
     } catch (error) {
       this.manager.stopDeviceScan();
       await this.resetConnection(candidate);
@@ -422,10 +434,12 @@ export class NativeSonicareClient implements SonicareClient {
     sessionCount: number | null,
     cursor?: DeviceSyncCursor | null,
   ): number[] {
-    if (!cursor || cursor.acceptNextSession) {
+    if (!cursor) {
       if (sessionCount === 0) return [];
       if (sessionCount === null) {
-        throw new Error("Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse");
+        // A rejected read means the optional characteristic is not usable.  Do not infer
+        // retention from latest: the only record that can be addressed without a count is latest.
+        return [latest];
       }
       const available = sessionCount;
       if (available > MAX_SYNC_BATCH) {
@@ -435,6 +449,26 @@ export class NativeSonicareClient implements SonicareClient {
         { length: available },
         (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
       );
+    }
+
+    if (cursor.acceptNextSession) {
+      if (sessionCount === 0) return [];
+      if (sessionCount === null) {
+        throw new Error("Conteggio storico BLE non disponibile: il reset non può essere verificato");
+      }
+      const available = sessionCount;
+      if (available > MAX_SYNC_BATCH) {
+        throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+      }
+      const sessionIds = Array.from(
+        { length: available },
+        (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
+      );
+      assertSafePostResetSessions({
+        resetBaselineSessionId: cursor.resetBaselineSessionId,
+        sessionIds,
+      });
+      return sessionIds;
     }
 
     if (latest === cursor.lastSessionId) return [];
@@ -483,8 +517,10 @@ export class NativeSonicareClient implements SonicareClient {
     if (latest === null) return [];
 
     let sessionCount: number | null = null;
+    let sessionCountReadFailed = false;
+    let countValue: Characteristic | null = null;
     try {
-      const countValue = await this.syncTransaction(
+      countValue = await this.syncTransaction(
         `${transactionPrefix}-count`,
         () => device.readCharacteristicForService(
           SONICARE.services.kidsSession,
@@ -493,11 +529,19 @@ export class NativeSonicareClient implements SonicareClient {
         ),
       );
       this.assertConnection(device, generation);
-      const countBytes = bytesFromBase64(countValue?.value);
-      sessionCount = countBytes.length === 2 ? uint16LE(countBytes) : null;
-    } catch {
+    } catch (error) {
       this.assertConnection(device, generation);
-      this.events.onLog("warning", "Conteggio storico BLE non disponibile; sincronizzazione prudente");
+      if (!isCharacteristicNotFoundError(error)) throw error;
+      sessionCountReadFailed = true;
+    }
+    if (sessionCountReadFailed) {
+      this.events.onLog("warning", "Impossibile leggere sessionCount BLE; sincronizzazione prudente");
+    } else {
+      const countBytes = bytesFromBase64(countValue?.value);
+      if (countBytes.length !== 2) {
+        throw new Error("Payload sessionCount BLE non valido; cursore invariato");
+      }
+      sessionCount = uint16LE(countBytes);
     }
 
     const anchorBefore = Date.now();
@@ -520,6 +564,12 @@ export class NativeSonicareClient implements SonicareClient {
     }
     const anchorWallTime = Math.floor((anchorBefore + Date.now()) / 2);
     const sessionIds = this.sessionIdsToSync(latest, sessionCount, cursor);
+    if (!cursor && sessionCountReadFailed) {
+      this.events.onLog(
+        "warning",
+        "Prima sincronizzazione limitata all'ultima sessione: le sessioni precedenti non vengono recuperate",
+      );
+    }
     const sessions: StoredDeviceSession[] = [];
 
     for (const sessionId of sessionIds) {
