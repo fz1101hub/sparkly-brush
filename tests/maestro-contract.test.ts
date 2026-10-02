@@ -91,4 +91,14 @@ describe("Maestro selector contract", () => {
       );
     }
   });
+
+  it("scorre verso l'anteprima nativa dopo il ritorno dal picker di sistema", () => {
+    const source = readFileSync(
+      join(ROOT, ".maestro", "flows", "native-complete-backup.yaml"),
+      "utf8",
+    );
+    expect(source).toMatch(
+      /- tapOn: sparkly-ci-archive\.sqlite\n- scrollUntilVisible:\n\s+element:\n\s+id: backup-file-preview\n\s+direction: DOWN\n\s+visibilityPercentage: 20\n\s+timeout: \d+/,
+    );
+  });
 });

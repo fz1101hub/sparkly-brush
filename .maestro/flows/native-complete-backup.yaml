@@ -53,10 +53,18 @@ tags:
     direction: DOWN
     timeout: 20000
 - tapOn: sparkly-ci-archive.sqlite
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: backup-file-preview
+    direction: DOWN
+    visibilityPercentage: 20
     timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: backup-comparison-file
+    direction: DOWN
+    visibilityPercentage: 20
+    timeout: 15000
 - assertVisible:
     id: backup-comparison-file
 - assertVisible: ".*125.*"

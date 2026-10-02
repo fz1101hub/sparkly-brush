@@ -31,14 +31,15 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 | 25 | Conferma ripristino locale | Pubblicata, CI reale verde | File completo nativo e codice legacy richiedono una seconda azione annullabile; selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
 | 26 | Confronto prima del ripristino | Pubblicato, CI reale verde | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
 | 27 | Cleanup backup SQLite temporanei | Pubblicato, CI reale verde | In caso di ENOSPC durante la copia, SQLite open o close falliti, elimina il file temporaneo incompleto in cache. Una review indipendente ha fatto ripristinare la semantica precedente per il file passato al restore: su close fallita non viene eliminato. Sei test con fault injection; il comportamento va verificato sul file system iOS/Android reale. |
-| 28 | Import file SQLite su emulatore Android | Gate fixture corretto, nuovo dispatch da eseguire | Fixture sintetica di 125 sessioni: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Nel dispatch `36942108179` verify, APK e iOS sono verdi; il nuovo flow non è partito perché `vite-node` non è esposto da pnpm frozen. La generazione ora usa `pnpm exec vitest` (testata col file in `/tmp`). Il terzo flow deve ancora provare picker, anteprima, annullamento, conferma e persistenza; nessun dato dell'utente. |
+| 28 | Import file SQLite su emulatore Android | Picker raggiunto, flow corretto da rieseguire | Fixture sintetica di 125 sessioni: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Nel [dispatch 36946358134](https://github.com/fz1101hub/sparkly-brush/actions/runs/36946358134), build Android/iOS e i due flow precedenti sono verdi; il nuovo flow ha selezionato il file, poi la pagina è tornata in cima e l'attesa della preview visibile è scaduta. Aggiunto scroll fino al pannello con soglia 20% e test statico; va verificato se la preview era solo fuori viewport o se il file è stato rifiutato. Nessun dato dell'utente. |
+| 29 | Advisory di sicurezza `node-forge` | **Blocco CI aperto**, [issue #8](https://github.com/fz1101hub/sparkly-brush/issues/8) | GHSA-86w9-cpqp-85rv (high) affligge `node-forge <=1.4.0` via `expo > @expo/cli`; versione corretta ufficiale **non disponibile** al 2 ottobre. Audit ancora bloccante, spostato dopo browser/export per non nascondere quei risultati. Non fare merge né silenziare il gate. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **50 file e 322 test** (sei fault injection native e tre regressioni fixture sintetica, inclusa la generazione per CI);
+- suite Vitest completa: **50 file e 323 test** (sei fault injection native, tre regressioni fixture sintetica, più contratto scroll del picker; confermati sul candidato del 2 ottobre);
 - gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
@@ -46,7 +47,7 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 - cinque percorsi Playwright funzionali superati, incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
-- `pnpm audit --prod --audit-level high`: superato, nessuna vulnerabilità nota;
+- `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;
 - `pnpm exec expo-doctor`: **21/21** con Expo 57.0.26;
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
@@ -57,11 +58,11 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 
 ## GitHub Actions
 
-Il blocco storico zero-step è cessato: [Verify 36940477890](https://github.com/fz1101hub/sparkly-brush/actions/runs/36940477890) ha completato `verify` (23 step) e `native-android` (14 step) realmente verdi sul commit `a00ae4e`. Nel [dispatch 36942108179](https://github.com/fz1101hub/sparkly-brush/actions/runs/36942108179), `verify`, `native-android` e `native-ios` sono riusciti; `e2e-android` è stato fermato **prima di Maestro** dal CLI di fixture non esposto, ora sostituito con Vitest. I due flow precedenti hanno avuto un esito verde nel dispatch `36829538328`. Il terzo flow richiede un nuovo dispatch sul commit aggiornato; la PR resta aperta e non sarà unita senza valutare l'issue hardware #3.
+Il blocco storico zero-step è cessato: [Verify 36940477890](https://github.com/fz1101hub/sparkly-brush/actions/runs/36940477890) è **l'ultimo run PR interamente verde**, sul commit `a00ae4e`, **prima** dell'advisory. Nel [dispatch 36946358134](https://github.com/fz1101hub/sparkly-brush/actions/runs/36946358134), `native-android`, `native-ios` e i due vecchi flow Maestro sono riusciti; `verify` è rosso per l'audit node-forge e il terzo flow si è fermato dopo il picker. Il nuovo flow deve completare un dispatch aggiornato; anche se passa, la PR resta aperta finché l'issue #8 non è risolta e il collaudo fisico #3 non è valutato.
 
 ## Supply chain
 
-Expo 57 ha rimosso `image-size` dal grafo delle dipendenze. `pnpm audit --prod --audit-level high` non rileva vulnerabilità note e `pnpm peers check` passa dopo l’allineamento di `@react-native/metro-config` a React Native 0.86.3.
+Expo 57 ha rimosso `image-size` dal grafo delle dipendenze, e `pnpm peers check` resta verde dopo l’allineamento di `@react-native/metro-config` a React Native 0.86.3. **Dal 2 ottobre** l'audit high rileva GHSA-86w9-cpqp-85rv in `node-forge@1.4.0`: nessuna patch è indicata dall'[advisory ufficiale](https://github.com/advisories/GHSA-86w9-cpqp-85rv). Non è una regressione di Expo testabile con override a una release inesistente; seguire l'[issue #8](https://github.com/fz1101hub/sparkly-brush/issues/8), mantenendo l'audit bloccante.
 
 ## Condizioni prima della release pubblica
 
