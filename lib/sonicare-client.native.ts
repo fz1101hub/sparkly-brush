@@ -27,6 +27,9 @@ import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare
 // can time out before a single advertisement even when the handle is nearby.
 const SCAN_TIMEOUT_MS = 45_000;
 const MAX_SYNC_BATCH = 128;
+// The handle loads a selected record asynchronously: right after the selection a slow handle can
+// still expose the previous record. Re-read with growing waits before failing the batch closed.
+const RECORD_LOAD_DELAYS_MS = [180, 360, 720] as const;
 
 function bytesFromBase64(value?: string | null): Uint8Array {
   if (!value) return new Uint8Array();
@@ -583,19 +586,23 @@ export class NativeSonicareClient implements SonicareClient {
         ),
       );
       this.assertConnection(device, generation);
-      await new Promise((resolve) => setTimeout(resolve, 180));
-      this.assertConnection(device, generation);
 
-      const value = await this.syncTransaction(
-        `${transactionPrefix}-data-${sessionId}`,
-        () => device.readCharacteristicForService(
-          SONICARE.services.kidsSession,
-          SONICARE.characteristics.sessionData,
-          `${transactionPrefix}-data-${sessionId}`,
-        ),
-      );
-      this.assertConnection(device, generation);
-      const decoded = decodeKidsSession(bytesFromBase64(value?.value), sessionId);
+      let decoded: StoredDeviceSession | null = null;
+      for (const [attempt, delayMs] of RECORD_LOAD_DELAYS_MS.entries()) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        this.assertConnection(device, generation);
+        const value = await this.syncTransaction(
+          `${transactionPrefix}-data-${sessionId}-${attempt}`,
+          () => device.readCharacteristicForService(
+            SONICARE.services.kidsSession,
+            SONICARE.characteristics.sessionData,
+            `${transactionPrefix}-data-${sessionId}-${attempt}`,
+          ),
+        );
+        this.assertConnection(device, generation);
+        decoded = decodeKidsSession(bytesFromBase64(value?.value), sessionId);
+        if (decoded) break;
+      }
       if (!decoded) {
         throw new Error(`Record BLE ${sessionId} mancante o non riconosciuto; cursore invariato`);
       }

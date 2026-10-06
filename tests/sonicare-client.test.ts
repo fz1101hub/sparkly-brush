@@ -556,6 +556,52 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 
+  it("rilegge il record se il manico espone ancora quello precedente subito dopo la selezione", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    const device = manager.devices[0];
+    configureStoredSessions(device, {
+      latest: 42,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+    // A slow handle keeps the previous record loaded for the first read after each selection.
+    let loaded = 40;
+    let selected = 40;
+    let readsSinceSelection = 0;
+    const configuredWrite = device.writeCharacteristicWithResponseForService.getMockImplementation();
+    device.writeCharacteristicWithResponseForService.mockImplementation(async (service, characteristic, value, id) => {
+      if (characteristic === SONICARE.characteristics.activeSessionId) {
+        const bytes = toByteArray(value);
+        selected = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+        readsSinceSelection = 0;
+      }
+      return configuredWrite!(service, characteristic, value, id);
+    });
+    const configuredRead = device.readCharacteristicForService.getMockImplementation();
+    device.readCharacteristicForService.mockImplementation(async (service: string, characteristic: string) => {
+      if (characteristic !== SONICARE.characteristics.sessionData) return configuredRead!(service, characteristic);
+      readsSinceSelection += 1;
+      if (readsSinceSelection > 1) loaded = selected;
+      return { value: b64(sessionPayload(800 + (loaded - 41) * 100, loaded)) };
+    });
+    vi.useFakeTimers();
+
+    const syncing = client.syncStoredSessionsSince({ lastSessionId: 40, acceptNextSession: false });
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([41, 42]);
+    const dataReads = device.readCharacteristicForService.mock.calls
+      .filter(([, characteristic]) => characteristic === SONICARE.characteristics.sessionData);
+    expect(dataReads).toHaveLength(4);
+    vi.useRealTimers();
+    client.destroy();
+  });
+
   it("scarta una sync del vecchio manico dopo disconnect e reconnect", async () => {
     const manager = new FakeManager();
     const { events } = createEvents();
