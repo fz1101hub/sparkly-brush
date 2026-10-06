@@ -951,6 +951,7 @@ export const fr = {
   "family.history.duration": "{minutes}:{seconds}",
   "family.history.deviceSource": "Synchronisée depuis la brosse à dents",
   "family.history.manualSource": "Minuteur guidé",
+  "family.history.demoSource": "Session de démo",
   "family.history.durationOf": "sur {duration}",
   "family.history.progressEyebrow": "Vos progrès",
   "family.history.title": "Historique",

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
+import { DemoModeNotice } from "@/components/demo-mode-notice";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
@@ -62,7 +63,7 @@ export default function ParentDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t, formatDate, formatNumber } = useI18n();
-  const { history, demoMode } = useBrush();
+  const { history, demoMode, setDemoMode } = useBrush();
   const { stats, missionCenter } = useBrushling();
   const { rewards, addReward, removeReward, markDelivered } =
     useParentRewards();
@@ -123,6 +124,8 @@ export default function ParentDashboardScreen() {
             />
           </View>
         </View>
+
+        {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
 
         <View
           style={[

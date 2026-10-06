@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
+import { DemoModeNotice } from "@/components/demo-mode-notice";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
@@ -24,7 +25,7 @@ import type { BrushSession } from "@/lib/brush-types";
 export default function HistoryScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { history, clearAllHistory } = useBrush();
+  const { history, clearAllHistory, demoMode, setDemoMode } = useBrush();
   const { t, formatDate, formatNumber } = useI18n();
   const completed = history.filter((session) => session.completed).length;
   const average = history.length
@@ -107,7 +108,9 @@ export default function HistoryScreen() {
           <Text style={[styles.sessionSubtitle, { color: colors.muted }]}>
             {item.source === "device"
               ? t("family.history.deviceSource")
-              : t("family.history.manualSource")}
+              : item.source === "demo"
+                ? t("family.history.demoSource")
+                : t("family.history.manualSource")}
           </Text>
         </View>
         <View style={styles.durationBlock}>
@@ -140,6 +143,7 @@ export default function HistoryScreen() {
               eyebrow={t("family.history.progressEyebrow")}
               title={t("family.history.title")}
             />
+            {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("family.history.parentCardLabel")}

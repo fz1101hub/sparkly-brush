@@ -10,6 +10,7 @@ export const itFamily = {
   "family.history.duration": "{minutes}:{seconds}",
   "family.history.deviceSource": "Sincronizzata dallo spazzolino",
   "family.history.manualSource": "Timer guidato",
+  "family.history.demoSource": "Sessione demo",
   "family.history.durationOf": "su {duration}",
   "family.history.progressEyebrow": "I tuoi progressi",
   "family.history.title": "Storico",

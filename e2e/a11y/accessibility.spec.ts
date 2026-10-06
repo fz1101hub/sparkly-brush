@@ -205,3 +205,34 @@ test.describe("WCAG automatic audit of reward states", () => {
     });
   }
 });
+
+test.describe("WCAG automatic audit in demo mode", () => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`simulated week on today, history and parent area in ${colorScheme}`, async ({
+      page,
+    }, testInfo) => {
+      await page.emulateMedia({ colorScheme });
+      await completeFirstRun(page);
+      await page.getByTestId("tab-device").click();
+      await expect(page.getByTestId("device-screen")).toBeVisible();
+      const demoSwitch = page.getByTestId("device-demo-switch");
+      await demoSwitch.click();
+      await expect(demoSwitch).toHaveAttribute("aria-checked", "true");
+      await page.getByRole("button", { name: "Genera una settimana di dati demo" }).click();
+      await expect(page.getByText(/^14 sessioni simulate/)).toBeVisible();
+
+      for (const route of [
+        { name: "today", path: "/" },
+        { name: "history", path: "/history" },
+        { name: "parent", path: "/parent" },
+      ]) {
+        await page.goto(route.path);
+        await expect(page.getByTestId("demo-mode-notice")).toBeVisible();
+        if (route.name === "history") {
+          await expect(page.getByText("Sessione demo").first()).toBeVisible();
+        }
+        await scan(page, testInfo, `${colorScheme}-demo-${route.name}`);
+      }
+    });
+  }
+});

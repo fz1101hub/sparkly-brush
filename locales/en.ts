@@ -936,6 +936,7 @@ export const en = {
   "family.history.duration": "{minutes}:{seconds}",
   "family.history.deviceSource": "Synced from toothbrush",
   "family.history.manualSource": "Guided timer",
+  "family.history.demoSource": "Demo session",
   "family.history.durationOf": "of {duration}",
   "family.history.progressEyebrow": "Your progress",
   "family.history.title": "History",

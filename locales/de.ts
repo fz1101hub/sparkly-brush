@@ -962,6 +962,7 @@ export const de = {
   "family.history.duration": "{minutes}:{seconds}",
   "family.history.deviceSource": "Von der Zahnbürste synchronisiert",
   "family.history.manualSource": "Geführter Timer",
+  "family.history.demoSource": "Demo-Sitzung",
   "family.history.durationOf": "auf {duration}",
   "family.history.progressEyebrow": "Dein Fortschritt",
   "family.history.title": "Verlauf",

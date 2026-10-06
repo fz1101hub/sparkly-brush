@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-n
 
 import { AppHeader } from "@/components/app-header";
 import { AnimatedBrushling } from "@/components/animated-brushling";
+import { DemoModeNotice } from "@/components/demo-mode-notice";
 import { SessionRewardModal } from "@/components/session-reward-modal";
 import { StarterChooser } from "@/components/starter-chooser";
 import { MouthZones } from "@/components/mouth-zones";
@@ -162,34 +163,7 @@ export default function TodayScreen() {
           connected={!demoMode && status === "connected"}
         />
 
-        {demoMode ? (
-          <View style={styles.demoBanner}>
-            <View style={styles.demoBannerIcon}>
-              <MaterialIcons name="science" size={22} color="#FFFFFF" />
-            </View>
-            <View style={styles.demoBannerCopy}>
-              <Text style={styles.demoBannerEyebrow}>
-                {t("home.demo.eyebrow")}
-              </Text>
-              <Text
-                style={[styles.demoBannerTitle, { color: colors.foreground }]}
-              >
-                {t("home.demo.title")}
-              </Text>
-              <Text style={[styles.demoBannerText, { color: colors.muted }]}>
-                {t("home.demo.description")}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("home.demo.exitLabel")}
-              onPress={() => void setDemoMode(false)}
-              style={({ pressed }) => [styles.demoExit, pressed && styles.pressed]}
-            >
-              <Text style={styles.demoExitText}>{t("home.demo.exit")}</Text>
-            </Pressable>
-          </View>
-        ) : null}
+        {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
 
         <View
           style={[
@@ -607,14 +581,6 @@ const styles = StyleSheet.create({
   },
   loadingTitle: { fontSize: 20, lineHeight: 26, fontWeight: "900", marginTop: 10 },
   loadingCopy: { fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 4, maxWidth: 280 },
-  demoBanner: { borderWidth: 1, borderColor: "#E8BE38", backgroundColor: "#FFF4C9", borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 9 },
-  demoBannerIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
-  demoBannerCopy: { flex: 1 },
-  demoBannerEyebrow: { color: "#8A6400", fontSize: 8, lineHeight: 12, fontWeight: "900", letterSpacing: 0.8 },
-  demoBannerTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
-  demoBannerText: { fontSize: 9, lineHeight: 14, marginTop: 1 },
-  demoExit: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
-  demoExitText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   companionCard: {
     borderRadius: 28,
     borderWidth: 2,
