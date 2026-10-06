@@ -19,6 +19,7 @@ export const de = {
   "language.fr": "Français",
   "language.es": "Español",
   "recovery.failed": "Die Datenwiederherstellung ist fehlgeschlagen",
+  "recovery.retry": "Erneut versuchen",
   "recovery.protectedTitle": "Geschützte Daten",
   "recovery.restart":
     "{error}. Starte die App neu, ohne ihre Daten zu löschen.",

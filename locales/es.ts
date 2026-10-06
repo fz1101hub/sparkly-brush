@@ -19,6 +19,7 @@ export const es = {
   "language.fr": "Français",
   "language.es": "Español",
   "recovery.failed": "Restauración de datos fallida",
+  "recovery.retry": "Reintentar",
   "recovery.protectedTitle": "Datos protegidos",
   "recovery.restart": "{error}. Reinicia la app sin borrar sus datos.",
   "recovery.inProgressLabel": "Restauración de datos en curso",

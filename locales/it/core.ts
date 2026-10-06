@@ -17,6 +17,7 @@ export const itCore = {
   "language.fr": "Français",
   "language.es": "Español",
   "recovery.failed": "Ripristino dati non riuscito",
+  "recovery.retry": "Riprova",
   "recovery.protectedTitle": "Dati protetti",
   "recovery.restart": "{error}. Riavvia l’app senza cancellarne i dati.",
   "recovery.inProgressLabel": "Ripristino dei dati in corso",

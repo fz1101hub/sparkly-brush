@@ -1,7 +1,7 @@
 import "@/global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { ActivityIndicator, BackHandler, Platform, StyleSheet, Text, View } from "react-native";
@@ -22,9 +22,9 @@ import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import { AppLocaleProvider } from "@/contexts/app-locale-provider";
 import { useI18n } from "@/contexts/locale-context";
+import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
-import { initializeHistoryStorage } from "@/lib/brush-storage";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -33,30 +33,6 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
-
-function DataRecoveryGate({ children }: { children: ReactNode }) {
-  const { t } = useI18n();
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    void initializeHistoryStorage()
-      .then(() => setReady(true))
-      .catch(() => setFailed(true));
-  }, []);
-
-  if (failed) {
-    return (
-      <View style={recoveryStyles.container}>
-        <Text style={recoveryStyles.title}>{t("recovery.protectedTitle")}</Text>
-        <Text style={recoveryStyles.message}>
-          {t("recovery.restart", { error: t("recovery.failed") })}
-        </Text>
-      </View>
-    );
-  }
-  return ready ? children : null;
-}
 
 function RestoreOperationOverlay() {
   const { t } = useI18n();
@@ -93,7 +69,6 @@ function RestoreOperationOverlay() {
 }
 
 const recoveryStyles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   title: { fontSize: 18, fontWeight: "700", textAlign: "center" },
   message: { marginTop: 8, textAlign: "center" },
   overlay: {
