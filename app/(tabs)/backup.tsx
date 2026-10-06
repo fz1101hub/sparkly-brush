@@ -5,17 +5,29 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
+import { GOLD_BUTTON_BACKGROUND } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
+import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "@/lib/i18n";
+import { DEFAULT_LOCALE } from "@/lib/locale-types";
 import {
   backupFingerprint,
   createBackupManifest,
   parseBackup,
   type BrushlingsBackup,
 } from "@/lib/backup";
+import {
+  compareBackupContents,
+  type BackupComparison,
+} from "@/lib/backup-comparison";
 import {
   discardCompleteBackupPreview,
   exportAndShareCompleteBackup,
@@ -30,15 +42,49 @@ import {
   type RestoreSnapshot,
 } from "@/lib/restore-journal";
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1_024) return `${bytes} B`;
-  if (bytes < 1_048_576) return `${(bytes / 1_024).toFixed(1)} KB`;
-  return `${(bytes / 1_048_576).toFixed(1)} MB`;
+const LIGHT_CARD_FOREGROUND = "#17213A";
+const LIGHT_CARD_MUTED = "#56617D";
+
+type BackupTranslate = (
+  key: TranslationKey,
+  params?: TranslationParams,
+) => string;
+type BackupFormatNumber = (
+  value: number,
+  options?: Intl.NumberFormatOptions,
+) => string;
+
+const fallbackTranslate: BackupTranslate = (key, params) =>
+  translateDynamic(DEFAULT_LOCALE, key, params);
+const fallbackFormatNumber: BackupFormatNumber = (value, options) =>
+  new Intl.NumberFormat("it-IT", options).format(value);
+
+function formatBytes(
+  bytes: number,
+  t: BackupTranslate = fallbackTranslate,
+  formatNumber: BackupFormatNumber = fallbackFormatNumber,
+): string {
+  if (bytes < 1_024) return t("backup.bytes", { value: bytes });
+  if (bytes < 1_048_576) {
+    return t("backup.kilobytes", {
+      value: formatNumber(bytes / 1_024, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+    });
+  }
+  return t("backup.megabytes", {
+    value: formatNumber(bytes / 1_048_576, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+  });
 }
 
 export default function BackupScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatDate, formatNumber } = useI18n();
   const {
     lifetimeProgress,
     historyReady,
@@ -61,9 +107,11 @@ export default function BackupScreen() {
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
   const [filePreview, setFilePreview] = useState<CompleteBackupPreview | null>(null);
+  const [pendingRestore, setPendingRestore] = useState<"file" | "legacy" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manifestCreatedAt] = useState(Date.now);
   const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
   const backupReady = historyReady && profileReady && preferencesReady && rewardsReady && !restoreInProgress;
   const nativeBackupAvailable = Platform.OS !== "web";
@@ -81,11 +129,22 @@ export default function BackupScreen() {
       { selectedId, hasChosenStarter },
       customization,
       lifetimeProgress,
-      Date.now(),
+      manifestCreatedAt,
       { preferences, parentRewards },
     ),
-    [customization, hasChosenStarter, lifetimeProgress, parentRewards, preferences, selectedId],
+    [customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId],
   );
+  const fileComparison = filePreview
+    ? compareBackupContents(
+      currentManifest,
+      filePreview.manifest,
+      filePreview.sessionCount,
+      filePreview.manifest.historyComplete,
+    )
+    : null;
+  const legacyComparison = preview
+    ? compareBackupContents(currentManifest, preview, preview.history.length, false)
+    : null;
 
   const shareBackup = async () => {
     if (demoMode || !backupReady) return;
@@ -93,9 +152,14 @@ export default function BackupScreen() {
     setError(null);
     try {
       const result = await exportAndShareCompleteBackup(currentManifest);
-      setMessage(`Backup completo: ${result.sessionCount} sessioni, ${formatBytes(result.size)}.`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Backup non riuscito");
+      setMessage(
+        t("backup.exportSuccess", {
+          sessions: result.sessionCount,
+          size: formatBytes(result.size, t, formatNumber),
+        }),
+      );
+    } catch {
+      setError(t("backup.exportFailed"));
     } finally {
       setBusy(false);
     }
@@ -108,21 +172,25 @@ export default function BackupScreen() {
     try {
       const inspected = await pickAndInspectCompleteBackup();
       if (inspected) {
+        setPendingRestore(null);
         if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
         setFilePreview(inspected);
         setPreview(null);
         setMessage(null);
       }
-    } catch (caught) {
-      if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
+    } catch {
+      setPendingRestore(null);
+      if (filePreviewRef.current)
+        discardCompleteBackupPreview(filePreviewRef.current);
       setFilePreview(null);
-      setError(caught instanceof Error ? caught.message : "File backup non valido");
+      setError(t("backup.invalidFile"));
     } finally {
       setBusy(false);
     }
   };
 
   const inspectImport = () => {
+    setPendingRestore(null);
     try {
       const parsed = parseBackup(importCode);
       setPreview(parsed);
@@ -130,14 +198,15 @@ export default function BackupScreen() {
       setFilePreview(null);
       setError(null);
       setMessage(null);
-    } catch (caught) {
+    } catch {
       setPreview(null);
-      setError(caught instanceof Error ? caught.message : "Backup non valido");
+      setError(t("backup.invalidBackup"));
     }
   };
 
   const restoreLegacy = async () => {
-    if (!preview || demoMode || !backupReady) return;
+    if (!preview || pendingRestore !== "legacy" || demoMode || !backupReady || busy) return;
+    setPendingRestore(null);
     const previous: RestoreSnapshot = {
       profile: { selectedId, hasChosenStarter },
       customization,
@@ -155,43 +224,46 @@ export default function BackupScreen() {
     try {
       await runRestoreOperation(async () => {
         setRestoreInProgress(true);
-        const restoreId = await beginApplicationRestore(previous, next);
-        let databaseCommitted = false;
         try {
-          await restoreFromBackup(next.profile, next.customization);
-          await restorePreferences(next.preferences);
-          await restoreRewards(next.parentRewards);
-          await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
-          databaseCommitted = true;
-          await completeApplicationRestore(restoreId);
-        } catch (caught) {
-          if (!databaseCommitted) {
-            const rollback = await Promise.allSettled([
-              restoreFromBackup(previous.profile, previous.customization),
-              restorePreferences(previous.preferences),
-              restoreRewards(previous.parentRewards),
-            ]);
-            if (rollback.every((result) => result.status === "fulfilled")) {
-              await completeApplicationRestore(restoreId);
+          const restoreId = await beginApplicationRestore(previous, next);
+          let databaseCommitted = false;
+          try {
+            await restoreFromBackup(next.profile, next.customization);
+            await restorePreferences(next.preferences);
+            await restoreRewards(next.parentRewards);
+            await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
+            databaseCommitted = true;
+            await completeApplicationRestore(restoreId);
+          } catch (caught) {
+            if (!databaseCommitted) {
+              const rollback = await Promise.allSettled([
+                restoreFromBackup(previous.profile, previous.customization),
+                restorePreferences(previous.preferences),
+                restoreRewards(previous.parentRewards),
+              ]);
+              if (rollback.every((result) => result.status === "fulfilled")) {
+                await completeApplicationRestore(restoreId);
+              }
             }
+            throw caught;
           }
-          throw caught;
         } finally {
           setRestoreInProgress(false);
         }
       });
       setImportCode("");
       setPreview(null);
-      setMessage("Vecchio backup ripristinato. Progressi lifetime e sessioni disponibili sono stati importati.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Ripristino non riuscito");
+      setMessage(t("backup.legacyRestoreSuccess"));
+    } catch {
+      setError(t("backup.restoreFailed"));
     } finally {
       setBusy(false);
     }
   };
 
   const restoreFile = async () => {
-    if (!filePreview || demoMode || !backupReady) return;
+    if (!filePreview || pendingRestore !== "file" || demoMode || !backupReady || busy) return;
+    setPendingRestore(null);
     const selectedPreview = filePreview;
     const previous: RestoreSnapshot = {
       profile: { selectedId, hasChosenStarter },
@@ -210,28 +282,30 @@ export default function BackupScreen() {
     try {
       await runRestoreOperation(async () => {
         setRestoreInProgress(true);
-        const restoreId = await beginApplicationRestore(previous, next);
-        let databaseCommitted = false;
         try {
-          await restoreFromBackup(next.profile, next.customization);
-          await restorePreferences(next.preferences);
-          await restoreRewards(next.parentRewards);
-          const restored = await restoreCompleteBackup(selectedPreview, restoreId);
-          databaseCommitted = true;
-          adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
-          await completeApplicationRestore(restoreId);
-        } catch (caught) {
-          if (!databaseCommitted) {
-            const rollback = await Promise.allSettled([
-              restoreFromBackup(previous.profile, previous.customization),
-              restorePreferences(previous.preferences),
-              restoreRewards(previous.parentRewards),
-            ]);
-            if (rollback.every((result) => result.status === "fulfilled")) {
-              await completeApplicationRestore(restoreId);
+          const restoreId = await beginApplicationRestore(previous, next);
+          let databaseCommitted = false;
+          try {
+            await restoreFromBackup(next.profile, next.customization);
+            await restorePreferences(next.preferences);
+            await restoreRewards(next.parentRewards);
+            const restored = await restoreCompleteBackup(selectedPreview, restoreId);
+            databaseCommitted = true;
+            adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
+            await completeApplicationRestore(restoreId);
+          } catch (caught) {
+            if (!databaseCommitted) {
+              const rollback = await Promise.allSettled([
+                restoreFromBackup(previous.profile, previous.customization),
+                restorePreferences(previous.preferences),
+                restoreRewards(previous.parentRewards),
+              ]);
+              if (rollback.every((result) => result.status === "fulfilled")) {
+                await completeApplicationRestore(restoreId);
+              }
             }
+            throw caught;
           }
-          throw caught;
         } finally {
           setRestoreInProgress(false);
         }
@@ -239,11 +313,11 @@ export default function BackupScreen() {
       setFilePreview(null);
       setPreview(null);
       setImportCode("");
-      setMessage("Ripristino completo: tutte le sessioni e i progressi sono tornati.");
-    } catch (caught) {
+      setMessage(t("backup.restoreSuccess"));
+    } catch {
       discardCompleteBackupPreview(selectedPreview);
       setFilePreview(null);
-      setError(caught instanceof Error ? caught.message : "Ripristino non riuscito");
+      setError(t("backup.restoreFailed"));
     } finally {
       setBusy(false);
     }
@@ -251,18 +325,22 @@ export default function BackupScreen() {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="backup-screen" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("backup.backLabel")}
             onPress={() => router.back()}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
           <View style={styles.headerWrap}>
-            <AppHeader eyebrow="Proteggi il tuo compagno" title="Backup & trasferimento" connected={false} />
+            <AppHeader
+              eyebrow={t("backup.eyebrow")}
+              title={t("backup.title")}
+              connected={false}
+            />
           </View>
         </View>
 
@@ -271,9 +349,11 @@ export default function BackupScreen() {
             <MaterialIcons name="cloud-done" size={31} color="#2E8A60" />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroTitle, { color: colors.foreground }]}>Ogni progresso segue il Brushling</Text>
-            <Text style={[styles.heroText, { color: colors.muted }]}>
-              Un solo file contiene tutte le sessioni, senza tagli, più date, durate, progressi, compagno, tana, premi e preferenze. Gli identificatori Bluetooth del manico vengono sostituiti da alias non leggibili.
+            <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
+              {t("backup.heroTitle")}
+            </Text>
+            <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>
+              {t("backup.heroDescription")}
             </Text>
           </View>
         </View>
@@ -282,125 +362,243 @@ export default function BackupScreen() {
           <View style={[styles.demoWarning, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
             <MaterialIcons name="science" size={22} color="#9A7200" />
             <View style={styles.demoWarningCopy}>
-              <Text style={[styles.demoWarningTitle, { color: colors.foreground }]}>Modalità demo attiva</Text>
-              <Text style={[styles.demoWarningText, { color: colors.muted }]}>
-                I backup usano solo i dati reali. Esci dalla demo prima di esportare o ripristinare.
+              <Text
+                style={[
+                  styles.demoWarningTitle,
+                  { color: LIGHT_CARD_FOREGROUND },
+                ]}
+              >
+                {t("backup.demoTitle")}
+              </Text>
+              <Text
+                style={[styles.demoWarningText, { color: LIGHT_CARD_MUTED }]}
+              >
+                {t("backup.demoDescription")}
               </Text>
             </View>
-            <Pressable onPress={() => void setDemoMode(false)} style={({ pressed }) => [styles.demoWarningButton, pressed && styles.pressed]}>
-              <Text style={styles.demoWarningButtonText}>Esci demo</Text>
+            <Pressable
+              onPress={() => void setDemoMode(false)}
+              style={({ pressed }) => [
+                styles.demoWarningButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.demoWarningButtonText}>
+                {t("backup.exitDemo")}
+              </Text>
             </Pressable>
           </View>
         ) : null}
         {!demoMode && !backupReady ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="hourglass-top" size={20} color="#2457D6" />
-            <Text style={[styles.messageText, { color: colors.foreground }]}>Caricamento dei dati in corso…</Text>
+            <Text
+              style={[styles.messageText, { color: LIGHT_CARD_FOREGROUND }]}
+            >
+              {t("backup.loading")}
+            </Text>
           </View>
         ) : null}
         {message ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View testID="backup-status" accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
-            <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
+            <Text style={[styles.messageText, { color: LIGHT_CARD_FOREGROUND }]}>{message}</Text>
           </View>
         ) : null}
 
         <View style={styles.section}>
           <View>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>1. Crea un backup</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {t("backup.createTitle")}
+            </Text>
             <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-              Salvalo in Mail, Messaggi, Drive o in un altro posto che resterà accessibile dopo il cambio telefono.
+              {t("backup.createDescription")}
             </Text>
           </View>
 
-          <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Summary icon="pets" label="Brushling" value={selectedId} />
-            <Summary icon="history" label="Sessioni archiviate" value={String(lifetimeProgress.attemptedSessions)} />
-            <Summary icon="home" label="Oggetti tana" value={String(customization.ownedIds.length)} />
-            <Summary icon="redeem" label="Premi famiglia" value={String(parentRewards.length)} />
+          <View
+            style={[
+              styles.summaryCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Summary
+              icon="pets"
+              label={t("backup.summaryBrushling")}
+              value={selectedId}
+            />
+            <Summary
+              icon="history"
+              label={t("backup.summarySessions")}
+              value={String(lifetimeProgress.attemptedSessions)}
+              testID="backup-current-sessions"
+            />
+            <Summary
+              icon="home"
+              label={t("backup.summaryDenItems")}
+              value={String(customization.ownedIds.length)}
+            />
+            <Summary
+              icon="redeem"
+              label={t("backup.summaryFamilyRewards")}
+              value={String(parentRewards.length)}
+            />
           </View>
 
           <Pressable
+            testID="backup-export"
             accessibilityRole="button"
+            accessibilityLabel={t("backup.exportLabel")}
+            accessibilityState={{
+              disabled:
+                demoMode || busy || !backupReady || !nativeBackupAvailable,
+              busy,
+            }}
             onPress={() => void shareBackup()}
             disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
             style={({ pressed }) => [styles.primaryButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
           >
             <MaterialIcons name="ios-share" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryText}>{!nativeBackupAvailable ? "Disponibile su iOS e Android" : busy ? "Preparazione…" : "Salva il file completo"}</Text>
+            <Text style={styles.primaryText}>
+              {!nativeBackupAvailable
+                ? t("backup.nativeOnly")
+                : busy
+                  ? t("backup.preparing")
+                  : t("backup.saveComplete")}
+            </Text>
           </Pressable>
-          <Text style={[styles.codeLabel, { color: colors.muted }]}>ID backup · {backupFingerprint(currentManifest)}</Text>
+          <Text style={[styles.codeLabel, { color: colors.muted }]}>
+            {t("backup.fingerprint", {
+              id: backupFingerprint(currentManifest),
+            })}
+          </Text>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <View style={styles.section}>
           <View>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>2. Ripristina sul nuovo telefono</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {t("backup.restoreTitle")}
+            </Text>
             <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-              Scegli il file .brushlings salvato. L’app controlla integrità e numero di sessioni prima del ripristino.
+              {t("backup.restoreDescription")}
             </Text>
           </View>
 
           <Pressable
+            testID="backup-pick-file"
             accessibilityRole="button"
-            disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
+            accessibilityLabel={t("backup.pickFileLabel")}
+            accessibilityState={{
+              disabled:
+                demoMode || busy || !backupReady || !nativeBackupAvailable,
+              busy,
+            }}
+            disabled={
+              demoMode || busy || !backupReady || !nativeBackupAvailable
+            }
             onPress={() => void pickBackupFile()}
             style={({ pressed }) => [styles.checkButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
           >
             <MaterialIcons name="folder-open" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryText}>Scegli file backup</Text>
+            <Text style={styles.primaryText}>{t("backup.pickFile")}</Text>
           </Pressable>
 
           {filePreview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+            <View testID="backup-file-preview" style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
               <MaterialIcons name="verified-user" size={27} color="#2E8A60" />
               <View style={styles.previewCopy}>
                 <Text style={[styles.previewEyebrow, { color: "#2E8A60" }]}>
-                  {filePreview.manifest.historyComplete ? "FILE COMPLETO VERIFICATO" : "BACKUP LEGACY VERIFICATO"}
+                  {filePreview.manifest.historyComplete
+                    ? t("backup.verifiedComplete")
+                    : t("backup.verifiedLegacy")}
                 </Text>
-                <Text style={[styles.previewTitle, { color: colors.foreground }]}>
-                  {filePreview.manifest.profile.selectedId} · {filePreview.sessionCount} sessioni
+                <Text
+                  style={[
+                    styles.previewTitle,
+                    { color: LIGHT_CARD_FOREGROUND },
+                  ]}
+                >
+                  {t("backup.previewTitle", {
+                    name: filePreview.manifest.profile.selectedId,
+                    sessions: filePreview.sessionCount,
+                  })}
                 </Text>
-                <Text style={[styles.previewText, { color: colors.muted }]}>
-                  {formatBytes(filePreview.size)} · creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(filePreview.manifest.createdAt))}.
+                <Text style={[styles.previewText, { color: LIGHT_CARD_MUTED }]}>
+                  {t("backup.createdAt", {
+                    size: formatBytes(filePreview.size, t, formatNumber),
+                    date: formatDate(filePreview.manifest.createdAt, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }),
+                  })}
                 </Text>
                 {!filePreview.manifest.historyComplete ? (
                   <Text style={[styles.warningText, { color: "#8A5B00" }]}>
-                    Origine legacy: tutti i progressi sono conservati, ma il vecchio codice conteneva solo {filePreview.sessionCount} righe consultabili.
+                    {t("backup.legacyOrigin", {
+                      sessions: filePreview.sessionCount,
+                    })}
                   </Text>
                 ) : null}
+                {fileComparison ? <BackupComparisonCard kind="file" comparison={fileComparison} /> : null}
                 <Text style={[styles.warningText, { color: "#246A4B" }]}>
-                  Il ripristino sostituirà integralmente l’archivio reale di questo telefono.
+                  {t("backup.replaceCompleteWarning")}
                 </Text>
                 <Pressable
+                  testID="backup-restore-file"
                   accessibilityRole="button"
+                  accessibilityLabel={t("backup.restoreFileLabel")}
+                  accessibilityHint={t("backup.restoreFileHint")}
+                  accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
-                  onPress={() => void restoreFile()}
+                  onPress={() => setPendingRestore("file")}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
                 >
-                  <MaterialIcons name="settings-backup-restore" size={20} color="#FFFFFF" />
-                  <Text style={styles.primaryText}>Ripristina archivio completo</Text>
+                  <MaterialIcons
+                    name="settings-backup-restore"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.primaryText}>
+                    {t("backup.restoreComplete")}
+                  </Text>
                 </Pressable>
+                {pendingRestore === "file" ? (
+                  <RestoreConfirmation
+                    kind="file"
+                    warning={t("backup.replaceCompleteWarning")}
+                    disabled={busy || !backupReady}
+                    onCancel={() => setPendingRestore(null)}
+                    onConfirm={() => void restoreFile()}
+                  />
+                ) : null}
               </View>
             </View>
           ) : null}
 
           <View style={[styles.legacyCard, { borderColor: colors.border }]}>
-            <Text style={[styles.legacyTitle, { color: colors.foreground }]}>Hai un vecchio codice backup?</Text>
-            <Text style={[styles.previewText, { color: colors.muted }]}>I codici v1 e v2 restano importabili per non perdere dati creati dalle versioni precedenti.</Text>
+            <Text style={[styles.legacyTitle, { color: colors.foreground }]}>
+              {t("backup.legacyTitle")}
+            </Text>
+            <Text style={[styles.previewText, { color: colors.muted }]}>
+              {t("backup.legacyDescription")}
+            </Text>
 
             <TextInput
+              testID="backup-import-code"
+              accessibilityLabel={t("backup.legacyCodeLabel")}
               value={importCode}
               onChangeText={(value) => {
                 setImportCode(value);
                 setPreview(null);
+                setPendingRestore(null);
                 if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
                 setFilePreview(null);
                 setError(null);
               }}
               multiline
-              placeholder="Incolla qui BRUSHLINGS-BACKUP-1/2:..."
+              placeholder={t("backup.legacyCodePlaceholder")}
               placeholderTextColor={colors.muted}
               autoCapitalize="none"
               autoCorrect={false}
@@ -408,55 +606,99 @@ export default function BackupScreen() {
             />
 
             <Pressable
+              testID="backup-inspect-code"
               accessibilityRole="button"
+              accessibilityLabel={t("backup.inspectCodeLabel")}
+              accessibilityState={{ disabled: !importCode.trim() }}
               disabled={!importCode.trim()}
               onPress={inspectImport}
               style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, !importCode.trim() && styles.disabled, pressed && styles.pressed]}
             >
-              <MaterialIcons name="manage-search" size={20} color={colors.primary} />
-              <Text style={[styles.secondaryText, { color: colors.primary }]}>Controlla vecchio codice</Text>
+              <MaterialIcons
+                name="manage-search"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={[styles.secondaryText, { color: colors.primary }]}>
+                {t("backup.inspectCode")}
+              </Text>
             </Pressable>
           </View>
 
           {error ? (
-            <View style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
+            <View testID="backup-error" accessibilityRole="alert" accessibilityLiveRegion="assertive" style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
               <MaterialIcons name="error-outline" size={20} color="#C43D58" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
           {preview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+            <View testID="backup-legacy-preview" style={[styles.previewCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
               <MaterialIcons name="inventory-2" size={27} color="#B98A00" />
               <View style={styles.previewCopy}>
-                <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>BACKUP VALIDO</Text>
-                <Text style={[styles.previewTitle, { color: colors.foreground }]}>
-                  {preview.profile.selectedId} · {preview.lifetimeProgress.completedSessions} sessioni
+                <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>
+                  {t("backup.validBackup")}
                 </Text>
-                <Text style={[styles.previewText, { color: colors.muted }]}>
-                  Creato il {new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(preview.createdAt))}.
+                <Text
+                  style={[
+                    styles.previewTitle,
+                    { color: LIGHT_CARD_FOREGROUND },
+                  ]}
+                >
+                  {t("backup.previewTitle", {
+                    name: preview.profile.selectedId,
+                    sessions: preview.lifetimeProgress.completedSessions,
+                  })}
                 </Text>
+                <Text style={[styles.previewText, { color: LIGHT_CARD_MUTED }]}>
+                  {t("backup.createdOn", {
+                    date: formatDate(preview.createdAt, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }),
+                  })}
+                </Text>
+                {legacyComparison ? <BackupComparisonCard kind="legacy" comparison={legacyComparison} /> : null}
                 <Text style={[styles.warningText, { color: "#8A5B00" }]}>
-                  Il ripristino sostituirà i progressi reali presenti su questo telefono.
+                  {t("backup.replaceWarning")}
                 </Text>
                 <Pressable
+                  testID="backup-restore-legacy"
                   accessibilityRole="button"
+                  accessibilityLabel={t("backup.restoreLegacyLabel")}
+                  accessibilityHint={t("backup.restoreLegacyHint")}
+                  accessibilityState={{ disabled: busy || !backupReady, busy }}
                   disabled={busy || !backupReady}
-                  onPress={() => void restoreLegacy()}
+                  onPress={() => setPendingRestore("legacy")}
                   style={({ pressed }) => [styles.restoreButton, (busy || !backupReady) && styles.disabled, pressed && styles.pressed]}
                 >
-                  <MaterialIcons name="settings-backup-restore" size={20} color="#FFFFFF" />
-                  <Text style={styles.primaryText}>Ripristina questo Brushling</Text>
+                  <MaterialIcons
+                    name="settings-backup-restore"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.primaryText}>
+                    {t("backup.restoreBrushling")}
+                  </Text>
                 </Pressable>
+                {pendingRestore === "legacy" ? (
+                  <RestoreConfirmation
+                    kind="legacy"
+                    warning={t("backup.replaceWarning")}
+                    disabled={busy || !backupReady}
+                    onCancel={() => setPendingRestore(null)}
+                    onConfirm={() => void restoreLegacy()}
+                  />
+                ) : null}
               </View>
             </View>
           ) : null}
         </View>
 
         <View style={[styles.privacyCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
-          <MaterialIcons name="privacy-tip" size={21} color={colors.muted} />
-          <Text style={[styles.privacyText, { color: colors.muted }]}>
-            Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.
+          <MaterialIcons name="privacy-tip" size={21} color={LIGHT_CARD_MUTED} />
+          <Text style={[styles.privacyText, { color: LIGHT_CARD_MUTED }]}>
+            {t("backup.privacy")}
           </Text>
         </View>
       </ScrollView>
@@ -464,12 +706,137 @@ export default function BackupScreen() {
   );
 }
 
-function Summary({ icon, label, value }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; label: string; value: string }) {
+function BackupComparisonCard({
+  kind,
+  comparison,
+}: {
+  kind: "file" | "legacy";
+  comparison: BackupComparison;
+}) {
+  const { t, formatNumber } = useI18n();
+  return (
+    <View testID={`backup-comparison-${kind}`} style={styles.comparisonCard}>
+      <Text style={styles.comparisonTitle}>{t("backup.compareTitle")}</Text>
+      <View style={styles.comparisonRow}>
+        <Text style={styles.comparisonMetric} />
+        <Text style={styles.comparisonValue}>{t("backup.compareCurrent")}</Text>
+        <Text style={styles.comparisonValue}>{t("backup.compareIncoming")}</Text>
+      </View>
+      <ComparisonRow
+        label={t("backup.summaryBrushling")}
+        current={comparison.current.brushling}
+        incoming={comparison.incoming.brushling}
+      />
+      <ComparisonRow
+        label={t("backup.compareLifetime")}
+        current={formatNumber(comparison.current.attemptedSessions)}
+        incoming={formatNumber(comparison.incoming.attemptedSessions)}
+      />
+      <ComparisonRow
+        label={t("backup.compareCompleted")}
+        current={formatNumber(comparison.current.completedSessions)}
+        incoming={formatNumber(comparison.incoming.completedSessions)}
+      />
+      <ComparisonRow
+        label={t("backup.summaryDenItems")}
+        current={formatNumber(comparison.current.denItems)}
+        incoming={formatNumber(comparison.incoming.denItems)}
+      />
+      <ComparisonRow
+        label={t("backup.summaryFamilyRewards")}
+        current={formatNumber(comparison.current.familyRewards)}
+        incoming={formatNumber(comparison.incoming.familyRewards)}
+      />
+      <Text style={styles.comparisonNote}>
+        {comparison.historyComplete
+          ? t("backup.compareCompleteRows", { count: formatNumber(comparison.incomingRows) })
+          : t("backup.comparePartialRows", { count: formatNumber(comparison.incomingRows) })}
+      </Text>
+      {comparison.lowerLifetimeProgress ? (
+        <Text testID={`backup-comparison-${kind}-older`} style={styles.comparisonWarning}>
+          {t("backup.compareOlder")}
+        </Text>
+      ) : null}
+      <Text style={styles.comparisonWarning}>{t("backup.compareNoMerge")}</Text>
+    </View>
+  );
+}
+
+function ComparisonRow({
+  label,
+  current,
+  incoming,
+}: {
+  label: string;
+  current: string;
+  incoming: string;
+}) {
+  return (
+    <View style={styles.comparisonRow}>
+      <Text style={styles.comparisonMetric}>{label}</Text>
+      <Text style={styles.comparisonValue}>{current}</Text>
+      <Text style={styles.comparisonValue}>{incoming}</Text>
+    </View>
+  );
+}
+
+function RestoreConfirmation({
+  kind,
+  warning,
+  disabled,
+  onCancel,
+  onConfirm,
+}: {
+  kind: "file" | "legacy";
+  warning: string;
+  disabled: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useI18n();
+  const confirmLabel = t(kind === "file" ? "backup.confirmFile" : "backup.confirmLegacy");
+  return (
+    <View
+      testID={`backup-confirm-${kind}-card`}
+      accessibilityLiveRegion="assertive"
+      style={styles.confirmCard}
+    >
+      <Text style={styles.confirmTitle}>{t("backup.confirmTitle")}</Text>
+      <Text style={styles.confirmWarning}>{warning}</Text>
+      <View style={styles.confirmActions}>
+        <Pressable
+          testID={`backup-cancel-${kind}`}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.cancel")}
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={onCancel}
+          style={({ pressed }) => [styles.confirmCancel, disabled && styles.disabled, pressed && styles.pressed]}
+        >
+          <Text style={styles.confirmCancelText}>{t("common.cancel")}</Text>
+        </Pressable>
+        <Pressable
+          testID={`backup-confirm-${kind}`}
+          accessibilityRole="button"
+          accessibilityLabel={confirmLabel}
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={onConfirm}
+          style={({ pressed }) => [styles.confirmProceed, disabled && styles.disabled, pressed && styles.pressed]}
+        >
+          <Text style={styles.confirmProceedText}>{confirmLabel}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function Summary({ icon, label, value, testID }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; label: string; value: string; testID?: string }) {
   const colors = useColors();
   return (
     <View style={styles.summaryItem}>
       <MaterialIcons name={icon} size={20} color={colors.primary} />
-      <Text style={[styles.summaryValue, { color: colors.foreground }]}>{value}</Text>
+      <Text testID={testID} style={[styles.summaryValue, { color: colors.foreground }]}>{value}</Text>
       <Text style={[styles.summaryLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );
@@ -489,7 +856,7 @@ const styles = StyleSheet.create({
   demoWarningCopy: { flex: 1 },
   demoWarningTitle: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
   demoWarningText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
-  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "#B07D00", alignItems: "center", justifyContent: "center" },
+  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: GOLD_BUTTON_BACKGROUND, alignItems: "center", justifyContent: "center" },
   demoWarningButtonText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   messageCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
   messageText: { flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
@@ -521,7 +888,22 @@ const styles = StyleSheet.create({
   previewTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900" },
   previewText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   warningText: { fontSize: 10, lineHeight: 15, fontWeight: "800", marginTop: 7 },
-  restoreButton: { minHeight: 46, marginTop: 10, borderRadius: 15, backgroundColor: "#B07D00", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  comparisonCard: { borderWidth: 1, borderColor: "#C4D1D9", backgroundColor: "#FFFFFF", borderRadius: 14, padding: 10, gap: 5, marginTop: 10 },
+  comparisonTitle: { color: LIGHT_CARD_FOREGROUND, fontSize: 12, lineHeight: 17, fontWeight: "900" },
+  comparisonRow: { flexDirection: "row", alignItems: "flex-start", gap: 4 },
+  comparisonMetric: { width: "42%", color: LIGHT_CARD_FOREGROUND, fontSize: 10, lineHeight: 15, fontWeight: "700" },
+  comparisonValue: { width: "27%", color: LIGHT_CARD_FOREGROUND, fontSize: 10, lineHeight: 15, fontWeight: "800", textAlign: "center" },
+  comparisonNote: { color: LIGHT_CARD_MUTED, fontSize: 10, lineHeight: 15, marginTop: 4 },
+  comparisonWarning: { color: "#651C2F", fontSize: 10, lineHeight: 15, fontWeight: "700", marginTop: 3 },
+  restoreButton: { minHeight: 46, marginTop: 10, borderRadius: 15, backgroundColor: GOLD_BUTTON_BACKGROUND, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  confirmCard: { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8", borderWidth: 1, borderRadius: 16, padding: 12, gap: 8, marginTop: 10 },
+  confirmTitle: { color: "#651C2F", fontSize: 14, lineHeight: 20, fontWeight: "900" },
+  confirmWarning: { color: "#651C2F", fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  confirmActions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  confirmCancel: { flexGrow: 1, minWidth: 100, minHeight: 44, borderWidth: 1, borderColor: "#A92E46", borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  confirmCancelText: { color: "#8A253A", fontSize: 11, lineHeight: 16, fontWeight: "800", textAlign: "center" },
+  confirmProceed: { flexGrow: 1, minWidth: 130, minHeight: 44, backgroundColor: "#A92E46", borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  confirmProceedText: { color: "#FFFFFF", fontSize: 11, lineHeight: 16, fontWeight: "800", textAlign: "center" },
   privacyCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 },
   privacyText: { flex: 1, fontSize: 10, lineHeight: 15 },
   pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },

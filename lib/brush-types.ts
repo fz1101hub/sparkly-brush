@@ -1,3 +1,5 @@
+import type { TranslationKey, TranslationParams } from "@/lib/i18n";
+
 export type ConnectionStatus =
   | "idle"
   | "scanning"
@@ -13,6 +15,8 @@ export interface DiagnosticLog {
   at: number;
   level: LogLevel;
   message: string;
+  translationKey?: TranslationKey;
+  translationParams?: TranslationParams;
 }
 
 export interface ToothbrushDevice {
@@ -58,6 +62,7 @@ export interface StoredDeviceSession {
 export interface DeviceSyncCursor {
   lastSessionId: number;
   acceptNextSession: boolean;
+  resetBaselineSessionId?: number | null;
 }
 
 export interface BleClientEvents {

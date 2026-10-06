@@ -38,6 +38,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Python test bytecode
+__pycache__/
+*.pyc
+
 app-example
 
 # generated native folders
@@ -62,6 +66,7 @@ Thumbs.db
 *.tgz
 *.tar.gz
 .cache/
+/artifacts/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/

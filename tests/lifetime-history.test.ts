@@ -214,6 +214,128 @@ describe("lifetime progress", () => {
     expect(distinct.recentHistory).toHaveLength(3);
   });
 
+  it("riconcilia il successore approssimato anche dopo una sync tardiva", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime - 300_000);
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+
+    const reconciled = await saveDeviceSessionsWithLifetime("brush-a", [{
+      ...storedDeviceSession(41),
+      startedAt: baseTime + 10 * 60_000,
+      timeConfidence: "approximate",
+    }]);
+
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(2);
+    expect(reconciled.lifetimeProgress.xp).toBe(120);
+    expect(reconciled.recentHistory).toHaveLength(2);
+    expect(reconciled.recentHistory.some((session) => session.id.startsWith("ble-live:"))).toBe(false);
+    expect(reconciled.recentHistory[0].startedAt).toBe(baseTime);
+  });
+
+  it("riconcilia una prima sessione approssimata tardiva anche senza cursore BLE", async () => {
+    await saveDeviceFallbackWithLifetime("brush-first-use", {
+      id: `ble-live:brush-first-use:${baseTime}`,
+      startedAt: baseTime,
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+
+    const reconciled = await saveDeviceSessionsWithLifetime("brush-first-use", [{
+      ...storedDeviceSession(1),
+      startedAt: baseTime + 10 * 60_000,
+      timeConfidence: "approximate",
+    }]);
+
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(1);
+    expect(reconciled.lifetimeProgress.xp).toBe(60);
+    expect(reconciled.recentHistory).toHaveLength(1);
+    expect(reconciled.recentHistory[0].startedAt).toBe(baseTime);
+  });
+
+  it("su first-use correla il fallback soltanto alla coda più recente del batch", async () => {
+    await saveDeviceFallbackWithLifetime("brush-first-batch", {
+      id: `ble-live:brush-first-batch:${baseTime}`,
+      startedAt: baseTime,
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+
+    const reconciled = await saveDeviceSessionsWithLifetime("brush-first-batch", [
+      { ...storedDeviceSession(0), startedAt: baseTime + 500_000, timeConfidence: "approximate" },
+      { ...storedDeviceSession(1), startedAt: baseTime + 600_000, timeConfidence: "approximate" },
+    ]);
+
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(2);
+    expect(reconciled.recentHistory).toHaveLength(2);
+    expect(reconciled.recentHistory.filter((session) => session.startedAt === baseTime)).toHaveLength(1);
+    expect(reconciled.recentHistory.some((session) => session.id.startsWith("ble-live:"))).toBe(false);
+  });
+
+  it("sostituisce il fallback senza perdere una sessione manuale interveniente", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime - 300_000);
+    await saveDeviceFallbackWithLifetime("brush-a", {
+      id: `ble-live:brush-a:${baseTime}`,
+      startedAt: baseTime,
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+    await saveSessionWithLifetime({ ...completeSession(99), startedAt: baseTime + 15_000 });
+
+    const reconciled = await saveDeviceSessionsWithLifetime("brush-a", [{
+      ...storedDeviceSession(41),
+      startedAt: baseTime + 10 * 60_000,
+      timeConfidence: "approximate",
+    }]);
+
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(3);
+    expect(reconciled.lifetimeProgress.xp).toBe(180);
+    expect(reconciled.recentHistory).toHaveLength(3);
+    expect(reconciled.recentHistory.some((session) => session.id === "session-99")).toBe(true);
+    expect(reconciled.recentHistory.some((session) => session.id.startsWith("ble-live:"))).toBe(false);
+  });
+
+  it("correla due fallback consecutivi ai rispettivi record GATT", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime - 300_000);
+    for (const [offset, duration] of [[0, 120], [180_000, 114]] as const) {
+      await saveDeviceFallbackWithLifetime("brush-a", {
+        id: `ble-live:brush-a:${baseTime + offset}`,
+        startedAt: baseTime + offset,
+        rewardPolicy: "completed-only",
+        durationSeconds: duration,
+        targetSeconds: 120,
+        completed: true,
+        source: "device",
+      });
+    }
+
+    const reconciled = await saveDeviceSessionsWithLifetime("brush-a", [
+      { ...storedDeviceSession(41), startedAt: baseTime + 600_000, timeConfidence: "approximate" },
+      { ...storedDeviceSession(42), durationSeconds: 114, startedAt: baseTime + 780_000, timeConfidence: "approximate" },
+    ]);
+
+    expect(reconciled.importedCount).toBe(2);
+    expect(reconciled.lifetimeProgress.completedSessions).toBe(3);
+    expect(reconciled.recentHistory).toHaveLength(3);
+    expect(reconciled.recentHistory.some((session) => session.id.startsWith("ble-live:"))).toBe(false);
+    expect(reconciled.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
+  });
+
   it("non perde progressi se oltre 120 sessioni seguono un fallback", async () => {
     await saveDeviceFallbackWithLifetime("brush-a", {
       id: `ble-live:brush-a:${baseTime}`,
@@ -428,6 +550,35 @@ describe("lifetime progress", () => {
     expect(firstAfterReset.lifetimeProgress.deviceCursors[deviceKey("brush-b")].lastSessionId).toBe(7);
   });
 
+  it("non apre un epoch reset senza un cursore BLE precedente", async () => {
+    await expect(forgetDeviceWithLifetime("brush-new")).rejects.toThrow(
+      "Nessun contatore BLE precedente",
+    );
+    const unchanged = await loadHistoryBundle();
+    expect(unchanged.lifetimeProgress.deviceCursors).toEqual({});
+  });
+
+  it("rifiuta il replay dello stesso manico se il contatore non è stato azzerato", async () => {
+    await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(100), baseTime);
+    const beforeReset = await saveDeviceSessionWithLifetime(
+      "brush-a",
+      storedDeviceSession(101),
+      baseTime + 1_000,
+    );
+    await forgetDeviceWithLifetime("brush-a");
+
+    await expect(saveDeviceSessionsWithLifetime("brush-a", [
+      { ...storedDeviceSession(100), startedAt: baseTime, timeConfidence: "reconstructed" },
+      { ...storedDeviceSession(101), startedAt: baseTime + 1_000, timeConfidence: "reconstructed" },
+    ])).rejects.toThrow("reset di fabbrica");
+
+    const afterRejectedReplay = await loadHistoryBundle();
+    expect(afterRejectedReplay.lifetimeProgress.completedSessions).toBe(
+      beforeReset.lifetimeProgress.completedSessions,
+    );
+    expect(afterRejectedReplay.recentHistory).toHaveLength(2);
+  });
+
   it("salva un batch BLE contiguo con un solo avanzamento atomico del cursore", async () => {
     await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(40), baseTime);
 
@@ -546,6 +697,7 @@ describe("lifetime progress", () => {
         lastSessionId: index,
         epoch: 0,
         acceptNextSession: false,
+        resetBaselineSessionId: null,
         previousEpochRecentSessionIds: [],
         recentIdentities: [`0:${index}`],
         updatedAt: 1,
@@ -554,10 +706,14 @@ describe("lifetime progress", () => {
     raw.pendingDeviceFallbacks = Object.fromEntries(Array.from({ length: 100 }, (_, index) => [
       `device-${index}`,
       {
+        deviceKey: deviceKey(`device-${index}`),
         sessionId: `fallback-${index}`,
         startedAt: 1,
+        timeConfidence: "exact" as const,
+        rewardPolicy: "completed-only" as const,
         durationSeconds: 120,
         targetSeconds: 120,
+        completed: true,
         expectedSessionId: index,
         hasInterveningProgress: false,
         progressBeforeSession: null,

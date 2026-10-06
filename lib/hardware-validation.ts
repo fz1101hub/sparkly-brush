@@ -1,3 +1,11 @@
+import {
+  type TranslationKey,
+  type TranslationParams,
+  translateDynamic,
+} from "@/lib/i18n";
+import { DEFAULT_LOCALE } from "@/lib/locale-types";
+import { localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+
 import type {
   BrushLiveData,
   ConnectionStatus,
@@ -7,110 +15,146 @@ import type {
 
 export const HARDWARE_VALIDATION_VERSION = 1;
 
+export type HardwareTranslate = (
+  key: TranslationKey,
+  params?: TranslationParams,
+) => string;
+
+const defaultTranslate: HardwareTranslate = (key, params) =>
+  translateDynamic(DEFAULT_LOCALE, key, params);
+
 export type HardwareTestStatus = "pending" | "passed" | "failed" | "blocked";
 
+export const HARDWARE_TEST_IDS = [
+  "scan-connect",
+  "metadata",
+  "live-timer",
+  "session-sync",
+  "rapid-stops",
+  "offline-gap",
+  "deduplication",
+  "demo-cancel",
+  "reconnect",
+  "factory-reset",
+  "background",
+  "restart",
+  "backup-restore",
+] as const;
+
+export type HardwareTestId = (typeof HARDWARE_TEST_IDS)[number];
+
 export type HardwareTestCase = {
-  id:
-    | "scan-connect"
-    | "metadata"
-    | "live-timer"
-    | "session-sync"
-    | "rapid-stops"
-    | "offline-gap"
-    | "deduplication"
-    | "demo-cancel"
-    | "reconnect"
-    | "factory-reset"
-    | "background"
-    | "restart"
-    | "backup-restore";
+  id: HardwareTestId;
   title: string;
   instruction: string;
   success: string;
 };
 
-export const HARDWARE_TEST_CASES: readonly HardwareTestCase[] = [
-  {
-    id: "scan-connect",
-    title: "Scansione e connessione",
-    instruction: "Avvia la ricerca con il manico vicino e non collegato ad altre app.",
-    success: "Il manico appare come Sonicare4Kids e lo stato diventa Collegato.",
-  },
-  {
-    id: "metadata",
-    title: "Metadati e batteria",
-    instruction: "Controlla modello, firmware e batteria, poi attendi almeno un aggiornamento.",
-    success: "I campi restano presenti e coerenti dopo l’aggiornamento batteria.",
-  },
-  {
-    id: "live-timer",
-    title: "Timer live e quadranti",
-    instruction: "Completa una sessione di due minuti osservando timer e cambi zona.",
-    success: "Avvio, arresto, secondi e quattro zone seguono il manico senza salti.",
-  },
-  {
-    id: "session-sync",
-    title: "Sincronizzazione sessione",
-    instruction: "Ferma il manico e attendi la sincronizzazione automatica.",
-    success: "Compare una sola nuova sessione nello storico con durata corretta.",
-  },
-  {
-    id: "rapid-stops",
-    title: "Due stop ravvicinati",
-    instruction: "Completa due sessioni senza attendere la fine della prima sincronizzazione.",
-    success: "Entrambe vengono conservate e contabilizzate una sola volta.",
-  },
-  {
-    id: "offline-gap",
-    title: "Sessioni offline, orario e salto ID",
-    instruction: "Completa due sessioni con l’app chiusa, riconnetti, poi completa una sessione con l’app aperta.",
-    success: "Le sessioni offline arrivano in ordine con orario ricostruito o dichiarato approssimato; il fallback live non viene riaccreditato.",
-  },
-  {
-    id: "deduplication",
-    title: "Deduplica manuale",
-    instruction: "Premi Sincronizza ultima due volte dopo la stessa sessione.",
-    success: "Storico, XP, monete e reward ledger non cambiano al secondo tentativo.",
-  },
-  {
-    id: "demo-cancel",
-    title: "Demo durante scansione",
-    instruction: "Avvia la scansione e attiva subito la modalità demo.",
-    success: "La scansione viene annullata e nessun manico reale resta collegato.",
-  },
-  {
-    id: "reconnect",
-    title: "Tre reconnect",
-    instruction: "Disconnetti e riconnetti tre volte, avviando brevemente il manico ogni volta.",
-    success: "Non compaiono callback duplicate, timer doppi o crash.",
-  },
-  {
-    id: "factory-reset",
-    title: "Reset di fabbrica del manico",
-    instruction: "Dopo un backup, resetta il manico, ricollegalo e usa Dimentica manico resettato prima della prima nuova sessione.",
-    success: "La nuova sessione viene acquisita una volta e storico, XP, monete e Brushling precedenti restano invariati.",
-  },
-  {
-    id: "background",
-    title: "App in background",
-    instruction: "Avvia una sessione, porta l’app in background e poi torna in primo piano.",
-    success: "Lo stato torna coerente e non viene creata alcuna sessione fantasma.",
-  },
-  {
-    id: "restart",
-    title: "Riavvio applicazione",
-    instruction: "Chiudi completamente e riapri l’app dopo una sessione sincronizzata.",
-    success: "Storico, progressione e ultimo dispositivo restano coerenti.",
-  },
-  {
-    id: "backup-restore",
-    title: "Backup e ripristino",
-    instruction: "Esporta il file .brushlings e ripristinalo su un secondo dispositivo o installazione pulita.",
-    success: "Storico completo, progressione e ledger coincidono dopo il ripristino.",
-  },
-] as const;
+type TestCopyKeys = {
+  title: TranslationKey;
+  instruction: TranslationKey;
+  success: TranslationKey;
+};
 
-export type HardwareTestId = (typeof HARDWARE_TEST_CASES)[number]["id"];
+const TEST_COPY_KEYS: Record<HardwareTestId, TestCopyKeys> = {
+  "scan-connect": {
+    title: "hardware.test.scanConnect.title",
+    instruction: "hardware.test.scanConnect.instruction",
+    success: "hardware.test.scanConnect.success",
+  },
+  metadata: {
+    title: "hardware.test.metadata.title",
+    instruction: "hardware.test.metadata.instruction",
+    success: "hardware.test.metadata.success",
+  },
+  "live-timer": {
+    title: "hardware.test.liveTimer.title",
+    instruction: "hardware.test.liveTimer.instruction",
+    success: "hardware.test.liveTimer.success",
+  },
+  "session-sync": {
+    title: "hardware.test.sessionSync.title",
+    instruction: "hardware.test.sessionSync.instruction",
+    success: "hardware.test.sessionSync.success",
+  },
+  "rapid-stops": {
+    title: "hardware.test.rapidStops.title",
+    instruction: "hardware.test.rapidStops.instruction",
+    success: "hardware.test.rapidStops.success",
+  },
+  "offline-gap": {
+    title: "hardware.test.offlineGap.title",
+    instruction: "hardware.test.offlineGap.instruction",
+    success: "hardware.test.offlineGap.success",
+  },
+  deduplication: {
+    title: "hardware.test.deduplication.title",
+    instruction: "hardware.test.deduplication.instruction",
+    success: "hardware.test.deduplication.success",
+  },
+  "demo-cancel": {
+    title: "hardware.test.demoCancel.title",
+    instruction: "hardware.test.demoCancel.instruction",
+    success: "hardware.test.demoCancel.success",
+  },
+  reconnect: {
+    title: "hardware.test.reconnect.title",
+    instruction: "hardware.test.reconnect.instruction",
+    success: "hardware.test.reconnect.success",
+  },
+  "factory-reset": {
+    title: "hardware.test.factoryReset.title",
+    instruction: "hardware.test.factoryReset.instruction",
+    success: "hardware.test.factoryReset.success",
+  },
+  background: {
+    title: "hardware.test.background.title",
+    instruction: "hardware.test.background.instruction",
+    success: "hardware.test.background.success",
+  },
+  restart: {
+    title: "hardware.test.restart.title",
+    instruction: "hardware.test.restart.instruction",
+    success: "hardware.test.restart.success",
+  },
+  "backup-restore": {
+    title: "hardware.test.backupRestore.title",
+    instruction: "hardware.test.backupRestore.instruction",
+    success: "hardware.test.backupRestore.success",
+  },
+};
+
+/** Returns the localized hardware-test matrix; Italian remains the API fallback. */
+export function getHardwareTestCases(
+  t: HardwareTranslate = defaultTranslate,
+): readonly HardwareTestCase[] {
+  return HARDWARE_TEST_IDS.map((id) => {
+    const copy = TEST_COPY_KEYS[id];
+    return {
+      id,
+      title: t(copy.title),
+      instruction: t(copy.instruction),
+      success: t(copy.success),
+    };
+  });
+}
+
+/** @deprecated Prefer getHardwareTestCases(t) in localized UI. */
+export const HARDWARE_TEST_CASES = getHardwareTestCases();
+
+export function hardwareTestStatusLabel(
+  status: HardwareTestStatus,
+  t: HardwareTranslate = defaultTranslate,
+): string {
+  return t(`hardware.status.${status}` as TranslationKey);
+}
+
+export function connectionStatusLabel(
+  status: ConnectionStatus,
+  t: HardwareTranslate = defaultTranslate,
+): string {
+  return t(`hardware.connection.${status}` as TranslationKey);
+}
 
 export type HardwareTestResult = {
   status: HardwareTestStatus;
@@ -140,8 +184,13 @@ export type HardwareValidationSnapshot = {
   diagnosticLogs: DiagnosticLog[];
 };
 
-const TEST_IDS = new Set<HardwareTestId>(HARDWARE_TEST_CASES.map((test) => test.id));
-const STATUSES = new Set<HardwareTestStatus>(["pending", "passed", "failed", "blocked"]);
+const TEST_IDS = new Set<HardwareTestId>(HARDWARE_TEST_IDS);
+const STATUSES = new Set<HardwareTestStatus>([
+  "pending",
+  "passed",
+  "failed",
+  "blocked",
+]);
 const MAX_NOTE_LENGTH = 1_000;
 const MAX_LOGS = 80;
 const NON_IDENTIFIER_VALUES = new Set([
@@ -182,10 +231,12 @@ const NON_IDENTIFIER_VALUES = new Set([
 ]);
 
 function emptyResults(): Record<HardwareTestId, HardwareTestResult> {
-  return Object.fromEntries(HARDWARE_TEST_CASES.map((test) => [
-    test.id,
-    { status: "pending", note: "", updatedAt: null },
-  ])) as Record<HardwareTestId, HardwareTestResult>;
+  return Object.fromEntries(
+    HARDWARE_TEST_IDS.map((id) => [
+      id,
+      { status: "pending", note: "", updatedAt: null },
+    ]),
+  ) as Record<HardwareTestId, HardwareTestResult>;
 }
 
 export function createHardwareValidationRun(
@@ -211,14 +262,26 @@ export function normalizeHardwareValidationRun(value: unknown): HardwareValidati
   const raw = value as Partial<HardwareValidationRun>;
   if (raw.version !== HARDWARE_VALIDATION_VERSION) return null;
   if (typeof raw.runId !== "string" || raw.runId.length > 256) return null;
-  if (!["ios", "android", "web", "unknown"].includes(String(raw.platform))) return null;
-  if (typeof raw.startedAt !== "number" || !Number.isFinite(raw.startedAt)) return null;
-  if (typeof raw.updatedAt !== "number" || !Number.isFinite(raw.updatedAt)) return null;
+  if (!["ios", "android", "web", "unknown"].includes(String(raw.platform))) {
+    return null;
+  }
+  if (typeof raw.startedAt !== "number" || !Number.isFinite(raw.startedAt)) {
+    return null;
+  }
+  if (typeof raw.updatedAt !== "number" || !Number.isFinite(raw.updatedAt)) {
+    return null;
+  }
 
   const results = emptyResults();
   if (raw.results && typeof raw.results === "object") {
     Object.entries(raw.results).forEach(([id, candidate]) => {
-      if (!TEST_IDS.has(id as HardwareTestId) || !candidate || typeof candidate !== "object") return;
+      if (
+        !TEST_IDS.has(id as HardwareTestId) ||
+        !candidate ||
+        typeof candidate !== "object"
+      ) {
+        return;
+      }
       const result = candidate as Partial<HardwareTestResult>;
       if (!STATUSES.has(result.status as HardwareTestStatus)) return;
       results[id as HardwareTestId] = {
@@ -235,8 +298,14 @@ export function normalizeHardwareValidationRun(value: unknown): HardwareValidati
     version: HARDWARE_VALIDATION_VERSION,
     runId: raw.runId,
     platform: raw.platform as HardwareValidationRun["platform"],
-    osVersion: typeof raw.osVersion === "string" ? raw.osVersion.slice(0, 120) : "sconosciuta",
-    appVersion: typeof raw.appVersion === "string" ? raw.appVersion.slice(0, 120) : "sconosciuta",
+    osVersion:
+      typeof raw.osVersion === "string"
+        ? raw.osVersion.slice(0, 120)
+        : defaultTranslate("hardware.unknownVersion"),
+    appVersion:
+      typeof raw.appVersion === "string"
+        ? raw.appVersion.slice(0, 120)
+        : defaultTranslate("hardware.unknownVersion"),
     startedAt: raw.startedAt,
     updatedAt: raw.updatedAt,
     results,
@@ -275,94 +344,168 @@ export function hardwareValidationSummary(run: HardwareValidationRun) {
   };
 }
 
-export function redactDiagnosticMessage(message: string): string {
+export function redactDiagnosticMessage(
+  message: string,
+  t: HardwareTranslate = defaultTranslate,
+): string {
   return message
-    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[device-id]")
-    .replace(/\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b/gi, "[device-id]")
     .replace(
-      /\b(?:device[\s_-]?(?:id|identifier)|peripheral(?:[\s_-]?(?:id|identifier))?|id\s+dispositivo|serial(?:\s+number)?|mac(?:\s+address)?|bluetooth(?:\s+address)?)(?:\s*[:=]\s*|\s+)([^\s,;]+)/gi,
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+      t("hardware.report.deviceId"),
+    )
+    .replace(
+      /\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b/gi,
+      t("hardware.report.deviceId"),
+    )
+    .replace(
+      /\b(?:device[\s_-]?(?:id|identifier)|peripheral(?:[\s_-]?(?:id|identifier))?|id\s+dispositivo|serial(?:\s+number)?|mac(?:\s+address)?|bluetooth\s+address)(?:\s*[:=]\s*|\s+)([^\s,;]+)/gi,
       (match, value: string) => {
         const normalized = value
           .replace(/^[\[({"']+|[\])}"'.!?]+$/g, "")
           .toLocaleLowerCase("it");
-        return NON_IDENTIFIER_VALUES.has(normalized) ? match : "device id: [redacted]";
+        return NON_IDENTIFIER_VALUES.has(normalized)
+          ? match
+          : t("hardware.report.redactedDevice");
       },
     );
 }
 
-function tableCell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim() || "—";
+function tableCell(value: string, t: HardwareTranslate): string {
+  return (
+    value
+      .replace(/\|/g, "\\|")
+      .replace(/[\r\n]+/g, " ")
+      .trim() || t("hardware.report.emptyCell")
+  );
 }
 
-function statusLabel(status: HardwareTestStatus): string {
-  if (status === "passed") return "SUPERATO";
-  if (status === "failed") return "FALLITO";
-  if (status === "blocked") return "BLOCCATO";
-  return "DA ESEGUIRE";
+function reportStatusLabel(
+  status: HardwareTestStatus,
+  t: HardwareTranslate,
+): string {
+  return t(`hardware.report.status.${status}` as TranslationKey);
 }
 
+function adapterStateLabel(state: string, t: HardwareTranslate): string {
+  const keyByState: Record<string, TranslationKey> = {
+    Unknown: "device.adapterState.unknown",
+    Resetting: "device.adapterState.resetting",
+    Unsupported: "device.adapterState.unsupported",
+    Unauthorized: "device.adapterState.unauthorized",
+    PoweredOff: "device.adapterState.poweredOff",
+    PoweredOn: "device.adapterState.poweredOn",
+  };
+  const key = keyByState[state];
+  return key ? t(key) : state;
+}
+
+function handleStateLabel(state: number, t: HardwareTranslate): string {
+  const keyByState: Record<number, TranslationKey> = {
+    0: "device.handleState.off",
+    1: "device.handleState.idle",
+    2: "device.handleState.brushing",
+    3: "device.handleState.charging",
+    4: "device.handleState.shuttingDown",
+    6: "device.handleState.verifying",
+    7: "device.handleState.background",
+  };
+  const key = keyByState[state];
+  return key ? t(key) : t("device.unknown");
+}
+
+function intensityLabel(
+  intensity: BrushLiveData["intensity"],
+  t: HardwareTranslate,
+): string {
+  const keyByIntensity: Record<BrushLiveData["intensity"], TranslationKey> = {
+    bassa: "device.intensity.low",
+    media: "device.intensity.medium",
+    alta: "device.intensity.high",
+    sconosciuta: "device.unknown",
+  };
+  return t(keyByIntensity[intensity]);
+}
+
+/**
+ * Builds a shareable report. Pass the active locale's `t` callback to localize
+ * every report label; omitting it keeps the historic Italian output.
+ */
 export function renderHardwareValidationReport(
   run: HardwareValidationRun,
   snapshot: HardwareValidationSnapshot,
   generatedAt = Date.now(),
+  t: HardwareTranslate = defaultTranslate,
 ): string {
   const summary = hardwareValidationSummary(run);
   const device = snapshot.device;
-  const testRows = HARDWARE_TEST_CASES.map((test) => {
-    const result = run.results[test.id];
-    return `| ${tableCell(test.title)} | ${statusLabel(result.status)} | ${tableCell(redactDiagnosticMessage(result.note))} |`;
-  }).join("\n");
-  const logs = snapshot.diagnosticLogs
-    .slice(0, MAX_LOGS)
-    .map((log) => `- ${new Date(log.at).toISOString()} · ${log.level.toUpperCase()} · ${redactDiagnosticMessage(log.message)}`)
-    .join("\n") || "- Nessun log disponibile";
+  const testRows = getHardwareTestCases(t)
+    .map((test) => {
+      const result = run.results[test.id];
+      return `| ${tableCell(test.title, t)} | ${reportStatusLabel(result.status, t)} | ${tableCell(redactDiagnosticMessage(result.note, t), t)} |`;
+    })
+    .join("\n");
+  const logs =
+    snapshot.diagnosticLogs
+      .slice(0, MAX_LOGS)
+      .map(
+        (log) =>
+          `- ${new Date(log.at).toISOString()} · ${log.level.toUpperCase()} · ${redactDiagnosticMessage(
+            log.translationKey
+              ? t(log.translationKey, log.translationParams)
+              : localizeSonicareMessage(log.message, t),
+            t,
+          )}`,
+      )
+      .join("\n") || `- ${t("hardware.report.noLogs")}`;
+  const unavailable = t("hardware.report.unavailable");
 
-  return `# Report collaudo hardware — Sparkly Brush
+  return `# ${t("hardware.report.title")}
 
-> Il report non include l’identificativo Bluetooth persistente del manico. Eventuali UUID o indirizzi MAC nei log sono oscurati automaticamente.
+> ${t("hardware.report.intro")}
 
-## Ambiente
+## ${t("hardware.report.environment")}
 
-| Campo | Valore |
+| ${t("hardware.report.field")} | ${t("hardware.report.value")} |
 |---|---|
-| Run | ${tableCell(run.runId)} |
-| Piattaforma | ${tableCell(run.platform)} |
-| Versione OS | ${tableCell(run.osVersion)} |
-| Versione app | ${tableCell(run.appVersion)} |
-| Avviato | ${new Date(run.startedAt).toISOString()} |
-| Generato | ${new Date(generatedAt).toISOString()} |
+| ${t("hardware.report.run")} | ${tableCell(run.runId, t)} |
+| ${t("hardware.report.platform")} | ${tableCell(run.platform, t)} |
+| ${t("hardware.report.osVersion")} | ${tableCell(run.osVersion, t)} |
+| ${t("hardware.report.appVersion")} | ${tableCell(run.appVersion, t)} |
+| ${t("hardware.report.started")} | ${new Date(run.startedAt).toISOString()} |
+| ${t("hardware.report.generated")} | ${new Date(generatedAt).toISOString()} |
 
-## Snapshot tecnico
+## ${t("hardware.report.technicalSnapshot")}
 
-| Campo | Valore |
+| ${t("hardware.report.field")} | ${t("hardware.report.value")} |
 |---|---|
-| Stato connessione | ${tableCell(snapshot.connectionStatus)} |
-| Adattatore BLE | ${tableCell(snapshot.adapterState)} |
-| Nome | ${tableCell(redactDiagnosticMessage(device?.name ?? "non disponibile"))} |
-| Modello | ${tableCell(redactDiagnosticMessage(device?.model ?? "non disponibile"))} |
-| Firmware | ${tableCell(redactDiagnosticMessage(device?.firmware ?? "non disponibile"))} |
-| Batteria | ${device?.battery === undefined ? "non disponibile" : `${device.battery}%`} |
-| Stato manico | ${snapshot.live.handleState} |
-| Spazzolatura attiva | ${snapshot.live.isBrushing ? "sì" : "no"} |
-| Tempo live | ${snapshot.live.elapsedSeconds}s / ${snapshot.live.routineSeconds}s |
-| Intensità | ${tableCell(snapshot.live.intensity)} |
-| Sessioni recenti in UI | ${snapshot.recentSessionCount} |
-| Sessioni lifetime tentate | ${snapshot.attemptedSessions} |
-| Sessioni lifetime complete | ${snapshot.completedSessions} |
+| ${t("hardware.report.connectionStatus")} | ${tableCell(connectionStatusLabel(snapshot.connectionStatus, t), t)} |
+| ${t("hardware.report.adapter")} | ${tableCell(adapterStateLabel(snapshot.adapterState, t), t)} |
+| ${t("hardware.report.name")} | ${tableCell(redactDiagnosticMessage(device?.name ?? unavailable, t), t)} |
+| ${t("hardware.report.model")} | ${tableCell(redactDiagnosticMessage(device?.model ?? unavailable, t), t)} |
+| ${t("hardware.report.firmware")} | ${tableCell(redactDiagnosticMessage(device?.firmware ?? unavailable, t), t)} |
+| ${t("hardware.report.battery")} | ${device?.battery === undefined ? unavailable : `${device.battery}%`} |
+| ${t("hardware.report.handleState")} | ${tableCell(handleStateLabel(snapshot.live.handleState, t), t)} |
+| ${t("hardware.report.brushingActive")} | ${snapshot.live.isBrushing ? t("hardware.report.yes") : t("hardware.report.no")} |
+| ${t("hardware.report.liveTime")} | ${snapshot.live.elapsedSeconds}s / ${snapshot.live.routineSeconds}s |
+| ${t("hardware.report.intensity")} | ${tableCell(intensityLabel(snapshot.live.intensity, t), t)} |
+| ${t("hardware.report.recentSessions")} | ${snapshot.recentSessionCount} |
+| ${t("hardware.report.attemptedSessions")} | ${snapshot.attemptedSessions} |
+| ${t("hardware.report.completedSessions")} | ${snapshot.completedSessions} |
 
-## Esito matrice
+## ${t("hardware.report.matrix")}
 
-**${summary.completed}/${summary.total} verifiche compilate · ${summary.passed} superate · ${summary.failed} fallite · ${summary.blocked} bloccate**
+**${t("hardware.report.summary", summary)}**
 
-| Verifica | Esito | Nota |
+| ${t("hardware.report.test")} | ${t("hardware.report.result")} | ${t("hardware.report.note")} |
 |---|---|---|
 ${testRows}
 
-## Diagnostica BLE sanitizzata
+## ${t("hardware.report.diagnostics")}
 
 ${logs}
 `;
 }
+
 export function reportFileName(run: HardwareValidationRun): string {
   const day = new Date(run.startedAt).toISOString().slice(0, 10);
   return `sparkly-brush-hardware-${run.platform}-${day}.md`;

@@ -1,11 +1,24 @@
-import React from "react";
-import TestRenderer, { act } from "react-test-renderer";
+import React, { act } from "react";
+import * as Haptics from "expo-haptics";
+import { Platform } from "react-native";
+import { createRoot } from "test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BleClientEvents, BrushSession, SonicareClient, StoredDeviceSession } from "@/lib/brush-types";
-import { applySessionToLifetime, createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
+import type {
+  BleClientEvents,
+  BrushSession,
+  SonicareClient,
+  StoredDeviceSession,
+} from "@/lib/brush-types";
+import {
+  applySessionToLifetime,
+  createEmptyLifetimeProgress,
+} from "@/lib/lifetime-progress";
+import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => ({
   forgetDevice: vi.fn(),
@@ -14,9 +27,18 @@ const mocks = vi.hoisted(() => ({
   saveDemo: vi.fn(),
   saveSession: vi.fn(),
   saveLastDevice: vi.fn(),
+  loadPendingManual: vi.fn(),
+  savePendingManual: vi.fn(),
+  clearPendingManual: vi.fn(),
+  hapticsEnabled: true,
 }));
 
 vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
+vi.mock("@/contexts/preferences-context", () => ({
+  useOptionalPreferences: () => ({
+    preferences: { hapticsEnabled: mocks.hapticsEnabled },
+  }),
+}));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light" },
   NotificationFeedbackType: { Success: "success" },
@@ -24,9 +46,13 @@ vi.mock("expo-haptics", () => ({
   notificationAsync: vi.fn(),
 }));
 vi.mock("@/lib/brush-storage", async () => {
-  const { createEmptyLifetimeProgress } = await import("@/lib/lifetime-progress");
+  const { createEmptyLifetimeProgress } =
+    await import("@/lib/lifetime-progress");
   return {
-    loadHistoryBundle: vi.fn(async () => ({ recentHistory: [], lifetimeProgress: createEmptyLifetimeProgress() })),
+    loadHistoryBundle: vi.fn(async () => ({
+      recentHistory: [],
+      lifetimeProgress: createEmptyLifetimeProgress(),
+    })),
     loadDemoHistory: vi.fn(async () => []),
     loadDemoMode: vi.fn(async () => false),
     forgetDeviceWithLifetime: mocks.forgetDevice,
@@ -42,6 +68,11 @@ vi.mock("@/lib/brush-storage", async () => {
     saveSessionWithLifetime: mocks.saveSession,
   };
 });
+vi.mock("@/lib/manual-session-storage", () => ({
+  loadPendingManualSession: mocks.loadPendingManual,
+  savePendingManualSession: mocks.savePendingManual,
+  clearPendingManualSession: mocks.clearPendingManual,
+}));
 
 import { BrushProvider, useBrush } from "@/contexts/brush-context";
 
@@ -61,6 +92,8 @@ class FakeClient implements SonicareClient {
 describe("BrushProvider BLE integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hapticsEnabled = true;
+    Object.assign(Platform, { OS: "web" });
     const empty = createEmptyLifetimeProgress();
     mocks.forgetDevice.mockReset().mockResolvedValue({
       recentHistory: [],
@@ -72,10 +105,111 @@ describe("BrushProvider BLE integration", () => {
       event: null,
       importedCount: 0,
     });
-    mocks.saveFallback.mockReset().mockResolvedValue({ recentHistory: [], lifetimeProgress: empty, event: null });
+    mocks.saveFallback.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: empty,
+      event: null,
+    });
     mocks.saveDemo.mockReset().mockResolvedValue([]);
-    mocks.saveSession.mockReset().mockResolvedValue({ recentHistory: [], lifetimeProgress: empty, event: null });
+    mocks.saveSession.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: empty,
+      event: null,
+    });
     mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
+    mocks.loadPendingManual.mockReset().mockResolvedValue(null);
+    mocks.savePendingManual.mockReset().mockResolvedValue(undefined);
+    mocks.clearPendingManual.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("rispetta Vibrazione spenta per connessione, timer e completamento su Android", async () => {
+    const start = new Date(2026, 9, 1, 8).getTime();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(start);
+    Object.assign(Platform, { OS: "android" });
+    mocks.hapticsEnabled = false;
+    let brush: ReturnType<typeof useBrush> | null = null;
+    function Probe() {
+      brush = useBrush();
+      return null;
+    }
+    const renderer = createRoot();
+    try {
+      await act(async () => {
+        renderer.render(
+          <TestLocaleProvider>
+            <BrushProvider clientFactory={(events) => new FakeClient(events)}>
+              <Probe />
+            </BrushProvider>
+          </TestLocaleProvider>,
+        );
+        await Promise.resolve();
+      });
+      await act(async () => {
+        await brush!.connect();
+      });
+      act(() => brush!.startManual());
+      clock.mockReturnValue(start + 120_000);
+      await act(async () => {
+        await brush!.stopManual();
+      });
+
+      expect(mocks.saveSession).toHaveBeenCalledWith(
+        expect.objectContaining({ completed: true }),
+      );
+      expect(Haptics.impactAsync).not.toHaveBeenCalled();
+      expect(Haptics.notificationAsync).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => renderer.unmount());
+      clock.mockRestore();
+      Object.assign(Platform, { OS: "web" });
+    }
+  });
+
+  it("cambia lingua senza ricreare il client BLE", async () => {
+    const holder: { client?: FakeClient } = {};
+    const factory = vi.fn((events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    });
+    let statusMessage = "";
+    function Probe() {
+      statusMessage = useBrush().statusMessage;
+      return null;
+    }
+
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="it">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+      await Promise.resolve();
+    });
+    act(() =>
+      holder.client?.events.onStatus(
+        "scanning",
+        "Accendi lo spazzolino e tienilo vicino",
+      ),
+    );
+    expect(statusMessage).toBe("Accendi lo spazzolino e tienilo vicino");
+
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="en">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+    });
+
+    expect(statusMessage).toBe("Turn on the toothbrush and keep it nearby");
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(holder.client?.destroy).not.toHaveBeenCalled();
+    await act(async () => renderer.unmount());
   });
 
   it("salva una sessione terminata dal manico e aggiorna storico e progressione", async () => {
@@ -110,7 +244,11 @@ describe("BrushProvider BLE integration", () => {
       importedCount: 1,
     });
 
-    let observed: { realHistory: BrushSession[]; completedSessions: number; disconnect: () => Promise<void> } = {
+    let observed: {
+      realHistory: BrushSession[];
+      completedSessions: number;
+      disconnect: () => Promise<void>;
+    } = {
       realHistory: [],
       completedSessions: 0,
       disconnect: async () => undefined,
@@ -125,10 +263,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -137,7 +277,11 @@ describe("BrushProvider BLE integration", () => {
     client.syncStoredSessionsSince.mockResolvedValue([stored]);
 
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       client.events.onLiveData({
         handleState: 2,
         isBrushing: true,
@@ -158,6 +302,7 @@ describe("BrushProvider BLE integration", () => {
     });
 
     expect(client.syncStoredSessionsSince).toHaveBeenCalledTimes(1);
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
     expect(mocks.saveDeviceBatch).toHaveBeenCalledWith("kids-brush", [stored]);
     expect(observed.realHistory).toEqual([persistedSession]);
     expect(observed.completedSessions).toBe(1);
@@ -175,15 +320,17 @@ describe("BrushProvider BLE integration", () => {
       holder.client = new FakeClient(events);
       return holder.client;
     };
-    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => {
-      const before = createEmptyLifetimeProgress();
-      const after = applySessionToLifetime(before, session);
-      return {
-        recentHistory: [session],
-        lifetimeProgress: after,
-        event: { session, before, after },
-      };
-    });
+    mocks.saveFallback.mockImplementation(
+      async (_deviceId: string, session: BrushSession) => {
+        const before = createEmptyLifetimeProgress();
+        const after = applySessionToLifetime(before, session);
+        return {
+          recentHistory: [session],
+          lifetimeProgress: after,
+          event: { session, before, after },
+        };
+      },
+    );
 
     let observed: { realHistory: BrushSession[] } = { realHistory: [] };
     function Probe() {
@@ -192,17 +339,23 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
     const client = holder.client!;
 
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       client.events.onLiveData({
         handleState: 2,
         isBrushing: true,
@@ -217,11 +370,14 @@ describe("BrushProvider BLE integration", () => {
     });
 
     expect(client.syncStoredSessionsSince).not.toHaveBeenCalled();
-    expect(mocks.saveFallback).toHaveBeenCalledWith("kids-brush", expect.objectContaining({
-      id: `ble-live:kids-brush:${endedAt - 30_000}`,
-      durationSeconds: 30,
-      source: "device",
-    }));
+    expect(mocks.saveFallback).toHaveBeenCalledWith(
+      "kids-brush",
+      expect.objectContaining({
+        id: `ble-live:kids-brush:${endedAt - 30_000}`,
+        durationSeconds: 30,
+        source: "device",
+      }),
+    );
     expect(observed.realHistory).toHaveLength(1);
     await act(async () => renderer.unmount());
     vi.useRealTimers();
@@ -235,15 +391,19 @@ describe("BrushProvider BLE integration", () => {
       return holder.client;
     };
     let releaseFallback!: () => void;
-    mocks.saveFallback.mockImplementation((_deviceId: string, session: BrushSession) => new Promise((resolve) => {
-      const before = createEmptyLifetimeProgress();
-      const after = applySessionToLifetime(before, session);
-      releaseFallback = () => resolve({
-        recentHistory: [session],
-        lifetimeProgress: after,
-        event: { session, before, after },
-      });
-    }));
+    mocks.saveFallback.mockImplementation(
+      (_deviceId: string, session: BrushSession) =>
+        new Promise((resolve) => {
+          const before = createEmptyLifetimeProgress();
+          const after = applySessionToLifetime(before, session);
+          releaseFallback = () =>
+            resolve({
+              recentHistory: [session],
+              lifetimeProgress: after,
+              event: { session, before, after },
+            });
+        }),
+    );
 
     let disconnect: () => Promise<void> = async () => undefined;
     function Probe() {
@@ -251,17 +411,25 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
     const client = holder.client!;
-    client.syncStoredSessionsSince.mockImplementation(() => new Promise(() => undefined));
+    client.syncStoredSessionsSince.mockImplementation(
+      () => new Promise(() => undefined),
+    );
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       client.events.onLiveData({
         handleState: 2,
         isBrushing: true,
@@ -287,10 +455,11 @@ describe("BrushProvider BLE integration", () => {
       await Promise.resolve();
     });
     expect(client.disconnect).toHaveBeenCalledTimes(1);
-    expect(client.syncStoredSessionsSince).toHaveBeenCalledTimes(1);
+    expect(client.syncStoredSessionsSince).not.toHaveBeenCalled();
 
     releaseFallback();
     await act(async () => disconnectPromise);
+    expect(client.syncStoredSessionsSince).not.toHaveBeenCalled();
     await act(async () => renderer.unmount());
     vi.useRealTimers();
   });
@@ -304,11 +473,16 @@ describe("BrushProvider BLE integration", () => {
       holder.client = new FakeClient(events);
       return holder.client;
     };
-    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => ({
-      recentHistory: [session],
-      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
-      event: null,
-    }));
+    mocks.saveFallback.mockImplementation(
+      async (_deviceId: string, session: BrushSession) => ({
+        recentHistory: [session],
+        lifetimeProgress: applySessionToLifetime(
+          createEmptyLifetimeProgress(),
+          session,
+        ),
+        event: null,
+      }),
+    );
 
     let disconnect: () => Promise<void> = async () => undefined;
     function Probe() {
@@ -316,10 +490,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory} syncDelayMs={450}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -338,7 +514,11 @@ describe("BrushProvider BLE integration", () => {
     });
 
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       client.events.onLiveData({
         handleState: 2,
         isBrushing: true,
@@ -348,6 +528,82 @@ describe("BrushProvider BLE integration", () => {
         intensity: "media",
       });
       await disconnect();
+    });
+
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("attende il teardown BLE prima del flush e non duplica un fallback già salvabile", async () => {
+    vi.useFakeTimers();
+    const endedAt = new Date(2026, 8, 23, 9, 50).getTime();
+    vi.setSystemTime(endedAt);
+    const holder: { client?: FakeClient } = {};
+    const factory = (events: BleClientEvents) => {
+      holder.client = new FakeClient(events);
+      return holder.client;
+    };
+    mocks.saveFallback.mockImplementation(
+      async (_deviceId: string, session: BrushSession) => ({
+        recentHistory: [session],
+        lifetimeProgress: applySessionToLifetime(
+          createEmptyLifetimeProgress(),
+          session,
+        ),
+        event: null,
+      }),
+    );
+
+    let disconnect: () => Promise<void> = async () => undefined;
+    function Probe() {
+      disconnect = useBrush().disconnect;
+      return null;
+    }
+
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          <Probe />
+        </BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = holder.client!;
+    client.disconnect.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      client.events.onLiveData({
+        handleState: 1,
+        isBrushing: false,
+        elapsedSeconds: 0,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+      client.events.onDevice(null);
+    });
+
+    act(() => {
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
+      client.events.onLiveData({
+        handleState: 2,
+        isBrushing: true,
+        elapsedSeconds: 30,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+    });
+    let operation!: Promise<void>;
+    await act(async () => {
+      operation = disconnect();
+      await vi.advanceTimersByTimeAsync(1_000);
+      await operation;
     });
 
     expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
@@ -372,11 +628,16 @@ describe("BrushProvider BLE integration", () => {
       mode: "clean",
       intensity: "media",
     };
-    mocks.saveFallback.mockImplementation(async (_deviceId: string, session: BrushSession) => ({
-      recentHistory: [session],
-      lifetimeProgress: applySessionToLifetime(createEmptyLifetimeProgress(), session),
-      event: null,
-    }));
+    mocks.saveFallback.mockImplementation(
+      async (_deviceId: string, session: BrushSession) => ({
+        recentHistory: [session],
+        lifetimeProgress: applySessionToLifetime(
+          createEmptyLifetimeProgress(),
+          session,
+        ),
+        event: null,
+      }),
+    );
     mocks.saveDeviceBatch.mockResolvedValue({
       recentHistory: [],
       lifetimeProgress: createEmptyLifetimeProgress(),
@@ -384,22 +645,31 @@ describe("BrushProvider BLE integration", () => {
       importedCount: 1,
     });
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory} syncDelayMs={450}>{null}</BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory} syncDelayMs={450}>
+          {null}
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
     const client = holder.client!;
     client.syncStoredSessionsSince
-      .mockImplementationOnce(() => new Promise((resolve) => {
-        releaseFirstSync = resolve;
-      }))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirstSync = resolve;
+          }),
+      )
       .mockResolvedValueOnce([secondStored]);
 
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       client.events.onLiveData({
         handleState: 2,
         isBrushing: true,
@@ -445,9 +715,11 @@ describe("BrushProvider BLE integration", () => {
       await Promise.resolve();
     });
 
-    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(2);
     expect(client.syncStoredSessionsSince).toHaveBeenCalledTimes(2);
-    expect(mocks.saveDeviceBatch).toHaveBeenCalledWith("kids-brush", [secondStored]);
+    expect(mocks.saveDeviceBatch).toHaveBeenCalledWith("kids-brush", [
+      secondStored,
+    ]);
     await act(async () => renderer.unmount());
     vi.useRealTimers();
   });
@@ -480,10 +752,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -491,12 +765,14 @@ describe("BrushProvider BLE integration", () => {
     vi.setSystemTime(startedAt + 45_000);
     await act(async () => stopManual());
 
-    expect(mocks.saveSession).toHaveBeenCalledWith(expect.objectContaining({
-      startedAt,
-      durationSeconds: 45,
-      completed: false,
-      source: "manual",
-    }));
+    expect(mocks.saveSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startedAt,
+        durationSeconds: 45,
+        completed: false,
+        source: "manual",
+      }),
+    );
     await act(async () => renderer.unmount());
     vi.useRealTimers();
   });
@@ -534,10 +810,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={(events) => new FakeClient(events)}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -546,16 +824,69 @@ describe("BrushProvider BLE integration", () => {
     await act(async () => stopManual());
 
     expect(pending).toBe(true);
-    expect(error).toBe("storage non disponibile");
+    expect(error).toBe("Sessione guidata non salvata");
     expect(history).toEqual([]);
+    expect(mocks.savePendingManual).toHaveBeenCalledTimes(1);
+    expect(mocks.clearPendingManual).not.toHaveBeenCalled();
 
     await act(async () => retryManualSession());
     expect(mocks.saveSession).toHaveBeenCalledTimes(2);
     expect(pending).toBe(false);
     expect(error).toBeNull();
     expect(history).toHaveLength(1);
+    expect(mocks.clearPendingManual).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
     vi.useRealTimers();
+  });
+
+  it("ripristina al mount una sessione manuale rimasta da salvare", async () => {
+    const pendingSession: BrushSession = {
+      id: "manual-recovered",
+      startedAt: new Date(2026, 8, 23, 11, 45).getTime(),
+      rewardPolicy: "completed-only",
+      durationSeconds: 45,
+      targetSeconds: 120,
+      completed: false,
+      source: "manual",
+    };
+    mocks.loadPendingManual.mockResolvedValue(pendingSession);
+    mocks.saveSession.mockImplementation(async (session: BrushSession) => ({
+      recentHistory: [session],
+      lifetimeProgress: applySessionToLifetime(
+        createEmptyLifetimeProgress(),
+        session,
+      ),
+      event: null,
+    }));
+
+    let retryManualSession: () => Promise<void> = async () => undefined;
+    let pending = false;
+    let error: string | null = null;
+    function Probe() {
+      const value = useBrush();
+      retryManualSession = value.retryManualSession;
+      pending = value.hasPendingManualSession;
+      error = value.manualSaveError;
+      return null;
+    }
+
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <BrushProvider clientFactory={(events) => new FakeClient(events)}>
+          <Probe />
+        </BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    expect(pending).toBe(true);
+    expect(error).toContain("sessione precedente");
+
+    await act(async () => retryManualSession());
+    expect(mocks.saveSession).toHaveBeenCalledWith(pendingSession);
+    expect(mocks.clearPendingManual).toHaveBeenCalledTimes(1);
+    expect(pending).toBe(false);
+    await act(async () => renderer.unmount());
   });
 
   it("conserva e riprova una sessione demo completata automaticamente", async () => {
@@ -566,7 +897,8 @@ describe("BrushProvider BLE integration", () => {
       .mockRejectedValueOnce(new Error("demo storage non disponibile"))
       .mockImplementationOnce(async (session: BrushSession) => [session]);
 
-    let setDemoMode: (enabled: boolean) => Promise<void> = async () => undefined;
+    let setDemoMode: (enabled: boolean) => Promise<void> = async () =>
+      undefined;
     let startManual: () => void = () => undefined;
     let retryManualSession: () => Promise<void> = async () => undefined;
     let pending = false;
@@ -583,10 +915,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={(events) => new FakeClient(events)}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={(events) => new FakeClient(events)}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -598,7 +932,7 @@ describe("BrushProvider BLE integration", () => {
     });
 
     expect(pending).toBe(true);
-    expect(error).toBe("demo storage non disponibile");
+    expect(error).toBe("Sessione guidata non salvata");
     expect(history).toEqual([]);
 
     await act(async () => retryManualSession());
@@ -623,10 +957,12 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
@@ -652,16 +988,22 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
     const client = holder.client!;
     await act(async () => {
-      client.events.onDevice({ id: "kids-brush", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       await forget();
     });
 
@@ -677,12 +1019,16 @@ describe("BrushProvider BLE integration", () => {
       return holder.client;
     };
     let completeForget!: () => void;
-    mocks.forgetDevice.mockImplementationOnce(() => new Promise((resolve) => {
-      completeForget = () => resolve({
-        recentHistory: [],
-        lifetimeProgress: createEmptyLifetimeProgress(),
-      });
-    }));
+    mocks.forgetDevice.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          completeForget = () =>
+            resolve({
+              recentHistory: [],
+              lifetimeProgress: createEmptyLifetimeProgress(),
+            });
+        }),
+    );
 
     let forget: () => Promise<void> = async () => undefined;
     let activeDeviceId: string | null = null;
@@ -695,16 +1041,22 @@ describe("BrushProvider BLE integration", () => {
       return null;
     }
 
-    let renderer!: TestRenderer.ReactTestRenderer;
+    const renderer = createRoot();
     await act(async () => {
-      renderer = TestRenderer.create(
-        <BrushProvider clientFactory={factory}><Probe /></BrushProvider>,
+      renderer.render(
+        <BrushProvider clientFactory={factory}>
+          <Probe />
+        </BrushProvider>,
       );
       await Promise.resolve();
     });
     const client = holder.client!;
     await act(async () => {
-      client.events.onDevice({ id: "brush-a", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "brush-a",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       await Promise.resolve();
     });
 
@@ -717,14 +1069,248 @@ describe("BrushProvider BLE integration", () => {
     expect(forgetting).toBe(true);
 
     await act(async () => {
-      client.events.onDevice({ id: "brush-b", name: "Sonicare4Kids", model: "HX6322/04" });
+      client.events.onDevice({
+        id: "brush-b",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
       completeForget();
       await forgetPromise;
     });
 
     expect(activeDeviceId).toBe("brush-b");
     expect(forgetting).toBe(false);
-    expect(mocks.saveLastDevice).toHaveBeenLastCalledWith(expect.objectContaining({ id: "brush-b" }));
+    expect(mocks.saveLastDevice).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "brush-b" }),
+    );
+    await act(async () => renderer.unmount());
+  });
+
+  it("mantiene il picco di durata quando il timer BLE torna a zero prima dello stop", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 23, 12).getTime());
+    const clientHolder: { current?: FakeClient } = {};
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <BrushProvider
+          clientFactory={(events) => {
+            clientHolder.current = new FakeClient(events);
+            return clientHolder.current;
+          }}
+          syncDelayMs={1}
+        />,
+      );
+      await Promise.resolve();
+    });
+    const client = clientHolder.current!;
+    client.syncStoredSessionsSince.mockRejectedValue(
+      new Error("record non ancora pronto"),
+    );
+    const live = (isBrushing: boolean, elapsedSeconds: number) =>
+      client.events.onLiveData({
+        handleState: isBrushing ? 2 : 1,
+        isBrushing,
+        elapsedSeconds,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+    await act(async () => {
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
+      live(true, 120);
+      live(true, 0);
+      live(false, 0);
+      await vi.runAllTimersAsync();
+    });
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    expect(mocks.saveFallback).toHaveBeenCalledWith(
+      "kids-brush",
+      expect.objectContaining({
+        durationSeconds: 120,
+        completed: true,
+      }),
+    );
+    expect(client.syncStoredSessionsSince).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("salva il live anche quando il batch allo stop contiene solo una sessione precedente", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 23, 12).getTime());
+    const clientHolder: { current?: FakeClient } = {};
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <BrushProvider
+          clientFactory={(events) => {
+            clientHolder.current = new FakeClient(events);
+            return clientHolder.current;
+          }}
+          syncDelayMs={1}
+        />,
+      );
+      await Promise.resolve();
+    });
+    const client = clientHolder.current!;
+    const oldRecord: StoredDeviceSession = {
+      sessionId: 42,
+      startedAt: Date.now() - 60_000,
+      timeConfidence: "reconstructed",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      mode: "clean",
+      intensity: "media",
+    };
+    client.syncStoredSessionsSince
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([oldRecord]);
+    const live = (isBrushing: boolean, elapsedSeconds: number) =>
+      client.events.onLiveData({
+        handleState: isBrushing ? 2 : 1,
+        isBrushing,
+        elapsedSeconds,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+    await act(async () => {
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
+      live(true, 120);
+      live(false, 120);
+      await vi.runAllTimersAsync();
+    });
+    vi.setSystemTime(Date.now() + 180_000);
+    await act(async () => {
+      live(true, 118);
+      live(false, 118);
+      await vi.runAllTimersAsync();
+    });
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(2);
+    expect(mocks.saveFallback.mock.calls[1][1]).toMatchObject({
+      durationSeconds: 118,
+    });
+    expect(mocks.saveDeviceBatch).toHaveBeenCalledWith("kids-brush", [
+      oldRecord,
+    ]);
+    const secondFallback = mocks.saveFallback.mock.invocationCallOrder[1];
+    const olderImport = mocks.saveDeviceBatch.mock.invocationCallOrder[0];
+    expect(secondFallback).toBeLessThan(olderImport);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("annulla il manuale attivo all'avvio BLE e rifiuta uno stop manuale tardivo", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 23, 12).getTime());
+    const clientHolder: { current?: FakeClient } = {};
+    let startManual: () => void = () => undefined;
+    let stopManual: () => Promise<void> = async () => undefined;
+    let manualActive = false;
+    function Probe() {
+      const value = useBrush();
+      startManual = value.startManual;
+      stopManual = value.stopManual;
+      manualActive = value.manualActive;
+      return null;
+    }
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <BrushProvider
+          clientFactory={(events) => {
+            clientHolder.current = new FakeClient(events);
+            return clientHolder.current;
+          }}
+          syncDelayMs={1}
+        >
+          <Probe />
+        </BrushProvider>,
+      );
+      await Promise.resolve();
+    });
+    const client = clientHolder.current!;
+    client.syncStoredSessionsSince.mockResolvedValue([]);
+    const live = (isBrushing: boolean, elapsedSeconds: number) =>
+      client.events.onLiveData({
+        handleState: isBrushing ? 2 : 1,
+        isBrushing,
+        elapsedSeconds,
+        routineSeconds: 120,
+        mode: "clean",
+        intensity: "media",
+      });
+    act(() => startManual());
+    vi.setSystemTime(Date.now() + 2_000);
+    await act(async () => {
+      client.events.onDevice({
+        id: "kids-brush",
+        name: "Sonicare4Kids",
+        model: "HX6322/04",
+      });
+      live(true, 118);
+      live(false, 118);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    await act(async () => stopManual());
+    expect(manualActive).toBe(false);
+    expect(mocks.saveSession).not.toHaveBeenCalled();
+    expect(mocks.saveFallback).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("mantiene l'errore BLE specifico dopo il render e lo ritraduce cambiando lingua", async () => {
+    const holder: { current?: FakeClient } = {};
+    let statusMessage = "";
+    function Probe() {
+      statusMessage = useBrush().statusMessage;
+      return null;
+    }
+    const factory = (events: BleClientEvents) => {
+      holder.current = new FakeClient(events);
+      return holder.current;
+    };
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="it">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+      await Promise.resolve();
+    });
+    act(() =>
+      holder.current?.events.onStatus(
+        "error",
+        "Autorizzazione Bluetooth non concessa",
+      ),
+    );
+    expect(statusMessage).toContain("Bluetooth");
+    expect(statusMessage).not.toBe("Connessione Bluetooth non riuscita");
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="en">
+          <BrushProvider clientFactory={factory}>
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+    });
+    expect(statusMessage.toLowerCase()).toContain("permission");
     await act(async () => renderer.unmount());
   });
 });

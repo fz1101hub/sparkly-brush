@@ -1,12 +1,13 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { CelebrationBurst } from "@/components/celebration-burst";
 import { useAudioFeedback } from "@/contexts/audio-feedback-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
 import { getBrushling, getEvolution } from "@/lib/brushlings";
@@ -19,7 +20,9 @@ export function SessionRewardModal() {
   const colors = useColors();
   const { playSuccess } = useAudioFeedback();
   const { preferences } = usePreferences();
-  const { reward, discovery, progressReward, dismissReward, selected } = useBrushling();
+  const { reward, discovery, progressReward, dismissReward, selected } =
+    useBrushling();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!reward) return;
@@ -54,7 +57,19 @@ export function SessionRewardModal() {
       onRequestClose={dismissReward}
       statusBarTranslucent
     >
-      <View style={styles.backdrop}>
+      <ScrollView
+        testID="session-reward-modal"
+        role="dialog"
+        accessibilityViewIsModal={Platform.OS !== "web"}
+        accessibilityLabel={t(
+          reward.completed
+            ? "sessionReward.completedLabel"
+            : "sessionReward.interruptedLabel",
+        )}
+        style={styles.backdrop}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View
           style={[
             styles.card,
@@ -73,26 +88,35 @@ export function SessionRewardModal() {
 
           <Text style={[styles.eyebrow, { color: celebration ? "#BFE3FF" : selected.accent }]}>
             {doubleSurprise
-              ? "DOPPIA SORPRESA!"
+              ? t("sessionReward.doubleSurpriseEyebrow")
               : evolved
-              ? "EVOLUZIONE!"
-              : hatchedCreature
-                ? "L'UOVO SI È SCHIUSO!"
-                : reward.completed
-                  ? "SESSIONE COMPLETATA"
-                  : "BEL TENTATIVO"}
+                ? t("sessionReward.evolutionEyebrow")
+                : hatchedCreature
+                  ? t("sessionReward.hatchedEyebrow")
+                  : reward.completed
+                    ? t("sessionReward.completedEyebrow")
+                    : t("sessionReward.interruptedEyebrow")}
           </Text>
 
           <Text style={[styles.title, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
             {doubleSurprise
-              ? `${reward.evolvedFrom} è diventato ${reward.evolvedTo} e ${hatchedCreature?.name} è entrato nella squadra!`
+              ? t("sessionReward.doubleSurpriseTitle", {
+                  from: reward.evolvedFrom ?? "",
+                  to: reward.evolvedTo ?? "",
+                  name: hatchedCreature?.name ?? "",
+                })
               : evolved
-              ? `${reward.evolvedFrom} si è evoluto in ${reward.evolvedTo}!`
-              : hatchedCreature
-                ? `Hai incontrato ${displayEvolution.name}!`
-                : reward.completed
-                  ? "Fantastico lavoro!"
-                  : "Ogni secondo conta!"}
+                ? t("sessionReward.evolutionTitle", {
+                    from: reward.evolvedFrom ?? "",
+                    to: reward.evolvedTo ?? "",
+                  })
+                : hatchedCreature
+                  ? t("sessionReward.encounterTitle", {
+                      name: displayEvolution.name,
+                    })
+                  : reward.completed
+                    ? t("sessionReward.completedTitle")
+                    : t("sessionReward.interruptedTitle")}
           </Text>
 
           <View style={styles.avatarWrap}>
@@ -102,21 +126,40 @@ export function SessionRewardModal() {
           <Text style={[styles.creatureName, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
             {displayEvolution.name}
           </Text>
-          <Text style={[styles.creatureTitle, { color: celebration ? "#BFE3FF" : displayCreature.accent }]}>
+          <Text style={[styles.creatureTitle, { color: celebration ? "#BFE3FF" : displayCreature.textAccent }]}>
             {displayEvolution.title}
           </Text>
 
           <View style={styles.rewardRow}>
-            <View style={[styles.rewardPill, { backgroundColor: celebration ? "#FFFFFF18" : selected.soft }]}>
-              <MaterialIcons name="auto-awesome" size={21} color={celebration ? "#FFE68A" : selected.accent} />
-              <Text style={[styles.rewardValue, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
-                +{reward.xpEarned} XP
+            <View
+              style={[
+                styles.rewardPill,
+                { backgroundColor: celebration ? "#FFFFFF18" : selected.soft },
+              ]}
+            >
+              <MaterialIcons
+                name="auto-awesome"
+                size={21}
+                color={celebration ? "#FFE68A" : selected.accent}
+              />
+              <Text
+                style={[
+                  styles.rewardValue,
+                  { color: celebration ? "#FFFFFF" : colors.foreground },
+                ]}
+              >
+                {t("sessionReward.xpEarned", { xp: reward.xpEarned })}
               </Text>
             </View>
             <View style={[styles.rewardPill, { backgroundColor: celebration ? "#FFFFFF18" : "#FFF7D7" }]}>
               <MaterialIcons name="stars" size={21} color="#D69C00" />
-              <Text style={[styles.rewardValue, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
-                +{reward.coinsEarned}
+              <Text
+                style={[
+                  styles.rewardValue,
+                  { color: celebration ? "#FFFFFF" : colors.foreground },
+                ]}
+              >
+                {t("sessionReward.coinsEarned", { coins: reward.coinsEarned })}
               </Text>
             </View>
           </View>
@@ -127,20 +170,38 @@ export function SessionRewardModal() {
                 <MaterialIcons name={discovery.item.icon} size={22} color={discovery.item.accent} />
               </View>
               <View style={styles.discoveryCopy}>
-                <Text style={[styles.discoveryEyebrow, { color: celebration ? "#BFE3FF" : colors.muted }]}>
-                  HAI TROVATO
+                <Text
+                  style={[
+                    styles.discoveryEyebrow,
+                    { color: celebration ? "#BFE3FF" : colors.muted },
+                  ]}
+                >
+                  {t("sessionReward.discoveryEyebrow")}
                 </Text>
                 <Text style={[styles.discoveryTitle, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
                   {discovery.item.name}
                 </Text>
                 {discovery.eggFound ? (
-                  <Text style={[styles.discoveryExtra, { color: celebration ? "#E9F5FF" : discovery.eggFound.accent }]}>
-                    + {discovery.eggFound.name}: continua a spazzolare per farlo schiudere!
+                  <Text
+                    style={[
+                      styles.discoveryExtra,
+                      {
+                        color: celebration
+                          ? "#E9F5FF"
+                          : discovery.eggFound.accent,
+                      },
+                    ]}
+                  >
+                    {t("sessionReward.eggFound", {
+                      name: discovery.eggFound.name,
+                    })}
                   </Text>
                 ) : null}
                 {discovery.eggHatched ? (
                   <Text style={[styles.discoveryExtra, { color: "#FFE68A" }]}>
-                    {discovery.eggHatched.name} si è schiuso: nuovo Brushling in squadra.
+                    {t("sessionReward.eggHatched", {
+                      name: discovery.eggHatched.name,
+                    })}
                   </Text>
                 ) : null}
               </View>
@@ -157,15 +218,22 @@ export function SessionRewardModal() {
                 />
               </View>
               <View style={styles.progressRewardCopy}>
-                <Text style={[styles.progressRewardEyebrow, { color: celebration ? "#FFE68A" : "#8A6900" }]}>
-                  BONUS AVVENTURA +{progressReward.totalBonusCoins}
+                <Text
+                  style={[
+                    styles.progressRewardEyebrow,
+                    { color: celebration ? "#FFE68A" : "#8A6900" },
+                  ]}
+                >
+                  {t("sessionReward.adventureBonus", {
+                    coins: progressReward.totalBonusCoins,
+                  })}
                 </Text>
                 <Text style={[styles.progressRewardTitle, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
                   {progressReward.chestUnlocked
-                    ? "Scrigno del Sorriso aperto!"
+                    ? t("sessionReward.chestUnlocked")
                     : progressReward.achievementTitles.length
-                      ? "Nuovo badge sbloccato!"
-                      : "Missione completata!"}
+                      ? t("sessionReward.newBadge")
+                      : t("sessionReward.missionCompleted")}
                 </Text>
                 <Text style={[styles.progressRewardText, { color: celebration ? "#E9F5FF" : colors.muted }]} numberOfLines={2}>
                   {[...progressReward.missionTitles, ...progressReward.achievementTitles].join(" · ")}
@@ -175,45 +243,66 @@ export function SessionRewardModal() {
           ) : null}
 
           {reward.level > reward.previousLevel ? (
-            <View style={[styles.levelBanner, { backgroundColor: celebration ? "#FFFFFF18" : "#EEF4FF" }]}>
-              <MaterialIcons name="arrow-upward" size={18} color={celebration ? "#BFE3FF" : "#2457D6"} />
-              <Text style={[styles.levelText, { color: celebration ? "#FFFFFF" : colors.foreground }]}>
-                Nuovo livello: {reward.level}
+            <View
+              style={[
+                styles.levelBanner,
+                { backgroundColor: celebration ? "#FFFFFF18" : "#EEF4FF" },
+              ]}
+            >
+              <MaterialIcons
+                name="arrow-upward"
+                size={18}
+                color={celebration ? "#BFE3FF" : "#2457D6"}
+              />
+              <Text
+                style={[
+                  styles.levelText,
+                  { color: celebration ? "#FFFFFF" : colors.foreground },
+                ]}
+              >
+                {t("sessionReward.newLevel", { level: reward.level })}
               </Text>
             </View>
           ) : null}
 
           <Text style={[styles.message, { color: celebration ? "#E9F5FF" : colors.muted }]}>
             {doubleSurprise
-              ? `${reward.evolvedTo} è più forte e ${hatchedCreature?.name} ti aspetta nella schermata Creature.`
+              ? t("sessionReward.doubleSurpriseMessage", {
+                  evolvedName: reward.evolvedTo ?? "",
+                  hatchedName: hatchedCreature?.name ?? "",
+                })
               : hatchedCreature
-              ? `${displayEvolution.name} ora è disponibile nella schermata Creature. Continua l'avventura per scoprire altri premi.`
-              : reward.completed
-                ? "Hai dato al tuo sorriso due minuti di super potere. Il tuo Brushling è diventato più forte!"
-                : "La prossima volta prova ad arrivare fino alla fine: il tuo Brushling ti aspetta."}
+                ? t("sessionReward.hatchedMessage", {
+                    name: displayEvolution.name,
+                  })
+                : reward.completed
+                  ? t("sessionReward.completedMessage")
+                  : t("sessionReward.interruptedMessage")}
           </Text>
 
           <Pressable
+            testID="session-reward-dismiss"
             accessibilityRole="button"
+            accessibilityLabel={t("sessionReward.dismissLabel")}
             onPress={dismissReward}
             style={({ pressed }) => [
               styles.button,
-              { backgroundColor: celebration ? "#2C97F4" : selected.accent },
+              { backgroundColor: celebration ? "#006ABF" : selected.textAccent },
               pressed && styles.pressed,
             ]}
           >
             <Text style={styles.buttonText}>
               {doubleSurprise
-                ? "Scopri le sorprese"
+                ? t("sessionReward.doubleSurpriseAction")
                 : hatchedCreature
-                  ? "Conosci il nuovo amico"
+                  ? t("sessionReward.hatchedAction")
                   : evolved
-                    ? "Continua l'avventura"
-                    : "Fantastico!"}
+                    ? t("sessionReward.evolutionAction")
+                    : t("sessionReward.defaultAction")}
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
@@ -222,10 +311,9 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: "#07162ECC",
-    alignItems: "center",
-    justifyContent: "center",
     padding: 20,
   },
+  scrollContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 8 },
   card: {
     width: "100%",
     maxWidth: 420,
@@ -235,11 +323,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 18,
     alignItems: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.28,
-    shadowRadius: 30,
-    elevation: 9,
+    ...Platform.select({
+      web: { boxShadow: "0 18px 30px rgba(0, 0, 0, 0.28)" },
+      default: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 18 },
+        shadowOpacity: 0.28,
+        shadowRadius: 30,
+        elevation: 9,
+      },
+    }),
   },
   stars: { flexDirection: "row", alignItems: "center", gap: 5 },
   eyebrow: { fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.4, marginTop: 6 },

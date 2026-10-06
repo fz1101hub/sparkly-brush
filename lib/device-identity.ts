@@ -10,6 +10,9 @@ export function deviceAlias(deviceId: string): string {
 
 export function sanitizeDeviceSessionId(sessionId: string): string {
   if (/^device-session-[0-9a-f]{24}-\d+-\d+$/.test(sessionId)) return sessionId;
+  if (containsLikelyRawDeviceId(sessionId)) {
+    return `device-session-${bytesToHex(sha256(utf8ToBytes(sessionId))).slice(0, 32)}`;
+  }
   if (!sessionId.startsWith("ble-")) return sessionId;
   const trailingIdentity = sessionId.match(/-(\d+)-(\d+)$/);
   if (!trailingIdentity) return `device-session-${bytesToHex(sha256(utf8ToBytes(sessionId))).slice(0, 32)}`;

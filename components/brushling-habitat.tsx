@@ -2,9 +2,12 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { readableAccent } from "@/constants/accessibility-colors";
+import { useI18n } from "@/contexts/locale-context";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 import {
   getCustomizationItem,
+  localizeCustomizationItem,
   type CustomizationState,
 } from "@/lib/customization";
 
@@ -19,12 +22,21 @@ export function BrushlingHabitat({
   customization: CustomizationState;
   height?: number;
 }) {
+  const { t } = useI18n();
   const habitat = getCustomizationItem(customization.equippedHabitatId);
   const accessory = getCustomizationItem(customization.equippedAccessoryId);
   const decor = getCustomizationItem(customization.equippedDecorId);
+  const localizedHabitat = habitat
+    ? localizeCustomizationItem(habitat, t)
+    : null;
+  const accent = readableAccent(habitat?.accent ?? creature.accent);
 
   return (
     <View
+      accessibilityLabel={t("game.habitat.sceneLabel", {
+        name: creature.name,
+        habitat: localizedHabitat?.name ?? t("game.habitat.defaultHome"),
+      })}
       style={[
         styles.scene,
         {
@@ -38,7 +50,7 @@ export function BrushlingHabitat({
         <MaterialIcons
           name={habitat?.icon ?? "opacity"}
           size={34}
-          color={habitat?.accent ?? creature.accent}
+          color={accent}
           style={styles.skyIcon}
         />
         <View style={styles.cloudOne} />
@@ -46,18 +58,37 @@ export function BrushlingHabitat({
       </View>
 
       {decor ? (
-        <View style={[styles.decor, { backgroundColor: "#FFFFFFCC", borderColor: decor.accent }]}>
-          <MaterialIcons name={decor.icon} size={34} color={decor.accent} />
+        <View
+          style={[
+            styles.decor,
+            { backgroundColor: "#FFFFFFCC", borderColor: decor.accent },
+          ]}
+        >
+          <MaterialIcons
+            name={decor.icon}
+            size={34}
+            color={readableAccent(decor.accent)}
+          />
         </View>
       ) : (
-        <View style={[styles.decor, { backgroundColor: "#FFFFFF88", borderColor: "#FFFFFF" }]}>
-          <MaterialIcons name="home" size={30} color={habitat?.accent ?? creature.accent} />
+        <View
+          style={[
+            styles.decor,
+            { backgroundColor: "#FFFFFF88", borderColor: "#FFFFFF" },
+          ]}
+        >
+          <MaterialIcons name="home" size={30} color={accent} />
         </View>
       )}
 
       <View style={styles.creatureWrap}>
         {accessory ? (
-          <View style={[styles.accessoryBadge, { backgroundColor: accessory.accent }]}>
+          <View
+            style={[
+              styles.accessoryBadge,
+              { backgroundColor: readableAccent(accessory.accent) },
+            ]}
+          >
             <MaterialIcons name={accessory.icon} size={24} color="#FFFFFF" />
           </View>
         ) : null}
@@ -67,7 +98,9 @@ export function BrushlingHabitat({
       <View style={[styles.ground, { backgroundColor: habitat?.accent ?? creature.accent }]} />
 
       <View style={styles.label}>
-        <Text style={styles.labelText}>{habitat?.name ?? "La tua tana"}</Text>
+        <Text style={styles.labelText}>
+          {localizedHabitat?.name ?? t("game.habitat.defaultHome")}
+        </Text>
       </View>
     </View>
   );
@@ -83,7 +116,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     position: "relative",
   },
-  sky: { ...StyleSheet.absoluteFillObject },
+  sky: { ...StyleSheet.absoluteFill },
   skyIcon: { position: "absolute", top: 22, right: 25, opacity: 0.55 },
   cloudOne: {
     position: "absolute",

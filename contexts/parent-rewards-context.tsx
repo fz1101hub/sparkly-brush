@@ -1,6 +1,7 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import {
   loadParentRewards,
   parentRewardProgress,
@@ -104,7 +105,8 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
 }
 
 export function useParentRewards(): ParentRewardsContextValue {
+  const { t } = useI18n();
   const value = useContext(ParentRewardsContext);
-  if (!value) throw new Error("useParentRewards deve essere usato dentro ParentRewardsProvider");
+  if (!value) throw new Error(t("family.rewards.contextError"));
   return value;
 }

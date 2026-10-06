@@ -41,6 +41,10 @@ function sessionPayload(handleTimestamp: number, sessionId: number, duration = 1
   ];
 }
 
+function missingSessionCountError(): Error & { errorCode: number } {
+  return Object.assign(new Error("CharacteristicNotFound: sessionCount"), { errorCode: 404 });
+}
+
 class FakeSubscription {
   remove = vi.fn();
 }
@@ -178,7 +182,26 @@ function createEvents() {
 describe("NativeSonicareClient", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("preserva modello e firmware quando arriva una notifica batteria", async () => {
+  it("attende advertising Kids lento ma chiude la scansione dopo 45 secondi", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.autoScanResult = false;
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    const operation = client.scanAndConnect();
+    // Attach the rejection handler immediately to avoid an unhandled rejection.
+    const result = operation.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(manager.stopDeviceScan).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
+    const error = await result;
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("Spazzolino non trovato");
+    expect(manager.stopDeviceScan).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("preserva modello riportato e firmware quando arriva una notifica batteria", async () => {
     const manager = new FakeManager();
     const { events, deviceUpdates } = createEvents();
     const client = new NativeSonicareClient(events, manager as never);
@@ -187,7 +210,7 @@ describe("NativeSonicareClient", () => {
     const device = manager.devices[0];
     device.monitors.get(SONICARE.characteristics.batteryLevel)?.(null, { value: b64([42]) });
     const last = deviceUpdates.at(-1);
-    expect(last).toMatchObject({ model: "HX6322/04 · HX6340", firmware: "1.2.3", battery: 42 });
+    expect(last).toMatchObject({ model: "HX6340", firmware: "1.2.3", battery: 42 });
   });
 
   it("rimuove tutti i monitor al disconnect e ignora callback della connessione precedente", async () => {
@@ -322,7 +345,7 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 
-  it("non avanza una prima sync se il conteggio storico non è disponibile", async () => {
+  it("legge e valida solo latest quando sessionCount è assente alla prima sync", async () => {
     const manager = new FakeManager();
     const { events } = createEvents();
     const client = new NativeSonicareClient(events, manager as never);
@@ -330,15 +353,74 @@ describe("NativeSonicareClient", () => {
     configureStoredSessions(manager.devices[0], {
       latest: 42,
       count: 2,
-      countError: new Error("sessionCount unavailable"),
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 42: 900 },
+    });
+    vi.useFakeTimers();
+
+    const syncing = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    await expect(syncing).resolves.toMatchObject([
+      { sessionId: 42, durationSeconds: 120 },
+    ]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(1);
+    expect(events.onLog).toHaveBeenCalledWith(
+      "warning",
+      "Prima sincronizzazione limitata all'ultima sessione: le sessioni precedenti non vengono recuperate",
+    );
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("è idempotente lato client dopo il fallback latest con cursore persistito", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 42: 900 },
+    });
+    vi.useFakeTimers();
+
+    const firstSync = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    await expect(firstSync).resolves.toHaveLength(1);
+    const writesAfterFirstSync = manager.devices[0].writeCharacteristicWithResponseForService.mock.calls.length;
+
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 42, acceptNextSession: false }))
+      .resolves.toEqual([]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(
+      writesAfterFirstSync,
+    );
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("recupera il backfill noto alla prima sync quando sessionCount è presente e valido", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
       handleTime: 1_000,
       recordTimes: { 41: 800, 42: 900 },
     });
+    vi.useFakeTimers();
 
-    await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
-    );
-    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    const syncing = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([41, 42]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
     client.destroy();
   });
 
@@ -356,8 +438,51 @@ describe("NativeSonicareClient", () => {
     });
 
     await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
+      "Payload sessionCount BLE non valido",
     );
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("rifiuta lo storico di un manico non azzerato dopo Dimentica manico", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 101,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 100: 800, 101: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince({
+      lastSessionId: 101,
+      acceptNextSession: true,
+      resetBaselineSessionId: 101,
+    })).rejects.toThrow("reset di fabbrica");
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("resta fail-closed dopo reset se sessionCount è assente", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 1,
+      count: 1,
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 1: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince({
+      lastSessionId: 101,
+      acceptNextSession: true,
+      resetBaselineSessionId: 101,
+    })).rejects.toThrow("Conteggio storico BLE non disponibile: il reset non può essere verificato");
     expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
   });
@@ -380,7 +505,7 @@ describe("NativeSonicareClient", () => {
     });
 
     await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
+      "Payload sessionCount BLE non valido",
     );
     expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();

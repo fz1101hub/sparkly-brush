@@ -218,4 +218,36 @@ describe("native SQLite partial lifetime reconciliation", () => {
     expect(nativeState.sessions[0].id).not.toBe(fallback.id);
     expect(fakeDatabase.getEachAsync).not.toHaveBeenCalled();
   });
+
+  it("riconcilia un fallback first-use tardivo senza doppio accredito", async () => {
+    const startedAt = new Date(2026, 8, 23, 9).getTime();
+    const {
+      saveDeviceFallbackWithLifetime,
+      saveDeviceSessionsWithLifetime,
+    } = await import("@/lib/brush-storage.native");
+    await saveDeviceFallbackWithLifetime("brush-first-native", {
+      id: `ble-live:brush-first-native:${startedAt}`,
+      startedAt,
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "device",
+    });
+
+    const result = await saveDeviceSessionsWithLifetime("brush-first-native", [{
+      sessionId: 1,
+      startedAt: startedAt + 10 * 60_000,
+      timeConfidence: "approximate",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      mode: "clean",
+      intensity: "media",
+    }]);
+
+    expect(result.lifetimeProgress.completedSessions).toBe(1);
+    expect(result.lifetimeProgress.xp).toBe(60);
+    expect(nativeState.sessions).toHaveLength(1);
+    expect(nativeState.sessions[0].started_at).toBe(startedAt);
+  });
 });

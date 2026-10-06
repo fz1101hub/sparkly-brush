@@ -3,11 +3,20 @@ name: Verify
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   push:
-    branches:
-      - main
-      - "feature/**"
-      - "fix/**"
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 env:
   CI: "1"
@@ -16,7 +25,7 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -43,14 +52,35 @@ jobs:
       - name: Tests
         run: pnpm test
 
+      - name: Localization catalogs
+        run: pnpm test:i18n
+
+      - name: Lifetime and timezone stress
+        run: pnpm test:stress
+
       - name: Lint
         run: pnpm lint
 
-      - name: Security audit (critical gate)
-        run: pnpm audit --prod --audit-level critical
-
       - name: Expo Doctor
         run: pnpm exec expo-doctor
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Accessibility audit
+        run: pnpm test:a11y:web
+
+      - name: Web functional journey
+        run: pnpm test:e2e:web
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-quality-playwright
+          path: |
+            artifacts/playwright
+            artifacts/playwright-functional
 
       - name: Bundle web
         run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-web
@@ -60,6 +90,11 @@ jobs:
 
       - name: Bundle Android
         run: pnpm exec expo export --platform android --output-dir /tmp/sparkly-android
+
+      # Keep this mandatory, but run it last so a newly published advisory
+      # cannot hide the results of the browser tests and platform bundles.
+      - name: Security audit (high gate)
+        run: pnpm audit --prod --audit-level high
 
   native-android:
     runs-on: ubuntu-latest
@@ -96,8 +131,22 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Verify permissions in compiled APK
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$apk"
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk"
+          analyzer=$(find "$sdk/cmdline-tools" -type f -name apkanalyzer -print | sort -V | tail -n 1)
+          test -n "$analyzer"
+          "$analyzer" manifest print "$apk" > /tmp/sparkly-apk-manifest.xml
+          python3 scripts/validate_android_manifest.py /tmp/sparkly-apk-manifest.xml
+
   native-ios:
-    runs-on: macos-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - name: Checkout
@@ -114,6 +163,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.4.1"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -137,3 +191,101 @@ jobs:
             -derivedDataPath /tmp/sparkly-derived-data \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+  e2e-android:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL -o /tmp/maestro.zip \
+            "https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.10.0/maestro.zip"
+          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  /tmp/maestro.zip" | sha256sum -c -
+          mkdir -p "$HOME/.maestro"
+          unzip -q /tmp/maestro.zip -d "$HOME/.maestro"
+          echo "$HOME/.maestro/maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/maestro/bin/maestro" --version
+
+      - name: Generate Android E2E project
+        env:
+          EXPO_PUBLIC_E2E: "1"
+        run: pnpm exec expo prebuild --platform android --clean --no-install
+
+      - name: Compile Android E2E app
+        working-directory: android
+        env:
+          EXPO_PUBLIC_E2E: "1"
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare disk and KVM for Android emulator
+        run: |
+          set -euo pipefail
+          df -h /
+          # The APK is already built: reclaim caches before downloading the API 36 system image.
+          rm -rf "$HOME/.gradle/caches" "$HOME/.gradle/daemon" "$HOME/.gradle/wrapper/dists"
+          sudo rm -rf /usr/share/dotnet /usr/local/share/powershell /opt/hostedtoolcache/CodeQL
+          # Enable hardware acceleration where /dev/kvm is exposed by GitHub's Linux VM.
+          if test -e /dev/kvm; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+            ls -l /dev/kvm
+          else
+            echo 'KVM non disponibile su questo runner: l’emulatore userà la modalità software.'
+          fi
+          df -h /
+
+      - name: Generate synthetic native backup fixture
+        env:
+          SPARKLY_FIXTURE_OUT: ${{ runner.temp }}/sparkly-ci-archive.sqlite
+        run: |
+          pnpm exec vitest run tests/native-backup-fixture.test.ts
+          test -s "$SPARKLY_FIXTURE_OUT"
+
+      - name: Run Maestro flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          disk-size: 2048M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb install -r android/app/build/outputs/apk/release/app-release.apk
+            adb push "$RUNNER_TEMP/sparkly-ci-archive.sqlite" /sdcard/Download/sparkly-ci-archive.sqlite
+            adb shell ls -l /sdcard/Download/sparkly-ci-archive.sqlite
+            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/sparkly-ci-archive.sqlite
+            pnpm test:e2e:android
+
+      - name: Upload Maestro artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android
+          path: artifacts/maestro

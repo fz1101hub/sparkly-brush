@@ -20,6 +20,7 @@ const env = {
   iosBundleId: bundleId,
   androidPackage: bundleId,
 };
+const e2eBuild = process.env.EXPO_PUBLIC_E2E === "1";
 
 const config: ExpoConfig = {
   name: env.appName,
@@ -29,13 +30,14 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "light",
-  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      NSBluetoothAlwaysUsageDescription: "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
+      CFBundleAllowMixedLocalizations: true,
+      NSBluetoothAlwaysUsageDescription:
+        "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
     },
   },
   android: {
@@ -43,10 +45,13 @@ const config: ExpoConfig = {
       backgroundColor: "#EAF4FF",
       foregroundImage: "./assets/images/android-icon-foreground.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     blockedPermissions: [
+      // react-native-ble-plx retains scoped sdk-23 location declarations for Android 11
+      // and below; block unscoped declarations contributed by its Android AAR.
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
       "android.permission.READ_EXTERNAL_STORAGE",
       "android.permission.WRITE_EXTERNAL_STORAGE",
       "android.permission.SYSTEM_ALERT_WINDOW",
@@ -54,7 +59,6 @@ const config: ExpoConfig = {
     intentFilters: [
       {
         action: "VIEW",
-        autoVerify: true,
         data: [
           {
             scheme: env.scheme,
@@ -70,17 +74,37 @@ const config: ExpoConfig = {
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
+  locales: {
+    it: "./locales/native/it.json",
+    en: "./locales/native/en.json",
+    de: "./locales/native/de.json",
+    fr: "./locales/native/fr.json",
+    es: "./locales/native/es.json",
+  },
   plugins: [
     "expo-router",
     "expo-asset",
     "expo-document-picker",
     "expo-font",
+    "expo-image",
+    [
+      "expo-localization",
+      {
+        supportedLocales: {
+          ios: ["it", "en", "de", "fr", "es"],
+          android: ["it", "en", "de", "fr", "es"],
+        },
+      },
+    ],
+    "expo-sharing",
     "expo-sqlite",
+    "expo-status-bar",
     [
       "expo-audio",
       {
         microphonePermission: false,
         recordAudioAndroid: false,
+        enableBackgroundPlayback: false,
       },
     ],
     [
@@ -107,7 +131,7 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
+          buildArchs: e2eBuild ? ["x86_64"] : ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
         },
       },

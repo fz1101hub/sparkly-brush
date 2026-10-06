@@ -1,47 +1,70 @@
-# Stato del candidato post-audit
+# Stato del candidato Sparkly Brush — audit Claude Opus ed Expo 57
 
-Aggiornato il 23 settembre 2026. La PR #6 è stata unita in `main` al commit `e2469fd`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario.
+Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
-| 1 | Reset del manico per dispositivo | Completato | Nuova epoch BLE del solo device; progressi e storico preservati; race con riconnessione coperta. |
-| 2 | Preflight e restore SQLite | Completato | Header bounded, copia privata verificata, validazione streaming, rollback e journal. |
-| 3 | Backfill BLE offline | Completato nel codice | Recupero contiguo, rollover, batch atomico, `sessionCount` Base64 rigoroso e fail-closed. |
-| 4 | Timestamp del manico | Completato nel codice | Clock relativo `uint32`, ricostruzione rollover-aware e date approssimate escluse dal calendario. |
-| 5 | Timer manuale | Completato | Clock assoluto, sessione pendente su errore, messaggio accessibile e retry single-flight. |
-| 6 | Progressione ed economia | Completato | Anti-farming per nuove sessioni, reward ledger e ledger acquisti con prezzo pagato. |
-| 7 | Privacy backup | Completato | Alias BLE SHA-256, disclosure UI e nessun limite applicativo alla dimensione del file. |
-| 8 | Archivio legacy parziale | Completato | Baseline lifetime preservata; replay completo vietato quando le righe fisiche sono incomplete; test diretto dello storage nativo. |
-| 9 | CI e lockfile | Completato nel candidato | pnpm 12.5.1, workspace/override versionati, installazione frozen riprodotta da directory pulita. |
-| 10 | Build native | Android locale completato | `assembleDebug` superato con SDK 36, NDK 27.1 e JDK 17. Il job iOS richiede il runner macOS della PR. |
-| 11 | Collaudo hardware | Aperto | Checklist persistente di 13 casi e report sanitizzato pronti; esecuzione fisica nell’issue #3. |
-| 12 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
-| 13 | PR e merge | Completato | PR #6 unita in `main` al commit `e2469fd`; eccezione CI a zero step documentata. |
+| 1 | Doppi accrediti fallback BLE | Corretto nel candidato | Coda bounded multi-fallback, correlazione col successore GATT, compensazione contabile e teardown serializzato. |
+| 2 | Anti-replay dopo reset del manico | Corretto nel candidato | Baseline precedente obbligatoria; contatore post-reset basso e coerente; blocco nel client e negli storage; copy UI restrittivo. |
+| 3 | Backup cross-timezone | Corretto nel candidato | Progressione e manifest portatili derivano dal replay del ledger esportato; test con cambio di fuso. |
+| 4 | Schema SQLite importato | Corretto nel candidato | Allowlist di tabelle e indici; trigger, view e oggetti sconosciuti falliscono prima della copia nel DB principale. |
+| 5 | Numeri SQLite non finiti | Corretto nel candidato | Validazione fail-closed di timestamp, durate, target, flag e device session id. |
+| 6 | Report hardware | Corretto nel candidato | Redazione limitata a label identificative e pattern MAC/UUID; stati Bluetooth ordinari preservati. |
+| 7 | CI e costi runner | Corretto nel workflow | I branch `feat/**` e `fix/**` sono verificati quando aprono una PR verso `main`; niente doppio trigger push+PR, concurrency, docs ignorati e macOS solo su tag o dispatch. |
+| 8 | Sessione manuale pendente | Corretto nel candidato | Journal AsyncStorage, recupero al riavvio, retry single-flight e blocco di nuove sessioni fino al salvataggio. |
+| 9 | Migrazione ledger acquisti | Corretto nel candidato | Lo stato normalizzato viene persistito al primo load anche senza nuovi acquisti. |
+| 10 | File condivisi Android | Corretto nel candidato | Backup e report restano in cache dopo l’handoff allo share sheet; gli errori prima dell’handoff eseguono cleanup. |
+| 11 | Privacy backup | Rafforzata | Alias BLE deterministici qualificati come pseudonimi; guardia runtime sugli ID portatili; nessun MAC/UUID grezzo ammesso. |
+| 12 | Collaudo hardware reale | Aperto | Checklist persistente di 13 casi; esecuzione fisica nell’issue #3 con HX6322/04, iPhone e Android. |
+| 13 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
+| 14 | Re-review audit Claude | Completata localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa pre-upgrade superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
+| 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
+| 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
+| 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
+| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward/backup, Playwright + axe su **36 stati UI**, inclusa la conferma restore chiara/scura; non sostituisce l'audit con screen reader. |
+| 19 | Maestro Android | **Due flow riusciti** su emulatore | [Dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328): APK release installato, percorso principale e checklist persistente passati su emulatore API 36 con KVM. Non è test BLE del manico reale. |
+| 20 | E2E web funzionale | Completato e ampliato | Cinque percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente, conferma/annullamento del restore legacy, lingue e CTA del modal su viewport 320×640. Il nuovo test ha rilevato e chiuso la riapertura di un premio già gestito dopo restore. |
+| 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 874 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
+| 22 | Audit Claude Opus 5.5 | Correzioni software pubblicate nella PR #7 | Fallback Kids senza `40d2` e sync alla riconnessione, picco timer BLE, fallback durevole e riconciliazione pre-batch, esclusione timer manuale, rollback Android URI/promise, demo nativa, permessi/audio, messaggi BLE, contrasto e lint esteso. Cinque scenari end-to-end con GATT finto **non sono test fisici**. |
+| 23 | Build/permessi APK sul candidato | Completata in CI | `assembleDebug`, otto test parser e verifica del manifest dell'APK con `apkanalyzer` riusciti nel [run 36819513631](https://github.com/fz1101hub/sparkly-brush/actions/runs/36819513631). Il parser riconosce `neverForLocation` sia simbolico sia come bitmask AOSP `0x00010000`. |
+| 24 | Build iOS per simulatore | Completata in CI manuale | Prebuild, CocoaPods e `xcodebuild` riusciti nel [run 36821117795](https://github.com/fz1101hub/sparkly-brush/actions/runs/36821117795) su macOS/Xcode; non è un test BLE su iPhone fisico. |
+| 25 | Conferma ripristino locale | Pubblicata, CI reale verde | File completo nativo e codice legacy richiedono una seconda azione annullabile; selezione del codice/file invalida la conferma precedente. E2E web prova cancel, persistenza, invalidazione, conferma e assenza di ricompensa duplicata. Il picker del file completo resta da provare su iOS/Android reali. |
+| 26 | Confronto prima del ripristino | Pubblicato, CI reale verde | Metadati bounded mostrano Brushling, sessioni lifetime/totali e completate, oggetti e premi locali vs backup; righe verificate o consultabili separate; avviso se il backup ha progressi inferiori e sempre nota che i dati **non sono uniti**. Test file/legacy pluriennali, E2E web e due nuovi scan axe; fix AA del pulsante oro. Non legge tutte le righe per l'anteprima. |
+| 27 | Cleanup backup SQLite temporanei | Pubblicato, CI reale verde | In caso di ENOSPC durante la copia, SQLite open o close falliti, elimina il file temporaneo incompleto in cache. Una review indipendente ha fatto ripristinare la semantica precedente per il file passato al restore: su close fallita non viene eliminato. Sei test con fault injection; il comportamento va verificato sul file system iOS/Android reale. |
+| 28 | Import file SQLite su emulatore Android | Picker raggiunto in precedenza; flow corretto, **runner bloccato** | Fixture sintetica di 125 sessioni: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Nel [dispatch 36946358134](https://github.com/fz1101hub/sparkly-brush/actions/runs/36946358134), build Android/iOS e i due flow precedenti sono verdi; il nuovo flow ha selezionato il file, poi la pagina è tornata in cima e l'attesa della preview è scaduta. Aggiunto scroll con soglia 20% e test statico; il [dispatch aggiornato 36949602454](https://github.com/fz1101hub/sparkly-brush/actions/runs/36949602454) è fallito con **zero step**, quindi il fix non è ancora verificato in emulatore. Nessun dato dell'utente. |
+| 29 | Advisory di sicurezza `node-forge` | **Blocco CI aperto**, [issue #8](https://github.com/fz1101hub/sparkly-brush/issues/8) | GHSA-86w9-cpqp-85rv (high) affligge `node-forge <=1.4.0` via `expo > @expo/cli`; versione corretta ufficiale **non disponibile** al 2 ottobre. Audit ancora bloccante, spostato dopo browser/export per non nascondere quei risultati. Non fare merge né silenziare il gate. |
+| 30 | Runner GitHub Actions | **Blocco esterno aperto**, [issue #9](https://github.com/fz1101hub/sparkly-brush/issues/9) | Sul commit `bd15839`, run PR `36949550949` e dispatch `36949602454` hanno chiuso tutti i job senza step e senza runner assegnato (`runner_id=0`), prima di checkout. Non dimostrano un errore applicativo. Fermati ulteriori retry fino al ripristino dei runner. |
 
-## Gate software superati
+## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
-- fresh install da `package.json`, `pnpm-lock.yaml` e `pnpm-workspace.yaml`;
-- `pnpm peers check` senza problemi;
+- `pnpm peers check`;
 - `pnpm check`;
-- `pnpm test`: **26 file e 127 test superati**;
-- `pnpm lint`: zero warning;
-- `pnpm audit --prod --audit-level critical`: superato;
-- `pnpm exec expo-doctor`: **18/18**;
-- `pnpm exec expo install --check`: dipendenze compatibili;
+- suite Vitest completa: **50 file e 323 test** (sei fault injection native, tre regressioni fixture sintetica, più contratto scroll del picker; confermati sul candidato del 2 ottobre);
+- gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
+- stress pluriennale e multi-timezone superato;
+- Playwright + axe superato su **36 stati UI** chiari/scuri con starter alternativi, reward reale e confronto backup prima della conferma, report separati per stato;
+- cinque percorsi Playwright funzionali superati, incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
+- contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
+- `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
+- `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;
+- `pnpm exec expo-doctor`: **21/21** con Expo 57.0.26;
+- `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
-- build Android nativa `assembleDebug`: **superata**, 458 task Gradle;
-- preview mobile web renderizzata a 390×844;
-- re-review conclusive su BLE, archivio SQLite parziale e salvataggio manuale: **fixed, nessun blocker**.
+- prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
+- build Android nativa debug e controllo del manifest APK **Expo 57.0.26 superati per `748f2ff` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale;
+- build iOS per simulatore con Xcode riuscita nel dispatch `36829538328`; nello stesso run entrambi i flow Android sono passati;
+- otto test Python locali sul validatore fail-closed del manifest APK compilato: permessi location legacy con `maxSdkVersion ≤ 30`, bitmask numerica/simbolica del flag BLE, servizio audio e input mancanti/malformati.
 
-## Blocco GitHub Actions
+## GitHub Actions
 
-Il workflow è stato accettato da GitHub e ha creato i job `verify`, `native-android` e `native-ios`, ma sia il run push sia quello `pull_request` li hanno terminati in pochi secondi con `steps: []` e senza log. Nessun comando del repository, incluso checkout, installazione o build, è stato avviato. Il blocco è pertanto classificato come infrastrutturale esterno; non viene dichiarata una build iOS riuscita.
+Il blocco storico zero-step è **ricomparso**: [Verify 36940477890](https://github.com/fz1101hub/sparkly-brush/actions/runs/36940477890) è l'ultimo run PR interamente verde sul commit `a00ae4e`, prima dell'advisory. Nel [dispatch 36946358134](https://github.com/fz1101hub/sparkly-brush/actions/runs/36946358134), `native-android`, `native-ios` e i due vecchi flow Maestro sono riusciti; `verify` è rosso per l'audit node-forge e il terzo flow si è fermato dopo il picker. [Run PR 36949550949](https://github.com/fz1101hub/sparkly-brush/actions/runs/36949550949) e [dispatch 36949602454](https://github.com/fz1101hub/sparkly-brush/actions/runs/36949602454) del commit `bd15839` hanno terminato **tutti i job a zero step e runner_id=0**, prima di checkout. Fermati ulteriori dispatch. La PR resta aperta finché le issue #8/#9 non sono risolte e il collaudo fisico #3 non è valutato.
 
-## Rischi noti non bloccanti per la PR
+## Supply chain
 
-Due advisory `high` riguardano `image-size`, dipendenza transitiva di Metro usata durante la build. Le pagine GitHub Reviewed non indicano ancora una versione corretta; la libreria non è esposta dal runtime mobile. La CI blocca gli advisory critici e il rischio è documentato in `docs/audit-source-notes-2026-09-23.md`.
+Expo 57 ha rimosso `image-size` dal grafo delle dipendenze, e `pnpm peers check` resta verde dopo l’allineamento di `@react-native/metro-config` a React Native 0.86.3. **Dal 2 ottobre** l'audit high rileva GHSA-86w9-cpqp-85rv in `node-forge@1.4.0`: nessuna patch è indicata dall'[advisory ufficiale](https://github.com/advisories/GHSA-86w9-cpqp-85rv). Non è una regressione di Expo testabile con override a una release inesistente; seguire l'[issue #8](https://github.com/fz1101hub/sparkly-brush/issues/8), mantenendo l'audit bloccante.
 
 ## Condizioni prima della release pubblica
 
-La compatibilità fisica definitiva richiede HX6322/04, iPhone e Android reali. Prima degli store servono inoltre privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate.
+Restano obbligatori il collaudo fisico HX6322/04 su iPhone e Android, una CI GitHub verde sul candidato finale, privacy policy pubblica, dichiarazioni target audience/Data Safety, revisione trademark e una decisione esplicita su Kids/Families, Companion Device Manager e parental gate. I flow Maestro e la build iOS per simulatore sono riusciti, ma non sostituiscono i test su hardware reale.
