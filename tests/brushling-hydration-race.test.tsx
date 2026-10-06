@@ -32,6 +32,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/contexts/brush-context", () => ({
   useBrush: () => mocks.brushState,
 }));
+vi.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
+}));
 vi.mock("@/lib/brushling-storage", () => ({
   loadBrushlingProfile: mocks.loadProfile,
   loadCustomizationState: mocks.loadCustomization,

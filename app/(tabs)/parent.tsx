@@ -22,6 +22,7 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { computeParentDashboard } from "@/lib/parent-dashboard";
 import {
   rewardRequirementLabel,
@@ -69,7 +70,8 @@ export default function ParentDashboardScreen() {
   const [requirement, setRequirement] =
     useState<ParentRewardRequirement>("perfect-days");
   const [target, setTarget] = useState("3");
-  const dashboard = computeParentDashboard(history);
+  const today = useCurrentDayTimestamp();
+  const dashboard = computeParentDashboard(history, today);
 
   const formatPercentage = (value: number) =>
     t("family.parent.percentage", {

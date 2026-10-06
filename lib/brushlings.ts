@@ -272,6 +272,7 @@ export function getNextEvolution(
 
 export function computeBrushlingStats(
   history: BrushSession[],
+  timestamp: number = Date.now(),
 ): BrushlingGameStats {
   const completed = history.filter((session) => session.completed);
   const completedSessions = completed.length;
@@ -300,7 +301,7 @@ export function computeBrushlingStats(
   const level = 1 + Math.floor(xp / XP_PER_LEVEL);
   const levelProgress = (xp % XP_PER_LEVEL) / XP_PER_LEVEL;
   const todayCompletedSessions = completed.filter((session) =>
-    sameLocalDay(session.startedAt, Date.now()),
+    sameLocalDay(session.startedAt, timestamp),
   ).length;
   const unlockedIds = BRUSHLINGS.filter(
     (brushling) => completedSessions >= brushling.unlockAtCompletedSessions,
@@ -313,7 +314,7 @@ export function computeBrushlingStats(
     coins: completedSessions * 12 + Math.floor(rewardedSeconds / 60),
     completedSessions,
     todayCompletedSessions,
-    currentStreakDays: currentCompletedDayStreak(history),
+    currentStreakDays: currentCompletedDayStreak(history, timestamp),
     unlockedIds,
   };
 }

@@ -11,6 +11,7 @@ import {
 
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import {
   DEFAULT_BRUSHLING_ID,
   STARTER_IDS,
@@ -137,17 +138,22 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     );
   }, [demoMode]);
 
+  const today = useCurrentDayTimestamp();
   const stats = useMemo(
-    () => demoMode ? computeBrushlingStats(history) : computeLifetimeBrushlingStats(lifetimeProgress),
-    [demoMode, history, lifetimeProgress],
+    () => demoMode
+      ? computeBrushlingStats(history, today)
+      : computeLifetimeBrushlingStats(lifetimeProgress, today),
+    [demoMode, history, lifetimeProgress, today],
   );
   const inventory = useMemo(
     () => demoMode ? computeGameInventory(history) : computeLifetimeInventory(lifetimeProgress),
     [demoMode, history, lifetimeProgress],
   );
   const missionCenter = useMemo(
-    () => demoMode ? computeMissionCenter(history) : computeLifetimeMissionCenter(lifetimeProgress),
-    [demoMode, history, lifetimeProgress],
+    () => demoMode
+      ? computeMissionCenter(history, today)
+      : computeLifetimeMissionCenter(lifetimeProgress, today),
+    [demoMode, history, lifetimeProgress, today],
   );
   const totalEarnedCoins = stats.coins + missionCenter.totalBonusCoins;
   const walletCoins = useMemo(

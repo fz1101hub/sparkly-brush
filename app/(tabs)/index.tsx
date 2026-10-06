@@ -15,8 +15,10 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
 import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
+import { sameLocalDay } from "@/lib/day-progress";
 
 const PASTEL_FOREGROUND = "#17213A";
 const PASTEL_MUTED = "#56617D";
@@ -29,14 +31,6 @@ function ActiveWakeLock({ active }: { active: boolean }) {
 function KeepAwake() {
   useKeepAwake();
   return null;
-}
-
-function sameDay(timestamp: number) {
-  const date = new Date(timestamp);
-  const today = new Date();
-  return date.getFullYear() === today.getFullYear()
-    && date.getMonth() === today.getMonth()
-    && date.getDate() === today.getDate();
 }
 
 export default function TodayScreen() {
@@ -52,6 +46,7 @@ export default function TodayScreen() {
     hasChosenStarter,
   } = useBrushling();
   const { nextReward: familyReward } = useParentRewards();
+  const today = useCurrentDayTimestamp();
   const currentEvolution = getEvolution(selected, stats.level);
   const nextEvolution = getNextEvolution(selected, stats.level);
 
@@ -76,10 +71,9 @@ export default function TodayScreen() {
     retryManualSession,
   } = useBrush();
 
-  const todaySessions = history.filter((session) => sameDay(session.startedAt)).length;
-  const todaySeconds = history
-    .filter((session) => sameDay(session.startedAt))
-    .reduce((total, session) => total + session.durationSeconds, 0);
+  const todayHistory = history.filter((session) => sameLocalDay(session.startedAt, today));
+  const todaySessions = todayHistory.length;
+  const todaySeconds = todayHistory.reduce((total, session) => total + session.durationSeconds, 0);
   const connecting = status === "scanning" || status === "connecting";
   const levelProgress = `${Math.round(stats.levelProgress * 100)}%` as `${number}%`;
   const dialogue = getBrushlingDialogue(
