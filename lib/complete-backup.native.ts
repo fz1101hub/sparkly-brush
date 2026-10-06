@@ -14,9 +14,23 @@ import {
   type BrushlingsBackupManifest,
 } from "./backup";
 import {
+  translateDynamic,
+  type TranslationKey,
+  type TranslationParams,
+} from "./i18n";
+import { DEFAULT_LOCALE } from "./locale-types";
+import {
   SQLITE_BACKUP_HEADER_BYTES,
   validateSQLiteBackupHeader,
 } from "./sqlite-backup-preflight";
+
+type BackupTranslate = (
+  key: TranslationKey,
+  params?: TranslationParams,
+) => string;
+
+const defaultTranslate: BackupTranslate = (key, params) =>
+  translateDynamic(DEFAULT_LOCALE, key, params);
 
 export type CompleteBackupPreview = {
   uri: string;
@@ -31,6 +45,7 @@ function fileName(manifest: BrushlingsBackupManifest): string {
 
 export async function exportAndShareCompleteBackup(
   manifest: BrushlingsBackupManifest,
+  t: BackupTranslate = defaultTranslate,
 ): Promise<{ sessionCount: number; size: number }> {
   const file = await createCompleteBackupDatabase(JSON.stringify(manifest), fileName(manifest));
   let handedToShareSheet = false;
@@ -39,7 +54,7 @@ export async function exportAndShareCompleteBackup(
       throw new Error("La condivisione file non è disponibile su questo dispositivo");
     }
     await Sharing.shareAsync(file.uri, {
-      dialogTitle: "Salva il backup completo di Sparkly Brush",
+      dialogTitle: t("backup.shareDialogTitle"),
       mimeType: "application/vnd.sqlite3",
       UTI: "public.database",
     });

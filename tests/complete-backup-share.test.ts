@@ -28,6 +28,7 @@ vi.mock("@/lib/brush-storage.native", () => ({
 
 import { exportAndShareCompleteBackup } from "@/lib/complete-backup.native";
 import { createBackupManifest } from "@/lib/backup";
+import { translateDynamic } from "@/lib/i18n";
 import { createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
 
 const manifest = createBackupManifest(
@@ -64,6 +65,20 @@ describe("complete backup native sharing", () => {
       expect.objectContaining({ mimeType: "application/vnd.sqlite3" }),
     );
     expect(mocks.deleted).not.toHaveBeenCalled();
+  });
+
+  it("usa il titolo del foglio di condivisione nella lingua dell'interfaccia", async () => {
+    await exportAndShareCompleteBackup(manifest, (key) => translateDynamic("de", key));
+    expect(mocks.shared).toHaveBeenCalledWith(
+      "file:///cache/sparkly.brushlings",
+      expect.objectContaining({ dialogTitle: "Vollständige Sicherung von Sparkly Brush speichern" }),
+    );
+
+    await exportAndShareCompleteBackup(manifest);
+    expect(mocks.shared).toHaveBeenLastCalledWith(
+      "file:///cache/sparkly.brushlings",
+      expect.objectContaining({ dialogTitle: "Salva il backup completo di Sparkly Brush" }),
+    );
   });
 
   it("cancella il file se non riesce a consegnarlo allo share sheet", async () => {

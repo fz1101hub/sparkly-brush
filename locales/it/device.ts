@@ -80,6 +80,7 @@ export const itDevice = {
   "backup.megabytes": "{value} MB",
   "backup.exportSuccess": "Backup completo: {sessions} sessioni, {size}.",
   "backup.exportFailed": "Backup non riuscito",
+  "backup.shareDialogTitle": "Salva il backup completo di Sparkly Brush",
   "backup.invalidFile": "File backup non valido",
   "backup.invalidBackup": "Backup non valido",
   "backup.legacyRestoreSuccess":

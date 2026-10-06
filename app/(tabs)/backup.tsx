@@ -151,7 +151,7 @@ export default function BackupScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await exportAndShareCompleteBackup(currentManifest);
+      const result = await exportAndShareCompleteBackup(currentManifest, t);
       setMessage(
         t("backup.exportSuccess", {
           sessions: result.sessionCount,

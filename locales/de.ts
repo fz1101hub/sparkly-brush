@@ -272,6 +272,7 @@ export const de = {
   "backup.megabytes": "{value} MB",
   "backup.exportSuccess": "Vollständiges Backup: {sessions} Sitzungen, {size}.",
   "backup.exportFailed": "Die Sicherung ist fehlgeschlagen",
+  "backup.shareDialogTitle": "Vollständige Sicherung von Sparkly Brush speichern",
   "backup.invalidFile": "Ungültige Sicherungsdatei",
   "backup.invalidBackup": "Ungültige Sicherung",
   "backup.legacyRestoreSuccess":

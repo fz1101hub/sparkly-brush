@@ -266,6 +266,7 @@ export const en = {
   "backup.megabytes": "{value} MB",
   "backup.exportSuccess": "Backup complete: {sessions} sessions, {size}.",
   "backup.exportFailed": "Backup failed",
+  "backup.shareDialogTitle": "Save the full Sparkly Brush backup",
   "backup.invalidFile": "Invalid backup file",
   "backup.invalidBackup": "Invalid backup",
   "backup.legacyRestoreSuccess":

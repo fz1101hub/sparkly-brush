@@ -268,6 +268,7 @@ export const es = {
   "backup.exportSuccess":
     "Copia de seguridad completa: {sessions} sesiones, {size}.",
   "backup.exportFailed": "Copia de seguridad fallida",
+  "backup.shareDialogTitle": "Guardar la copia de seguridad completa de Sparkly Brush",
   "backup.invalidFile": "Archivo de copia de seguridad no válido",
   "backup.invalidBackup": "Copia de seguridad no válida",
   "backup.legacyRestoreSuccess":
