@@ -8,7 +8,7 @@ const themeColors = {
   border: { light: '#DFE5F4', dark: '#33415F' },
   success: { light: '#11845B', dark: '#52D6A3' },
   warning: { light: '#E36B24', dark: '#FFAE73' },
-  error: { light: '#D33D5D', dark: '#FF8299' },
+  error: { light: '#BE2D4C', dark: '#FF8299' },
 };
 
 module.exports = { themeColors };
