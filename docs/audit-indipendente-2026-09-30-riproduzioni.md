@@ -2,6 +2,8 @@
 
 Rapporto principale: [`audit-indipendente-2026-09-30.md`](audit-indipendente-2026-09-30.md).
 
+> **Aggiornamento del 6 ottobre 2026.** Nel finto manico la lettura di una caratteristica assente ora fallisce con `errorCode: 404` (`BleErrorCode.CharacteristicNotFound`), come il `BleError` reale di `react-native-ble-plx`; la versione del 30/9 lanciava un `Error` senza codice. Su `main` e sulla PR #7 @ `7d0e305` l'esito non cambia (il client non distingueva il codice), mentre la correzione di C1 nella PR #7 riconosce proprio il 404: con il finto manico precedente F1 risultava fallito anche sul codice corretto. La colonna `6b9632c` riporta gli esiti sul nuovo head della PR #7 con il finto manico aggiornato; la verifica completa è in [`verifica-correzioni-2026-10-06.md`](verifica-correzioni-2026-10-06.md).
+
 Questi file **non fanno parte della suite del prodotto** e non sono stati aggiunti a `tests/`: ogni test afferma il comportamento **corretto**, quindi un test che fallisce indica che il difetto è presente. Dopo le correzioni possono diventare test di regressione.
 
 ## Come eseguirli
@@ -15,25 +17,27 @@ pnpm exec vitest run tests/__audit__
 rm -rf tests/__audit__
 ```
 
-Esito osservato il 30/9/2026 (✗ = test fallito = difetto presente):
+Esito osservato il 30/9/2026 e, per la colonna `6b9632c`, il 6/10/2026 (✗ = test fallito = difetto presente). Con il finto manico aggiornato gli esiti su `a7769e3` e `7d0e305` sono stati riverificati il 6/10 e restano invariati:
 
-| Test | Rilievo | `main` @ `a7769e3` | PR #7 @ `7d0e305` |
-|---|---|---|---|
-| F1a — la prima sync sul GATT Kids reale riesce | C1 | ✗ | ✗ |
-| F1b — cursore creato e sessione offline importata | C1 | ✗ | ✗ |
-| F3 — azzeramento timer prima dello stop | M1 | ✗ | ✗ |
-| F2 — sync che restituisce solo record precedenti | M2 | ✗ | ✗ |
-| F5a — sessione offline + fallback live (storage web) | M3 | ✓ | ✗ |
-| F5b — pressione accidentale registrata dal manico | M3 | ✓ | ✗ |
-| F5c — come F5a sullo storage SQLite nativo | M3 | ✓ | ✗ |
-| F7 — timer manuale + spazzolata BLE | M4 | ✗ | ✗ |
-| S3 — codice v2 con aggregati falsificati | S3 | ✗ | ✗ |
-| S3 controllo — codice v2 genuino accettato | — | ✓ | ✓ |
-| G1 — sessione demo salvata dallo storage nativo | G1 | ✗ | ✗ |
+| Test | Rilievo | `main` @ `a7769e3` | PR #7 @ `7d0e305` | PR #7 @ `6b9632c` |
+|---|---|---|---|---|
+| F1a — la prima sync sul GATT Kids reale riesce | C1 | ✗ | ✗ | ✓ |
+| F1b — cursore creato e sessione offline importata | C1 | ✗ | ✗ | ✓ |
+| F3 — azzeramento timer prima dello stop | M1 | ✗ | ✗ | ✓ |
+| F2 — sync che restituisce solo record precedenti | M2 | ✗ | ✗ | ✓ |
+| F5a — sessione offline + fallback live (storage web) | M3 | ✓ | ✗ | ✓ |
+| F5b — pressione accidentale registrata dal manico | M3 | ✓ | ✗ | ✓ |
+| F5c — come F5a sullo storage SQLite nativo | M3 | ✓ | ✗ | ✓ |
+| F7 — timer manuale + spazzolata BLE | M4 | ✗ | ✗ | ✓ |
+| S3 — codice v2 con aggregati falsificati | S3 | ✗ | ✗ | ✗ |
+| S3 controllo — codice v2 genuino accettato | — | ✓ | ✓ | ✓ |
+| G1 — sessione demo salvata dallo storage nativo | G1 | ✗ | ✗ | ✓ |
 
 `kids-ble-fake.ts` riproduce la tabella GATT del dump reale HX6340 (firmware 4.2.2) pubblicato in `mtheli/philips_sonicare_ble`, `tests/fixtures/classic_hx6340_kids.json`. `native-reconcile.audit.test.ts` riusa (righe iniziali) il finto database già presente in `tests/brush-storage-native-partial.test.ts`.
 
-## Harness SQLite reale (S1, S2) — non incluso nel repository
+## Harness SQLite reale (S1, S2)
+
+> Dal 6 ottobre 2026 l'harness è nel repository come progetto Vitest `native-sqlite` ([`tests/native-sqlite/`](../tests/native-sqlite/README.md)), incluso in `pnpm test`; la descrizione seguente è quella dell'audit.
 
 Per verificare lo storage nativo è stato costruito, nel solo ambiente dell'audit, un harness Vitest che esegue i veri `lib/brush-storage.native.ts` e `lib/complete-backup.native.ts` della PR #7 sostituendo soltanto il modulo nativo di expo-sqlite con un adattatore su `node:sqlite` (il codice JavaScript di expo-sqlite resta quello reale) e expo-file-system con un'implementazione su file system che riproduce il comportamento iOS e Android, AsyncStorage in memoria, condivisione e document picker simulati, più strumenti per simulare riavvii e crash in un punto preciso (`faults.killAt`). Esito sulla PR #7: 17 prove verdi (16 di sanità e autoverifica + il controllo iOS di S1) e una rossa, **S1 in modalità Android**: il restore viene interrotto durante l'inserimento delle sessioni, al riavvio `recoverInterruptedRestore` fallisce con `IllegalArgumentException: URI is not absolute` e lo storico non è più leggibile, mentre lo stesso scenario in modalità iOS torna correttamente allo storico precedente. Limiti dichiarati: nessuna simulazione di perdita di alimentazione, esecuzione seriale delle chiamate native, SQLite 3.51 invece di 3.50. L'harness può essere aggiunto al repository come base per test nativi (S2) se lo si desidera.
 
@@ -78,6 +82,10 @@ export type KidsRecord = { stamp: number; duration: number; target: number };
 
 class Sub { remove = vi.fn(); }
 
+function characteristicNotFound(characteristic: string): Error & { errorCode: number } {
+  return Object.assign(new Error(`Characteristic ${characteristic} not found`), { errorCode: 404 });
+}
+
 export class FakeKidsDevice {
   id = "24:E5:AA:00:00:02";
   name = "Sonicare4Kids";
@@ -121,14 +129,15 @@ export class FakeKidsDevice {
   readCharacteristicForService = vi.fn(async (service: string, characteristic: string) => {
     const entry = this.table()[characteristic];
     if (!entry || entry[0] !== service) {
-      // react-native-ble-plx rejects with BleError "Characteristic <uuid> not found"
-      throw new Error(`Characteristic ${characteristic} not found`);
+      // react-native-ble-plx rejects with BleError "Characteristic <uuid> not found",
+      // errorCode 404 (BleErrorCode.CharacteristicNotFound)
+      throw characteristicNotFound(characteristic);
     }
     return { value: b64(entry[1]()) };
   });
 
   writeCharacteristicWithResponseForService = vi.fn(async (service: string, characteristic: string, value: string) => {
-    if (service !== SVC.kids || characteristic !== CHR.activeSessionId) throw new Error(`Characteristic ${characteristic} not found`);
+    if (service !== SVC.kids || characteristic !== CHR.activeSessionId) throw characteristicNotFound(characteristic);
     const bytes = toByteArray(value);
     this.selected = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
     return {};

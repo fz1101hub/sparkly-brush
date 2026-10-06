@@ -1,6 +1,6 @@
 # Stato del candidato Sparkly Brush — audit Claude Opus ed Expo 57
 
-Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`. Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
+Aggiornato il 6 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
@@ -21,7 +21,7 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
 | 17 | Stress lifetime e backup | Completato | 14.610 sessioni/20 anni, 20.000 righe streaming, 40 manici, rollover e tre fusi orari; stato del validatore sotto 4 KiB. |
-| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward/backup, Playwright + axe su **36 stati UI**, inclusa la conferma restore chiara/scura; non sostituisce l'audit con screen reader. |
+| 18 | Accessibilità automatica | Ampliata nel candidato | Contratti React Native, colori AA per home/starter/reward/backup, Playwright + axe su **42 stati UI**, inclusa la conferma restore chiara/scura; non sostituisce l'audit con screen reader. |
 | 19 | Maestro Android | **Due flow riusciti** su emulatore | [Dispatch 36829538328](https://github.com/fz1101hub/sparkly-brush/actions/runs/36829538328): APK release installato, percorso principale e checklist persistente passati su emulatore API 36 con KVM. Non è test BLE del manico reale. |
 | 20 | E2E web funzionale | Completato e ampliato | Cinque percorsi Playwright verificano timer, ricompensa, storico dopo reload, checklist persistente, conferma/annullamento del restore legacy, lingue e CTA del modal su viewport 320×640. Il nuovo test ha rilevato e chiuso la riapertura di un premio già gestito dopo restore. |
 | 21 | Localizzazione internazionale | Completata e re-reviewata | Interfaccia, errori, diagnostica e report in italiano, inglese, tedesco, francese e spagnolo; selezione Sistema/manuale persistente, backup legacy compatibile, 874 chiavi per catalogo, metadati nativi e percorso E2E dedicato. |
@@ -34,21 +34,30 @@ Aggiornato il 2 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 | 28 | Import file SQLite su emulatore Android | Picker raggiunto in precedenza; flow corretto, **runner bloccato** | Fixture sintetica di 125 sessioni: integrità SQLite, 125 righe in archivio contro 120 visibili, manifest/ledger verificati localmente. Nel [dispatch 36946358134](https://github.com/fz1101hub/sparkly-brush/actions/runs/36946358134), build Android/iOS e i due flow precedenti sono verdi; il nuovo flow ha selezionato il file, poi la pagina è tornata in cima e l'attesa della preview è scaduta. Aggiunto scroll con soglia 20% e test statico; il [dispatch aggiornato 36949602454](https://github.com/fz1101hub/sparkly-brush/actions/runs/36949602454) è fallito con **zero step**, quindi il fix non è ancora verificato in emulatore. Nessun dato dell'utente. |
 | 29 | Advisory di sicurezza `node-forge` | **Blocco CI aperto**, [issue #8](https://github.com/fz1101hub/sparkly-brush/issues/8) | GHSA-86w9-cpqp-85rv (high) affligge `node-forge <=1.4.0` via `expo > @expo/cli`; versione corretta ufficiale **non disponibile** al 2 ottobre. Audit ancora bloccante, spostato dopo browser/export per non nascondere quei risultati. Non fare merge né silenziare il gate. |
 | 30 | Runner GitHub Actions | **Blocco esterno aperto**, [issue #9](https://github.com/fz1101hub/sparkly-brush/issues/9) | Sul commit `bd15839`, run PR `36949550949` e dispatch `36949602454` hanno chiuso tutti i job senza step e senza runner assegnato (`runner_id=0`), prima di checkout. Non dimostrano un errore applicativo. Fermati ulteriori retry fino al ripristino dei runner. |
+| 31 | Verifica indipendente delle correzioni all'audit | Completata il 6 ottobre | Test di riproduzione dell'audit rieseguiti su `6b9632c`: C1, M1–M4, G1 verdi (con il finto manico allineato al `BleError` reale, codice 404); S1, M3 e G1 verificati anche su SQLite reale. Resta S3 (codici testuali v1/v2), decisione di prodotto. |
+| 32 | Storage nativo su SQLite reale | Aggiunto alla suite | Progetto Vitest `native-sqlite` in `pnpm test` (22 test): storage nativo reale su `node:sqlite`, riavvii e crash simulati; i test di regressione falliscono sul codice precedente alle correzioni. Richiede Node ≥ 22.16. |
+| 33 | Record BLE caricato lentamente | Corretto | Fino a tre letture (180/360/720 ms) prima di fallire in modo chiuso (audit B6). |
+| 34 | Valori di "oggi" dopo mezzanotte | Corretto | Hook `useCurrentDayTimestamp`: missioni, sessioni di oggi, serie e dashboard settimanale si aggiornano al cambio di giorno e al ritorno in primo piano (audit U6). |
+| 35 | Dati demo riconoscibili | Corretto | Banner demo in Oggi, Storico e Area genitori, etichetta "Sessione demo"; banner leggibile nel tema scuro e pulsanti ≥ 4,5:1; 6 nuovi stati axe (audit U4). |
+| 36 | Contrasto pulsante Elimina dello Storico | Corretto | `error` chiaro da `#D33D5D` (4,34:1) a `#BE2D4C` (5,44:1), trovato dalla nuova scansione demo. |
+| 37 | Errore di inizializzazione dei dati | Corretto | Pulsante "Riprova" in `DataRecoveryGate` (audit S4). |
+| 38 | Titolo condivisione backup | Corretto | Tradotto nelle cinque lingue (audit L2). |
+| 39 | Advisory 6 ottobre | Parziale | `source-map-js` 1.2.2 (GHSA-68fv-2mgg-jv7q) via override; `node-forge` e il nuovo `braces` (GHSA-vfj7-8cjw-p6xm) senza versione corretta: gate `high` ancora rosso. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **50 file e 323 test** (sei fault injection native, tre regressioni fixture sintetica, più contratto scroll del picker; confermati sul candidato del 2 ottobre);
+- suite Vitest completa: **58 file e 352 test** al 6 ottobre, di cui 22 del progetto `native-sqlite` su SQLite reale (sul candidato del 2 ottobre: 50 file e 323 test);
 - gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su **36 stati UI** chiari/scuri con starter alternativi, reward reale e confronto backup prima della conferma, report separati per stato;
+- Playwright + axe superato su **42 stati UI** chiari/scuri con starter alternativi, reward reale, confronto backup prima della conferma e settimana demo su Oggi, Storico e Area genitori, report separati per stato;
 - cinque percorsi Playwright funzionali superati, incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
-- `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;
+- `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge e, dal 6 ottobre, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in braces, entrambi senza versione corretta; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;
 - `pnpm exec expo-doctor`: **21/21** con Expo 57.0.26;
 - `pnpm exec expo install --check`;
 - export Expo web, iOS e Android;
