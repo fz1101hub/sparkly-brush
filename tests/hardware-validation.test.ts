@@ -61,6 +61,21 @@ describe("hardware validation assistant", () => {
       "serial number",
       "MAC address",
       "Bluetooth address",
+      "ID del dispositivo",
+      "identificativo dispositivo",
+      "numero di serie",
+      "indirizzo MAC",
+      "Geräte-ID",
+      "Gerätekennung",
+      "Seriennummer",
+      "MAC-Adresse",
+      "Bluetooth-Adresse",
+      "identifiant de l’appareil",
+      "numéro de série",
+      "adresse Bluetooth",
+      "identificador del dispositivo",
+      "número de serie",
+      "dirección MAC",
     ];
     const secrets = labels.flatMap((label, labelIndex) => [": ", "=", " "].map(
       (separator, separatorIndex) => `${label}${separator}secret-${labelIndex}-${separatorIndex}`,
@@ -90,6 +105,12 @@ describe("hardware validation assistant", () => {
       "Bluetooth address unavailable",
       "Device identifier sconosciuto",
       "Errore serial number non disponibile",
+      "Geräte-ID unbekannt",
+      "MAC-Adresse nicht verfügbar",
+      "Adresse MAC indisponible",
+      "Numéro de série inconnu",
+      "Dirección MAC no disponible",
+      "Identificador del dispositivo desconocido",
     ];
 
     messages.forEach((message) => {

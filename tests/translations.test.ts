@@ -32,6 +32,20 @@ describe("translation catalogs", () => {
   );
 
   it.each(Object.entries(catalogs))(
+    "%s non contiene caratteri invisibili",
+    (_locale, catalog) => {
+      expect(
+        Object.entries(catalog).filter(([, value]) => /[\u200B-\u200D\u2060\uFEFF]/.test(value)),
+      ).toEqual([]);
+    },
+  );
+
+  it("usa un solo termine tedesco per il manico e cita i pulsanti con il loro nome reale", () => {
+    expect(Object.values(de).filter((value) => value.includes("Handstück"))).toEqual([]);
+    expect(de["brush.client.resetDetected"]).toContain(`„${de["device.forgetResetLabel"]}“`);
+  });
+
+  it.each(Object.entries(catalogs))(
     "%s non contiene traduzioni vuote",
     (_locale, catalog) => {
       expect(

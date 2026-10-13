@@ -415,7 +415,7 @@ export const fr = {
     "Vérifiez le modèle, le firmware et la batterie, puis attendez au moins une mise à jour.",
   "hardware.test.metadata.success":
     "Les champs restent présents et cohérents après la mise à jour de la batterie.",
-  "hardware.test.liveTimer.title": "Minuteur en temps réel et cadrans",
+  "hardware.test.liveTimer.title": "Minuteur en temps réel et zones de la bouche",
   "hardware.test.liveTimer.instruction":
     "Effectuez une session de deux minutes en observant le minuteur et les changements de zone.",
   "hardware.test.liveTimer.success":

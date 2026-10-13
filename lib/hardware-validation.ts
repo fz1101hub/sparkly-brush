@@ -193,6 +193,40 @@ const STATUSES = new Set<HardwareTestStatus>([
 ]);
 const MAX_NOTE_LENGTH = 1_000;
 const MAX_LOGS = 80;
+/**
+ * "<identifier label> <value>" in the five interface languages: device id, serial number,
+ * MAC or Bluetooth address. Notes are free text, so testers write them in their own language.
+ */
+const IDENTIFIER_LABEL_WITH_VALUE = new RegExp(
+  "\\b(?:"
+    + [
+      // en
+      "device[\\s_-]?(?:id|identifier)",
+      "peripheral(?:[\\s_-]?(?:id|identifier))?",
+      "serial(?:\\s+number)?",
+      "mac(?:\\s+address)?",
+      "bluetooth\\s+address",
+      // it
+      "id(?:entificativo)?\\s+(?:del\\s+)?dispositivo",
+      "numero\\s+di\\s+serie",
+      "indirizzo\\s+(?:mac|bluetooth)",
+      // de
+      "ger(?:ä|ae)te[\\s_-]?(?:id|kennung)",
+      "seriennummer",
+      "(?:mac|bluetooth)[\\s_-]?adresse",
+      // fr
+      "(?:id|identifiant)\\s+(?:de\\s+l['’]\\s*)?appareil",
+      "num(?:é|e)ro\\s+de\\s+s(?:é|e)rie",
+      "adresse\\s+(?:mac|bluetooth)",
+      // es
+      "(?:id|identificador)\\s+(?:del\\s+)?dispositivo",
+      "n(?:ú|u)mero\\s+de\\s+serie",
+      "direcci(?:ó|o)n\\s+(?:mac|bluetooth)",
+    ].join("|")
+    + ")(?:\\s*[:=]\\s*|\\s+)([^\\s,;]+)",
+  "gi",
+);
+
 const NON_IDENTIFIER_VALUES = new Set([
   "assente",
   "attualmente",
@@ -228,6 +262,32 @@ const NON_IDENTIFIER_VALUES = new Set([
   "undefined",
   "unknown",
   "was",
+  // de
+  "fehlt",
+  "getrennt",
+  "kein",
+  "keine",
+  "nicht",
+  "unbekannt",
+  "verbunden",
+  "während",
+  // fr
+  "aucun",
+  "aucune",
+  "connecté",
+  "déconnecté",
+  "disponible",
+  "indisponible",
+  "inconnu",
+  "inconnue",
+  "pendant",
+  // es
+  "conectado",
+  "desconectado",
+  "desconocida",
+  "desconocido",
+  "ninguna",
+  "ninguno",
 ]);
 
 function emptyResults(): Record<HardwareTestId, HardwareTestResult> {
@@ -358,7 +418,7 @@ export function redactDiagnosticMessage(
       t("hardware.report.deviceId"),
     )
     .replace(
-      /\b(?:device[\s_-]?(?:id|identifier)|peripheral(?:[\s_-]?(?:id|identifier))?|id\s+dispositivo|serial(?:\s+number)?|mac(?:\s+address)?|bluetooth\s+address)(?:\s*[:=]\s*|\s+)([^\s,;]+)/gi,
+      IDENTIFIER_LABEL_WITH_VALUE,
       (match, value: string) => {
         const normalized = value
           .replace(/^[\[({"']+|[\])}"'.!?]+$/g, "")

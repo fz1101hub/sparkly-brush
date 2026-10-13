@@ -114,7 +114,7 @@ export const de = {
   "onboarding.slide2.title": "Zwei Minuten werden zum Abenteuer",
   "onboarding.slide2.body":
     "Morgens und abends warten Missionen, Eier, Entwicklungen, Gegenstände und Belohnungen auf dich. Das Spiel folgt deinem echten Sitzungsverlauf.",
-  "onboarding.slide3.eyebrow": "FÜR ERWACHSENE",
+  "onboarding.slide3.eyebrow": "FÜR DIE GROSSEN",
   "onboarding.slide3.title": "Eltern sehen Routine, keine Note",
   "onboarding.slide3.body":
     "Die Übersicht zeigt, was die App aufgezeichnet hat, und erlaubt Familienbelohnungen. Es werden keine Daten an ein Konto gesendet.",
@@ -337,7 +337,7 @@ export const de = {
     "Das Backup enthält weniger Sitzungen insgesamt oder weniger abgeschlossene Sitzungen als dieses Telefon.",
   "backup.compareNoMerge":
     "Beim Wiederherstellen werden Daten nicht zusammengeführt: Auch bei gleicher Anzahl werden die Sitzungen auf diesem Telefon ersetzt.",
-  "backup.legacyTitle": "Haben Sie einen alten Backup-Code?",
+  "backup.legacyTitle": "Hast du einen alten Backup-Code?",
   "backup.legacyDescription":
     "Die Codes v1 und v2 können weiterhin importiert werden, damit Daten aus früheren Versionen nicht verloren gehen.",
   "backup.legacyCodeLabel": "Legacy-Backup-Code",
@@ -417,7 +417,7 @@ export const de = {
     "Überprüfe Modell, Firmware und Akku und warte dann auf mindestens ein Update.",
   "hardware.test.metadata.success":
     "Die Felder bleiben nach der Akkuaktualisierung vorhanden und stimmig.",
-  "hardware.test.liveTimer.title": "Live-Timer und Zifferblätter",
+  "hardware.test.liveTimer.title": "Live-Timer und Mundbereiche",
   "hardware.test.liveTimer.instruction":
     "Führe eine Zwei-Minuten-Sitzung durch und beobachte Timer und Bereichswechsel.",
   "hardware.test.liveTimer.success":
@@ -505,7 +505,7 @@ export const de = {
   "hardware.report.result": "Ergebnis",
   "hardware.report.note": "Notiz",
   "hardware.report.summary":
-    "{completed}/{total}-Prüfungen abgeschlossen · {passed} bestanden · {failed} fehlgeschlagen · {blocked} blockiert",
+    "{completed}/{total} Prüfungen abgeschlossen · {passed} bestanden · {failed} fehlgeschlagen · {blocked} blockiert",
   "hardware.report.noLogs": "Keine Protokolle verfügbar",
   "hardware.report.log.info": "INFO",
   "hardware.report.log.success": "ERFOLG",
@@ -767,7 +767,7 @@ export const de = {
     "Ein strahlender Gipfel, der Ausdauer belohnt.",
   "game.adventure.crystal-lake.name": "Kristallsee",
   "game.adventure.crystal-lake.subtitle":
-    "Klares Wasser, Edelsteine ​​und neue Begegnungen.",
+    "Klares Wasser, Edelsteine und neue Begegnungen.",
   "game.adventure.smile-valley.name": "Tal des Lächelns",
   "game.adventure.smile-valley.subtitle":
     "Das geheime Tal der seltensten Brushlings.",
@@ -1073,7 +1073,7 @@ export const de = {
   "brush.client.servicesFound": "{count} GATT-Dienste gefunden",
   "brush.client.ready": "Sonicare ist bereit",
   "brush.client.connected": "Verbunden: HX63xx-GATT geöffnet",
-  "brush.client.handleState": "Status des Handstücks: {state}",
+  "brush.client.handleState": "Status des Handgriffs: {state}",
   "brush.client.notificationUnavailable":
     "Benachrichtigung nicht verfügbar: {code}",
   "brush.client.disconnected": "Zahnbürste getrennt",
@@ -1087,7 +1087,7 @@ export const de = {
   "brush.client.invalidCountPayload":
     "Ungültige Bluetooth-Sitzungsanzahl: Synchronisierung gestoppt, Zähler unverändert.",
   "brush.client.clockUnavailable":
-    "Uhr des Handstücks nicht verfügbar: Sitzungsdatum ist ungefähr",
+    "Uhr des Handgriffs nicht verfügbar: Sitzungsdatum ist ungefähr",
   "brush.client.sessionRead": "Sitzung {id} gelesen ({duration}s)",
   "brush.client.sessionsReady":
     "{count} BLE-Sitzungen bereit zum atomaren Speichern",
@@ -1115,13 +1115,13 @@ export const de = {
   "brush.client.notFound":
     "Zahnbürste nicht gefunden. Schalte sie ein und versuche es erneut.",
   "brush.client.syncLimit":
-    "Das Handstück meldet {count} Sitzungen: Die Synchronisierung überschreitet die Sicherheitsgrenze",
+    "Der Handgriff meldet {count} Sitzungen: Die Synchronisierung überschreitet die Sicherheitsgrenze",
   "brush.client.resetDetected":
-    "Der Zähler des Handstücks scheint zurückgesetzt worden zu sein: Wähle „Zurückgesetztes Handstück vergessen“.",
+    "Der Zähler des Handgriffs scheint zurückgesetzt worden zu sein: Wähle „Zurückgesetzten Handgriff entfernen“.",
   "brush.client.unsafeGap":
     "Unsicheres Bluetooth-Intervall ({count} Sitzungen): Synchronisierung angehalten",
   "brush.client.incompleteHistory":
-    "Der Verlauf des Handstücks enthält nicht mehr alle fehlenden Sitzungen",
+    "Der Verlauf des Handgriffs enthält nicht mehr alle fehlenden Sitzungen",
   "brush.client.missingRecord":
     "Bluetooth-Datensatz {id} fehlt oder wurde nicht erkannt; Synchronisierung angehalten",
 } as const satisfies TranslationCatalog;
