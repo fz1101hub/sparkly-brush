@@ -8,7 +8,7 @@ export const itGame = {
   "game.collection.habitatEyebrow": "LA TANA",
   "game.collection.habitatTitle": "Personalizza la casa",
   "game.collection.habitatSummary":
-    "{items} oggetti posseduti · {coins} monete da spendere",
+    "{items} {items|oggetto posseduto|oggetti posseduti} · {coins} {coins|moneta|monete} da spendere",
   "game.collection.openHabitat": "Apri la tana",
   "game.collection.starterFamilies": "Le tre famiglie starter",
   "game.collection.starterFamiliesDescription":
@@ -22,10 +22,10 @@ export const itGame = {
     "Prossima evoluzione: {name} al livello {level}.",
   "game.collection.inTeam": "In squadra",
   "game.collection.choose": "Scegli",
-  "game.collection.afterSessions": "Dopo {sessions} sessioni",
+  "game.collection.afterSessions": "Dopo {sessions} {sessions|sessione|sessioni}",
   "game.collection.selectCreature": "Scegli {name}",
   "game.collection.lockedCreature":
-    "{name} bloccato fino a {sessions} sessioni",
+    "{name} bloccato fino a {sessions} {sessions|sessione|sessioni}",
   "game.collection.tip":
     "Ogni sessione completa vale 60 XP. Al livello 3 lo starter raggiunge la seconda forma; al livello 6 raggiunge la forma finale.",
 
@@ -35,11 +35,11 @@ export const itGame = {
   "game.explore.exploresWithYou": "{name} esplora con te",
   "game.explore.chooseCompanionFirst": "Scegli prima il tuo compagno",
   "game.explore.sessionsUntilZone":
-    "Mancano {sessions} sessioni complete per raggiungere {zone}.",
+    "{sessions|Manca|Mancano} {sessions} {sessions|sessione completa|sessioni complete} per raggiungere {zone}.",
   "game.explore.allZonesUnlocked":
     "Hai aperto tutte le zone disponibili in questa prima versione dell’isola!",
   "game.explore.currentZone": "ZONA ATTUALE",
-  "game.explore.sessionCount": "{count} sessioni",
+  "game.explore.sessionCount": "{count} {count|sessione|sessioni}",
   "game.explore.openRewards": "Apri premi e uova",
   "game.explore.inventoryEyebrow": "IL TUO ZAINO",
   "game.explore.inventoryTitle": "Premi e uova",
@@ -50,9 +50,7 @@ export const itGame = {
     "Completa le sessioni da due minuti per aprire nuovi luoghi e preparare futuri incontri, uova e premi.",
   "game.explore.youAreHere": "SEI QUI",
   "game.explore.zoneUnlocked": "Zona sbloccata",
-  "game.explore.zoneOpensIn": "Si apre tra {count} {sessionWord}",
-  "game.explore.sessionSingular": "sessione",
-  "game.explore.sessionPlural": "sessioni",
+  "game.explore.zoneOpensIn": "Si apre tra {count} {count|sessione|sessioni}",
   "game.explore.islandEncounters": "Incontri sull’isola",
   "game.explore.islandEncountersDescription":
     "Alcuni Brushlings arrivano da uova speciali trovate durante l’esplorazione.",
@@ -63,7 +61,7 @@ export const itGame = {
   "game.explore.brushlingAvailable":
     "{name} è ora disponibile nella tua squadra.",
   "game.explore.sessionsUntilHatch":
-    "Ancora {count} {sessionWord} per la schiusa.",
+    "Ancora {count} {count|sessione|sessioni} per la schiusa.",
   "game.explore.continueUntilEgg":
     "Continua fino alla sessione {session} per trovare questo uovo.",
   "game.explore.nextStepTitle": "Continua a esplorare",
@@ -87,14 +85,14 @@ export const itGame = {
     "Badge permanenti che premiano costanza e routine.",
   "game.missions.badgeUnlocked": "Badge sbloccato",
   "game.missions.openHabitat": "Apri la tana",
-  "game.missions.walletTitle": "{coins} monete disponibili",
+  "game.missions.walletTitle": "{coins} {coins|moneta disponibile|monete disponibili}",
   "game.missions.walletDescription":
-    "Bonus missioni e obiettivi: +{coins} guadagnate finora.",
+    "Bonus missioni e obiettivi: +{coins} {coins|guadagnata|guadagnate} finora.",
 
   "game.rewards.backLabel": "Torna alla mappa",
   "game.rewards.eyebrow": "Collezione",
   "game.rewards.title": "I tuoi premi",
-  "game.rewards.completedAdventures": "{count} avventure completate",
+  "game.rewards.completedAdventures": "{count} {count|avventura completata|avventure completate}",
   "game.rewards.heroDescription":
     "Ogni sessione completa lascia un ricordo della zona esplorata. Le uova richiedono altre sessioni per schiudersi.",
   "game.rewards.foundItems": "Oggetti trovati",
@@ -112,25 +110,25 @@ export const itGame = {
   "game.rewards.mysteryEgg": "Uovo misterioso",
   "game.rewards.brushlingJoined": "{name} è entrato nella tua squadra!",
   "game.rewards.eggFoundAfter":
-    "Si può trovare dopo {count} sessioni complete.",
-  "game.rewards.sessionsUntilHatch": "{count} {sessionWord} alla schiusa",
+    "Si può trovare dopo {count} {count|sessione completa|sessioni complete}.",
+  "game.rewards.sessionsUntilHatch": "{count} {count|sessione|sessioni} alla schiusa",
   "game.rewards.goToHabitat": "Vai alla tana",
   "game.rewards.goToHabitatLabel": "Vai alla tana",
   "game.rewards.habitatCoins":
-    "Hai {coins} monete sorriso da spendere in habitat, accessori e decorazioni.",
+    "Hai {coins} {coins|moneta sorriso|monete sorriso} da spendere in habitat, accessori e decorazioni.",
 
   "game.habitat.backLabel": "Torna indietro",
   "game.habitat.eyebrow": "Casa Brushling",
   "game.habitat.title": "La tana",
   "game.habitat.wallet": "PORTAFOGLIO",
-  "game.habitat.walletValue": "{coins} monete sorriso",
+  "game.habitat.walletValue": "{coins} {coins|moneta sorriso|monete sorriso}",
   "game.habitat.walletDescription":
     "Le guadagni spazzolando; ciò che acquisti resta salvato su questo telefono.",
   "game.habitat.customizeSpace":
     "Personalizza il suo spazio con un habitat, un accessorio e una decorazione.",
   "game.habitat.equipped": "{name} equipaggiato!",
   "game.habitat.equipFailed": "Non riesco a equipaggiare questo oggetto.",
-  "game.habitat.needMoreCoins": "Servono {coins} monete sorriso in più.",
+  "game.habitat.needMoreCoins": "{coins|Serve|Servono} {coins} {coins|moneta sorriso|monete sorriso} in più.",
   "game.habitat.purchased": "{name} acquistato ed equipaggiato!",
   "game.habitat.category.habitat": "Habitat",
   "game.habitat.category.accessory": "Accessori",

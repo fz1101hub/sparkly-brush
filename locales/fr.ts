@@ -52,7 +52,7 @@ export const fr = {
   "home.companion.evolutionNotice":
     "Au niveau {level}, il peut évoluer en {name}.",
   "home.companion.levelProgressLabel": "Progression du niveau {level}",
-  "home.companion.stats": "Niveau {level} · {xp} XP · {coins} pièces sourire",
+  "home.companion.stats": "Niveau {level} · {xp} XP · {coins} {coins|pièce sourire|pièces sourire}",
   "home.companion.speechAttribution": "{name} dit :",
   "home.familyReward.eyebrow": "RÉCOMPENSE FAMILIALE",
   "home.familyReward.progressLabel":
@@ -182,10 +182,10 @@ export const fr = {
   "mouthZones.progressLabel": "Progression des zones de brossage",
   "mouthZones.activeHint": "Zone active : {zone}",
   "mouthZones.inactiveHint": "La session n'a pas encore commencé",
-  "mouthZones.progressText": "{completed} zones terminées sur {total}",
+  "mouthZones.progressText": "{completed} {completed|zone terminée|zones terminées} sur {total}",
   "mouthZones.completedZone": "Fait · {zone}",
   "mouthZones.activeZone": "Maintenant · {zone}",
-  "mouthZones.duration": "{seconds} secondes",
+  "mouthZones.duration": "{seconds} {seconds|seconde|secondes}",
   "avatar.label": "{name}, créature {element}, évolution {stage}",
   "avatar.levelBadge": "Niv. {level}",
   "context.brushling.missingProvider":
@@ -239,7 +239,7 @@ export const fr = {
   "device.demoEyebrow": "LABORATOIRE SANS BROSSE À DENTS",
   "device.demoTitle": "Mode démo",
   "device.demoSummary":
-    "{count} sessions simulées · les données réelles restent intactes",
+    "{count} {count|session simulée|sessions simulées} · les données réelles restent intactes",
   "device.demoDescription":
     "Essaie les évolutions, les œufs, les missions et le tableau de bord sans toucher à l'historique réel.",
   "device.demoSwitchLabel": "Mode démo",
@@ -268,7 +268,7 @@ export const fr = {
   "backup.bytes": "{value} B",
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
-  "backup.exportSuccess": "Sauvegarde complète créée : {sessions} sessions, {size}. Vérifiez qu’elle a bien été enregistrée depuis le menu de partage.",
+  "backup.exportSuccess": "Sauvegarde complète créée : {sessions} {sessions|session|sessions}, {size}. Vérifiez qu’elle a bien été enregistrée depuis le menu de partage.",
   "backup.exportFailed": "Échec de la sauvegarde",
   "backup.shareDialogTitle": "Enregistrer la sauvegarde complète de Sparkly Brush",
   "backup.invalidFile": "Fichier de sauvegarde invalide",
@@ -309,10 +309,10 @@ export const fr = {
   "backup.pickFile": "Choisir un fichier de sauvegarde",
   "backup.verifiedComplete": "FICHIER COMPLET VÉRIFIÉ",
   "backup.verifiedLegacy": "SAUVEGARDE LEGACY VÉRIFIÉE",
-  "backup.previewTitle": "{name} · {sessions} sessions",
+  "backup.previewTitle": "{name} · {sessions} {sessions|session|sessions}",
   "backup.createdAt": "{size} · créé le {date}.",
   "backup.legacyOrigin":
-    "Origine legacy : tous les progrès sont conservés, mais l’ancien code ne contenait que {sessions} lignes consultables.",
+    "Origine legacy : tous les progrès sont conservés, mais l’ancien code ne contenait que {sessions} {sessions|ligne consultable|lignes consultables}.",
   "backup.replaceCompleteWarning":
     "La restauration remplacera intégralement les données réelles de ce téléphone.",
   "backup.restoreFileLabel":
@@ -383,7 +383,7 @@ export const fr = {
     "Désactive la démo avant les tests avec le manche réel.",
   "hardware.progressTitle": "Avancement",
   "hardware.progressSummary":
-    "{completed}/{total} complétées · {passed} réussies{saving}",
+    "{completed}/{total} complétées · {passed} {passed|réussie|réussies}{saving}",
   "hardware.progressSaving": " · sauvegarde…",
   "hardware.progressLoading": "Chargement…",
   "hardware.snapshotBle": "BLE",
@@ -503,7 +503,7 @@ export const fr = {
   "hardware.report.result": "Résultat",
   "hardware.report.note": "Note",
   "hardware.report.summary":
-    "{completed}/{total} vérifications réalisées · {passed} réussies · {failed} échouées · {blocked} bloquées",
+    "{completed}/{total} vérifications réalisées · {passed} {passed|réussie|réussies} · {failed} {failed|échouée|échouées} · {blocked} {blocked|bloquée|bloquées}",
   "hardware.report.noLogs": "Aucun journal disponible",
   "hardware.report.log.info": "INFO",
   "hardware.report.log.success": "SUCCÈS",
@@ -554,7 +554,7 @@ export const fr = {
   "brush.log.syncDisabledInDemo":
     "La synchronisation BLE est désactivée en mode démo",
   "brush.error.connectFirst": "Connectez d'abord la brosse à dents",
-  "brush.log.sessionsSynced": "{count} sessions synchronisées",
+  "brush.log.sessionsSynced": "{count} {count|session synchronisée|sessions synchronisées}",
   "brush.log.noNewSessions": "Aucune nouvelle session disponible",
   "brush.error.syncFailed": "Échec de la synchronisation",
   "brush.log.retryPreviousSave":
@@ -588,7 +588,7 @@ export const fr = {
   "game.collection.habitatEyebrow": "LA TANIÈRE",
   "game.collection.habitatTitle": "Personnalise la maison",
   "game.collection.habitatSummary":
-    "{items} objets possédés · {coins} pièces à dépenser",
+    "{items} {items|objet possédé|objets possédés} · {coins} {coins|pièce|pièces} à dépenser",
   "game.collection.openHabitat": "Ouvre la tanière",
   "game.collection.starterFamilies": "Les trois familles de départ",
   "game.collection.starterFamiliesDescription":
@@ -602,9 +602,9 @@ export const fr = {
     "Prochaine évolution : {name} au niveau {level}.",
   "game.collection.inTeam": "Dans l'équipe",
   "game.collection.choose": "Choisir",
-  "game.collection.afterSessions": "Après {sessions} sessions",
+  "game.collection.afterSessions": "Après {sessions} {sessions|session|sessions}",
   "game.collection.selectCreature": "Choisis {name}",
-  "game.collection.lockedCreature": "{name} bloqué jusqu'à {sessions} sessions",
+  "game.collection.lockedCreature": "{name} bloqué jusqu'à {sessions} {sessions|session|sessions}",
   "game.collection.tip":
     "Chaque session complète vaut 60 XP. Au niveau 3, le compagnon de départ atteint la deuxième forme ; au niveau 6, il atteint la forme finale.",
   "game.explore.eyebrow": "Aventure",
@@ -613,11 +613,11 @@ export const fr = {
   "game.explore.exploresWithYou": "{name} explore avec toi",
   "game.explore.chooseCompanionFirst": "Choisis d'abord ton compagnon",
   "game.explore.sessionsUntilZone":
-    "Il reste {sessions} sessions complètes pour atteindre {zone}.",
+    "Il reste {sessions} {sessions|session complète|sessions complètes} pour atteindre {zone}.",
   "game.explore.allZonesUnlocked":
     "Tu as débloqué toutes les zones disponibles dans cette première version de l'île !",
   "game.explore.currentZone": "ZONE ACTUELLE",
-  "game.explore.sessionCount": "{count} sessions",
+  "game.explore.sessionCount": "{count} {count|session|sessions}",
   "game.explore.openRewards": "Ouvre les récompenses et les œufs",
   "game.explore.inventoryEyebrow": "TON SAC À DOS",
   "game.explore.inventoryTitle": "Récompenses et œufs",
@@ -628,9 +628,7 @@ export const fr = {
     "Complète les sessions de deux minutes pour ouvrir de nouveaux lieux et préparer de futures rencontres, œufs et récompenses.",
   "game.explore.youAreHere": "TU ES ICI",
   "game.explore.zoneUnlocked": "Zone débloquée",
-  "game.explore.zoneOpensIn": "S'ouvre dans {count} {sessionWord}",
-  "game.explore.sessionSingular": "session",
-  "game.explore.sessionPlural": "sessions",
+  "game.explore.zoneOpensIn": "S'ouvre dans {count} {count|session|sessions}",
   "game.explore.islandEncounters": "Rencontres sur l'île",
   "game.explore.islandEncountersDescription":
     "Certains Brushlings viennent d'œufs spéciaux trouvés pendant l'exploration.",
@@ -641,7 +639,7 @@ export const fr = {
   "game.explore.brushlingAvailable":
     "{name} est maintenant disponible dans ton équipe.",
   "game.explore.sessionsUntilHatch":
-    "Encore {count} {sessionWord} avant l'éclosion.",
+    "Encore {count} {count|session|sessions} avant l'éclosion.",
   "game.explore.continueUntilEgg":
     "Continue jusqu'à la session {session} pour trouver cet œuf.",
   "game.explore.nextStepTitle": "Continue à explorer",
@@ -664,13 +662,13 @@ export const fr = {
     "Badges permanents qui récompensent la constance et la routine.",
   "game.missions.badgeUnlocked": "Badge débloqué",
   "game.missions.openHabitat": "Ouvre la tanière",
-  "game.missions.walletTitle": "{coins} pièces disponibles",
+  "game.missions.walletTitle": "{coins} {coins|pièce disponible|pièces disponibles}",
   "game.missions.walletDescription":
-    "Bonus missions et objectifs : +{coins} gagnées jusqu'à présent.",
+    "Bonus missions et objectifs : +{coins} {coins|gagnée|gagnées} jusqu'à présent.",
   "game.rewards.backLabel": "Retour à la carte",
   "game.rewards.eyebrow": "Collection",
   "game.rewards.title": "Tes récompenses",
-  "game.rewards.completedAdventures": "{count} aventures terminées",
+  "game.rewards.completedAdventures": "{count} {count|aventure terminée|aventures terminées}",
   "game.rewards.heroDescription":
     "Chaque session complète laisse un souvenir de la zone explorée. Les œufs ont besoin de plusieurs sessions pour éclore.",
   "game.rewards.foundItems": "Objets trouvés",
@@ -688,24 +686,24 @@ export const fr = {
   "game.rewards.mysteryEgg": "Œuf mystérieux",
   "game.rewards.brushlingJoined": "{name} a rejoint ton équipe !",
   "game.rewards.eggFoundAfter":
-    "Peut être trouvé après {count} sessions complètes.",
-  "game.rewards.sessionsUntilHatch": "{count} {sessionWord} avant l'éclosion",
+    "Peut être trouvé après {count} {count|session complète|sessions complètes}.",
+  "game.rewards.sessionsUntilHatch": "{count} {count|session|sessions} avant l'éclosion",
   "game.rewards.goToHabitat": "Va à la tanière",
   "game.rewards.goToHabitatLabel": "Va à la tanière",
   "game.rewards.habitatCoins":
-    "Tu as {coins} pièces sourire à dépenser pour l'habitat, les accessoires et les décorations.",
+    "Tu as {coins} {coins|pièce sourire|pièces sourire} à dépenser pour l'habitat, les accessoires et les décorations.",
   "game.habitat.backLabel": "Retour",
   "game.habitat.eyebrow": "Maison Brushling",
   "game.habitat.title": "La tanière",
   "game.habitat.wallet": "PORTEFEUILLE",
-  "game.habitat.walletValue": "{coins} pièces sourire",
+  "game.habitat.walletValue": "{coins} {coins|pièce sourire|pièces sourire}",
   "game.habitat.walletDescription":
     "Tu les gagnes en te brossant ; ce que tu achètes reste enregistré sur ce téléphone.",
   "game.habitat.customizeSpace":
     "Personnalise son espace avec un habitat, un accessoire et une décoration.",
   "game.habitat.equipped": "{name} équipé !",
   "game.habitat.equipFailed": "Impossible d'équiper cet objet.",
-  "game.habitat.needMoreCoins": "Il te faut {coins} pièces sourire de plus.",
+  "game.habitat.needMoreCoins": "Il te faut {coins} {coins|pièce sourire|pièces sourire} de plus.",
   "game.habitat.purchased": "{name} acheté et équipé !",
   "game.habitat.category.habitat": "Habitat",
   "game.habitat.category.accessory": "Accessoires",
@@ -988,10 +986,10 @@ export const fr = {
   "family.parent.fromToothbrush": "de la brosse à dents",
   "family.parent.manualTimer": "minuteur manuel",
   "family.parent.approximateSessions":
-    "{count} séances BLE sauvegardées avec une heure approximative sont exclues du bilan de la semaine, du calendrier, des séries et des missions quotidiennes, mais comptent pour l’XP et les pièces.",
+    "{count} {count|séance BLE sauvegardée|séances BLE sauvegardées} avec une heure approximative {count|est exclue|sont exclues} du bilan de la semaine, du calendrier, des séries et des missions quotidiennes, mais {count|compte|comptent} pour l’XP et les pièces.",
   "family.parent.gameProgress": "Progression du jeu",
   "family.parent.gameProgressDescription":
-    "Niveau {level} · {sessions} séances complètes · {badges} badges débloqués.",
+    "Niveau {level} · {sessions} {sessions|séance complète|séances complètes} · {badges} {badges|badge débloqué|badges débloqués}.",
   "family.parent.rewardsTitle": "Récompenses familiales",
   "family.parent.rewardsDescription":
     "Crée des récompenses réelles choisies par le parent. L'application ne garde que la progression ; la promesse reste une affaire de famille.",
@@ -1029,10 +1027,10 @@ export const fr = {
   "family.parent.percentage": "{value}%",
   "family.parent.minutes": "{minutes} min",
   "family.parent.duration": "{minutes}:{seconds}",
-  "family.rewardRequirement.completedSessions": "{target} sessions complètes",
-  "family.rewardRequirement.perfectDays": "{target} jours matin et soir",
+  "family.rewardRequirement.completedSessions": "{target} {target|session complète|sessions complètes}",
+  "family.rewardRequirement.perfectDays": "{target} {target|jour|jours} matin et soir",
   "family.rewardRequirement.streak":
-    "Meilleure série : {target} jours consécutifs",
+    "Meilleure série : {target} {target|jour consécutif|jours consécutifs}",
   "family.rewards.contextError":
     "useParentRewards doit être utilisé à l'intérieur de ParentRewardsProvider",
   "family.settings.eyebrow": "Confort et retours",
@@ -1056,7 +1054,7 @@ export const fr = {
   "brush.client.scanStarted": "Recherche BLE démarrée (Sonicare4Kids)",
   "brush.client.connecting": "Connexion et lecture des services",
   "brush.client.found": "{name} trouvé",
-  "brush.client.servicesFound": "{count} services GATT détectés",
+  "brush.client.servicesFound": "{count} {count|service GATT détecté|services GATT détectés}",
   "brush.client.ready": "Sonicare est prête",
   "brush.client.connected": "Connexion établie : GATT HX63xx ouvert",
   "brush.client.handleState": "État du manche : {state}",
@@ -1075,7 +1073,7 @@ export const fr = {
     "Horloge du manche indisponible : date de session approximative",
   "brush.client.sessionRead": "Session {id} lue ({duration}s)",
   "brush.client.sessionsReady":
-    "{count} sessions BLE prêtes pour l’enregistrement atomique",
+    "{count} {count|session BLE prête|sessions BLE prêtes} pour l’enregistrement atomique",
   "brush.client.disconnectedShort": "Déconnectée",
   "brush.client.unsupported":
     "Le Bluetooth est disponible uniquement dans l’application installée",

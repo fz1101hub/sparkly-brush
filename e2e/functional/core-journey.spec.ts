@@ -87,7 +87,7 @@ test.describe("percorso funzionale web", () => {
     await expect.poll(readWallet, { timeout: 15_000 }).toBeGreaterThanOrEqual(28);
     const beforePurchase = await readWallet();
     await page.getByTestId("habitat-item-fresh-garden").click();
-    await expect(page.getByTestId("habitat-wallet-value")).toHaveText(`${beforePurchase - 28} monete sorriso`);
+    await expect.poll(readWallet).toBe(beforePurchase - 28);
 
     await page.goto("/history");
     page.once("dialog", (dialog) => void dialog.accept());

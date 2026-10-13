@@ -53,7 +53,7 @@ export const de = {
   "home.companion.evolutionNotice":
     "Auf Level {level} kann er sich zu {name} entwickeln.",
   "home.companion.levelProgressLabel": "Fortschritt zu Level {level}",
-  "home.companion.stats": "Level {level} · {xp} XP · {coins} Lächeln-Münzen",
+  "home.companion.stats": "Level {level} · {xp} XP · {coins} {coins|Lächeln-Münze|Lächeln-Münzen}",
   "home.companion.speechAttribution": "{name} sagt:",
   "home.familyReward.eyebrow": "FAMILIENBELOHNUNG",
   "home.familyReward.progressLabel":
@@ -187,7 +187,7 @@ export const de = {
   "mouthZones.progressText": "{completed} von {total} Bereichen abgeschlossen",
   "mouthZones.completedZone": "Fertig · {zone}",
   "mouthZones.activeZone": "Jetzt · {zone}",
-  "mouthZones.duration": "{seconds} Sekunden",
+  "mouthZones.duration": "{seconds} {seconds|Sekunde|Sekunden}",
   "avatar.label": "{name}, Kreatur {element}, Evolution {stage}",
   "avatar.levelBadge": "Lv {level}",
   "context.brushling.missingProvider":
@@ -241,7 +241,7 @@ export const de = {
   "device.demoEyebrow": "WERKSTATT OHNE ZAHNBÜRSTE",
   "device.demoTitle": "Demo-Modus",
   "device.demoSummary":
-    "{count} simulierte Sitzungen · echte Daten bleiben unverändert",
+    "{count} {count|simulierte Sitzung|simulierte Sitzungen} · echte Daten bleiben unverändert",
   "device.demoDescription":
     "Probiere Entwicklungen, Eier, Missionen und die Übersicht aus, ohne den echten Verlauf zu verändern.",
   "device.demoSwitchLabel": "Demo-Modus",
@@ -271,7 +271,7 @@ export const de = {
   "backup.bytes": "{value} B",
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
-  "backup.exportSuccess": "Vollständiges Backup erstellt: {sessions} Sitzungen, {size}. Bitte prüfen, ob es über das Teilen-Menü gespeichert wurde.",
+  "backup.exportSuccess": "Vollständiges Backup erstellt: {sessions} {sessions|Sitzung|Sitzungen}, {size}. Bitte prüfen, ob es über das Teilen-Menü gespeichert wurde.",
   "backup.exportFailed": "Die Sicherung ist fehlgeschlagen",
   "backup.shareDialogTitle": "Vollständige Sicherung von Sparkly Brush speichern",
   "backup.invalidFile": "Ungültige Sicherungsdatei",
@@ -311,10 +311,10 @@ export const de = {
   "backup.pickFile": "Backup-Datei auswählen",
   "backup.verifiedComplete": "VOLLSTÄNDIGE DATEI GEPRÜFT",
   "backup.verifiedLegacy": "LEGACY-BACKUP GEPRÜFT",
-  "backup.previewTitle": "{name} · {sessions} Sitzungen",
+  "backup.previewTitle": "{name} · {sessions} {sessions|Sitzung|Sitzungen}",
   "backup.createdAt": "{size} · erstellt am {date}.",
   "backup.legacyOrigin":
-    "Legacy-Quelle: Alle Fortschritte bleiben erhalten, aber der alte Code enthielt nur {sessions} einsehbare Einträge.",
+    "Legacy-Quelle: Alle Fortschritte bleiben erhalten, aber der alte Code enthielt nur {sessions} {sessions|einsehbaren Eintrag|einsehbare Einträge}.",
   "backup.replaceCompleteWarning":
     "Durch die Wiederherstellung wird das echte Archiv dieses Telefons vollständig ersetzt.",
   "backup.restoreFileLabel":
@@ -558,7 +558,7 @@ export const de = {
   "brush.log.syncDisabledInDemo":
     "Die BLE-Synchronisierung ist im Demomodus deaktiviert",
   "brush.error.connectFirst": "Verbinde zuerst deine Zahnbürste",
-  "brush.log.sessionsSynced": "{count} synchronisierte Sitzungen",
+  "brush.log.sessionsSynced": "{count} {count|synchronisierte Sitzung|synchronisierte Sitzungen}",
   "brush.log.noNewSessions": "Keine neuen Sitzungen verfügbar",
   "brush.error.syncFailed": "Die Synchronisierung ist fehlgeschlagen",
   "brush.log.retryPreviousSave":
@@ -592,7 +592,7 @@ export const de = {
   "game.collection.habitatEyebrow": "DIE HÖHLE",
   "game.collection.habitatTitle": "Gestalte das Zuhause",
   "game.collection.habitatSummary":
-    "{items} Gegenstände · {coins} Münzen zum Ausgeben",
+    "{items} {items|Gegenstand|Gegenstände} · {coins} {coins|Münze|Münzen} zum Ausgeben",
   "game.collection.openHabitat": "Höhle öffnen",
   "game.collection.starterFamilies": "Die drei Starterfamilien",
   "game.collection.starterFamiliesDescription":
@@ -606,9 +606,9 @@ export const de = {
     "Nächste Entwicklung: {name} auf Level {level}.",
   "game.collection.inTeam": "Im Team",
   "game.collection.choose": "Auswählen",
-  "game.collection.afterSessions": "Nach {sessions}-Sitzungen",
+  "game.collection.afterSessions": "Nach {sessions} {sessions|Sitzung|Sitzungen}",
   "game.collection.selectCreature": "{name} auswählen",
-  "game.collection.lockedCreature": "{name} bis {sessions} Sitzungen gesperrt",
+  "game.collection.lockedCreature": "{name} bis {sessions} {sessions|Sitzung|Sitzungen} gesperrt",
   "game.collection.tip":
     "Jede vollständige Sitzung bringt 60 XP. Auf Level 3 erreicht dein Starter die zweite Form, auf Level 6 die letzte Form.",
   "game.explore.eyebrow": "Abenteuer",
@@ -617,11 +617,11 @@ export const de = {
   "game.explore.exploresWithYou": "{name} erkundet mit dir",
   "game.explore.chooseCompanionFirst": "Wähle zuerst deinen Begleiter",
   "game.explore.sessionsUntilZone":
-    "Noch {sessions} vollständige Sitzungen bis {zone}.",
+    "Noch {sessions} {sessions|vollständige Sitzung|vollständige Sitzungen} bis {zone}.",
   "game.explore.allZonesUnlocked":
     "Du hast alle Bereiche geöffnet, die in dieser ersten Inselversion verfügbar sind!",
   "game.explore.currentZone": "AKTUELLES GEBIET",
-  "game.explore.sessionCount": "{count}-Sitzungen",
+  "game.explore.sessionCount": "{count} {count|Sitzung|Sitzungen}",
   "game.explore.openRewards": "Belohnungen und Eier öffnen",
   "game.explore.inventoryEyebrow": "DEIN RUCKSACK",
   "game.explore.inventoryTitle": "Belohnungen und Eier",
@@ -632,9 +632,7 @@ export const de = {
     "Schließe Zwei-Minuten-Sitzungen ab, um neue Orte zu öffnen und künftige Begegnungen, Eier und Belohnungen vorzubereiten.",
   "game.explore.youAreHere": "DU BIST HIER",
   "game.explore.zoneUnlocked": "Bereich freigeschaltet",
-  "game.explore.zoneOpensIn": "Öffnet in {count} {sessionWord}",
-  "game.explore.sessionSingular": "Sitzung",
-  "game.explore.sessionPlural": "Sitzungen",
+  "game.explore.zoneOpensIn": "Öffnet in {count} {count|Sitzung|Sitzungen}",
   "game.explore.islandEncounters": "Begegnungen auf der Insel",
   "game.explore.islandEncountersDescription":
     "Einige Brushlings stammen aus speziellen Eiern, die bei der Erkundung gefunden wurden.",
@@ -645,7 +643,7 @@ export const de = {
   "game.explore.brushlingAvailable":
     "{name} ist jetzt in deinem Team verfügbar.",
   "game.explore.sessionsUntilHatch":
-    "Noch {count} {sessionWord} bis zum Schlüpfen.",
+    "Noch {count} {count|Sitzung|Sitzungen} bis zum Schlüpfen.",
   "game.explore.continueUntilEgg":
     "Setze dein Abenteuer bis zur Sitzung {session} fort, um dieses Ei zu finden.",
   "game.explore.nextStepTitle": "Weiter erkunden",
@@ -668,7 +666,7 @@ export const de = {
     "Permanente Abzeichen, die Beständigkeit und Routine belohnen.",
   "game.missions.badgeUnlocked": "Abzeichen freigeschaltet",
   "game.missions.openHabitat": "Höhle öffnen",
-  "game.missions.walletTitle": "{coins} Münzen verfügbar",
+  "game.missions.walletTitle": "{coins} {coins|Münze|Münzen} verfügbar",
   "game.missions.walletDescription":
     "Missionsboni und Ziele: bisher +{coins} verdient.",
   "game.rewards.backLabel": "Zur Karte zurück",
@@ -692,18 +690,18 @@ export const de = {
   "game.rewards.mysteryEgg": "Geheimnisvolles Ei",
   "game.rewards.brushlingJoined": "{name} ist deinem Team beigetreten!",
   "game.rewards.eggFoundAfter":
-    "Kann nach {count} vollständigen Sitzungen gefunden werden.",
+    "Kann nach {count} {count|vollständigen Sitzung|vollständigen Sitzungen} gefunden werden.",
   "game.rewards.sessionsUntilHatch":
-    "Noch {count} {sessionWord} bis zum Schlüpfen",
+    "Noch {count} {count|Sitzung|Sitzungen} bis zum Schlüpfen",
   "game.rewards.goToHabitat": "Zur Höhle",
   "game.rewards.goToHabitatLabel": "Zur Höhle",
   "game.rewards.habitatCoins":
-    "Du hast {coins} Lächeln-Münzen für Lebensräume, Zubehör und Dekorationen.",
+    "Du hast {coins} {coins|Lächeln-Münze|Lächeln-Münzen} für Lebensräume, Zubehör und Dekorationen.",
   "game.habitat.backLabel": "Zurück",
   "game.habitat.eyebrow": "BRUSHLING-ZUHAUSE",
   "game.habitat.title": "Die Höhle",
   "game.habitat.wallet": "GELDBEUTEL",
-  "game.habitat.walletValue": "{coins} Lächeln-Münzen",
+  "game.habitat.walletValue": "{coins} {coins|Lächeln-Münze|Lächeln-Münzen}",
   "game.habitat.walletDescription":
     "Du verdienst sie beim Putzen; was du kaufst, bleibt auf diesem Telefon gespeichert.",
   "game.habitat.customizeSpace":
@@ -711,7 +709,7 @@ export const de = {
   "game.habitat.equipped": "{name} ausgestattet!",
   "game.habitat.equipFailed":
     "Dieser Gegenstand kann nicht ausgerüstet werden.",
-  "game.habitat.needMoreCoins": "Du brauchst noch {coins} Lächeln-Münzen.",
+  "game.habitat.needMoreCoins": "Du brauchst noch {coins} {coins|Lächeln-Münze|Lächeln-Münzen}.",
   "game.habitat.purchased": "{name} gekauft und ausgestattet!",
   "game.habitat.category.habitat": "Lebensraum",
   "game.habitat.category.accessory": "Accessoires",
@@ -999,10 +997,10 @@ export const de = {
   "family.parent.fromToothbrush": "von der Zahnbürste",
   "family.parent.manualTimer": "manueller Timer",
   "family.parent.approximateSessions":
-    "{count} gespeicherte BLE-Sitzungen mit ungefährer Uhrzeit werden nicht für Wochenübersicht, Kalender, Serien und tägliche Missionen gezählt, zählen aber für XP und Münzen.",
+    "{count} gespeicherte {count|BLE-Sitzung|BLE-Sitzungen} mit ungefährer Uhrzeit {count|wird|werden} nicht für Wochenübersicht, Kalender, Serien und tägliche Missionen gezählt, {count|zählt|zählen} aber für XP und Münzen.",
   "family.parent.gameProgress": "Spielfortschritt",
   "family.parent.gameProgressDescription":
-    "Level {level} · {sessions} vollständige Sitzungen · {badges}-Abzeichen freigeschaltet.",
+    "Level {level} · {sessions} {sessions|vollständige Sitzung|vollständige Sitzungen} · {badges} Abzeichen freigeschaltet.",
   "family.parent.rewardsTitle": "Familienbelohnungen",
   "family.parent.rewardsDescription":
     "Erstelle echte Belohnungen, die ein Elternteil auswählt. Die App hält nur den Fortschritt fest; das Versprechen bleibt Familiensache.",
@@ -1042,9 +1040,9 @@ export const de = {
   "family.parent.minutes": "{minutes} min",
   "family.parent.duration": "{minutes}:{seconds}",
   "family.rewardRequirement.completedSessions":
-    "{target} vollständige Sitzungen",
-  "family.rewardRequirement.perfectDays": "{target} Tage morgens + abends",
-  "family.rewardRequirement.streak": "Beste Serie: {target} Tage in Folge",
+    "{target} {target|vollständige Sitzung|vollständige Sitzungen}",
+  "family.rewardRequirement.perfectDays": "{target} {target|Tag|Tage} morgens + abends",
+  "family.rewardRequirement.streak": "Beste Serie: {target} {target|Tag|Tage} in Folge",
   "family.rewards.contextError":
     "useParentRewards muss innerhalb von ParentRewardsProvider verwendet werden",
   "family.settings.eyebrow": "Komfort und Feedback",
@@ -1070,7 +1068,7 @@ export const de = {
   "brush.client.connecting":
     "Verbindung wird hergestellt und Dienste werden gelesen",
   "brush.client.found": "{name} gefunden",
-  "brush.client.servicesFound": "{count} GATT-Dienste gefunden",
+  "brush.client.servicesFound": "{count} {count|GATT-Dienst|GATT-Dienste} gefunden",
   "brush.client.ready": "Sonicare ist bereit",
   "brush.client.connected": "Verbunden: HX63xx-GATT geöffnet",
   "brush.client.handleState": "Status des Handgriffs: {state}",
@@ -1090,7 +1088,7 @@ export const de = {
     "Uhr des Handgriffs nicht verfügbar: Sitzungsdatum ist ungefähr",
   "brush.client.sessionRead": "Sitzung {id} gelesen ({duration}s)",
   "brush.client.sessionsReady":
-    "{count} BLE-Sitzungen bereit zum atomaren Speichern",
+    "{count} {count|BLE-Sitzung|BLE-Sitzungen} bereit zum atomaren Speichern",
   "brush.client.disconnectedShort": "Getrennt",
   "brush.client.unsupported":
     "Bluetooth ist nur in der installierten App verfügbar",

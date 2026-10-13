@@ -6,9 +6,10 @@ import { it, type TranslationCatalog, type TranslationKey } from "@/locales/it";
 import { LOCALE_TAGS, type SupportedLocale } from "@/lib/locale-types";
 
 export type TranslationParams = Record<string, string | number>;
+/** `{name}` inserts a value; `{name|one|other}` picks a form by the plural category of `name`. */
 type PlaceholderNames<Value extends string> =
   Value extends `${string}{${infer Name}}${infer Rest}`
-    ? Name | PlaceholderNames<Rest>
+    ? (Name extends `${infer Base}|${string}` ? Base : Name) | PlaceholderNames<Rest>
     : never;
 
 export type TranslationParamsFor<Key extends TranslationKey> = Record<
@@ -35,16 +36,33 @@ const TRANSLATIONS: Record<SupportedLocale, TranslationCatalog> = {
   es,
 };
 
+/**
+ * CLDR cardinal category for the integers the app counts. Every supported language has only
+ * "one" and "other" here; French uses "one" for 0 and 1. Values may arrive already formatted
+ * ("1.234", "1 234"), so only their digits are read.
+ */
+export function pluralCategory(locale: SupportedLocale, value: string | number): "one" | "other" {
+  const count = typeof value === "number" ? Math.abs(value) : Number(String(value).replace(/\D/g, ""));
+  if (!Number.isFinite(count) || String(value).replace(/\D/g, "") === "") return "other";
+  if (locale === "fr") return count < 2 ? "one" : "other";
+  return count === 1 ? "one" : "other";
+}
+
 function renderTranslation(
   locale: SupportedLocale,
   key: TranslationKey,
   params: TranslationParams,
 ): string {
   const template = TRANSLATIONS[locale][key] ?? it[key] ?? key;
-  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, name: string) => {
-    const value = params[name];
-    return value === undefined ? match : String(value);
-  });
+  return template.replace(
+    /\{([a-zA-Z0-9_]+)(?:\|([^|{}]*)\|([^|{}]*))?\}/g,
+    (match, name: string, one: string | undefined, other: string | undefined) => {
+      const value = params[name];
+      if (value === undefined) return match;
+      if (one === undefined || other === undefined) return String(value);
+      return pluralCategory(locale, value) === "one" ? one : other;
+    },
+  );
 }
 
 export function translate<Key extends TranslationKey>(

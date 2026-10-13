@@ -52,7 +52,7 @@ export const en = {
   "home.companion.evolutionNotice":
     "At level {level}, it can evolve into {name}.",
   "home.companion.levelProgressLabel": "Level {level} progress",
-  "home.companion.stats": "Level {level} · {xp} XP · {coins} smile coins",
+  "home.companion.stats": "Level {level} · {xp} XP · {coins} {coins|smile coin|smile coins}",
   "home.companion.speechAttribution": "{name} says:",
   "home.familyReward.eyebrow": "FAMILY REWARD",
   "home.familyReward.progressLabel": "Family reward progress: {title}",
@@ -178,10 +178,10 @@ export const en = {
   "mouthZones.progressLabel": "Brushing-area progress",
   "mouthZones.activeHint": "Active area: {zone}",
   "mouthZones.inactiveHint": "The session has not started yet",
-  "mouthZones.progressText": "{completed} areas completed out of {total}",
+  "mouthZones.progressText": "{completed} {completed|area|areas} completed out of {total}",
   "mouthZones.completedZone": "Done · {zone}",
   "mouthZones.activeZone": "Now · {zone}",
-  "mouthZones.duration": "{seconds} seconds",
+  "mouthZones.duration": "{seconds} {seconds|second|seconds}",
   "avatar.label": "{name}, {element} creature, evolution {stage}",
   "avatar.levelBadge": "Lv {level}",
   "context.brushling.missingProvider":
@@ -235,7 +235,7 @@ export const en = {
     "Only after a factory reset; it does not delete history, progress, or backup.",
   "device.demoEyebrow": "TOOTHBRUSH-FREE LAB",
   "device.demoTitle": "Demo mode",
-  "device.demoSummary": "{count} sample sessions · real data stays safe",
+  "device.demoSummary": "{count} {count|sample session|sample sessions} · real data stays safe",
   "device.demoDescription":
     "Try evolutions, eggs, missions, and the dashboard without changing your real history.",
   "device.demoSwitchLabel": "Demo mode",
@@ -265,7 +265,7 @@ export const en = {
   "backup.bytes": "{value} B",
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
-  "backup.exportSuccess": "Full backup created: {sessions} sessions, {size}. Make sure you saved it from the share sheet.",
+  "backup.exportSuccess": "Full backup created: {sessions} {sessions|session|sessions}, {size}. Make sure you saved it from the share sheet.",
   "backup.exportFailed": "Backup failed",
   "backup.shareDialogTitle": "Save the full Sparkly Brush backup",
   "backup.invalidFile": "Invalid backup file",
@@ -305,10 +305,10 @@ export const en = {
   "backup.pickFile": "Choose backup file",
   "backup.verifiedComplete": "COMPLETE FILE VERIFIED",
   "backup.verifiedLegacy": "LEGACY BACKUP VERIFIED",
-  "backup.previewTitle": "{name} · {sessions} sessions",
+  "backup.previewTitle": "{name} · {sessions} {sessions|session|sessions}",
   "backup.createdAt": "{size} · created on {date}.",
   "backup.legacyOrigin":
-    "Legacy source: all progress is kept, but the old code included only {sessions} viewable entries.",
+    "Legacy source: all progress is kept, but the old code included only {sessions} viewable {sessions|entry|entries}.",
   "backup.replaceCompleteWarning":
     "Restoring will completely replace this phone’s real archive.",
   "backup.restoreFileLabel": "Restore complete archive from selected file",
@@ -546,7 +546,7 @@ export const en = {
   "brush.error.noCounterToReset": "There is no previous Bluetooth counter to reset for this handle.",
   "brush.log.syncDisabledInDemo": "BLE sync is disabled in demo mode",
   "brush.error.connectFirst": "Connect the toothbrush first",
-  "brush.log.sessionsSynced": "{count} sessions synchronized",
+  "brush.log.sessionsSynced": "{count} {count|session|sessions} synchronized",
   "brush.log.noNewSessions": "No new sessions available",
   "brush.error.syncFailed": "Synchronization failed",
   "brush.log.retryPreviousSave": "Try saving the previous session first",
@@ -579,7 +579,7 @@ export const en = {
   "game.collection.habitatEyebrow": "THE DEN",
   "game.collection.habitatTitle": "Customize your home",
   "game.collection.habitatSummary":
-    "{items} items owned · {coins} coins to spend",
+    "{items} {items|item|items} owned · {coins} {coins|coin|coins} to spend",
   "game.collection.openHabitat": "Open the den",
   "game.collection.starterFamilies": "The three starter families",
   "game.collection.starterFamiliesDescription":
@@ -592,9 +592,9 @@ export const en = {
   "game.collection.nextEvolution": "Next evolution: {name} at level {level}.",
   "game.collection.inTeam": "On your team",
   "game.collection.choose": "Choose",
-  "game.collection.afterSessions": "After {sessions} sessions",
+  "game.collection.afterSessions": "After {sessions} {sessions|session|sessions}",
   "game.collection.selectCreature": "Choose {name}",
-  "game.collection.lockedCreature": "{name} locked until {sessions} sessions",
+  "game.collection.lockedCreature": "{name} locked until {sessions} {sessions|session|sessions}",
   "game.collection.tip":
     "Every complete session is worth 60 XP. At level 3, your starter reaches its second form; at level 6, it reaches its final form.",
 
@@ -604,11 +604,11 @@ export const en = {
   "game.explore.exploresWithYou": "{name} explores with you",
   "game.explore.chooseCompanionFirst": "Choose your companion first",
   "game.explore.sessionsUntilZone":
-    "{sessions} complete sessions to go until you reach {zone}.",
+    "{sessions} complete {sessions|session|sessions} to go until you reach {zone}.",
   "game.explore.allZonesUnlocked":
     "You opened all the areas available in this first version of the island!",
   "game.explore.currentZone": "CURRENT AREA",
-  "game.explore.sessionCount": "{count} sessions",
+  "game.explore.sessionCount": "{count} {count|session|sessions}",
   "game.explore.openRewards": "Open rewards and eggs",
   "game.explore.inventoryEyebrow": "YOUR BACKPACK",
   "game.explore.inventoryTitle": "Rewards and eggs",
@@ -619,9 +619,7 @@ export const en = {
     "Complete two-minute sessions to open new places and prepare for future encounters, eggs, and rewards.",
   "game.explore.youAreHere": "YOU ARE HERE",
   "game.explore.zoneUnlocked": "Area unlocked",
-  "game.explore.zoneOpensIn": "Opens in {count} {sessionWord}",
-  "game.explore.sessionSingular": "session",
-  "game.explore.sessionPlural": "sessions",
+  "game.explore.zoneOpensIn": "Opens in {count} {count|session|sessions}",
   "game.explore.islandEncounters": "Island encounters",
   "game.explore.islandEncountersDescription":
     "Some Brushlings come from special eggs found while exploring.",
@@ -631,7 +629,7 @@ export const en = {
   "game.explore.unknown": "???",
   "game.explore.brushlingAvailable": "{name} is now available on your team.",
   "game.explore.sessionsUntilHatch":
-    "{count} more {sessionWord} until it hatches.",
+    "{count} more {count|session|sessions} until it hatches.",
   "game.explore.continueUntilEgg":
     "Keep going until session {session} to find this egg.",
   "game.explore.nextStepTitle": "Keep exploring",
@@ -655,14 +653,14 @@ export const en = {
     "Permanent badges that celebrate consistency and routine.",
   "game.missions.badgeUnlocked": "Badge unlocked",
   "game.missions.openHabitat": "Open the den",
-  "game.missions.walletTitle": "{coins} coins available",
+  "game.missions.walletTitle": "{coins} {coins|coin|coins} available",
   "game.missions.walletDescription":
     "Mission and achievement bonuses: +{coins} earned so far.",
 
   "game.rewards.backLabel": "Back to map",
   "game.rewards.eyebrow": "Collection",
   "game.rewards.title": "Your rewards",
-  "game.rewards.completedAdventures": "{count} adventures completed",
+  "game.rewards.completedAdventures": "{count} {count|adventure|adventures} completed",
   "game.rewards.heroDescription":
     "Every complete session leaves a memory from the area you explored. Eggs need more sessions to hatch.",
   "game.rewards.foundItems": "Items found",
@@ -680,25 +678,25 @@ export const en = {
   "game.rewards.mysteryEgg": "Mystery egg",
   "game.rewards.brushlingJoined": "{name} joined your team!",
   "game.rewards.eggFoundAfter":
-    "It can be found after {count} complete sessions.",
-  "game.rewards.sessionsUntilHatch": "{count} {sessionWord} until it hatches",
+    "It can be found after {count} complete {count|session|sessions}.",
+  "game.rewards.sessionsUntilHatch": "{count} {count|session|sessions} until it hatches",
   "game.rewards.goToHabitat": "Go to the den",
   "game.rewards.goToHabitatLabel": "Go to the den",
   "game.rewards.habitatCoins":
-    "You have {coins} smile coins to spend on habitats, accessories, and decorations.",
+    "You have {coins} {coins|smile coin|smile coins} to spend on habitats, accessories, and decorations.",
 
   "game.habitat.backLabel": "Go back",
   "game.habitat.eyebrow": "BRUSHLING'S HOME",
   "game.habitat.title": "The den",
   "game.habitat.wallet": "WALLET",
-  "game.habitat.walletValue": "{coins} smile coins",
+  "game.habitat.walletValue": "{coins} {coins|smile coin|smile coins}",
   "game.habitat.walletDescription":
     "You earn them by brushing; what you buy stays saved on this phone.",
   "game.habitat.customizeSpace":
     "Customize their space with a habitat, an accessory, and a decoration.",
   "game.habitat.equipped": "{name} equipped!",
   "game.habitat.equipFailed": "I can’t equip this item.",
-  "game.habitat.needMoreCoins": "You need {coins} more smile coins.",
+  "game.habitat.needMoreCoins": "You need {coins} more {coins|smile coin|smile coins}.",
   "game.habitat.purchased": "{name} purchased and equipped!",
   "game.habitat.category.habitat": "Habitat",
   "game.habitat.category.accessory": "Accessories",
@@ -973,10 +971,10 @@ export const en = {
   "family.parent.fromToothbrush": "from toothbrush",
   "family.parent.manualTimer": "manual timer",
   "family.parent.approximateSessions":
-    "{count} saved BLE sessions with an approximate time are left out of the weekly summary, the calendar, streaks and daily missions, but still count for XP and coins.",
+    "{count} saved BLE {count|session|sessions} with an approximate time {count|is|are} left out of the weekly summary, the calendar, streaks and daily missions, but still {count|counts|count} for XP and coins.",
   "family.parent.gameProgress": "Game progress",
   "family.parent.gameProgressDescription":
-    "Level {level} · {sessions} complete sessions · {badges} badges unlocked.",
+    "Level {level} · {sessions} complete {sessions|session|sessions} · {badges} {badges|badge|badges} unlocked.",
   "family.parent.rewardsTitle": "Family rewards",
   "family.parent.rewardsDescription":
     "Create real rewards chosen by a parent. The app only keeps track of progress; the promise stays a family matter.",
@@ -1014,9 +1012,9 @@ export const en = {
   "family.parent.minutes": "{minutes} min",
   "family.parent.duration": "{minutes}:{seconds}",
 
-  "family.rewardRequirement.completedSessions": "{target} complete sessions",
-  "family.rewardRequirement.perfectDays": "{target} morning + evening days",
-  "family.rewardRequirement.streak": "Best streak: {target} days in a row",
+  "family.rewardRequirement.completedSessions": "{target} complete {target|session|sessions}",
+  "family.rewardRequirement.perfectDays": "{target} morning + evening {target|day|days}",
+  "family.rewardRequirement.streak": "Best streak: {target} {target|day|days} in a row",
   "family.rewards.contextError":
     "useParentRewards must be used within ParentRewardsProvider",
 
@@ -1040,7 +1038,7 @@ export const en = {
   "brush.client.scanStarted": "BLE scan started (Sonicare4Kids)",
   "brush.client.connecting": "Connecting and reading services",
   "brush.client.found": "Found {name}",
-  "brush.client.servicesFound": "{count} GATT services found",
+  "brush.client.servicesFound": "{count} GATT {count|service|services} found",
   "brush.client.ready": "Sonicare ready",
   "brush.client.connected": "Connected: HX63xx GATT open",
   "brush.client.handleState": "Handle status: {state}",
@@ -1057,7 +1055,7 @@ export const en = {
   "brush.client.clockUnavailable":
     "Handle clock unavailable: session date is approximate",
   "brush.client.sessionRead": "Session {id} read ({duration}s)",
-  "brush.client.sessionsReady": "{count} BLE sessions ready for atomic saving",
+  "brush.client.sessionsReady": "{count} BLE {count|session|sessions} ready for atomic saving",
   "brush.client.disconnectedShort": "Disconnected",
   "brush.client.unsupported":
     "Bluetooth is available only in the installed app",

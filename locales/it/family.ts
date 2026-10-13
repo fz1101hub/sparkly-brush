@@ -46,10 +46,10 @@ export const itFamily = {
   "family.parent.fromToothbrush": "da spazzolino",
   "family.parent.manualTimer": "timer manuale",
   "family.parent.approximateSessions":
-    "{count} sessioni BLE salvate con orario approssimato non rientrano nel riepilogo settimanale, nel calendario, nelle serie e nelle missioni giornaliere, ma contano per XP e monete.",
+    "{count} {count|sessione BLE salvata|sessioni BLE salvate} con orario approssimato non {count|rientra|rientrano} nel riepilogo settimanale, nel calendario, nelle serie e nelle missioni giornaliere, ma {count|conta|contano} per XP e monete.",
   "family.parent.gameProgress": "Progressione gioco",
   "family.parent.gameProgressDescription":
-    "Livello {level} · {sessions} sessioni complete · {badges} badge sbloccati.",
+    "Livello {level} · {sessions} {sessions|sessione completa|sessioni complete} · {badges} {badges|badge sbloccato|badge sbloccati}.",
   "family.parent.rewardsTitle": "Premi di famiglia",
   "family.parent.rewardsDescription":
     "Crea ricompense reali scelte dal genitore. L’app tiene solo il progresso; la promessa resta una cosa di famiglia.",
@@ -87,10 +87,10 @@ export const itFamily = {
   "family.parent.minutes": "{minutes} min",
   "family.parent.duration": "{minutes}:{seconds}",
 
-  "family.rewardRequirement.completedSessions": "{target} sessioni complete",
-  "family.rewardRequirement.perfectDays": "{target} giorni mattina + sera",
+  "family.rewardRequirement.completedSessions": "{target} {target|sessione completa|sessioni complete}",
+  "family.rewardRequirement.perfectDays": "{target} {target|giorno|giorni} mattina + sera",
   "family.rewardRequirement.streak":
-    "Record di serie: {target} giorni consecutivi",
+    "Record di serie: {target} {target|giorno consecutivo|giorni consecutivi}",
   "family.rewards.contextError":
     "useParentRewards deve essere usato dentro ParentRewardsProvider",
 

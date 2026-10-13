@@ -52,7 +52,7 @@ export const es = {
   "home.companion.evolutionNotice":
     "En el nivel {level} puede evolucionar a {name}.",
   "home.companion.levelProgressLabel": "Progreso del nivel {level}",
-  "home.companion.stats": "Nivel {level} · {xp} XP · {coins} monedas sonrisa",
+  "home.companion.stats": "Nivel {level} · {xp} XP · {coins} {coins|moneda sonrisa|monedas sonrisa}",
   "home.companion.speechAttribution": "{name} dice:",
   "home.familyReward.eyebrow": "PREMIO FAMILIAR",
   "home.familyReward.progressLabel": "Progreso del premio familiar: {title}",
@@ -180,10 +180,10 @@ export const es = {
   "mouthZones.progressLabel": "Progreso de las zonas de cepillado",
   "mouthZones.activeHint": "Zona activa: {zone}",
   "mouthZones.inactiveHint": "La sesión aún no ha comenzado",
-  "mouthZones.progressText": "{completed} zonas completadas de {total}",
+  "mouthZones.progressText": "{completed} {completed|zona completada|zonas completadas} de {total}",
   "mouthZones.completedZone": "Hecho · {zone}",
   "mouthZones.activeZone": "Ahora · {zone}",
-  "mouthZones.duration": "{seconds} segundos",
+  "mouthZones.duration": "{seconds} {seconds|segundo|segundos}",
   "avatar.label": "{name}, criatura {element}, evolución {stage}",
   "avatar.levelBadge": "Lv {level}",
   "context.brushling.missingProvider":
@@ -237,7 +237,7 @@ export const es = {
   "device.demoEyebrow": "LABORATORIO SIN CEPILLO",
   "device.demoTitle": "Modo demo",
   "device.demoSummary":
-    "{count} sesiones simuladas · los datos reales permanecen intactos",
+    "{count} {count|sesión simulada|sesiones simuladas} · los datos reales permanecen intactos",
   "device.demoDescription":
     "Prueba evoluciones, huevos, misiones y panel sin tocar el historial real.",
   "device.demoSwitchLabel": "Modo demo",
@@ -267,7 +267,7 @@ export const es = {
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
   "backup.exportSuccess":
-    "Copia de seguridad completa creada: {sessions} sesiones, {size}. Comprueba que la guardaste desde el menú de compartir.",
+    "Copia de seguridad completa creada: {sessions} {sessions|sesión|sesiones}, {size}. Comprueba que la guardaste desde el menú de compartir.",
   "backup.exportFailed": "Copia de seguridad fallida",
   "backup.shareDialogTitle": "Guardar la copia de seguridad completa de Sparkly Brush",
   "backup.invalidFile": "Archivo de copia de seguridad no válido",
@@ -307,10 +307,10 @@ export const es = {
   "backup.pickFile": "Elegir archivo de copia de seguridad",
   "backup.verifiedComplete": "ARCHIVO COMPLETO VERIFICADO",
   "backup.verifiedLegacy": "BACKUP LEGACY VERIFICADO",
-  "backup.previewTitle": "{name} · {sessions} sesiones",
+  "backup.previewTitle": "{name} · {sessions} {sessions|sesión|sesiones}",
   "backup.createdAt": "{size} · creado el {date}.",
   "backup.legacyOrigin":
-    "Origen legacy: todos los progresos se conservan, pero el código antiguo contenía solo {sessions} líneas consultables.",
+    "Origen legacy: todos los progresos se conservan, pero el código antiguo contenía solo {sessions} {sessions|línea consultable|líneas consultables}.",
   "backup.replaceCompleteWarning":
     "La restauración reemplazará íntegramente el archivo real de este teléfono.",
   "backup.restoreFileLabel":
@@ -381,7 +381,7 @@ export const es = {
     "Desactiva la demo antes de las pruebas con el mango real.",
   "hardware.progressTitle": "Progreso",
   "hardware.progressSummary":
-    "{completed}/{total} completadas · {passed} aprobadas{saving}",
+    "{completed}/{total} completadas · {passed} {passed|aprobada|aprobadas}{saving}",
   "hardware.progressSaving": " · guardando…",
   "hardware.progressLoading": "Cargando…",
   "hardware.snapshotBle": "BLE",
@@ -499,7 +499,7 @@ export const es = {
   "hardware.report.result": "Resultado",
   "hardware.report.note": "Nota",
   "hardware.report.summary":
-    "{completed}/{total} verificaciones completadas · {passed} aprobadas · {failed} fallidas · {blocked} bloqueadas",
+    "{completed}/{total} verificaciones completadas · {passed} {passed|aprobada|aprobadas} · {failed} {failed|fallida|fallidas} · {blocked} {blocked|bloqueada|bloqueadas}",
   "hardware.report.noLogs": "No hay registros disponibles",
   "hardware.report.log.info": "INFO",
   "hardware.report.log.success": "ÉXITO",
@@ -551,7 +551,7 @@ export const es = {
   "brush.log.syncDisabledInDemo":
     "La sincronización BLE está desactivada en modo demo",
   "brush.error.connectFirst": "Conecta primero el cepillo",
-  "brush.log.sessionsSynced": "{count} sesiones sincronizadas",
+  "brush.log.sessionsSynced": "{count} {count|sesión sincronizada|sesiones sincronizadas}",
   "brush.log.noNewSessions": "No hay nuevas sesiones disponibles",
   "brush.error.syncFailed": "Sincronización fallida",
   "brush.log.retryPreviousSave":
@@ -586,7 +586,7 @@ export const es = {
   "game.collection.habitatEyebrow": "LA CASITA",
   "game.collection.habitatTitle": "Personaliza la casita",
   "game.collection.habitatSummary":
-    "{items} objetos en tu poder · {coins} monedas para gastar",
+    "{items} {items|objeto en tu poder|objetos en tu poder} · {coins} {coins|moneda|monedas} para gastar",
   "game.collection.openHabitat": "Abre la casita",
   "game.collection.starterFamilies": "Las tres familias iniciales",
   "game.collection.starterFamiliesDescription":
@@ -600,10 +600,10 @@ export const es = {
     "Próxima evolución: {name} en el nivel {level}.",
   "game.collection.inTeam": "En el equipo",
   "game.collection.choose": "Elige",
-  "game.collection.afterSessions": "Después de {sessions} sesiones",
+  "game.collection.afterSessions": "Después de {sessions} {sessions|sesión|sesiones}",
   "game.collection.selectCreature": "Elige a {name}",
   "game.collection.lockedCreature":
-    "{name} bloqueado hasta {sessions} sesiones",
+    "{name} bloqueado hasta {sessions} {sessions|sesión|sesiones}",
   "game.collection.tip":
     "Cada sesión completa vale 60 XP. Al nivel 3 el inicial alcanza la segunda forma; al nivel 6 alcanza la forma final.",
   "game.explore.eyebrow": "Aventura",
@@ -612,11 +612,11 @@ export const es = {
   "game.explore.exploresWithYou": "{name} explora contigo",
   "game.explore.chooseCompanionFirst": "Elige primero a tu compañero",
   "game.explore.sessionsUntilZone":
-    "Faltan {sessions} sesiones completas para alcanzar {zone}.",
+    "{sessions|Falta|Faltan} {sessions} {sessions|sesión completa|sesiones completas} para alcanzar {zone}.",
   "game.explore.allZonesUnlocked":
     "¡Has desbloqueado todas las zonas disponibles en esta primera versión de la isla!",
   "game.explore.currentZone": "ZONA ACTUAL",
-  "game.explore.sessionCount": "{count} sesiones",
+  "game.explore.sessionCount": "{count} {count|sesión|sesiones}",
   "game.explore.openRewards": "Abre premios y huevos",
   "game.explore.inventoryEyebrow": "TU MOCHILA",
   "game.explore.inventoryTitle": "Premios y huevos",
@@ -627,9 +627,7 @@ export const es = {
     "Completa sesiones de dos minutos para abrir nuevos lugares y preparar futuros encuentros, huevos y premios.",
   "game.explore.youAreHere": "ESTÁS AQUÍ",
   "game.explore.zoneUnlocked": "Zona desbloqueada",
-  "game.explore.zoneOpensIn": "Se abrirá en {count} {sessionWord}",
-  "game.explore.sessionSingular": "sesión",
-  "game.explore.sessionPlural": "sesiones",
+  "game.explore.zoneOpensIn": "Se abrirá en {count} {count|sesión|sesiones}",
   "game.explore.islandEncounters": "Encuentros en la isla",
   "game.explore.islandEncountersDescription":
     "Algunos Brushlings provienen de huevos especiales encontrados durante la exploración.",
@@ -639,7 +637,7 @@ export const es = {
   "game.explore.unknown": "???",
   "game.explore.brushlingAvailable": "{name} ya está disponible en tu equipo.",
   "game.explore.sessionsUntilHatch":
-    "Faltan {count} {sessionWord} para la eclosión.",
+    "{count|Falta|Faltan} {count} {count|sesión|sesiones} para la eclosión.",
   "game.explore.continueUntilEgg":
     "Continúa hasta la sesión {session} para encontrar este huevo.",
   "game.explore.nextStepTitle": "Sigue explorando",
@@ -662,13 +660,13 @@ export const es = {
     "Insignias permanentes que premian la constancia y la rutina.",
   "game.missions.badgeUnlocked": "Insignia desbloqueada",
   "game.missions.openHabitat": "Abre la casita",
-  "game.missions.walletTitle": "{coins} monedas disponibles",
+  "game.missions.walletTitle": "{coins} {coins|moneda disponible|monedas disponibles}",
   "game.missions.walletDescription":
-    "Bonos de misiones y logros: +{coins} ganadas hasta ahora.",
+    "Bonos de misiones y logros: +{coins} {coins|ganada|ganadas} hasta ahora.",
   "game.rewards.backLabel": "Volver al mapa",
   "game.rewards.eyebrow": "Colección",
   "game.rewards.title": "Tus premios",
-  "game.rewards.completedAdventures": "{count} aventuras completadas",
+  "game.rewards.completedAdventures": "{count} {count|aventura completada|aventuras completadas}",
   "game.rewards.heroDescription":
     "Cada sesión completa deja un recuerdo de la zona explorada. Los huevos requieren más sesiones para eclosionar.",
   "game.rewards.foundItems": "Objetos encontrados",
@@ -686,24 +684,24 @@ export const es = {
   "game.rewards.mysteryEgg": "Huevo misterioso",
   "game.rewards.brushlingJoined": "¡{name} se ha unido a tu equipo!",
   "game.rewards.eggFoundAfter":
-    "Se puede encontrar después de {count} sesiones completas.",
-  "game.rewards.sessionsUntilHatch": "{count} {sessionWord} para la eclosión",
+    "Se puede encontrar después de {count} {count|sesión completa|sesiones completas}.",
+  "game.rewards.sessionsUntilHatch": "{count} {count|sesión|sesiones} para la eclosión",
   "game.rewards.goToHabitat": "Ir a la casita",
   "game.rewards.goToHabitatLabel": "Ir a la casita",
   "game.rewards.habitatCoins":
-    "Tienes {coins} monedas sonrisa para gastar en hábitat, accesorios y decoraciones.",
+    "Tienes {coins} {coins|moneda sonrisa|monedas sonrisa} para gastar en hábitat, accesorios y decoraciones.",
   "game.habitat.backLabel": "Volver",
   "game.habitat.eyebrow": "Casa Brushling",
   "game.habitat.title": "La casita",
   "game.habitat.wallet": "MONEDERO",
-  "game.habitat.walletValue": "{coins} monedas sonrisa",
+  "game.habitat.walletValue": "{coins} {coins|moneda sonrisa|monedas sonrisa}",
   "game.habitat.walletDescription":
     "Las ganas al cepillarte; lo que compres se guarda en este teléfono.",
   "game.habitat.customizeSpace":
     "Personaliza su espacio con un hábitat, un accesorio y una decoración.",
   "game.habitat.equipped": "¡{name} equipado!",
   "game.habitat.equipFailed": "No puedo equipar este objeto.",
-  "game.habitat.needMoreCoins": "Necesitas {coins} monedas sonrisa más.",
+  "game.habitat.needMoreCoins": "Necesitas {coins} {coins|moneda sonrisa|monedas sonrisa} más.",
   "game.habitat.purchased": "¡{name} comprado y equipado!",
   "game.habitat.category.habitat": "Hábitat",
   "game.habitat.category.accessory": "Accesorios",
@@ -981,10 +979,10 @@ export const es = {
   "family.parent.fromToothbrush": "desde el cepillo",
   "family.parent.manualTimer": "temporizador manual",
   "family.parent.approximateSessions":
-    "{count} sesiones BLE guardadas con hora aproximada no se incluyen en el resumen semanal, el calendario, la racha ni las misiones diarias, pero cuentan para la XP y las monedas.",
+    "{count} {count|sesión BLE guardada|sesiones BLE guardadas} con hora aproximada no se {count|incluye|incluyen} en el resumen semanal, el calendario, la racha ni las misiones diarias, pero {count|cuenta|cuentan} para la XP y las monedas.",
   "family.parent.gameProgress": "Progreso del juego",
   "family.parent.gameProgressDescription":
-    "Nivel {level} · {sessions} sesiones completas · {badges} insignias desbloqueadas.",
+    "Nivel {level} · {sessions} {sessions|sesión completa|sesiones completas} · {badges} {badges|insignia desbloqueada|insignias desbloqueadas}.",
   "family.parent.rewardsTitle": "Recompensas familiares",
   "family.parent.rewardsDescription":
     "Crea recompensas reales elegidas por el padre o la madre. La app solo guarda el progreso; la promesa sigue siendo cosa de la familia.",
@@ -1021,10 +1019,10 @@ export const es = {
   "family.parent.percentage": "{value}%",
   "family.parent.minutes": "{minutes} min",
   "family.parent.duration": "{minutes}:{seconds}",
-  "family.rewardRequirement.completedSessions": "{target} sesiones completas",
-  "family.rewardRequirement.perfectDays": "{target} días mañana + noche",
+  "family.rewardRequirement.completedSessions": "{target} {target|sesión completa|sesiones completas}",
+  "family.rewardRequirement.perfectDays": "{target} {target|día|días} mañana + noche",
   "family.rewardRequirement.streak":
-    "Récord de racha: {target} días consecutivos",
+    "Récord de racha: {target} {target|día consecutivo|días consecutivos}",
   "family.rewards.contextError":
     "useParentRewards debe usarse dentro de ParentRewardsProvider",
   "family.settings.eyebrow": "Comodidad y retroalimentación",
@@ -1048,7 +1046,7 @@ export const es = {
   "brush.client.scanStarted": "Búsqueda BLE iniciada (Sonicare4Kids)",
   "brush.client.connecting": "Conectando y leyendo servicios",
   "brush.client.found": "Se encontró {name}",
-  "brush.client.servicesFound": "{count} servicios GATT detectados",
+  "brush.client.servicesFound": "{count} {count|servicio GATT detectado|servicios GATT detectados}",
   "brush.client.ready": "Sonicare listo",
   "brush.client.connected": "Conexión completada: GATT HX63xx abierto",
   "brush.client.handleState": "Estado del mango: {state}",
@@ -1067,7 +1065,7 @@ export const es = {
     "Reloj del mango no disponible: la fecha de la sesión es aproximada",
   "brush.client.sessionRead": "Sesión {id} leída ({duration}s)",
   "brush.client.sessionsReady":
-    "{count} sesiones BLE listas para el guardado atómico",
+    "{count} {count|sesión BLE lista|sesiones BLE listas} para el guardado atómico",
   "brush.client.disconnectedShort": "Desconectado",
   "brush.client.unsupported":
     "Bluetooth solo está disponible en la app instalada",

@@ -54,12 +54,6 @@ export default function ExploreScreen() {
   );
   const nextZone = getNextAdventureZone(stats.completedSessions);
   const evolution = getEvolution(selectedCreature, stats.level);
-  const sessionWord = (count: number) =>
-    t(
-      count === 1
-        ? "game.explore.sessionSingular"
-        : "game.explore.sessionPlural",
-    );
 
   return (
     <ScreenContainer>
@@ -302,7 +296,6 @@ export default function ExploreScreen() {
                           ? t("game.explore.zoneUnlocked")
                           : t("game.explore.zoneOpensIn", {
                               count: formatNumber(remaining),
-                              sessionWord: sessionWord(remaining),
                             })}
                       </Text>
                     </View>
@@ -418,7 +411,6 @@ export default function ExploreScreen() {
                       : egg.found
                         ? t("game.explore.sessionsUntilHatch", {
                             count: formatNumber(egg.sessionsRemaining),
-                            sessionWord: sessionWord(egg.sessionsRemaining),
                           })
                         : t("game.explore.continueUntilEgg", {
                             session: formatNumber(egg.foundAtCompletedSessions),

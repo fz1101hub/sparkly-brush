@@ -48,7 +48,7 @@ export const itDevice = {
   "device.demoEyebrow": "LABORATORIO SENZA SPAZZOLINO",
   "device.demoTitle": "Modalità demo",
   "device.demoSummary":
-    "{count} sessioni simulate · i dati reali restano intatti",
+    "{count} {count|sessione simulata|sessioni simulate} · i dati reali restano intatti",
   "device.demoDescription":
     "Prova evoluzioni, uova, missioni e dashboard senza toccare lo storico reale.",
   "device.demoSwitchLabel": "Modalità demo",
@@ -78,7 +78,7 @@ export const itDevice = {
   "backup.bytes": "{value} B",
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
-  "backup.exportSuccess": "Backup completo creato: {sessions} sessioni, {size}. Controlla di averlo salvato dal foglio di condivisione.",
+  "backup.exportSuccess": "Backup completo creato: {sessions} {sessions|sessione|sessioni}, {size}. Controlla di averlo salvato dal foglio di condivisione.",
   "backup.exportFailed": "Backup non riuscito",
   "backup.shareDialogTitle": "Salva il backup completo di Sparkly Brush",
   "backup.invalidFile": "File backup non valido",
@@ -118,10 +118,10 @@ export const itDevice = {
   "backup.pickFile": "Scegli file backup",
   "backup.verifiedComplete": "FILE COMPLETO VERIFICATO",
   "backup.verifiedLegacy": "BACKUP LEGACY VERIFICATO",
-  "backup.previewTitle": "{name} · {sessions} sessioni",
+  "backup.previewTitle": "{name} · {sessions} {sessions|sessione|sessioni}",
   "backup.createdAt": "{size} · creato il {date}.",
   "backup.legacyOrigin":
-    "Origine legacy: tutti i progressi sono conservati, ma il vecchio codice conteneva solo {sessions} righe consultabili.",
+    "Origine legacy: tutti i progressi sono conservati, ma il vecchio codice conteneva solo {sessions} {sessions|riga consultabile|righe consultabili}.",
   "backup.replaceCompleteWarning":
     "Il ripristino sostituirà integralmente l’archivio reale di questo telefono.",
   "backup.restoreFileLabel":
@@ -193,7 +193,7 @@ export const itDevice = {
     "Disattiva la demo prima delle prove con il manico reale.",
   "hardware.progressTitle": "Avanzamento",
   "hardware.progressSummary":
-    "{completed}/{total} compilate · {passed} superate{saving}",
+    "{completed}/{total} compilate · {passed} {passed|superata|superate}{saving}",
   "hardware.progressSaving": " · salvataggio…",
   "hardware.progressLoading": "Caricamento…",
   "hardware.snapshotBle": "BLE",
@@ -314,7 +314,7 @@ export const itDevice = {
   "hardware.report.result": "Esito",
   "hardware.report.note": "Nota",
   "hardware.report.summary":
-    "{completed}/{total} verifiche compilate · {passed} superate · {failed} fallite · {blocked} bloccate",
+    "{completed}/{total} verifiche compilate · {passed} {passed|superata|superate} · {failed} {failed|fallita|fallite} · {blocked} {blocked|bloccata|bloccate}",
   "hardware.report.noLogs": "Nessun log disponibile",
   "hardware.report.log.info": "INFO",
   "hardware.report.log.success": "SUCCESSO",
@@ -367,7 +367,7 @@ export const itDevice = {
   "brush.log.syncDisabledInDemo":
     "La sincronizzazione BLE è disattivata in modalità demo",
   "brush.error.connectFirst": "Collega prima lo spazzolino",
-  "brush.log.sessionsSynced": "{count} sessioni sincronizzate",
+  "brush.log.sessionsSynced": "{count} {count|sessione sincronizzata|sessioni sincronizzate}",
   "brush.log.noNewSessions": "Nessuna nuova sessione disponibile",
   "brush.error.syncFailed": "Sincronizzazione non riuscita",
   "brush.log.retryPreviousSave":
@@ -396,7 +396,7 @@ export const itDevice = {
   "brush.client.scanStarted": "Scansione BLE avviata (Sonicare4Kids)",
   "brush.client.connecting": "Connessione e lettura dei servizi",
   "brush.client.found": "Trovato {name}",
-  "brush.client.servicesFound": "{count} servizi GATT rilevati",
+  "brush.client.servicesFound": "{count} {count|servizio GATT rilevato|servizi GATT rilevati}",
   "brush.client.ready": "Sonicare pronto",
   "brush.client.connected": "Connessione completata: GATT aperto HX63xx",
   "brush.client.handleState": "Stato manico: {state}",
@@ -415,7 +415,7 @@ export const itDevice = {
     "Clock del manico non disponibile: data sessione approssimata",
   "brush.client.sessionRead": "Sessione {id} letta ({duration}s)",
   "brush.client.sessionsReady":
-    "{count} sessioni BLE pronte per il salvataggio atomico",
+    "{count} {count|sessione BLE pronta|sessioni BLE pronte} per il salvataggio atomico",
   "brush.client.disconnectedShort": "Disconnesso",
   "brush.client.unsupported": "Bluetooth disponibile solo nell’app installata",
   "brush.client.webPreview":

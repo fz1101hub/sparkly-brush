@@ -30,12 +30,6 @@ export default function RewardsScreen() {
   const router = useRouter();
   const { t, formatNumber } = useI18n();
   const { inventory, walletCoins } = useBrushling();
-  const sessionWord = (count: number) =>
-    t(
-      count === 1
-        ? "game.explore.sessionSingular"
-        : "game.explore.sessionPlural",
-    );
   return (
     <ScreenContainer>
       <ScrollView
@@ -284,7 +278,6 @@ export default function RewardsScreen() {
                       >
                         {t("game.rewards.sessionsUntilHatch", {
                           count: formatNumber(egg.sessionsRemaining),
-                          sessionWord: sessionWord(egg.sessionsRemaining),
                         })}
                       </Text>
                     </>
