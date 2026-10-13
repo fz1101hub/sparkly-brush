@@ -209,10 +209,13 @@ describe("native SQLite partial lifetime reconciliation", () => {
     expect(result.lifetimeProgress.attemptedSessions).toBe(366);
     expect(result.lifetimeProgress.completedSessions).toBe(366);
     expect(result.lifetimeProgress.xp).toBe(baseline.xp + 60);
-    expect(result.lifetimeProgress.dailyBonusCoins).toBe(baseline.dailyBonusCoins);
-    expect(result.lifetimeProgress.perfectDays).toBe(baseline.perfectDays);
-    expect(result.lifetimeProgress.currentStreakDays).toBe(baseline.currentStreakDays);
-    expect(result.lifetimeProgress.longestStreakDays).toBe(baseline.longestStreakDays);
+    // The record is the newest session: it keeps the day, mission and streak credit the live
+    // fallback earned, exactly once (it replaces the fallback, it does not add to it).
+    expect(withFallback.dailyBonusCoins).toBeGreaterThan(baseline.dailyBonusCoins);
+    expect(result.lifetimeProgress.dailyBonusCoins).toBe(withFallback.dailyBonusCoins);
+    expect(result.lifetimeProgress.perfectDays).toBe(withFallback.perfectDays);
+    expect(result.lifetimeProgress.currentStreakDays).toBe(withFallback.currentStreakDays);
+    expect(result.lifetimeProgress.longestStreakDays).toBe(withFallback.longestStreakDays);
     expect(result.lifetimeProgress.deviceCursors[deviceKey("brush-a")].lastSessionId).toBe(42);
     expect(nativeState.sessions).toHaveLength(1);
     expect(nativeState.sessions[0].id).not.toBe(fallback.id);

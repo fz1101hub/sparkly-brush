@@ -789,6 +789,10 @@ export async function saveDeviceSessionsWithLifetime(
         const maxRow = await txn.getFirstAsync<MaxStartedRow>(
           "SELECT MAX(started_at) AS max_started_at FROM sessions",
         );
+        // Like saveNewSession: a session newer than every archived one extends the day, mission
+        // and streak counters even when the archive is partial; only older ones cannot.
+        const newestSession = maxRow?.max_started_at === null
+          || session.startedAt >= (maxRow?.max_started_at ?? 0);
         if (fallback) {
           await txn.runAsync("DELETE FROM reward_ledger WHERE session_id = ?", fallback.sessionId);
           await txn.runAsync("DELETE FROM sessions WHERE id = ?", fallback.sessionId);
@@ -801,11 +805,13 @@ export async function saveDeviceSessionsWithLifetime(
             deviceId,
             fallback.sessionId,
             session,
-            historyComplete,
+            historyComplete || newestSession,
           )
           : null;
         const before = replacement?.before ?? allocation.progress;
-        const after = replacement?.after ?? applySessionToStoredLifetime(before, session, historyComplete);
+        const after = replacement?.after ?? (newestSession
+          ? applySessionToLifetime(before, session)
+          : applySessionToStoredLifetime(before, session, historyComplete));
         progress = fallback
           ? clearPendingDeviceFallback(after, deviceId, fallback.sessionId)
           : advancePendingDeviceFallbackExpectationsForEarlierSession(
