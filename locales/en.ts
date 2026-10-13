@@ -233,6 +233,15 @@ export const en = {
   "device.forgetting": "Removing…",
   "device.forgetResetDescription":
     "Only after a factory reset; it does not delete history, progress, or backup.",
+  "device.pairedHandle": "Paired handle: {name}",
+  "device.noPairedHandle": "No paired handle: the first one you connect will be remembered",
+  "device.changeHandle": "Change handle",
+  "device.changeHandleLabel": "Pair a different handle",
+  "device.changeHandleHint": "Searches for a handle other than the paired one and remembers it instead",
+  "device.changeHandleDescription": "For siblings or a new handle; history and progress stay.",
+  "device.changeHandleTitle": "Change handle?",
+  "device.changeHandleMessage": "The app will search for a handle other than the paired one and from now on connect only to it. History, progress and backups stay.",
+  "device.changeHandleAction": "Search for another handle",
   "device.demoEyebrow": "TOOTHBRUSH-FREE LAB",
   "device.demoTitle": "Demo mode",
   "device.demoSummary": "{count} {count|sample session|sample sessions} · real data stays safe",
@@ -521,6 +530,7 @@ export const en = {
     "Share Sparkly Brush hardware test report",
 
   "brush.status.ready": "Ready to search for the toothbrush",
+  "brush.status.pairedReady": "Handle paired: tap Search and connect",
   "brush.error.identityUnavailable": "Toothbrush identity unavailable",
   "brush.log.liveFallback":
     "Session saved from live data because the handle record was unavailable",
@@ -1073,6 +1083,13 @@ export const en = {
   "brush.client.poweredOff": "Bluetooth is off: turn it on and try again",
   "brush.client.bluetoothUnsupported": "This device does not support Bluetooth",
   "brush.client.adapterNotReady": "Bluetooth is not ready: check that it is on and allowed",
+  "brush.client.pairedNotFound": "Paired handle not found. Turn it on and keep it nearby, or change handle.",
+  "brush.client.otherNotFound": "No other handle found. Turn on the new handle and keep it nearby.",
+  "brush.client.scanPromptReplace": "Turn on the new handle and keep it nearby",
+  "brush.client.scanStartedPaired": "BLE scan started: looking for the paired handle",
+  "brush.client.scanStartedReplace": "BLE scan started: looking for another handle",
+  "brush.client.otherHandleIgnored": "Another handle found: ignored until you change handle",
+  "brush.client.pairedHandleIgnored": "Already paired handle ignored: turn on the new handle",
   "brush.client.locationPermissionRequired":
     "Location permission is required for Bluetooth scanning",
   "brush.client.connectionInProgress":

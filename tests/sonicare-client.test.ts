@@ -143,6 +143,8 @@ class FakeManager {
   devices: FakeDevice[] = [];
   failServicesCount = 0;
   autoScanResult = true;
+  // When set, the scan reports these peripherals in order instead of a fresh Kids handle.
+  scanDevices: FakeDevice[] | null = null;
   deferConnect = false;
   releaseConnect: (() => void) | null = null;
   adapterState = "PoweredOn";
@@ -167,6 +169,13 @@ class FakeManager {
     this.stateListeners.forEach((listener) => listener(state));
   }
   startDeviceScan = vi.fn((_uuids, _options, callback) => {
+    if (this.scanDevices) {
+      for (const advertised of this.scanDevices) {
+        this.devices.push(advertised);
+        callback(null, advertised);
+      }
+      return;
+    }
     const device = new FakeDevice();
     if (this.failServicesCount > 0) {
       this.failServicesCount -= 1;
@@ -721,5 +730,100 @@ describe("NativeSonicareClient", () => {
       expect(events.onStatus).toHaveBeenLastCalledWith("error", message);
       client.destroy();
     });
+  });
+});
+
+describe("abbinamento al manico", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function sonicare(id: string, name: string | null = "Sonicare4Kids"): FakeDevice {
+    const device = new FakeDevice();
+    device.id = id;
+    device.name = name as string;
+    device.localName = name as string;
+    if (!name) device.serviceUUIDs = [];
+    return device;
+  }
+
+  it("con un manico abbinato ignora gli altri Sonicare e si collega solo a quello, anche se avvisa senza nome", async () => {
+    const manager = new FakeManager();
+    const sibling = sonicare("sibling-brush");
+    const paired = sonicare("kids-brush", null);
+    manager.scanDevices = [sibling, paired];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect({ mode: "paired", deviceId: "kids-brush" });
+
+    expect(sibling.connect).not.toHaveBeenCalled();
+    expect(paired.connect).toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "kids-brush" });
+    expect(events.onLog).toHaveBeenCalledWith("info", "Scansione BLE avviata: cerco il manico abbinato");
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Trovato un altro manico: ignorato finché non cambi manico");
+  });
+
+  it("segnala che il manico abbinato non è in zona invece di collegarsi a un altro", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.scanDevices = [sonicare("sibling-brush")];
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const result = client.scanAndConnect({ mode: "paired", deviceId: "kids-brush" }).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(45_000);
+    const error = await result;
+
+    expect((error as Error).message).toBe("Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.");
+    expect(manager.devices[0].connect).not.toHaveBeenCalled();
+    expect(manager.stopDeviceScan).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("'cambia manico' salta il manico abbinato e si collega al primo altro Sonicare", async () => {
+    const manager = new FakeManager();
+    const paired = sonicare("kids-brush");
+    const other = sonicare("sibling-brush");
+    manager.scanDevices = [paired, other];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect({ mode: "replace", currentDeviceId: "kids-brush" });
+
+    expect(paired.connect).not.toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "sibling-brush" });
+    expect(events.onStatus).toHaveBeenCalledWith("scanning", "Accendi il nuovo manico e tienilo vicino");
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Manico già abbinato ignorato: accendi il nuovo manico");
+  });
+
+  it("'cambia manico' non si collega mai al manico già abbinato", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.scanDevices = [sonicare("kids-brush")];
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const result = client.scanAndConnect({ mode: "replace", currentDeviceId: "kids-brush" }).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(45_000);
+    const error = await result;
+
+    expect((error as Error).message).toBe("Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.");
+    expect(manager.devices[0].connect).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("senza abbinamento accetta il primo Sonicare e ignora le altre periferiche", async () => {
+    const manager = new FakeManager();
+    const lamp = sonicare("lamp", "Smart Lamp");
+    lamp.serviceUUIDs = [];
+    const kids = sonicare("kids-brush");
+    manager.scanDevices = [lamp, kids];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect();
+
+    expect(lamp.connect).not.toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "kids-brush" });
+    expect(events.onLog).not.toHaveBeenCalledWith("warning", expect.stringContaining("ignorato"));
   });
 });

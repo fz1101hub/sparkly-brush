@@ -234,6 +234,15 @@ export const es = {
   "device.forgetting": "Eliminando…",
   "device.forgetResetDescription":
     "Solo después del restablecimiento de fábrica; no elimina el historial, los progresos ni las copias de seguridad.",
+  "device.pairedHandle": "Mango vinculado: {name}",
+  "device.noPairedHandle": "Ningún mango vinculado: se recordará el primero que conectes",
+  "device.changeHandle": "Cambiar de mango",
+  "device.changeHandleLabel": "Vincular otro mango",
+  "device.changeHandleHint": "Busca un mango distinto del vinculado y lo recuerda en su lugar",
+  "device.changeHandleDescription": "Para hermanos o un mango nuevo; el historial y los progresos se conservan.",
+  "device.changeHandleTitle": "¿Cambiar de mango?",
+  "device.changeHandleMessage": "La app buscará un mango distinto del vinculado y a partir de ahora se conectará solo a ese. El historial, los progresos y las copias de seguridad se conservan.",
+  "device.changeHandleAction": "Buscar otro mango",
   "device.demoEyebrow": "LABORATORIO SIN CEPILLO",
   "device.demoTitle": "Modo demo",
   "device.demoSummary":
@@ -522,6 +531,7 @@ export const es = {
   "hardware.report.shareDialogTitle":
     "Compartir el informe de prueba Sparkly Brush",
   "brush.status.ready": "Listo para buscar el cepillo",
+  "brush.status.pairedReady": "Mango vinculado: toca Buscar y conectar",
   "brush.error.identityUnavailable": "Identidad del cepillo no disponible",
   "brush.log.liveFallback":
     "Sesión guardada a partir de datos en vivo porque el registro del mango no estaba disponible",
@@ -1083,6 +1093,13 @@ export const es = {
   "brush.client.poweredOff": "Bluetooth apagado: actívalo e inténtalo de nuevo",
   "brush.client.bluetoothUnsupported": "Este dispositivo no admite Bluetooth",
   "brush.client.adapterNotReady": "Bluetooth no está listo: comprueba que esté activado y permitido",
+  "brush.client.pairedNotFound": "Mango vinculado no encontrado. Enciéndelo y mantenlo cerca, o cambia de mango.",
+  "brush.client.otherNotFound": "No se encontró otro mango. Enciende el mango nuevo y mantenlo cerca.",
+  "brush.client.scanPromptReplace": "Enciende el mango nuevo y mantenlo cerca",
+  "brush.client.scanStartedPaired": "Búsqueda BLE iniciada: busco el mango vinculado",
+  "brush.client.scanStartedReplace": "Búsqueda BLE iniciada: busco otro mango",
+  "brush.client.otherHandleIgnored": "Se encontró otro mango: se ignora hasta que cambies de mango",
+  "brush.client.pairedHandleIgnored": "Mango ya vinculado ignorado: enciende el mango nuevo",
   "brush.client.locationPermissionRequired":
     "El permiso de ubicación es necesario para buscar por Bluetooth",
   "brush.client.connectionInProgress": "Ya hay una conexión Bluetooth en curso",

@@ -73,9 +73,18 @@ export interface BleClientEvents {
   onLog: (level: LogLevel, message: string) => void;
 }
 
+/**
+ * Which handle a scan may connect to: only the paired one, any Sonicare (first pairing)
+ * or a handle different from the paired one (the parent is changing handle).
+ */
+export type ScanTarget =
+  | { mode: "any" }
+  | { mode: "paired"; deviceId: string }
+  | { mode: "replace"; currentDeviceId: string };
+
 export interface SonicareClient {
   initialize(): Promise<void>;
-  scanAndConnect(): Promise<void>;
+  scanAndConnect(target?: ScanTarget): Promise<void>;
   disconnect(): Promise<void>;
   syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]>;
   destroy(): void;

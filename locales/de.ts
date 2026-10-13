@@ -238,6 +238,15 @@ export const de = {
   "device.forgetting": "Wird entfernt…",
   "device.forgetResetDescription":
     "Nur nach Zurücksetzen auf die Werkseinstellungen; löscht keinen Verlauf, Fortschritt oder Backups.",
+  "device.pairedHandle": "Gekoppelter Handgriff: {name}",
+  "device.noPairedHandle": "Kein gekoppelter Handgriff: Der erste, den du verbindest, wird gemerkt",
+  "device.changeHandle": "Handgriff wechseln",
+  "device.changeHandleLabel": "Einen anderen Handgriff koppeln",
+  "device.changeHandleHint": "Sucht einen anderen als den gekoppelten Handgriff und merkt sich stattdessen diesen",
+  "device.changeHandleDescription": "Für Geschwister oder einen neuen Handgriff; Verlauf und Fortschritt bleiben.",
+  "device.changeHandleTitle": "Handgriff wechseln?",
+  "device.changeHandleMessage": "Die App sucht einen anderen als den gekoppelten Handgriff und verbindet sich ab jetzt nur mit diesem. Verlauf, Fortschritt und Backups bleiben erhalten.",
+  "device.changeHandleAction": "Anderen Handgriff suchen",
   "device.demoEyebrow": "WERKSTATT OHNE ZAHNBÜRSTE",
   "device.demoTitle": "Demo-Modus",
   "device.demoSummary":
@@ -528,6 +537,7 @@ export const de = {
   "hardware.report.shareDialogTitle":
     "Sparkly Brush-Hardware-Testbericht teilen",
   "brush.status.ready": "Bereit, nach der Zahnbürste zu suchen",
+  "brush.status.pairedReady": "Handgriff gekoppelt: Tippe auf „Suchen und verbinden“",
   "brush.error.identityUnavailable": "Zahnbürstenidentität nicht verfügbar",
   "brush.log.liveFallback":
     "Sitzung aus Live-Daten gespeichert, weil kein Datensatz vom Handgriff verfügbar war",
@@ -1106,6 +1116,13 @@ export const de = {
   "brush.client.poweredOff": "Bluetooth ist aus: Schalte es ein und versuche es erneut",
   "brush.client.bluetoothUnsupported": "Dieses Gerät unterstützt kein Bluetooth",
   "brush.client.adapterNotReady": "Bluetooth ist nicht bereit: Prüfe, ob es eingeschaltet und erlaubt ist",
+  "brush.client.pairedNotFound": "Gekoppelter Handgriff nicht gefunden. Schalte ihn ein und halte ihn in der Nähe, oder wechsle den Handgriff.",
+  "brush.client.otherNotFound": "Kein anderer Handgriff gefunden. Schalte den neuen Handgriff ein und halte ihn in der Nähe.",
+  "brush.client.scanPromptReplace": "Schalte den neuen Handgriff ein und halte ihn in der Nähe",
+  "brush.client.scanStartedPaired": "BLE-Suche gestartet: Suche den gekoppelten Handgriff",
+  "brush.client.scanStartedReplace": "BLE-Suche gestartet: Suche einen anderen Handgriff",
+  "brush.client.otherHandleIgnored": "Anderer Handgriff gefunden: ignoriert, bis du den Handgriff wechselst",
+  "brush.client.pairedHandleIgnored": "Bereits gekoppelter Handgriff ignoriert: Schalte den neuen Handgriff ein",
   "brush.client.locationPermissionRequired":
     "Für die Bluetooth-Suche ist die Standortberechtigung erforderlich",
   "brush.client.connectionInProgress":

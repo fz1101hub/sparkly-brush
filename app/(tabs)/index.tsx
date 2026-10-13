@@ -67,6 +67,7 @@ export default function TodayScreen() {
     demoMode,
     setDemoMode,
     connect,
+    pairedDevice,
     startManual,
     stopManual,
     retryManualSession,
@@ -309,7 +310,7 @@ export default function TodayScreen() {
             <Text style={[styles.statusTitle, { color: colors.foreground }]}>
               {demoMode
                 ? t("home.device.demoMode")
-                : (device?.name ??
+                : ((device ?? pairedDevice)?.name ??
                   (connecting
                     ? t("home.device.searching")
                     : t("home.device.defaultModel")))}

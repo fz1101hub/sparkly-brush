@@ -43,6 +43,15 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Sincronizzazione Bluetooth annullata": "brush.client.cancelled",
   "Errore Bluetooth sconosciuto": "brush.client.unknownError",
   "Spazzolino non trovato. Accendilo e riprova.": "brush.client.notFound",
+  "Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.":
+    "brush.client.pairedNotFound",
+  "Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.":
+    "brush.client.otherNotFound",
+  "Accendi il nuovo manico e tienilo vicino": "brush.client.scanPromptReplace",
+  "Scansione BLE avviata: cerco il manico abbinato": "brush.client.scanStartedPaired",
+  "Scansione BLE avviata: cerco un altro manico": "brush.client.scanStartedReplace",
+  "Trovato un altro manico: ignorato finché non cambi manico": "brush.client.otherHandleIgnored",
+  "Manico già abbinato ignorato: accendi il nuovo manico": "brush.client.pairedHandleIgnored",
   "Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse":
     "brush.client.historyCountUnavailable",
   "Conteggio storico BLE non disponibile: il reset non può essere verificato":

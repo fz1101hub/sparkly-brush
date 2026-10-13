@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   saveDemo: vi.fn(),
   saveSession: vi.fn(),
   saveLastDevice: vi.fn(),
+  loadLastDevice: vi.fn(),
   loadPendingManual: vi.fn(),
   savePendingManual: vi.fn(),
   clearPendingManual: vi.fn(),
@@ -59,6 +60,7 @@ vi.mock("@/lib/brush-storage", async () => {
     saveDeviceFallbackWithLifetime: mocks.saveFallback,
     saveDeviceSessionsWithLifetime: mocks.saveDeviceBatch,
     saveLastDevice: mocks.saveLastDevice,
+    loadLastDevice: mocks.loadLastDevice,
     clearDemoHistory: vi.fn(),
     clearHistory: vi.fn(),
     replaceDemoHistory: vi.fn(async () => []),
@@ -117,6 +119,7 @@ describe("BrushProvider BLE integration", () => {
       event: null,
     });
     mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
+    mocks.loadLastDevice.mockReset().mockResolvedValue(null);
     mocks.loadPendingManual.mockReset().mockResolvedValue(null);
     mocks.savePendingManual.mockReset().mockResolvedValue(undefined);
     mocks.clearPendingManual.mockReset().mockResolvedValue(undefined);
@@ -1311,6 +1314,105 @@ describe("BrushProvider BLE integration", () => {
       );
     });
     expect(statusMessage.toLowerCase()).toContain("permission");
+    await act(async () => renderer.unmount());
+  });
+});
+
+describe("abbinamento del manico nel provider", () => {
+  const pairedHandle = { id: "brush-a", name: "Sonicare4Kids", model: "HX6322/04" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.loadLastDevice.mockReset().mockResolvedValue(null);
+    mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
+    mocks.forgetDevice.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: createEmptyLifetimeProgress(),
+    });
+  });
+
+  async function renderProvider() {
+    const holder: { client?: FakeClient } = {};
+    let brush!: ReturnType<typeof useBrush>;
+    function Probe() {
+      brush = useBrush();
+      return null;
+    }
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="it">
+          <BrushProvider
+            clientFactory={(events) => {
+              holder.client = new FakeClient(events);
+              return holder.client;
+            }}
+          >
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    return { renderer, client: holder.client!, brush: () => brush };
+  }
+
+  it("cerca solo il manico abbinato, lo sostituisce su richiesta e ricorda quello nuovo", async () => {
+    mocks.loadLastDevice.mockResolvedValue(pairedHandle);
+    const { renderer, client, brush } = await renderProvider();
+    expect(brush().pairedDevice).toMatchObject({ id: "brush-a" });
+    expect(brush().statusMessage).toBe("Manico abbinato: tocca Cerca e collega");
+
+    await act(async () => {
+      await brush().connect();
+    });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "paired", deviceId: "brush-a" });
+
+    await act(async () => {
+      await brush().connect({ replaceHandle: true });
+    });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "replace", currentDeviceId: "brush-a" });
+
+    act(() => client.events.onDevice({ id: "brush-b", name: "Sonicare4Kids", model: "HX6340", battery: 70 }));
+    expect(brush().pairedDevice).toMatchObject({ id: "brush-b", battery: 70 });
+    expect(mocks.saveLastDevice).toHaveBeenLastCalledWith(expect.objectContaining({ id: "brush-b" }));
+
+    act(() => client.events.onDevice(null));
+    await act(async () => {
+      await brush().connect();
+    });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "paired", deviceId: "brush-b" });
+    await act(async () => renderer.unmount());
+  });
+
+  it("senza manico abbinato accetta il primo Sonicare e da allora lo ricorda", async () => {
+    const { renderer, client, brush } = await renderProvider();
+    expect(brush().pairedDevice).toBeNull();
+    expect(brush().statusMessage).toBe("Pronto per cercare lo spazzolino");
+
+    await act(async () => {
+      await brush().connect();
+    });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "any" });
+
+    act(() => client.events.onDevice(pairedHandle));
+    expect(brush().pairedDevice).toMatchObject({ id: "brush-a" });
+    expect(mocks.saveLastDevice).toHaveBeenLastCalledWith(expect.objectContaining({ id: "brush-a" }));
+    await act(async () => renderer.unmount());
+  });
+
+  it("dimentica il manico abbinato anche da disconnesso", async () => {
+    mocks.loadLastDevice.mockResolvedValue(pairedHandle);
+    const { renderer, client, brush } = await renderProvider();
+
+    await act(async () => {
+      await brush().forgetToothbrush();
+    });
+
+    expect(client.disconnect).toHaveBeenCalled();
+    expect(mocks.forgetDevice).toHaveBeenCalledWith("brush-a");
+    expect(brush().pairedDevice).toBeNull();
+    expect(brush().statusMessage).toBe("Pronto per cercare lo spazzolino");
     await act(async () => renderer.unmount());
   });
 });

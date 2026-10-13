@@ -8,7 +8,7 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
-import { confirmDestructive, showMessage } from "@/lib/dialogs";
+import { confirmAction, confirmDestructive, showMessage } from "@/lib/dialogs";
 import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
 
 const LIGHT_CARD_FOREGROUND = "#17213A";
@@ -36,9 +36,22 @@ export default function DeviceScreen() {
     generateDemoWeek,
     clearDemoData,
     isForgettingToothbrush,
+    pairedDevice,
   } = useBrush();
   const connected = status === "connected";
   const busy = status === "scanning" || status === "connecting" || isForgettingToothbrush;
+  const shownDevice = device ?? pairedDevice;
+  const canForget = (connected || pairedDevice !== null) && !demoMode && !isForgettingToothbrush;
+
+  const confirmChangeHandle = () => {
+    confirmAction({
+      title: t("device.changeHandleTitle"),
+      message: t("device.changeHandleMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.changeHandleAction"),
+      onConfirm: () => void connect({ replaceHandle: true }),
+    });
+  };
 
   const confirmForgetToothbrush = () => {
     confirmDestructive({
@@ -115,10 +128,18 @@ export default function DeviceScreen() {
                 <Text
                   style={[styles.heroModel, { color: LIGHT_CARD_FOREGROUND }]}
                 >
-                  {device?.model ?? t("device.defaultModel")}
+                  {shownDevice?.model ?? t("device.defaultModel")}
                 </Text>
                 <Text style={[styles.heroStatus, { color: LIGHT_CARD_MUTED }]}>
                   {statusMessage}
+                </Text>
+                <Text
+                  testID="device-paired-handle"
+                  style={[styles.heroPairing, { color: LIGHT_CARD_MUTED }]}
+                >
+                  {pairedDevice
+                    ? t("device.pairedHandle", { name: pairedDevice.name })
+                    : t("device.noPairedHandle")}
                 </Text>
                 <View style={styles.badges}>
                   <View style={styles.protocolBadge}>
@@ -126,7 +147,7 @@ export default function DeviceScreen() {
                       {t("device.protocol")}
                     </Text>
                   </View>
-                  {device?.battery !== undefined ? (
+                  {connected && device?.battery !== undefined ? (
                     <View style={styles.batteryBadge}>
                       <Text style={styles.batteryText}>{device.battery}%</Text>
                     </View>
@@ -182,6 +203,34 @@ export default function DeviceScreen() {
               </Pressable>
             </View>
 
+            {pairedDevice && !demoMode ? (
+              <Pressable
+                testID="device-change-handle"
+                accessibilityRole="button"
+                accessibilityLabel={t("device.changeHandleLabel")}
+                accessibilityHint={t("device.changeHandleHint")}
+                accessibilityState={{ disabled: busy, busy }}
+                disabled={busy}
+                onPress={confirmChangeHandle}
+                style={({ pressed }) => [
+                  styles.changeHandleButton,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                  busy && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <MaterialIcons name="swap-horiz" size={22} color={colors.primary} />
+                <View style={styles.forgetCopy}>
+                  <Text style={[styles.forgetTitle, { color: colors.foreground }]}>
+                    {t("device.changeHandle")}
+                  </Text>
+                  <Text style={[styles.forgetText, { color: colors.muted }]}>
+                    {t("device.changeHandleDescription")}
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
+
             <View
               style={[
                 styles.infoCard,
@@ -225,15 +274,15 @@ export default function DeviceScreen() {
               accessibilityLabel={t("device.forgetResetLabel")}
               accessibilityHint={t("device.forgetResetHint")}
               accessibilityState={{
-                disabled: !connected || demoMode || isForgettingToothbrush,
+                disabled: !canForget,
                 busy: isForgettingToothbrush,
               }}
-              disabled={!connected || demoMode || isForgettingToothbrush}
+              disabled={!canForget}
               onPress={confirmForgetToothbrush}
               style={({ pressed }) => [
                 styles.forgetButton,
                 { borderColor: colors.border, backgroundColor: colors.surface },
-                (!connected || demoMode || isForgettingToothbrush) && styles.disabled,
+                !canForget && styles.disabled,
                 pressed && styles.pressed,
               ]}
             >
@@ -561,6 +610,7 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   heroModel: { fontSize: 18, lineHeight: 24, fontWeight: "900" },
   heroStatus: { fontSize: 13, lineHeight: 19, marginTop: 4 },
+  heroPairing: { fontSize: 11, lineHeight: 16, marginTop: 6, fontWeight: "700" },
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 },
   protocolBadge: { backgroundColor: "#FFFFFF", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
   protocolText: { color: "#2457D6", fontSize: 10, lineHeight: 14, fontWeight: "900" },
@@ -580,6 +630,7 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 13, lineHeight: 18, fontWeight: "800", textTransform: "capitalize" },
   infoDivider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
   forgetButton: { minHeight: 62, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 11 },
+  changeHandleButton: { minHeight: 62, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 11 },
   forgetCopy: { flex: 1 },
   forgetTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   forgetText: { fontSize: 10, lineHeight: 15, marginTop: 1 },

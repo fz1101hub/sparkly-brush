@@ -45,6 +45,15 @@ export const itDevice = {
   "device.forgetting": "Rimozione in corso…",
   "device.forgetResetDescription":
     "Solo dopo il reset di fabbrica; non elimina storico, progressi o backup.",
+  "device.pairedHandle": "Manico abbinato: {name}",
+  "device.noPairedHandle": "Nessun manico abbinato: il primo che colleghi verrà ricordato",
+  "device.changeHandle": "Cambia manico",
+  "device.changeHandleLabel": "Abbina un altro manico",
+  "device.changeHandleHint": "Cerca un manico diverso da quello abbinato e lo ricorda al posto suo",
+  "device.changeHandleDescription": "Per fratelli o un manico nuovo; storico e progressi restano.",
+  "device.changeHandleTitle": "Cambiare manico?",
+  "device.changeHandleMessage": "L’app cercherà un manico diverso da quello abbinato e da ora si collegherà solo a quello. Storico, progressi e backup restano.",
+  "device.changeHandleAction": "Cerca un altro manico",
   "device.demoEyebrow": "LABORATORIO SENZA SPAZZOLINO",
   "device.demoTitle": "Modalità demo",
   "device.demoSummary":
@@ -338,6 +347,7 @@ export const itDevice = {
     "Condividi il report di collaudo Sparkly Brush",
 
   "brush.status.ready": "Pronto per cercare lo spazzolino",
+  "brush.status.pairedReady": "Manico abbinato: tocca Cerca e collega",
   "brush.error.identityUnavailable":
     "Identità dello spazzolino non disponibile",
   "brush.log.liveFallback":
@@ -432,6 +442,13 @@ export const itDevice = {
   "brush.client.poweredOff": "Bluetooth spento: attivalo e riprova",
   "brush.client.bluetoothUnsupported": "Bluetooth non supportato da questo dispositivo",
   "brush.client.adapterNotReady": "Bluetooth non pronto: controlla che sia acceso e autorizzato",
+  "brush.client.pairedNotFound": "Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.",
+  "brush.client.otherNotFound": "Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.",
+  "brush.client.scanPromptReplace": "Accendi il nuovo manico e tienilo vicino",
+  "brush.client.scanStartedPaired": "Scansione BLE avviata: cerco il manico abbinato",
+  "brush.client.scanStartedReplace": "Scansione BLE avviata: cerco un altro manico",
+  "brush.client.otherHandleIgnored": "Trovato un altro manico: ignorato finché non cambi manico",
+  "brush.client.pairedHandleIgnored": "Manico già abbinato ignorato: accendi il nuovo manico",
   "brush.client.locationPermissionRequired":
     "Autorizzazione alla posizione necessaria per la scansione Bluetooth",
   "brush.client.connectionInProgress": "Connessione Bluetooth già in corso",

@@ -236,6 +236,15 @@ export const fr = {
   "device.forgetting": "Suppression en cours…",
   "device.forgetResetDescription":
     "Uniquement après la réinitialisation d'usine ; n'efface pas l'historique, les progrès ni les sauvegardes.",
+  "device.pairedHandle": "Manche associé : {name}",
+  "device.noPairedHandle": "Aucun manche associé : le premier que tu connectes sera mémorisé",
+  "device.changeHandle": "Changer de manche",
+  "device.changeHandleLabel": "Associer un autre manche",
+  "device.changeHandleHint": "Recherche un manche différent de celui associé et le mémorise à sa place",
+  "device.changeHandleDescription": "Pour la fratrie ou un nouveau manche ; l’historique et les progrès restent.",
+  "device.changeHandleTitle": "Changer de manche ?",
+  "device.changeHandleMessage": "L’app recherchera un manche différent de celui associé et ne se connectera désormais qu’à lui. L’historique, les progrès et les sauvegardes restent.",
+  "device.changeHandleAction": "Chercher un autre manche",
   "device.demoEyebrow": "LABORATOIRE SANS BROSSE À DENTS",
   "device.demoTitle": "Mode démo",
   "device.demoSummary":
@@ -526,6 +535,7 @@ export const fr = {
   "hardware.report.shareDialogTitle":
     "Partager le rapport de test Sparkly Brush",
   "brush.status.ready": "Prêt à rechercher la brosse à dents",
+  "brush.status.pairedReady": "Manche associé : touche Rechercher et connecter",
   "brush.error.identityUnavailable":
     "Identité de la brosse à dents non disponible",
   "brush.log.liveFallback":
@@ -1092,6 +1102,13 @@ export const fr = {
   "brush.client.poweredOff": "Bluetooth désactivé : active-le et réessaie",
   "brush.client.bluetoothUnsupported": "Cet appareil ne prend pas en charge le Bluetooth",
   "brush.client.adapterNotReady": "Bluetooth pas prêt : vérifie qu’il est activé et autorisé",
+  "brush.client.pairedNotFound": "Manche associé introuvable. Allume-le et garde-le à proximité, ou change de manche.",
+  "brush.client.otherNotFound": "Aucun autre manche trouvé. Allume le nouveau manche et garde-le à proximité.",
+  "brush.client.scanPromptReplace": "Allume le nouveau manche et garde-le à proximité",
+  "brush.client.scanStartedPaired": "Recherche BLE démarrée : je cherche le manche associé",
+  "brush.client.scanStartedReplace": "Recherche BLE démarrée : je cherche un autre manche",
+  "brush.client.otherHandleIgnored": "Un autre manche a été trouvé : ignoré tant que tu ne changes pas de manche",
+  "brush.client.pairedHandleIgnored": "Manche déjà associé ignoré : allume le nouveau manche",
   "brush.client.locationPermissionRequired":
     "L’autorisation de localisation est nécessaire pour la recherche Bluetooth",
   "brush.client.connectionInProgress":

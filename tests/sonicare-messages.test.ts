@@ -10,10 +10,11 @@ const clientSource = fs.readFileSync(
 );
 
 // Plain string literals the native client shows as status, writes to the diagnostic log or
-// throws to the provider. Template literals are covered by the pattern-based translations.
+// throws to the provider, plus the scan message table. Template literals are covered by the
+// pattern-based translations.
 const clientMessages = [
   ...clientSource.matchAll(
-    /(?:onLog\(\s*"(?:info|success|warning|error)",|onStatus\(\s*"[a-z]+",|new Error\()\s*"([^"]+)"/g,
+    /(?:onLog\(\s*"(?:info|success|warning|error)",|onStatus\(\s*"[a-z]+",|new Error\(|\b(?:prompt|started|notFound|ignored):)\s*"([^"]+)"/g,
   ),
 ].map((match) => match[1]);
 

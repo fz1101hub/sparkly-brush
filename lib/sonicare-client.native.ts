@@ -12,6 +12,7 @@ import {
   type BleClientEvents,
   type BrushLiveData,
   type DeviceSyncCursor,
+  type ScanTarget,
   type SonicareClient,
   type StoredDeviceSession,
 } from "@/lib/brush-types";
@@ -77,6 +78,34 @@ function isSonicare(device: Device): boolean {
     uuid.toLowerCase().startsWith("477ea600-a260-11e4-ae37-0002a5d5"),
   );
 }
+
+// The paired handle is matched by identifier only: iOS can advertise it without a name.
+function matchesScanTarget(device: Device, target: ScanTarget): boolean {
+  if (target.mode === "paired") return device.id === target.deviceId;
+  if (!isSonicare(device)) return false;
+  return target.mode === "any" || device.id !== target.currentDeviceId;
+}
+
+const SCAN_MESSAGES: Record<ScanTarget["mode"], { prompt: string; started: string; notFound: string; ignored: string }> = {
+  any: {
+    prompt: "Accendi lo spazzolino e tienilo vicino",
+    started: "Scansione BLE avviata (Sonicare4Kids)",
+    notFound: "Spazzolino non trovato. Accendilo e riprova.",
+    ignored: "",
+  },
+  paired: {
+    prompt: "Accendi lo spazzolino e tienilo vicino",
+    started: "Scansione BLE avviata: cerco il manico abbinato",
+    notFound: "Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.",
+    ignored: "Trovato un altro manico: ignorato finché non cambi manico",
+  },
+  replace: {
+    prompt: "Accendi il nuovo manico e tienilo vicino",
+    started: "Scansione BLE avviata: cerco un altro manico",
+    notFound: "Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.",
+    ignored: "Manico già abbinato ignorato: accendi il nuovo manico",
+  },
+};
 
 export class NativeSonicareClient implements SonicareClient {
   private managerInstance: BleManager | null;
@@ -186,7 +215,7 @@ export class NativeSonicareClient implements SonicareClient {
     }
   }
 
-  async scanAndConnect(): Promise<void> {
+  async scanAndConnect(scanTarget: ScanTarget = { mode: "any" }): Promise<void> {
     if (this.connecting) throw new Error("Connessione Bluetooth già in corso");
     if (this.destroyed) throw new Error("Client Bluetooth non disponibile");
     this.connecting = true;
@@ -202,16 +231,18 @@ export class NativeSonicareClient implements SonicareClient {
       this.assertOperation(operationGeneration);
       await guard(this.waitForPoweredOn());
       this.assertOperation(operationGeneration);
-      this.events.onStatus("scanning", "Accendi lo spazzolino e tienilo vicino");
-      this.events.onLog("info", "Scansione BLE avviata (Sonicare4Kids)");
+      const messages = SCAN_MESSAGES[scanTarget.mode];
+      this.events.onStatus("scanning", messages.prompt);
+      this.events.onLog("info", messages.started);
 
       const found = await guard(new Promise<Device>((resolve, reject) => {
         let settled = false;
+        const ignored = new Set<string>();
         const timeout = setTimeout(() => {
           if (settled) return;
           settled = true;
           this.manager.stopDeviceScan();
-          reject(new Error("Spazzolino non trovato. Accendilo e riprova."));
+          reject(new Error(messages.notFound));
         }, SCAN_TIMEOUT_MS);
         this.cancelScan = () => {
           if (settled) return;
@@ -230,12 +261,18 @@ export class NativeSonicareClient implements SonicareClient {
             reject(error);
             return;
           }
-          if (device && isSonicare(device)) {
-            settled = true;
-            clearTimeout(timeout);
-            this.manager.stopDeviceScan();
-            resolve(device);
+          if (!device) return;
+          if (!matchesScanTarget(device, scanTarget)) {
+            if (isSonicare(device) && !ignored.has(device.id)) {
+              ignored.add(device.id);
+              this.events.onLog("warning", messages.ignored);
+            }
+            return;
           }
+          settled = true;
+          clearTimeout(timeout);
+          this.manager.stopDeviceScan();
+          resolve(device);
         });
       }).finally(() => {
         this.cancelScan = null;

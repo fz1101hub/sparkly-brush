@@ -18,6 +18,7 @@ import {
   type ConnectionStatus,
   type DiagnosticLog,
   type LogLevel,
+  type ScanTarget,
   type SonicareClient,
   type StoredDeviceSession,
   type ToothbrushDevice,
@@ -29,6 +30,7 @@ import {
   loadDemoHistory,
   loadDemoMode,
   loadHistoryBundle,
+  loadLastDevice,
   replaceDemoHistory,
   replaceHistoryWithLifetime,
   saveDeviceFallbackWithLifetime,
@@ -109,7 +111,9 @@ type BrushContextValue = {
   demoMode: boolean;
   demoSessionCount: number;
   isForgettingToothbrush: boolean;
-  connect: () => Promise<void>;
+  /** Handle remembered from the last connection: the only one scans connect to. */
+  pairedDevice: ToothbrushDevice | null;
+  connect: (options?: ConnectOptions) => Promise<void>;
   disconnect: () => Promise<void>;
   forgetToothbrush: () => Promise<void>;
   syncLatest: () => Promise<void>;
@@ -124,6 +128,11 @@ type BrushContextValue = {
   reloadRealHistory: () => Promise<void>;
   adoptRestoredHistory: (history: BrushSession[], progress: LifetimeProgress) => void;
   clearAllHistory: () => Promise<void>;
+};
+
+export type ConnectOptions = {
+  /** Pair a handle different from the remembered one (for example a sibling's). */
+  replaceHandle?: boolean;
 };
 
 const BrushContext = createContext<BrushContextValue | null>(null);
@@ -190,6 +199,7 @@ export function BrushProvider({
   const [statusDetail, setStatusDetail] = useState<string | null>(null);
   const [adapterState, setAdapterState] = useState("Unknown");
   const [device, setDevice] = useState<ToothbrushDevice | null>(null);
+  const [pairedDevice, setPairedDevice] = useState<ToothbrushDevice | null>(null);
   const [live, setLive] = useState<BrushLiveData>(DEFAULT_LIVE_DATA);
   const [realHistory, setRealHistory] = useState<BrushSession[]>([]);
   const [lifetimeProgress, setLifetimeProgress] = useState<LifetimeProgress>(createEmptyLifetimeProgress);
@@ -209,6 +219,7 @@ export function BrushProvider({
 
   const clientRef = useRef<SonicareClient | null>(null);
   const deviceRef = useRef<ToothbrushDevice | null>(null);
+  const pairedDeviceRef = useRef<ToothbrushDevice | null>(null);
   const liveRef = useRef<BrushLiveData>(DEFAULT_LIVE_DATA);
   const liveSessionPeakRef = useRef<BrushLiveData | null>(null);
   const lifetimeProgressRef = useRef<LifetimeProgress>(createEmptyLifetimeProgress());
@@ -224,7 +235,11 @@ export function BrushProvider({
   const history = demoMode ? demoHistory : realHistory;
   const manualSaveError = manualSaveErrorKey ? activeTranslate(manualSaveErrorKey) : null;
   const statusKeyByStatus: Record<ConnectionStatus, TranslationKey> = {
-    idle: device ? "brush.client.disconnectedShort" : "brush.status.ready",
+    idle: device
+      ? "brush.client.disconnectedShort"
+      : pairedDevice
+        ? "brush.status.pairedReady"
+        : "brush.status.ready",
     scanning: "brush.client.scanPrompt",
     connecting: "brush.client.connecting",
     connected: "brush.client.ready",
@@ -290,6 +305,7 @@ export function BrushProvider({
       loadDemoHistory(),
       loadDemoMode(),
       loadPendingManualSession(),
+      loadLastDevice(),
     ])
       .then(
         ([
@@ -297,11 +313,18 @@ export function BrushProvider({
           savedDemoHistory,
           savedDemoMode,
           savedPendingManualSession,
+          savedDevice,
         ]) => {
           setRealHistory(savedHistory.recentHistory);
           setLifetimeProgress(savedHistory.lifetimeProgress);
           setDemoHistory(savedDemoHistory);
           setDemoModeState(savedDemoMode);
+          // A handle connected before this launch stays paired; a connection made in the
+          // meantime has already replaced it.
+          if (savedDevice && !pairedDeviceRef.current) {
+            pairedDeviceRef.current = savedDevice;
+            setPairedDevice(savedDevice);
+          }
           if (savedPendingManualSession) {
             setPendingManualSession(savedPendingManualSession);
             setManualSaveErrorKey("brush.error.pendingManualSession");
@@ -445,12 +468,13 @@ export function BrushProvider({
           setLive({ ...DEFAULT_LIVE_DATA });
           return;
         }
-        deviceRef.current = next;
-        setDevice((current) => {
-          const merged = { ...current, ...next };
-          void saveLastDevice(merged);
-          return merged;
-        });
+        const previous = deviceRef.current;
+        const merged = previous && previous.id === next.id ? { ...previous, ...next } : { ...next };
+        deviceRef.current = merged;
+        pairedDeviceRef.current = merged;
+        setDevice(merged);
+        setPairedDevice(merged);
+        void saveLastDevice(merged);
       },
       onLiveData: (next) => {
         const previous = liveRef.current;
@@ -614,7 +638,7 @@ export function BrushProvider({
     if (forgettingToothbrushRef.current) {
       throw new Error(t("brush.error.forgettingInProgress"));
     }
-    const deviceId = deviceRef.current?.id;
+    const deviceId = deviceRef.current?.id ?? pairedDeviceRef.current?.id;
     if (!deviceId) throw new Error(t("brush.error.connectHandleToReset"));
     forgettingToothbrushRef.current = true;
     setIsForgettingToothbrush(true);
@@ -626,6 +650,10 @@ export function BrushProvider({
         setDevice(null);
         liveRef.current = { ...DEFAULT_LIVE_DATA };
         setLive({ ...DEFAULT_LIVE_DATA });
+      }
+      if (pairedDeviceRef.current?.id === deviceId) {
+        pairedDeviceRef.current = null;
+        setPairedDevice(null);
       }
       setRealHistory(next.recentHistory);
       setLifetimeProgress(next.lifetimeProgress);
@@ -684,7 +712,7 @@ export function BrushProvider({
     }
   }, [appendLog, appendTranslatedLog, demoMode, persistDeviceSessions]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (options?: ConnectOptions) => {
     if (forgettingToothbrushRef.current) {
       appendTranslatedLog("warning", "brush.log.waitForForget");
       return;
@@ -698,8 +726,14 @@ export function BrushProvider({
     }
     const client = clientRef.current;
     if (!client) return;
+    const paired = pairedDeviceRef.current;
+    const target: ScanTarget = options?.replaceHandle && paired
+      ? { mode: "replace", currentDeviceId: paired.id }
+      : paired
+        ? { mode: "paired", deviceId: paired.id }
+        : { mode: "any" };
     try {
-      await client.scanAndConnect();
+      await client.scanAndConnect(target);
     } catch {
       // The client already reports the connection error to the user and log.
       return;
@@ -896,6 +930,7 @@ export function BrushProvider({
       demoMode,
       demoSessionCount: demoHistory.length,
       isForgettingToothbrush,
+      pairedDevice,
       connect,
       disconnect,
       forgetToothbrush,
@@ -937,6 +972,7 @@ export function BrushProvider({
       logs,
       manualActive,
       manualSaveError,
+      pairedDevice,
       pendingManualSession,
       progressEvent,
       realHistory,
