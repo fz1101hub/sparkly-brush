@@ -267,7 +267,7 @@ export const es = {
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
   "backup.exportSuccess":
-    "Copia de seguridad completa: {sessions} sesiones, {size}.",
+    "Copia de seguridad completa creada: {sessions} sesiones, {size}. Comprueba que la guardaste desde el menú de compartir.",
   "backup.exportFailed": "Copia de seguridad fallida",
   "backup.shareDialogTitle": "Guardar la copia de seguridad completa de Sparkly Brush",
   "backup.invalidFile": "Archivo de copia de seguridad no válido",

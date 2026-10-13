@@ -151,7 +151,8 @@ export default function BackupScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await exportAndShareCompleteBackup(currentManifest, t);
+      // The screen stays mounted for days: date the file when it is created, not when the tab was opened.
+      const result = await exportAndShareCompleteBackup({ ...currentManifest, createdAt: Date.now() }, t);
       setMessage(
         t("backup.exportSuccess", {
           sessions: result.sessionCount,

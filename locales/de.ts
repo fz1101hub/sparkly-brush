@@ -271,7 +271,7 @@ export const de = {
   "backup.bytes": "{value} B",
   "backup.kilobytes": "{value} KB",
   "backup.megabytes": "{value} MB",
-  "backup.exportSuccess": "Vollständiges Backup: {sessions} Sitzungen, {size}.",
+  "backup.exportSuccess": "Vollständiges Backup erstellt: {sessions} Sitzungen, {size}. Bitte prüfen, ob es über das Teilen-Menü gespeichert wurde.",
   "backup.exportFailed": "Die Sicherung ist fehlgeschlagen",
   "backup.shareDialogTitle": "Vollständige Sicherung von Sparkly Brush speichern",
   "backup.invalidFile": "Ungültige Sicherungsdatei",
