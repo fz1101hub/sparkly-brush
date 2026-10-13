@@ -4,7 +4,7 @@ import {
   type AppPreferences,
 } from "@/lib/preferences";
 import { isLanguagePreference } from "@/lib/locale-types";
-import type { ParentReward } from "@/lib/parent-rewards";
+import { MAX_PARENT_REWARDS, type ParentReward } from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
   createLifetimeProgress,
@@ -134,7 +134,7 @@ function normalizeParentRewards(value: unknown): ParentReward[] {
       && raw.target >= 1
       && typeof raw.createdAt === "number"
       && (raw.deliveredAt === null || typeof raw.deliveredAt === "number");
-  }).slice(0, 40);
+  }).slice(0, MAX_PARENT_REWARDS);
 }
 
 export function createBackup(

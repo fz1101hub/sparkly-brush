@@ -25,7 +25,10 @@ import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { computeParentDashboard } from "@/lib/parent-dashboard";
+import { confirmDestructive } from "@/lib/dialogs";
 import {
+  MAX_PARENT_REWARD_TITLE_LENGTH,
+  MAX_PARENT_REWARDS,
   rewardRequirementLabel,
   type ParentRewardRequirement,
 } from "@/lib/parent-rewards";
@@ -84,14 +87,24 @@ export default function ParentDashboardScreen() {
       seconds: formatNumber(seconds % 60).padStart(2, "0"),
     });
 
+  const rewardLimitReached = rewards.length >= MAX_PARENT_REWARDS;
   const createReward = async () => {
     const parsedTarget = Math.max(
       1,
       Math.min(30, Number.parseInt(target, 10) || 1),
     );
-    if (!rewardTitle.trim()) return;
+    if (!rewardTitle.trim() || rewardLimitReached) return;
     await addReward(rewardTitle, requirement, parsedTarget);
     setRewardTitle("");
+  };
+  const confirmRemoveReward = (id: string, title: string) => {
+    confirmDestructive({
+      title: t("family.parent.removeRewardTitle"),
+      message: t("family.parent.removeRewardMessage", { title }),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("family.parent.removeRewardAction"),
+      onConfirm: () => void removeReward(id),
+    });
   };
 
   return (
@@ -374,6 +387,7 @@ export default function ParentDashboardScreen() {
           </Text>
           <TextInput
             accessibilityLabel={t("family.parent.rewardNameLabel")}
+            maxLength={MAX_PARENT_REWARD_TITLE_LENGTH}
             value={rewardTitle}
             onChangeText={setRewardTitle}
             placeholder={t("family.parent.rewardNamePlaceholder")}
@@ -464,14 +478,19 @@ export default function ParentDashboardScreen() {
             />
           </View>
 
+          {rewardLimitReached ? (
+            <Text style={[styles.sectionCopy, { color: colors.muted }]}>
+              {t("family.parent.rewardLimit", { max: formatNumber(MAX_PARENT_REWARDS) })}
+            </Text>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("family.parent.addReward")}
-            disabled={!rewardTitle.trim()}
+            disabled={!rewardTitle.trim() || rewardLimitReached}
             onPress={() => void createReward()}
             style={({ pressed }) => [
               styles.addRewardButton,
-              !rewardTitle.trim() && styles.disabled,
+              (!rewardTitle.trim() || rewardLimitReached) && styles.disabled,
               pressed && styles.pressed,
             ]}
           >
@@ -580,6 +599,7 @@ export default function ParentDashboardScreen() {
                         title: reward.title,
                       })}
                       disabled={demoMode}
+                      hitSlop={6}
                       onPress={() => void markDelivered(reward.id)}
                       style={({ pressed }) => [
                         styles.deliverButton,
@@ -595,7 +615,8 @@ export default function ParentDashboardScreen() {
                     accessibilityLabel={t("family.parent.removeReward", {
                       title: reward.title,
                     })}
-                    onPress={() => void removeReward(reward.id)}
+                    hitSlop={6}
+                    onPress={() => confirmRemoveReward(reward.id, reward.title)}
                     style={({ pressed }) => [
                       styles.removeButton,
                       pressed && styles.pressed,

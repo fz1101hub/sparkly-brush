@@ -973,7 +973,7 @@ export const en = {
   "family.parent.fromToothbrush": "from toothbrush",
   "family.parent.manualTimer": "manual timer",
   "family.parent.approximateSessions":
-    "{count} saved BLE sessions with an approximate time are excluded from the calendar, streak, and daily missions.",
+    "{count} saved BLE sessions with an approximate time are left out of the weekly summary, the calendar, streaks and daily missions, but still count for XP and coins.",
   "family.parent.gameProgress": "Game progress",
   "family.parent.gameProgressDescription":
     "Level {level} · {sessions} complete sessions · {badges} badges unlocked.",
@@ -999,6 +999,10 @@ export const en = {
   "family.parent.rewardProgress": "{progress}/{target}",
   "family.parent.deliverReward": "Deliver reward: {title}",
   "family.parent.removeReward": "Delete reward: {title}",
+  "family.parent.removeRewardTitle": "Delete this reward?",
+  "family.parent.removeRewardMessage": "“{title}” will be removed from the family rewards.",
+  "family.parent.removeRewardAction": "Delete",
+  "family.parent.rewardLimit": "You have reached the maximum of {max} rewards: delete one to add another.",
   "family.parent.noRewards": "No family rewards set up yet.",
   "family.parent.settingsCardLabel": "Open settings",
   "family.parent.settingsTitle": "Sounds, music, and vibration",

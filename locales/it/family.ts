@@ -46,7 +46,7 @@ export const itFamily = {
   "family.parent.fromToothbrush": "da spazzolino",
   "family.parent.manualTimer": "timer manuale",
   "family.parent.approximateSessions":
-    "{count} sessioni BLE conservate con orario approssimato sono escluse da calendario, streak e missioni giornaliere.",
+    "{count} sessioni BLE salvate con orario approssimato non rientrano nel riepilogo settimanale, nel calendario, nelle serie e nelle missioni giornaliere, ma contano per XP e monete.",
   "family.parent.gameProgress": "Progressione gioco",
   "family.parent.gameProgressDescription":
     "Livello {level} · {sessions} sessioni complete · {badges} badge sbloccati.",
@@ -72,6 +72,10 @@ export const itFamily = {
   "family.parent.rewardProgress": "{progress}/{target}",
   "family.parent.deliverReward": "Consegna il premio {title}",
   "family.parent.removeReward": "Elimina il premio {title}",
+  "family.parent.removeRewardTitle": "Eliminare il premio?",
+  "family.parent.removeRewardMessage": "«{title}» verrà rimosso dai premi della famiglia.",
+  "family.parent.removeRewardAction": "Elimina",
+  "family.parent.rewardLimit": "Hai raggiunto il massimo di {max} premi: elimina un premio per aggiungerne un altro.",
   "family.parent.noRewards": "Nessun premio di famiglia ancora configurato.",
   "family.parent.settingsCardLabel": "Apri le impostazioni",
   "family.parent.settingsTitle": "Suoni, musica e vibrazione",

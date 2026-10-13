@@ -12,6 +12,10 @@ import {
 
 const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
 
+/** Same limit as backups: more rewards would be dropped silently on restore. */
+export const MAX_PARENT_REWARDS = 40;
+export const MAX_PARENT_REWARD_TITLE_LENGTH = 60;
+
 export type ParentRewardRequirement = "completed-sessions" | "perfect-days" | "streak";
 
 export type ParentReward = {

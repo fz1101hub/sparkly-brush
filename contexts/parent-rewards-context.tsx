@@ -4,6 +4,8 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import {
   loadParentRewards,
+  MAX_PARENT_REWARD_TITLE_LENGTH,
+  MAX_PARENT_REWARDS,
   parentRewardProgress,
   parentRewardProgressFromMetrics,
   saveParentRewards,
@@ -55,8 +57,8 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
     requirement: ParentRewardRequirement,
     target: number,
   ) => {
-    const cleanTitle = title.trim();
-    if (!cleanTitle || target < 1) return;
+    const cleanTitle = title.trim().slice(0, MAX_PARENT_REWARD_TITLE_LENGTH);
+    if (!cleanTitle || target < 1 || definitions.length >= MAX_PARENT_REWARDS) return;
     const next: ParentReward[] = [
       ...definitions,
       {

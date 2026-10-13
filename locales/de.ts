@@ -999,7 +999,7 @@ export const de = {
   "family.parent.fromToothbrush": "von der Zahnbürste",
   "family.parent.manualTimer": "manueller Timer",
   "family.parent.approximateSessions":
-    "{count} gespeicherte BLE-Sitzungen mit ungefährer Uhrzeit werden nicht für Kalender, Serien und tägliche Missionen gezählt.",
+    "{count} gespeicherte BLE-Sitzungen mit ungefährer Uhrzeit werden nicht für Wochenübersicht, Kalender, Serien und tägliche Missionen gezählt, zählen aber für XP und Münzen.",
   "family.parent.gameProgress": "Spielfortschritt",
   "family.parent.gameProgressDescription":
     "Level {level} · {sessions} vollständige Sitzungen · {badges}-Abzeichen freigeschaltet.",
@@ -1027,6 +1027,10 @@ export const de = {
   "family.parent.rewardProgress": "{progress}/{target}",
   "family.parent.deliverReward": "Belohnung {title} überreichen",
   "family.parent.removeReward": "Belohnung {title} entfernen",
+  "family.parent.removeRewardTitle": "Belohnung entfernen?",
+  "family.parent.removeRewardMessage": "„{title}“ wird aus den Familienbelohnungen entfernt.",
+  "family.parent.removeRewardAction": "Entfernen",
+  "family.parent.rewardLimit": "Höchstzahl von {max} Belohnungen erreicht. Zum Hinzufügen zuerst eine Belohnung entfernen.",
   "family.parent.noRewards": "Noch keine Familienbelohnungen eingerichtet.",
   "family.parent.settingsCardLabel": "Einstellungen öffnen",
   "family.parent.settingsTitle": "Geräusche, Musik und Vibration",

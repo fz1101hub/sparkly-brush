@@ -988,7 +988,7 @@ export const fr = {
   "family.parent.fromToothbrush": "de la brosse à dents",
   "family.parent.manualTimer": "minuteur manuel",
   "family.parent.approximateSessions":
-    "{count} séances BLE sauvegardées avec une heure approximative sont exclues du calendrier, des séries et des missions quotidiennes.",
+    "{count} séances BLE sauvegardées avec une heure approximative sont exclues du bilan de la semaine, du calendrier, des séries et des missions quotidiennes, mais comptent pour l’XP et les pièces.",
   "family.parent.gameProgress": "Progression du jeu",
   "family.parent.gameProgressDescription":
     "Niveau {level} · {sessions} séances complètes · {badges} badges débloqués.",
@@ -1014,6 +1014,10 @@ export const fr = {
   "family.parent.rewardProgress": "{progress}/{target}",
   "family.parent.deliverReward": "Remettre la récompense {title}",
   "family.parent.removeReward": "Supprimer la récompense {title}",
+  "family.parent.removeRewardTitle": "Supprimer la récompense ?",
+  "family.parent.removeRewardMessage": "« {title} » sera retirée des récompenses familiales.",
+  "family.parent.removeRewardAction": "Supprimer",
+  "family.parent.rewardLimit": "Vous avez atteint le maximum de {max} récompenses : supprimez-en une pour en ajouter une autre.",
   "family.parent.noRewards":
     "Aucune récompense familiale n'est encore configurée.",
   "family.parent.settingsCardLabel": "Ouvrir les paramètres",
