@@ -13,6 +13,7 @@ const ADDITIONAL_ROUTES = [
   { name: "parent", path: "/parent", title: "Area genitori" },
   { name: "settings", path: "/settings", title: "Impostazioni" },
   { name: "hardware-test", path: "/hardware-test", title: "Collaudo hardware" },
+  { name: "not-found", path: "/collegamento-inesistente", title: "Pagina non trovata" },
 ] as const;
 
 async function scan(page: Page, testInfo: TestInfo, name: string) {

@@ -12,6 +12,7 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useBack } from "@/hooks/use-back";
 import { useColors } from "@/hooks/use-colors";
 import {
   getBrushling,
@@ -28,6 +29,7 @@ import {
 export default function RewardsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const goBack = useBack();
   const { t, formatNumber } = useI18n();
   const { inventory, walletCoins } = useBrushling();
   return (
@@ -40,7 +42,8 @@ export default function RewardsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("game.rewards.backLabel")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [
               styles.backButton,
               pressed && styles.pressed,

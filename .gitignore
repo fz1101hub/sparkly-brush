@@ -72,5 +72,3 @@ Thumbs.db
 .webdev/
 .project-config.json
 
-# Manus runtime logs
-.manus-logs/

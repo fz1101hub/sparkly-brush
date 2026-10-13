@@ -22,6 +22,12 @@ export const itCore = {
   "recovery.restart": "{error}. Riavvia l’app senza cancellarne i dati.",
   "recovery.inProgressLabel": "Ripristino dei dati in corso",
   "recovery.inProgressTitle": "Ripristino protetto in corso",
+  "notFound.title": "Pagina non trovata",
+  "notFound.message": "Il collegamento che hai aperto non porta a nessuna schermata di Sparkly Brush.",
+  "notFound.action": "Torna a Oggi",
+  "notFound.actionLabel": "Torna alla schermata Oggi",
+  "common.actionFailedTitle": "Operazione non riuscita",
+  "common.actionFailedMessage": "Riprova tra poco. Se il problema continua, chiudi e riapri l’app.",
   "recovery.inProgressMessage":
     "Non chiudere l’app. Le modifiche torneranno disponibili tra pochi istanti.",
   "app.brand": "Brushlings",

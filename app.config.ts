@@ -29,15 +29,19 @@ const config: ExpoConfig = {
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
-  userInterfaceStyle: "light",
+  // The theme provider follows the system scheme on every platform; "light" would force
+  // Android to light while the splash plugin already makes iOS automatic.
+  userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
+    // Portrait only also on iPad: without full screen, iPadOS multitasking ignores the lock.
+    requireFullScreen: true,
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       CFBundleAllowMixedLocalizations: true,
-      NSBluetoothAlwaysUsageDescription:
-        "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
+      // NSBluetoothAlwaysUsageDescription comes from the react-native-ble-plx plugin below and
+      // is localized through `locales` (InfoPlist.strings) in the five supported languages.
     },
   },
   android: {
@@ -82,11 +86,12 @@ const config: ExpoConfig = {
     es: "./locales/native/es.json",
   },
   plugins: [
-    "expo-router",
+    // The generated /_sitemap route must not ship: unknown links land on +not-found instead.
+    ["expo-router", { sitemap: false }],
     "expo-asset",
     "expo-document-picker",
     "expo-font",
-    "expo-image",
+    "./plugins/with-android-orientation-compat",
     [
       "expo-localization",
       {
@@ -112,7 +117,9 @@ const config: ExpoConfig = {
       {
         isBackgroundEnabled: false,
         neverForLocation: true,
-        bluetoothAlwaysPermission: "Consenti a Sparkly Brush di collegarsi al Philips Sonicare for Kids.",
+        // English fallback; `locales` provides the translated InfoPlist.strings.
+        bluetoothAlwaysPermission:
+          "Sparkly Brush uses Bluetooth to connect to your Philips Sonicare for Kids toothbrush and record brushing sessions.",
       },
     ],
     [
@@ -123,7 +130,7 @@ const config: ExpoConfig = {
         resizeMode: "contain",
         backgroundColor: "#F7F9FF",
         dark: {
-          backgroundColor: "#F7F9FF",
+          backgroundColor: "#10162A",
         },
       },
     ],

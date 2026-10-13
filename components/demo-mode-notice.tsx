@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   title: { color: NOTICE_TEXT, fontSize: 13, lineHeight: 18, fontWeight: "900" },
   text: { color: NOTICE_MUTED, fontSize: 9, lineHeight: 14, marginTop: 1 },
   exit: {
-    minHeight: 34,
+    minHeight: 44,
     paddingHorizontal: 10,
     borderRadius: 12,
     backgroundColor: NOTICE_ACCENT,

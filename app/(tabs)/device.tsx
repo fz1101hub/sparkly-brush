@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
 import { confirmAction, confirmDestructive, showMessage } from "@/lib/dialogs";
@@ -18,6 +19,7 @@ export default function DeviceScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t, formatDate } = useI18n();
+  const runAction = useAsyncAction();
   const {
     status,
     statusMessage,
@@ -49,7 +51,7 @@ export default function DeviceScreen() {
       message: t("device.changeHandleMessage"),
       cancelLabel: t("common.cancel"),
       confirmLabel: t("device.changeHandleAction"),
-      onConfirm: () => void connect({ replaceHandle: true }),
+      onConfirm: () => runAction(connect({ replaceHandle: true })),
     });
   };
 
@@ -166,7 +168,7 @@ export default function DeviceScreen() {
                     : t("device.connectLabel")
                 }
                 accessibilityState={{ disabled: busy || demoMode, busy }}
-                onPress={connected ? () => void disconnect() : () => void connect()}
+                onPress={connected ? () => runAction(disconnect()) : () => runAction(connect())}
                 disabled={busy || demoMode}
                 style={({ pressed }) => [styles.primaryButton, connected && styles.disconnectButton, (busy || demoMode) && styles.disabled, pressed && styles.pressed]}
               >
@@ -192,7 +194,7 @@ export default function DeviceScreen() {
                 accessibilityState={{
                   disabled: !connected || demoMode || isForgettingToothbrush,
                 }}
-                onPress={() => void syncLatest()}
+                onPress={() => runAction(syncLatest())}
                 disabled={!connected || demoMode || isForgettingToothbrush}
                 style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode || isForgettingToothbrush) && styles.disabled, pressed && styles.pressed]}
               >
@@ -339,7 +341,8 @@ export default function DeviceScreen() {
                   accessibilityLabel={t("device.demoSwitchLabel")}
                   accessibilityState={{ checked: demoMode }}
                   aria-checked={demoMode}
-                  onPress={() => void setDemoMode(!demoMode)}
+                  hitSlop={8}
+                  onPress={() => runAction(setDemoMode(!demoMode))}
                   style={({ pressed }) => [
                     styles.demoToggle,
                     { backgroundColor: demoMode ? "#2E9B67" : "#C8CDD8" },
@@ -355,7 +358,7 @@ export default function DeviceScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t("device.demoMorningLabel")}
-                    onPress={() => void addDemoSession("morning")}
+                    onPress={() => runAction(addDemoSession("morning"))}
                     style={({ pressed }) => [
                       styles.demoAction,
                       pressed && styles.pressed,
@@ -374,7 +377,7 @@ export default function DeviceScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t("device.demoEveningLabel")}
-                    onPress={() => void addDemoSession("evening")}
+                    onPress={() => runAction(addDemoSession("evening"))}
                     style={({ pressed }) => [
                       styles.demoAction,
                       pressed && styles.pressed,
@@ -393,7 +396,7 @@ export default function DeviceScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t("device.demoWeekLabel")}
-                    onPress={() => void generateDemoWeek()}
+                    onPress={() => runAction(generateDemoWeek())}
                     style={({ pressed }) => [
                       styles.demoAction,
                       pressed && styles.pressed,
@@ -416,7 +419,7 @@ export default function DeviceScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t("device.demoClearLabel")}
-                    onPress={() => void clearDemoData()}
+                    onPress={() => runAction(clearDemoData())}
                     style={({ pressed }) => [
                       styles.demoAction,
                       pressed && styles.pressed,

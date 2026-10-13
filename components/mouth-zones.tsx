@@ -28,6 +28,7 @@ export function MouthZones({
   return (
     <View
       testID="mouth-zones-progress"
+      accessible
       accessibilityRole="progressbar"
       accessibilityLabel={t("mouthZones.progressLabel")}
       accessibilityHint={

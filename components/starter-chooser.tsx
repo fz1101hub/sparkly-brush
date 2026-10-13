@@ -5,11 +5,13 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { STARTER_IDS, getBrushling, type BrushlingId } from "@/lib/brushlings";
 
 export function StarterChooser() {
   const { selectedId, chooseStarter } = useBrushling();
   const { t } = useI18n();
+  const runAction = useAsyncAction();
   const [candidate, setCandidate] = useState<BrushlingId>(
     STARTER_IDS.includes(selectedId) ? selectedId : STARTER_IDS[0],
   );
@@ -97,7 +99,7 @@ export function StarterChooser() {
         accessibilityLabel={t("starter.confirmLabel", { name: chosen.name })}
         accessibilityState={{ disabled: saving, busy: saving }}
         disabled={saving}
-        onPress={() => void confirm()}
+        onPress={() => runAction(confirm())}
         style={({ pressed }) => [
           styles.confirmButton,
           { backgroundColor: chosen.textAccent },

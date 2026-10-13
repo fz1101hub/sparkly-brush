@@ -18,12 +18,14 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useBack } from "@/hooks/use-back";
 import { useColors } from "@/hooks/use-colors";
 import { localizeAchievement, localizeDailyMission } from "@/lib/missions";
 
 export default function MissionsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const goBack = useBack();
   const { t, formatNumber } = useI18n();
   const { missionCenter, walletCoins } = useBrushling();
   const today = missionCenter.today;
@@ -46,7 +48,8 @@ export default function MissionsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("game.missions.backLabel")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [
               styles.backButton,
               pressed && styles.pressed,

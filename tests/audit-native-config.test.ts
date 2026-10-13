@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import config from "../app.config";
+import nativeEnglish from "../locales/native/en.json";
 
 function pluginOptions(name: string): Record<string, unknown> {
   const plugin = config.plugins?.find(
@@ -23,6 +24,34 @@ describe("native permission configuration", () => {
     expect(pluginOptions("react-native-ble-plx")).toMatchObject({
       neverForLocation: true,
     });
+  });
+
+  it("describes the Bluetooth permission once, through the BLE plugin, with the English fallback", () => {
+    expect(config.ios?.infoPlist).not.toHaveProperty("NSBluetoothAlwaysUsageDescription");
+    expect(pluginOptions("react-native-ble-plx").bluetoothAlwaysPermission).toBe(
+      nativeEnglish.ios.NSBluetoothAlwaysUsageDescription,
+    );
+    for (const locale of ["it", "en", "de", "fr", "es"]) {
+      expect(config.locales).toHaveProperty(locale, `./locales/native/${locale}.json`);
+    }
+  });
+
+  it("follows the system colour scheme on both platforms with a matching dark splash", () => {
+    expect(config.userInterfaceStyle).toBe("automatic");
+    const splash = pluginOptions("expo-splash-screen") as { backgroundColor: string; dark: { backgroundColor: string } };
+    expect(splash.dark.backgroundColor).not.toBe(splash.backgroundColor);
+  });
+
+  it("keeps portrait on iPad and large Android screens and ships no sitemap route", () => {
+    expect(config.orientation).toBe("portrait");
+    expect(config.ios?.requireFullScreen).toBe(true);
+    expect(config.plugins).toContain("./plugins/with-android-orientation-compat");
+    expect(pluginOptions("expo-router")).toMatchObject({ sitemap: false });
+  });
+
+  it("lists only plugins whose packages the app uses", () => {
+    const names = (config.plugins ?? []).map((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin));
+    expect(names).not.toContain("expo-image");
   });
 
   it("does not enable Expo audio background playback", () => {

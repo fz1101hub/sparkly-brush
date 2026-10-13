@@ -12,6 +12,7 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import {
   BRUSHLINGS,
@@ -26,6 +27,7 @@ export default function CollectionScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t, formatNumber } = useI18n();
+  const runAction = useAsyncAction();
   const {
     selectedId,
     selected,
@@ -347,7 +349,7 @@ export default function CollectionScreen() {
                         })
                   }
                   disabled={!unlocked || isSelected}
-                  onPress={() => void selectBrushling(creature.id)}
+                  onPress={() => runAction(selectBrushling(creature.id))}
                   style={({ pressed }) => [
                     styles.selectButton,
                     {
@@ -517,7 +519,7 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     width: "100%",
-    minHeight: 40,
+    minHeight: 44,
     marginTop: 10,
     borderWidth: 1,
     borderRadius: 14,

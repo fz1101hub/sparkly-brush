@@ -19,6 +19,7 @@ import {
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { BrushSession } from "@/lib/brush-types";
 import { confirmDestructive } from "@/lib/dialogs";
@@ -26,16 +27,25 @@ import { confirmDestructive } from "@/lib/dialogs";
 export default function HistoryScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { history, clearAllHistory, demoMode, setDemoMode } = useBrush();
+  const { history, lifetimeProgress, clearAllHistory, demoMode, setDemoMode } = useBrush();
   const { settlePurchasesAfterHistoryReset } = useBrushling();
   const { t, formatDate, formatNumber } = useI18n();
-  const completed = history.filter((session) => session.completed).length;
-  const average = history.length
-    ? Math.round(
-        history.reduce((total, session) => total + session.durationSeconds, 0) /
-          history.length,
-      )
-    : 0;
+  const runAction = useAsyncAction();
+  // The list holds only the most recent sessions; the totals come from the lifetime record,
+  // except in demo mode where the simulated history is the whole story.
+  const totals = demoMode || lifetimeProgress.attemptedSessions < history.length
+    ? {
+        sessions: history.length,
+        completed: history.filter((session) => session.completed).length,
+        brushingSeconds: history.reduce((total, session) => total + session.durationSeconds, 0),
+      }
+    : {
+        sessions: lifetimeProgress.attemptedSessions,
+        completed: lifetimeProgress.completedSessions,
+        brushingSeconds: lifetimeProgress.totalBrushingSeconds,
+      };
+  const completed = totals.completed;
+  const average = totals.sessions ? Math.round(totals.brushingSeconds / totals.sessions) : 0;
 
   const formatDuration = (seconds: number) =>
     t("family.history.duration", {
@@ -146,7 +156,7 @@ export default function HistoryScreen() {
               eyebrow={t("family.history.progressEyebrow")}
               title={t("family.history.title")}
             />
-            {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
+            {demoMode ? <DemoModeNotice onExit={() => runAction(setDemoMode(false))} /> : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("family.history.parentCardLabel")}
@@ -189,7 +199,7 @@ export default function HistoryScreen() {
                 style={[styles.summaryCard, { backgroundColor: "#E7EEFF" }]}
               >
                 <Text testID="history-recent-sessions" style={[styles.summaryValue, { color: "#173F9F" }]}>
-                  {formatNumber(history.length)}
+                  {formatNumber(totals.sessions)}
                 </Text>
                 <Text
                   style={[styles.summaryLabel, { color: LIGHT_CARD_MUTED }]}

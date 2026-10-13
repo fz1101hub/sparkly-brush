@@ -4,14 +4,18 @@ import { Animated, Modal, Platform, Pressable, StyleSheet, Text, View } from "re
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
 import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { usePreferences } from "@/contexts/preferences-context";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getBrushling } from "@/lib/brushlings";
 
 export function OnboardingOverlay() {
   const { preferences, ready, completeOnboarding } = usePreferences();
   const { t } = useI18n();
+  const runAction = useAsyncAction();
   const [index, setIndex] = useState(0);
   const [fade] = useState(() => new Animated.Value(1));
+  const reducedMotion = useReducedMotion();
   const bloopi = getBrushling("bloopi");
   const slides = [
     {
@@ -41,9 +45,13 @@ export function OnboardingOverlay() {
   ];
 
   useEffect(() => {
+    if (reducedMotion) {
+      fade.setValue(1);
+      return;
+    }
     fade.setValue(0);
     Animated.timing(fade, { toValue: 1, duration: 280, useNativeDriver: Platform.OS !== "web" }).start();
-  }, [fade, index]);
+  }, [fade, index, reducedMotion]);
 
   if (!ready || preferences.onboardingCompleted) return null;
   const slide = slides[index];
@@ -111,7 +119,7 @@ export function OnboardingOverlay() {
               )}
               onPress={() =>
                 finalSlide
-                  ? void completeOnboarding()
+                  ? runAction(completeOnboarding())
                   : setIndex((value) => value + 1)
               }
               style={({ pressed }) => [

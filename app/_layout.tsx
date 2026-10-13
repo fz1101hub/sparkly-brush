@@ -1,19 +1,14 @@
 import "@/global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { ActivityIndicator, BackHandler, Platform, StyleSheet, Text, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
-import {
-  SafeAreaFrameContext,
-  SafeAreaInsetsContext,
-  SafeAreaProvider,
-  initialWindowMetrics,
-} from "react-native-safe-area-context";
-import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
+import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BrushProvider } from "@/contexts/brush-context";
@@ -24,7 +19,7 @@ import { AppLocaleProvider } from "@/contexts/app-locale-provider";
 import { useI18n } from "@/contexts/locale-context";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
-import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -89,37 +84,20 @@ const recoveryStyles = StyleSheet.create({
   },
 });
 
+function ThemedStatusBar() {
+  const colorScheme = useColorScheme();
+  return <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />;
+}
+
 export default function RootLayout() {
-  const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
-  const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
-
-  const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
-  const [frame, setFrame] = useState<Rect>(initialFrame);
-
-  // Initialize Manus runtime for cookie injection from parent container
-  useEffect(() => {
-    initManusRuntime();
-  }, []);
-
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     document.title = "Sparkly Brush";
   }, []);
 
-  const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
-    setInsets(metrics.insets);
-    setFrame(metrics.frame);
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const unsubscribe = subscribeSafeAreaInsets(handleSafeAreaUpdate);
-    return () => unsubscribe();
-  }, [handleSafeAreaUpdate]);
-
-  // Ensure minimum 8px padding for top and bottom on mobile
+  // Ensure minimum padding for top and bottom on mobile before the first native measurement.
   const providerInitialMetrics = useMemo(() => {
-    const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
+    const metrics = initialWindowMetrics ?? { insets: DEFAULT_WEB_INSETS, frame: DEFAULT_WEB_FRAME };
     return {
       ...metrics,
       insets: {
@@ -128,7 +106,7 @@ export default function RootLayout() {
         bottom: Math.max(metrics.insets.bottom, 12),
       },
     };
-  }, [initialInsets, initialFrame]);
+  }, []);
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -144,7 +122,7 @@ export default function RootLayout() {
                     </Stack>
                     <OnboardingOverlay />
                     <RestoreOperationOverlay />
-                    <StatusBar style="dark" />
+                    <ThemedStatusBar />
                   </ParentRewardsProvider>
                 </BrushlingProvider>
               </AudioFeedbackProvider>
@@ -154,22 +132,6 @@ export default function RootLayout() {
       </PreferencesProvider>
     </GestureHandlerRootView>
   );
-
-  const shouldOverrideSafeArea = Platform.OS === "web";
-
-  if (shouldOverrideSafeArea) {
-    return (
-      <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>
-          <SafeAreaFrameContext.Provider value={frame}>
-            <SafeAreaInsetsContext.Provider value={insets}>
-              {content}
-            </SafeAreaInsetsContext.Provider>
-          </SafeAreaFrameContext.Provider>
-        </SafeAreaProvider>
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider>

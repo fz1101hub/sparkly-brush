@@ -290,4 +290,21 @@ test.describe("percorso funzionale web", () => {
     await page.reload();
     await expect(page.getByRole("radio", { name: "Sistema" })).toBeChecked();
   });
+
+  test("un collegamento sconosciuto mostra la pagina non trovata tradotta e riporta a Oggi", async ({ page }) => {
+    await completeFirstRun(page);
+
+    await page.goto("/collegamento-inesistente");
+    const notFound = page.getByTestId("not-found-screen");
+    await expect(notFound).toBeVisible();
+    await expect(notFound).toContainText("Pagina non trovata");
+    await expect(page.getByText("Unmatched Route")).toHaveCount(0);
+
+    await page.getByTestId("not-found-home").click();
+    await expect(page.getByTestId("today-screen")).toBeVisible();
+
+    // The expo-router sitemap is disabled: it must not leak the route list.
+    await page.goto("/_sitemap");
+    await expect(page.getByTestId("not-found-screen")).toBeVisible();
+  });
 });

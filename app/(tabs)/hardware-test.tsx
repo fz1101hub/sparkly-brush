@@ -1,6 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Constants from "expo-constants";
-import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -21,6 +20,8 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import {
   createHardwareValidationRun,
@@ -73,8 +74,9 @@ function newRun(): HardwareValidationRun {
 
 export default function HardwareTestScreen() {
   const colors = useColors();
-  const router = useRouter();
+  const goBack = useBack();
   const { t } = useI18n();
+  const runAction = useAsyncAction();
   const {
     status,
     adapterState,
@@ -350,7 +352,8 @@ export default function HardwareTestScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t("hardware.backLabel")}
-                onPress={() => router.back()}
+                hitSlop={4}
+                onPress={goBack}
                 style={({ pressed }) => [
                   styles.backButton,
                   { backgroundColor: colors.surface },
@@ -531,7 +534,7 @@ export default function HardwareTestScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t("hardware.shareReportLabel")}
-                onPress={() => void shareReport()}
+                onPress={() => runAction(shareReport())}
                 disabled={!run || busy}
                 style={({ pressed }) => [
                   styles.primaryButton,
@@ -694,7 +697,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   retryButton: {
-    minHeight: 34,
+    minHeight: 44,
     borderRadius: 11,
     backgroundColor: "#9A7200",
     paddingHorizontal: 10,
@@ -775,7 +778,7 @@ const styles = StyleSheet.create({
   statusGrid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   statusButton: {
     width: "48%",
-    minHeight: 39,
+    minHeight: 44,
     borderRadius: 13,
     borderWidth: 1,
     flexDirection: "row",

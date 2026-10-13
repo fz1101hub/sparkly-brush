@@ -10,6 +10,7 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
+import { announce } from "@/lib/announce";
 import { getBrushling, getEvolution } from "@/lib/brushlings";
 import {
   celebrationShowsSelectedCreature,
@@ -26,6 +27,7 @@ export function SessionRewardModal() {
 
   useEffect(() => {
     if (!reward) return;
+    announce(t(reward.completed ? "sessionReward.completedLabel" : "sessionReward.interruptedLabel"));
     if (reward.completed) playSuccess();
     if (!preferences.hapticsEnabled || Platform.OS === "web") return;
     void Haptics.notificationAsync(
@@ -33,7 +35,7 @@ export function SessionRewardModal() {
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Warning,
     );
-  }, [playSuccess, preferences.hapticsEnabled, reward]);
+  }, [playSuccess, preferences.hapticsEnabled, reward, t]);
 
   if (!reward) return null;
 

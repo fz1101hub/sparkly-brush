@@ -52,6 +52,11 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Scansione BLE avviata: cerco un altro manico": "brush.client.scanStartedReplace",
   "Trovato un altro manico: ignorato finché non cambi manico": "brush.client.otherHandleIgnored",
   "Manico già abbinato ignorato: accendi il nuovo manico": "brush.client.pairedHandleIgnored",
+  "Operazione Bluetooth scaduta: riprova": "brush.client.operationTimedOut",
+  "Connessione allo spazzolino non riuscita: riprova": "brush.client.connectionFailedRetry",
+  "Impossibile avviare la scansione Bluetooth: riprova tra poco": "brush.client.scanStartFailed",
+  "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth":
+    "brush.client.locationServicesDisabled",
   "Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse":
     "brush.client.historyCountUnavailable",
   "Conteggio storico BLE non disponibile: il reset non può essere verificato":

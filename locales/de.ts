@@ -25,6 +25,12 @@ export const de = {
     "{error}. Starte die App neu, ohne ihre Daten zu löschen.",
   "recovery.inProgressLabel": "Daten werden gerade wiederhergestellt",
   "recovery.inProgressTitle": "Sichere Wiederherstellung läuft",
+  "notFound.title": "Seite nicht gefunden",
+  "notFound.message": "Der geöffnete Link führt zu keiner Ansicht von Sparkly Brush.",
+  "notFound.action": "Zurück zu Heute",
+  "notFound.actionLabel": "Zurück zur Ansicht Heute",
+  "common.actionFailedTitle": "Aktion fehlgeschlagen",
+  "common.actionFailedMessage": "Versuch es gleich noch einmal. Bleibt das Problem, schließe die App und öffne sie erneut.",
   "recovery.inProgressMessage":
     "Schließe die App nicht. Die Änderungen sind gleich wieder verfügbar.",
   "app.brand": "Brushlings",
@@ -1038,6 +1044,9 @@ export const de = {
   "family.parent.removeRewardTitle": "Belohnung entfernen?",
   "family.parent.removeRewardMessage": "„{title}“ wird aus den Familienbelohnungen entfernt.",
   "family.parent.removeRewardAction": "Entfernen",
+  "family.parent.deliverConfirmTitle": "Als übergeben markieren?",
+  "family.parent.deliverConfirmMessage": "Hast du „{title}“ wirklich übergeben? Die Belohnung bleibt als übergeben in der Liste.",
+  "family.parent.deliverConfirmAction": "Als übergeben markieren",
   "family.parent.rewardLimit": "Höchstzahl von {max} Belohnungen erreicht. Zum Hinzufügen zuerst eine Belohnung entfernen.",
   "family.parent.noRewards": "Noch keine Familienbelohnungen eingerichtet.",
   "family.parent.settingsCardLabel": "Einstellungen öffnen",
@@ -1123,6 +1132,10 @@ export const de = {
   "brush.client.scanStartedReplace": "BLE-Suche gestartet: Suche einen anderen Handgriff",
   "brush.client.otherHandleIgnored": "Anderer Handgriff gefunden: ignoriert, bis du den Handgriff wechselst",
   "brush.client.pairedHandleIgnored": "Bereits gekoppelter Handgriff ignoriert: Schalte den neuen Handgriff ein",
+  "brush.client.operationTimedOut": "Bluetooth-Vorgang abgelaufen: Versuch es erneut",
+  "brush.client.connectionFailedRetry": "Verbindung zur Zahnbürste fehlgeschlagen: Versuch es erneut",
+  "brush.client.scanStartFailed": "Bluetooth-Suche konnte nicht gestartet werden: Versuch es gleich noch einmal",
+  "brush.client.locationServicesDisabled": "Schalte den Standort in den Android-Einstellungen ein: Er ist für die Bluetooth-Suche nötig",
   "brush.client.locationPermissionRequired":
     "Für die Bluetooth-Suche ist die Standortberechtigung erforderlich",
   "brush.client.connectionInProgress":

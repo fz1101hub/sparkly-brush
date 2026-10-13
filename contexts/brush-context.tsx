@@ -999,3 +999,8 @@ export function useBrush(): BrushContextValue {
   if (!value) throw new Error("useBrush deve essere usato dentro BrushProvider");
   return value;
 }
+
+/** For components that also render outside BrushProvider, such as the header in tests. */
+export function useOptionalBrush(): BrushContextValue | null {
+  return useContext(BrushContext);
+}

@@ -24,6 +24,12 @@ export const fr = {
   "recovery.restart": "{error}. Redémarre l’app sans effacer ses données.",
   "recovery.inProgressLabel": "Restauration des données en cours",
   "recovery.inProgressTitle": "Restauration protégée en cours",
+  "notFound.title": "Page introuvable",
+  "notFound.message": "Le lien que tu as ouvert ne mène à aucun écran de Sparkly Brush.",
+  "notFound.action": "Retour à Aujourd’hui",
+  "notFound.actionLabel": "Revenir à l’écran Aujourd’hui",
+  "common.actionFailedTitle": "Action impossible",
+  "common.actionFailedMessage": "Réessaie dans un instant. Si le problème persiste, ferme puis rouvre l’app.",
   "recovery.inProgressMessage":
     "Ne fermez pas l’application. Les modifications seront disponibles d’ici quelques instants.",
   "app.brand": "Brushlings",
@@ -1025,6 +1031,9 @@ export const fr = {
   "family.parent.removeRewardTitle": "Supprimer la récompense ?",
   "family.parent.removeRewardMessage": "« {title} » sera retirée des récompenses familiales.",
   "family.parent.removeRewardAction": "Supprimer",
+  "family.parent.deliverConfirmTitle": "Marquer comme remis ?",
+  "family.parent.deliverConfirmMessage": "Confirmes-tu avoir remis « {title} » ? La récompense restera dans la liste comme remise.",
+  "family.parent.deliverConfirmAction": "Marquer comme remis",
   "family.parent.rewardLimit": "Vous avez atteint le maximum de {max} récompenses : supprimez-en une pour en ajouter une autre.",
   "family.parent.noRewards":
     "Aucune récompense familiale n'est encore configurée.",
@@ -1109,6 +1118,10 @@ export const fr = {
   "brush.client.scanStartedReplace": "Recherche BLE démarrée : je cherche un autre manche",
   "brush.client.otherHandleIgnored": "Un autre manche a été trouvé : ignoré tant que tu ne changes pas de manche",
   "brush.client.pairedHandleIgnored": "Manche déjà associé ignoré : allume le nouveau manche",
+  "brush.client.operationTimedOut": "Opération Bluetooth expirée : réessaie",
+  "brush.client.connectionFailedRetry": "Connexion à la brosse à dents impossible : réessaie",
+  "brush.client.scanStartFailed": "Impossible de lancer la recherche Bluetooth : réessaie dans un instant",
+  "brush.client.locationServicesDisabled": "Active la localisation dans les réglages Android : elle est nécessaire à la recherche Bluetooth",
   "brush.client.locationPermissionRequired":
     "L’autorisation de localisation est nécessaire pour la recherche Bluetooth",
   "brush.client.connectionInProgress":

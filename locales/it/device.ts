@@ -449,6 +449,10 @@ export const itDevice = {
   "brush.client.scanStartedReplace": "Scansione BLE avviata: cerco un altro manico",
   "brush.client.otherHandleIgnored": "Trovato un altro manico: ignorato finché non cambi manico",
   "brush.client.pairedHandleIgnored": "Manico già abbinato ignorato: accendi il nuovo manico",
+  "brush.client.operationTimedOut": "Operazione Bluetooth scaduta: riprova",
+  "brush.client.connectionFailedRetry": "Connessione allo spazzolino non riuscita: riprova",
+  "brush.client.scanStartFailed": "Impossibile avviare la scansione Bluetooth: riprova tra poco",
+  "brush.client.locationServicesDisabled": "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth",
   "brush.client.locationPermissionRequired":
     "Autorizzazione alla posizione necessaria per la scansione Bluetooth",
   "brush.client.connectionInProgress": "Connessione Bluetooth già in corso",

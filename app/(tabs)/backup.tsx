@@ -1,5 +1,4 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -11,6 +10,8 @@ import { useI18n } from "@/contexts/locale-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { usePreferences } from "@/contexts/preferences-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import {
   translateDynamic,
@@ -83,8 +84,9 @@ function formatBytes(
 
 export default function BackupScreen() {
   const colors = useColors();
-  const router = useRouter();
+  const goBack = useBack();
   const { t, formatDate, formatNumber } = useI18n();
+  const runAction = useAsyncAction();
   const {
     lifetimeProgress,
     historyReady,
@@ -331,7 +333,8 @@ export default function BackupScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("backup.backLabel")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
@@ -378,7 +381,7 @@ export default function BackupScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => void setDemoMode(false)}
+              onPress={() => runAction(setDemoMode(false))}
               style={({ pressed }) => [
                 styles.demoWarningButton,
                 pressed && styles.pressed,
@@ -455,7 +458,7 @@ export default function BackupScreen() {
                 demoMode || busy || !backupReady || !nativeBackupAvailable,
               busy,
             }}
-            onPress={() => void shareBackup()}
+            onPress={() => runAction(shareBackup())}
             disabled={demoMode || busy || !backupReady || !nativeBackupAvailable}
             style={({ pressed }) => [styles.primaryButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
           >
@@ -499,7 +502,7 @@ export default function BackupScreen() {
             disabled={
               demoMode || busy || !backupReady || !nativeBackupAvailable
             }
-            onPress={() => void pickBackupFile()}
+            onPress={() => runAction(pickBackupFile())}
             style={({ pressed }) => [styles.checkButton, (demoMode || busy || !backupReady || !nativeBackupAvailable) && styles.disabled, pressed && styles.pressed]}
           >
             <MaterialIcons name="folder-open" size={20} color="#FFFFFF" />
@@ -571,7 +574,7 @@ export default function BackupScreen() {
                     warning={t("backup.replaceCompleteWarning")}
                     disabled={busy || !backupReady}
                     onCancel={() => setPendingRestore(null)}
-                    onConfirm={() => void restoreFile()}
+                    onConfirm={() => runAction(restoreFile())}
                   />
                 ) : null}
               </View>
@@ -688,7 +691,7 @@ export default function BackupScreen() {
                     warning={t("backup.replaceWarning")}
                     disabled={busy || !backupReady}
                     onCancel={() => setPendingRestore(null)}
-                    onConfirm={() => void restoreLegacy()}
+                    onConfirm={() => runAction(restoreLegacy())}
                   />
                 ) : null}
               </View>
@@ -857,7 +860,7 @@ const styles = StyleSheet.create({
   demoWarningCopy: { flex: 1 },
   demoWarningTitle: { fontSize: 12, lineHeight: 17, fontWeight: "900" },
   demoWarningText: { fontSize: 9, lineHeight: 14, marginTop: 2 },
-  demoWarningButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 12, backgroundColor: GOLD_BUTTON_BACKGROUND, alignItems: "center", justifyContent: "center" },
+  demoWarningButton: { minHeight: 44, paddingHorizontal: 10, borderRadius: 12, backgroundColor: GOLD_BUTTON_BACKGROUND, alignItems: "center", justifyContent: "center" },
   demoWarningButtonText: { color: "#FFFFFF", fontSize: 9, lineHeight: 13, fontWeight: "900" },
   messageCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
   messageText: { flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },

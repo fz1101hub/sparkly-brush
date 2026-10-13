@@ -1,5 +1,4 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -14,6 +13,8 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import {
   CUSTOMIZATION_ITEMS,
@@ -53,8 +54,9 @@ const CATEGORY_KEYS: Record<
 
 export default function HabitatScreen() {
   const colors = useColors();
-  const router = useRouter();
+  const goBack = useBack();
   const { t, formatNumber } = useI18n();
+  const runAction = useAsyncAction();
   const {
     selected,
     stats,
@@ -112,7 +114,8 @@ export default function HabitatScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("game.habitat.backLabel")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [
               styles.backButton,
               pressed && styles.pressed,
@@ -308,7 +311,7 @@ export default function HabitatScreen() {
                         { action: buttonText, name: localizedItem.name },
                       )}
                       disabled={equipped}
-                      onPress={() => void handleItem(item)}
+                      onPress={() => runAction(handleItem(item))}
                       style={({ pressed }) => [
                         styles.itemButton,
                         {
@@ -471,7 +474,7 @@ const styles = StyleSheet.create({
   costRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   cost: { fontSize: 11, lineHeight: 15, fontWeight: "900" },
   itemButton: {
-    minHeight: 40,
+    minHeight: 44,
     marginTop: 8,
     borderRadius: 14,
     borderWidth: 1,

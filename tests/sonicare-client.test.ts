@@ -145,6 +145,8 @@ class FakeManager {
   autoScanResult = true;
   // When set, the scan reports these peripherals in order instead of a fresh Kids handle.
   scanDevices: FakeDevice[] | null = null;
+  // When set, the scan fails immediately with this react-native-ble-plx error.
+  scanError: (Error & { errorCode?: number }) | null = null;
   deferConnect = false;
   releaseConnect: (() => void) | null = null;
   adapterState = "PoweredOn";
@@ -169,6 +171,10 @@ class FakeManager {
     this.stateListeners.forEach((listener) => listener(state));
   }
   startDeviceScan = vi.fn((_uuids, _options, callback) => {
+    if (this.scanError) {
+      callback(this.scanError, null);
+      return;
+    }
     if (this.scanDevices) {
       for (const advertised of this.scanDevices) {
         this.devices.push(advertised);
@@ -825,5 +831,32 @@ describe("abbinamento al manico", () => {
     expect(lamp.connect).not.toHaveBeenCalled();
     expect(deviceUpdates.at(-1)).toMatchObject({ id: "kids-brush" });
     expect(events.onLog).not.toHaveBeenCalledWith("warning", expect.stringContaining("ignorato"));
+  });
+});
+
+describe("errori react-native-ble-plx", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("traduce il codice 601 (Localizzazione spenta su Android ≤ 11) in un messaggio dell'app", async () => {
+    const manager = new FakeManager();
+    manager.scanError = Object.assign(new Error("Location services are disabled"), { errorCode: 601 });
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await expect(client.scanAndConnect()).rejects.toThrow("Location services are disabled");
+
+    const expected = "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth";
+    expect(events.onStatus).toHaveBeenLastCalledWith("error", expected);
+    expect(events.onLog).toHaveBeenCalledWith("error", expected);
+  });
+
+  it("lascia intatti i messaggi senza codice noto", async () => {
+    const manager = new FakeManager();
+    manager.scanError = Object.assign(new Error("Scan failed"), { errorCode: 9999 });
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await expect(client.scanAndConnect()).rejects.toThrow("Scan failed");
+    expect(events.onStatus).toHaveBeenLastCalledWith("error", "Scan failed");
   });
 });

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 
 export function AnimatedBrushling({
@@ -16,9 +17,11 @@ export function AnimatedBrushling({
   active: boolean;
 }) {
   const [bounce] = useState(() => new Animated.Value(0));
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!active) {
+    // The bounce is a decorative loop: keep the creature still when motion is reduced.
+    if (!active || reducedMotion) {
       bounce.stopAnimation();
       bounce.setValue(0);
       return;
@@ -43,7 +46,7 @@ export function AnimatedBrushling({
 
     loop.start();
     return () => loop.stop();
-  }, [active, bounce]);
+  }, [active, bounce, reducedMotion]);
 
   const translateY = bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
   const rotate = bounce.interpolate({ inputRange: [0, 0.5, 1], outputRange: ["-1deg", "1deg", "-1deg"] });

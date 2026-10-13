@@ -24,6 +24,12 @@ export const en = {
   "recovery.restart": "{error}. Restart the app without deleting its data.",
   "recovery.inProgressLabel": "Data restoration in progress",
   "recovery.inProgressTitle": "Protected restoration in progress",
+  "notFound.title": "Page not found",
+  "notFound.message": "The link you opened does not lead to any Sparkly Brush screen.",
+  "notFound.action": "Back to Today",
+  "notFound.actionLabel": "Go back to the Today screen",
+  "common.actionFailedTitle": "Something went wrong",
+  "common.actionFailedMessage": "Try again shortly. If the problem continues, close and reopen the app.",
   "recovery.inProgressMessage":
     "Do not close the app. Your changes will be available again in a moment.",
   "app.brand": "Brushlings",
@@ -1010,6 +1016,9 @@ export const en = {
   "family.parent.removeRewardTitle": "Delete this reward?",
   "family.parent.removeRewardMessage": "“{title}” will be removed from the family rewards.",
   "family.parent.removeRewardAction": "Delete",
+  "family.parent.deliverConfirmTitle": "Mark as delivered?",
+  "family.parent.deliverConfirmMessage": "Confirm you have delivered “{title}”? The reward stays in the list as delivered.",
+  "family.parent.deliverConfirmAction": "Mark delivered",
   "family.parent.rewardLimit": "You have reached the maximum of {max} rewards: delete one to add another.",
   "family.parent.noRewards": "No family rewards set up yet.",
   "family.parent.settingsCardLabel": "Open settings",
@@ -1090,6 +1099,10 @@ export const en = {
   "brush.client.scanStartedReplace": "BLE scan started: looking for another handle",
   "brush.client.otherHandleIgnored": "Another handle found: ignored until you change handle",
   "brush.client.pairedHandleIgnored": "Already paired handle ignored: turn on the new handle",
+  "brush.client.operationTimedOut": "Bluetooth operation timed out: try again",
+  "brush.client.connectionFailedRetry": "Could not connect to the toothbrush: try again",
+  "brush.client.scanStartFailed": "Could not start the Bluetooth scan: try again shortly",
+  "brush.client.locationServicesDisabled": "Turn on Location in Android settings: it is required for Bluetooth scanning",
   "brush.client.locationPermissionRequired":
     "Location permission is required for Bluetooth scanning",
   "brush.client.connectionInProgress":

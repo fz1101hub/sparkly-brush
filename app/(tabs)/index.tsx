@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -15,8 +16,10 @@ import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
+import { announce } from "@/lib/announce";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
 import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
 import { sameLocalDay } from "@/lib/day-progress";
@@ -38,6 +41,7 @@ export default function TodayScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t } = useI18n();
+  const runAction = useAsyncAction();
   const {
     selected,
     stats,
@@ -93,6 +97,13 @@ export default function TodayScreen() {
     t("timer.zone.lowerLeft"),
     t("timer.zone.lowerRight"),
   ];
+  const activeZoneName = zoneNames[activeZone] ?? zoneNames[0];
+
+  // Screen readers hear the zone to brush each time the guided timer moves on.
+  useEffect(() => {
+    if (!isActive) return;
+    announce(t("home.timer.activeZonePrompt", { zone: activeZoneName }));
+  }, [activeZoneName, isActive, t]);
 
   if (!profileReady) {
     return (
@@ -164,7 +175,7 @@ export default function TodayScreen() {
           connected={!demoMode && status === "connected"}
         />
 
-        {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
+        {demoMode ? <DemoModeNotice onExit={() => runAction(setDemoMode(false))} /> : null}
 
         <View
           style={[
@@ -195,6 +206,7 @@ export default function TodayScreen() {
                 : selected.tagline}
             </Text>
             <View
+              accessible
               accessibilityRole="progressbar"
               accessibilityLabel={t("home.companion.levelProgressLabel", {
                 level: stats.level,
@@ -264,6 +276,7 @@ export default function TodayScreen() {
               <Text style={[styles.familyRewardTitle, { color: PASTEL_FOREGROUND }]}>{familyReward.title}</Text>
               <View style={styles.familyRewardProgressRow}>
                 <View
+                  accessible
                   accessibilityRole="progressbar"
                   accessibilityLabel={t("home.familyReward.progressLabel", {
                     title: familyReward.title,
@@ -326,7 +339,7 @@ export default function TodayScreen() {
               accessibilityLabel={t("home.device.connectLabel")}
               accessibilityState={{ disabled: connecting, busy: connecting }}
               disabled={connecting}
-              onPress={() => void connect()}
+              onPress={() => runAction(connect())}
               style={({ pressed }) => [styles.smallButton, pressed && styles.pressed, connecting && styles.disabled]}
             >
               <Text style={styles.smallButtonText}>
@@ -366,9 +379,7 @@ export default function TodayScreen() {
 
           <Text style={[styles.zonePrompt, { color: colors.foreground }]}>
             {isActive
-              ? t("home.timer.activeZonePrompt", {
-                  zone: zoneNames[activeZone] ?? zoneNames[0],
-                })
+              ? t("home.timer.activeZonePrompt", { zone: activeZoneName })
               : t("home.timer.inactiveZonePrompt")}
           </Text>
           <MouthZones activeZone={activeZone} isActive={isActive} />
@@ -385,7 +396,7 @@ export default function TodayScreen() {
               disabled: liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession,
               busy: isSavingManualSession,
             }}
-            onPress={manualActive ? () => void stopManual() : startManual}
+            onPress={manualActive ? () => runAction(stopManual()) : startManual}
             disabled={liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession}
             style={({ pressed }) => [
               styles.primaryButton,
@@ -429,7 +440,7 @@ export default function TodayScreen() {
               accessibilityRole="button"
               accessibilityLabel={t("home.saveError.retryLabel")}
               disabled={isSavingManualSession}
-              onPress={() => void retryManualSession()}
+              onPress={() => runAction(retryManualSession())}
               style={({ pressed }) => [styles.retryButton, isSavingManualSession && styles.disabled, pressed && styles.pressed]}
             >
               <Text style={styles.retryButtonText}>
@@ -666,7 +677,7 @@ const styles = StyleSheet.create({
   saveErrorCopy: { flex: 1 },
   saveErrorTitle: { color: "#B42318", fontSize: 13, lineHeight: 18, fontWeight: "900" },
   saveErrorText: { color: "#7A271A", fontSize: 10, lineHeight: 15, marginTop: 2 },
-  retryButton: { minHeight: 38, borderRadius: 13, backgroundColor: "#B42318", paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
+  retryButton: { minHeight: 44, borderRadius: 13, backgroundColor: "#B42318", paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
   retryButtonText: { color: "#FFFFFF", fontSize: 11, lineHeight: 15, fontWeight: "900" },
   pressed: { opacity: 0.86, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.55 },

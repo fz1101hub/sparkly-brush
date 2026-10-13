@@ -15,6 +15,8 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      // Hidden screens (habitat, backup, settings…) go back to where they were opened from.
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,

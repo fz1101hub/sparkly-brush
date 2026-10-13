@@ -27,6 +27,7 @@ export function TimerRing({ elapsed, target, active }: TimerRingProps) {
   return (
     <View
       testID="manual-timer"
+      accessible
       accessibilityRole="progressbar"
       accessibilityLabel={t("timerRing.label", {
         elapsed: formatTime(elapsed),

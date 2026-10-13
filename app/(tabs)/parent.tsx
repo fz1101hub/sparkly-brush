@@ -22,10 +22,12 @@ import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { computeParentDashboard } from "@/lib/parent-dashboard";
-import { confirmDestructive } from "@/lib/dialogs";
+import { confirmAction, confirmDestructive } from "@/lib/dialogs";
 import {
   MAX_PARENT_REWARD_TITLE_LENGTH,
   MAX_PARENT_REWARDS,
@@ -65,7 +67,9 @@ const REQUIREMENTS = [
 export default function ParentDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
+  const goBack = useBack();
   const { t, formatDate, formatNumber } = useI18n();
+  const runAction = useAsyncAction();
   const { history, demoMode, setDemoMode } = useBrush();
   const { stats, missionCenter } = useBrushling();
   const { rewards, addReward, removeReward, markDelivered } =
@@ -97,13 +101,22 @@ export default function ParentDashboardScreen() {
     await addReward(rewardTitle, requirement, parsedTarget);
     setRewardTitle("");
   };
+  const confirmDeliverReward = (id: string, title: string) => {
+    confirmAction({
+      title: t("family.parent.deliverConfirmTitle"),
+      message: t("family.parent.deliverConfirmMessage", { title }),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("family.parent.deliverConfirmAction"),
+      onConfirm: () => runAction(markDelivered(id)),
+    });
+  };
   const confirmRemoveReward = (id: string, title: string) => {
     confirmDestructive({
       title: t("family.parent.removeRewardTitle"),
       message: t("family.parent.removeRewardMessage", { title }),
       cancelLabel: t("common.cancel"),
       confirmLabel: t("family.parent.removeRewardAction"),
-      onConfirm: () => void removeReward(id),
+      onConfirm: () => runAction(removeReward(id)),
     });
   };
 
@@ -117,7 +130,8 @@ export default function ParentDashboardScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("common.back")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [
               styles.backButton,
               pressed && styles.pressed,
@@ -138,7 +152,7 @@ export default function ParentDashboardScreen() {
           </View>
         </View>
 
-        {demoMode ? <DemoModeNotice onExit={() => void setDemoMode(false)} /> : null}
+        {demoMode ? <DemoModeNotice onExit={() => runAction(setDemoMode(false))} /> : null}
 
         <View
           style={[
@@ -487,7 +501,7 @@ export default function ParentDashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel={t("family.parent.addReward")}
             disabled={!rewardTitle.trim() || rewardLimitReached}
-            onPress={() => void createReward()}
+            onPress={() => runAction(createReward())}
             style={({ pressed }) => [
               styles.addRewardButton,
               (!rewardTitle.trim() || rewardLimitReached) && styles.disabled,
@@ -599,8 +613,7 @@ export default function ParentDashboardScreen() {
                         title: reward.title,
                       })}
                       disabled={demoMode}
-                      hitSlop={6}
-                      onPress={() => void markDelivered(reward.id)}
+                      onPress={() => confirmDeliverReward(reward.id, reward.title)}
                       style={({ pressed }) => [
                         styles.deliverButton,
                         demoMode && styles.disabled,
@@ -615,7 +628,6 @@ export default function ParentDashboardScreen() {
                     accessibilityLabel={t("family.parent.removeReward", {
                       title: reward.title,
                     })}
-                    hitSlop={6}
                     onPress={() => confirmRemoveReward(reward.id, reward.title)}
                     style={({ pressed }) => [
                       styles.removeButton,
@@ -866,19 +878,19 @@ const styles = StyleSheet.create({
   rewardTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   rewardMeta: { fontSize: 9, lineHeight: 14, marginTop: 2 },
   rewardState: { fontSize: 9, lineHeight: 14, fontWeight: "900", marginTop: 3 },
-  rewardActions: { flexDirection: "row", alignItems: "center", gap: 5 },
+  rewardActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   deliverButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: "#17633F",
     alignItems: "center",
     justifyContent: "center",
   },
   removeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: "#FFF0F2",
     alignItems: "center",
     justifyContent: "center",

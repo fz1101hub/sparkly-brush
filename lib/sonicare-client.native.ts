@@ -71,6 +71,25 @@ function isCharacteristicNotFoundError(error: unknown): boolean {
   );
 }
 
+// react-native-ble-plx reports these with English messages; the codes are stable across platforms.
+const BLE_ERROR_MESSAGES: Record<number, string> = {
+  2: "Connessione Bluetooth annullata",
+  3: "Operazione Bluetooth scaduta: riprova",
+  100: "Bluetooth non supportato da questo dispositivo",
+  101: "Autorizzazione Bluetooth non concessa",
+  102: "Bluetooth spento: attivalo e riprova",
+  200: "Connessione allo spazzolino non riuscita: riprova",
+  201: "Spazzolino disconnesso",
+  600: "Impossibile avviare la scansione Bluetooth: riprova tra poco",
+  601: "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth",
+};
+
+export function describeBleError(error: unknown): string | null {
+  if (typeof error !== "object" || error === null || !("errorCode" in error)) return null;
+  const code = (error as { errorCode?: unknown }).errorCode;
+  return typeof code === "number" ? (BLE_ERROR_MESSAGES[code] ?? null) : null;
+}
+
 function isSonicare(device: Device): boolean {
   const name = `${device.name ?? ""} ${device.localName ?? ""}`.toLowerCase();
   if (name.includes("sonicare")) return true;
@@ -338,7 +357,8 @@ export class NativeSonicareClient implements SonicareClient {
       this.managerInstance?.stopDeviceScan();
       await this.resetConnection(candidate);
       if (operationGeneration !== this.operationGeneration || this.destroyed) return;
-      const message = error instanceof Error ? error.message : "Errore Bluetooth sconosciuto";
+      const message = describeBleError(error)
+        ?? (error instanceof Error ? error.message : "Errore Bluetooth sconosciuto");
       this.events.onStatus("error", message);
       this.events.onLog("error", message);
       throw error;

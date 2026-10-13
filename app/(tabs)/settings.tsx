@@ -1,5 +1,4 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import {
   Pressable,
   ScrollView,
@@ -18,6 +17,8 @@ import {
 } from "@/constants/accessibility-colors";
 import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { LanguagePreference } from "@/lib/locale-types";
 
@@ -41,9 +42,10 @@ const LANGUAGE_OPTIONS = [
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const router = useRouter();
+  const goBack = useBack();
   const { preferences, setPreference } = usePreferences();
   const { languagePreference, setLanguagePreference, t } = useI18n();
+  const runAction = useAsyncAction();
 
   const rows = [
     {
@@ -76,7 +78,8 @@ export default function SettingsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("common.back")}
-            onPress={() => router.back()}
+            hitSlop={4}
+            onPress={goBack}
             style={({ pressed }) => [styles.back, pressed && styles.pressed]}
           >
             <MaterialIcons
@@ -138,7 +141,7 @@ export default function SettingsScreen() {
                   accessibilityLabel={label}
                   accessibilityState={{ checked: selected }}
                   aria-checked={selected}
-                  onPress={() => void setLanguagePreference(value)}
+                  onPress={() => runAction(setLanguagePreference(value))}
                   style={({ pressed }) => [
                     styles.languageOption,
                     {
@@ -196,7 +199,7 @@ export default function SettingsScreen() {
                 <Switch
                   accessibilityLabel={row.title}
                   value={preferences[row.key]}
-                  onValueChange={(value) => void setPreference(row.key, value)}
+                  onValueChange={(value) => runAction(setPreference(row.key, value))}
                   trackColor={{ false: "#D3D7E0", true: "#9EC0FF" }}
                   thumbColor={preferences[row.key] ? "#2457D6" : "#F5F5F5"}
                 />
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   languageOption: {
-    minHeight: 42,
+    minHeight: 44,
     borderWidth: 1,
     borderRadius: 14,
     flexDirection: "row",
