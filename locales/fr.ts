@@ -1056,7 +1056,7 @@ export const fr = {
   "brush.client.found": "{name} trouvé",
   "brush.client.servicesFound": "{count} {count|service GATT détecté|services GATT détectés}",
   "brush.client.ready": "Sonicare est prête",
-  "brush.client.connected": "Connexion établie : GATT HX63xx ouvert",
+  "brush.client.connected": "Connexion établie : GATT Sonicare ouvert",
   "brush.client.handleState": "État du manche : {state}",
   "brush.client.notificationUnavailable": "Notification indisponible : {code}",
   "brush.client.disconnected": "Brosse à dents déconnectée",
@@ -1089,6 +1089,9 @@ export const fr = {
   "brush.client.diagnostic": "Mise à jour du diagnostic Bluetooth",
   "brush.client.permissionDenied":
     "L’autorisation Bluetooth n’a pas été accordée",
+  "brush.client.poweredOff": "Bluetooth désactivé : active-le et réessaie",
+  "brush.client.bluetoothUnsupported": "Cet appareil ne prend pas en charge le Bluetooth",
+  "brush.client.adapterNotReady": "Bluetooth pas prêt : vérifie qu’il est activé et autorisé",
   "brush.client.locationPermissionRequired":
     "L’autorisation de localisation est nécessaire pour la recherche Bluetooth",
   "brush.client.connectionInProgress":

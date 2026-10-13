@@ -398,7 +398,7 @@ export const itDevice = {
   "brush.client.found": "Trovato {name}",
   "brush.client.servicesFound": "{count} {count|servizio GATT rilevato|servizi GATT rilevati}",
   "brush.client.ready": "Sonicare pronto",
-  "brush.client.connected": "Connessione completata: GATT aperto HX63xx",
+  "brush.client.connected": "Connessione completata: GATT Sonicare aperto",
   "brush.client.handleState": "Stato manico: {state}",
   "brush.client.notificationUnavailable": "Notifica non disponibile: {code}",
   "brush.client.disconnected": "Spazzolino disconnesso",
@@ -429,6 +429,9 @@ export const itDevice = {
   "brush.client.connectionFailed": "Connessione Bluetooth non riuscita",
   "brush.client.diagnostic": "Aggiornamento diagnostica Bluetooth",
   "brush.client.permissionDenied": "Autorizzazione Bluetooth non concessa",
+  "brush.client.poweredOff": "Bluetooth spento: attivalo e riprova",
+  "brush.client.bluetoothUnsupported": "Bluetooth non supportato da questo dispositivo",
+  "brush.client.adapterNotReady": "Bluetooth non pronto: controlla che sia acceso e autorizzato",
   "brush.client.locationPermissionRequired":
     "Autorizzazione alla posizione necessaria per la scansione Bluetooth",
   "brush.client.connectionInProgress": "Connessione Bluetooth già in corso",

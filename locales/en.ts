@@ -1040,7 +1040,7 @@ export const en = {
   "brush.client.found": "Found {name}",
   "brush.client.servicesFound": "{count} GATT {count|service|services} found",
   "brush.client.ready": "Sonicare ready",
-  "brush.client.connected": "Connected: HX63xx GATT open",
+  "brush.client.connected": "Connected: Sonicare GATT open",
   "brush.client.handleState": "Handle status: {state}",
   "brush.client.notificationUnavailable": "Notification unavailable: {code}",
   "brush.client.disconnected": "Toothbrush disconnected",
@@ -1070,6 +1070,9 @@ export const en = {
   "brush.client.connectionFailed": "Bluetooth connection failed",
   "brush.client.diagnostic": "Bluetooth diagnostic update",
   "brush.client.permissionDenied": "Bluetooth permission was not granted",
+  "brush.client.poweredOff": "Bluetooth is off: turn it on and try again",
+  "brush.client.bluetoothUnsupported": "This device does not support Bluetooth",
+  "brush.client.adapterNotReady": "Bluetooth is not ready: check that it is on and allowed",
   "brush.client.locationPermissionRequired":
     "Location permission is required for Bluetooth scanning",
   "brush.client.connectionInProgress":

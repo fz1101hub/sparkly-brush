@@ -12,6 +12,8 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("react-native-ble-plx", () => ({ BleManager: class {} }));
 
+import { Platform } from "react-native";
+
 import type { BleClientEvents, ToothbrushDevice } from "@/lib/brush-types";
 import { NativeSonicareClient } from "@/lib/sonicare-client.native";
 import { SONICARE } from "@/lib/sonicare-uuids";
@@ -143,14 +145,27 @@ class FakeManager {
   autoScanResult = true;
   deferConnect = false;
   releaseConnect: (() => void) | null = null;
+  adapterState = "PoweredOn";
   adapterSubscription = new FakeSubscription();
+  stateListeners: ((state: string) => void)[] = [];
+  stateSubscriptions: FakeSubscription[] = [];
   stopDeviceScan = vi.fn();
   cancelTransaction = vi.fn(async () => undefined);
   destroy = vi.fn();
-  onStateChange = vi.fn((callback: (state: string) => void) => {
-    callback("PoweredOn");
-    return this.adapterSubscription;
+  // Like react-native-ble-plx: one subscription per listener, current state on request.
+  onStateChange = vi.fn((callback: (state: string) => void, emitCurrentState?: boolean) => {
+    const subscription = this.stateSubscriptions.length === 0
+      ? this.adapterSubscription
+      : new FakeSubscription();
+    this.stateSubscriptions.push(subscription);
+    this.stateListeners.push(callback);
+    if (emitCurrentState) callback(this.adapterState);
+    return subscription;
   });
+  emitState(state: string) {
+    this.adapterState = state;
+    this.stateListeners.forEach((listener) => listener(state));
+  }
   startDeviceScan = vi.fn((_uuids, _options, callback) => {
     const device = new FakeDevice();
     if (this.failServicesCount > 0) {
@@ -633,5 +648,78 @@ describe("NativeSonicareClient", () => {
     expect(first.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     expect(second.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
+  });
+
+  describe("permesso Bluetooth e stato dell'adattatore", () => {
+    it("su iOS crea il BleManager solo al primo collegamento, non all'avvio", async () => {
+      const manager = new FakeManager();
+      const factory = vi.fn(() => manager as never);
+      const { events } = createEvents();
+      const client = new NativeSonicareClient(events, factory);
+
+      await client.initialize();
+      expect(factory).not.toHaveBeenCalled();
+
+      await client.scanAndConnect();
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(events.onAdapterState).toHaveBeenCalledWith("PoweredOn");
+      client.destroy();
+      expect(manager.destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it("chiudendo l'app senza collegarsi non crea mai il BleManager", () => {
+      const factory = vi.fn(() => new FakeManager() as never);
+      const client = new NativeSonicareClient(createEvents().events, factory);
+      void client.initialize();
+      client.destroy();
+      expect(factory).not.toHaveBeenCalled();
+    });
+
+    it("su Android mostra lo stato dell'adattatore fin dall'avvio", async () => {
+      const previous = Platform.OS;
+      Platform.OS = "android";
+      try {
+        const factory = vi.fn(() => new FakeManager() as never);
+        const { events } = createEvents();
+        const client = new NativeSonicareClient(events, factory);
+        await client.initialize();
+        expect(factory).toHaveBeenCalledTimes(1);
+        expect(events.onAdapterState).toHaveBeenCalledWith("PoweredOn");
+        client.destroy();
+      } finally {
+        Platform.OS = previous;
+      }
+    });
+
+    it("attende che il Bluetooth sia pronto prima di cercare lo spazzolino", async () => {
+      const manager = new FakeManager();
+      manager.adapterState = "Unknown";
+      const client = new NativeSonicareClient(createEvents().events, manager as never);
+
+      const connecting = client.scanAndConnect();
+      await Promise.resolve();
+      expect(manager.startDeviceScan).not.toHaveBeenCalled();
+
+      manager.emitState("PoweredOn");
+      await connecting;
+      expect(manager.startDeviceScan).toHaveBeenCalledTimes(1);
+      client.destroy();
+    });
+
+    it.each([
+      ["PoweredOff", "Bluetooth spento: attivalo e riprova"],
+      ["Unauthorized", "Autorizzazione Bluetooth non concessa"],
+      ["Unsupported", "Bluetooth non supportato da questo dispositivo"],
+    ])("con adattatore %s spiega il motivo senza avviare la scansione", async (state, message) => {
+      const manager = new FakeManager();
+      manager.adapterState = state;
+      const { events } = createEvents();
+      const client = new NativeSonicareClient(events, manager as never);
+
+      await expect(client.scanAndConnect()).rejects.toThrow(message);
+      expect(manager.startDeviceScan).not.toHaveBeenCalled();
+      expect(events.onStatus).toHaveBeenLastCalledWith("error", message);
+      client.destroy();
+    });
   });
 });

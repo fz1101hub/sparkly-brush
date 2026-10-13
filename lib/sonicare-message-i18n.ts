@@ -8,6 +8,7 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Connessione e lettura dei servizi": "brush.client.connecting",
   "Sonicare pronto": "brush.client.ready",
   "Connessione completata: GATT aperto HX63xx": "brush.client.connected",
+  "Connessione completata: GATT Sonicare aperto": "brush.client.connected",
   "Spazzolino disconnesso": "brush.client.disconnected",
   "Connessione Bluetooth terminata": "brush.client.connectionEnded",
   "Conteggio storico BLE non disponibile; sincronizzazione prudente":
@@ -31,6 +32,9 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Sincronizzazione disponibile solo su iOS e Android":
     "brush.client.syncNativeOnly",
   "Autorizzazione Bluetooth non concessa": "brush.client.permissionDenied",
+  "Bluetooth spento: attivalo e riprova": "brush.client.poweredOff",
+  "Bluetooth non supportato da questo dispositivo": "brush.client.bluetoothUnsupported",
+  "Bluetooth non pronto: controlla che sia acceso e autorizzato": "brush.client.adapterNotReady",
   "Autorizzazione posizione necessaria per la scansione BLE":
     "brush.client.locationPermissionRequired",
   "Connessione Bluetooth già in corso": "brush.client.connectionInProgress",

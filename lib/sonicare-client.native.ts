@@ -30,6 +30,8 @@ const MAX_SYNC_BATCH = 128;
 // The handle loads a selected record asynchronously: right after the selection a slow handle can
 // still expose the previous record. Re-read with growing waits before failing the batch closed.
 const RECORD_LOAD_DELAYS_MS = [180, 360, 720] as const;
+// Includes the time a parent needs to answer the iOS Bluetooth permission prompt.
+const ADAPTER_READY_TIMEOUT_MS = 30_000;
 
 function bytesFromBase64(value?: string | null): Uint8Array {
   if (!value) return new Uint8Array();
@@ -77,7 +79,9 @@ function isSonicare(device: Device): boolean {
 }
 
 export class NativeSonicareClient implements SonicareClient {
-  private readonly manager: BleManager;
+  private managerInstance: BleManager | null;
+  private readonly createManager: () => BleManager;
+  private adapterStateRequested = false;
   private readonly events: BleClientEvents;
   private device: Device | null = null;
   private deviceInfo: import("@/lib/brush-types").ToothbrushDevice | null = null;
@@ -94,17 +98,68 @@ export class NativeSonicareClient implements SonicareClient {
   private destroyed = false;
   private live: BrushLiveData = { ...DEFAULT_LIVE_DATA };
 
-  constructor(events: BleClientEvents, manager: BleManager = new BleManager()) {
+  constructor(events: BleClientEvents, manager?: BleManager | (() => BleManager)) {
     this.events = events;
-    this.manager = manager;
+    this.managerInstance = typeof manager === "function" ? null : manager ?? null;
+    this.createManager = typeof manager === "function" ? manager : () => new BleManager();
+  }
+
+  /**
+   * Created on first use: on iOS creating the central manager immediately shows the Bluetooth
+   * permission prompt, so it must wait for the first explicit Bluetooth action.
+   */
+  private get manager(): BleManager {
+    if (!this.managerInstance) {
+      if (this.destroyed) throw new Error("Client Bluetooth non disponibile");
+      this.managerInstance = this.createManager();
+      if (this.adapterStateRequested) this.subscribeAdapterState(this.managerInstance);
+    }
+    return this.managerInstance;
   }
 
   async initialize(): Promise<void> {
+    this.adapterStateRequested = true;
+    // Android asks for Bluetooth permissions explicitly in scanAndConnect, so the adapter state
+    // can be shown from launch; on iOS it appears with the first connection attempt.
+    if (Platform.OS === "ios" && !this.managerInstance) return;
+    this.subscribeAdapterState(this.manager);
+  }
+
+  private subscribeAdapterState(manager: BleManager): void {
     this.adapterSubscription?.remove();
-    this.adapterSubscription = this.manager.onStateChange((state) => {
+    this.adapterSubscription = manager.onStateChange((state) => {
       this.events.onAdapterState(state);
       this.events.onLog("info", `Bluetooth: ${state}`);
     }, true);
+  }
+
+  /** Resolves once the adapter is usable; scanning while it is still "Unknown" fails on iOS. */
+  private waitForPoweredOn(): Promise<void> {
+    const manager = this.manager;
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let subscription: Subscription | null = null;
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        subscription?.remove();
+        if (error) reject(error);
+        else resolve();
+      };
+      const timeout = setTimeout(
+        () => finish(new Error("Bluetooth non pronto: controlla che sia acceso e autorizzato")),
+        ADAPTER_READY_TIMEOUT_MS,
+      );
+      subscription = manager.onStateChange((state) => {
+        if (state === "PoweredOn") finish();
+        else if (state === "PoweredOff") finish(new Error("Bluetooth spento: attivalo e riprova"));
+        else if (state === "Unauthorized") finish(new Error("Autorizzazione Bluetooth non concessa"));
+        else if (state === "Unsupported") finish(new Error("Bluetooth non supportato da questo dispositivo"));
+      }, true);
+      // onStateChange may report the current state before returning its subscription.
+      if (settled) subscription.remove();
+    });
   }
 
   private async requestPermissions(): Promise<void> {
@@ -144,6 +199,8 @@ export class NativeSonicareClient implements SonicareClient {
     try {
       await this.resetConnection();
       await guard(this.requestPermissions());
+      this.assertOperation(operationGeneration);
+      await guard(this.waitForPoweredOn());
       this.assertOperation(operationGeneration);
       this.events.onStatus("scanning", "Accendi lo spazzolino e tienilo vicino");
       this.events.onLog("info", "Scansione BLE avviata (Sonicare4Kids)");
@@ -241,7 +298,7 @@ export class NativeSonicareClient implements SonicareClient {
       this.events.onStatus("connected", "Sonicare pronto");
       this.events.onLog("success", "Connessione completata: GATT Sonicare aperto");
     } catch (error) {
-      this.manager.stopDeviceScan();
+      this.managerInstance?.stopDeviceScan();
       await this.resetConnection(candidate);
       if (operationGeneration !== this.operationGeneration || this.destroyed) return;
       const message = error instanceof Error ? error.message : "Errore Bluetooth sconosciuto";
@@ -355,7 +412,7 @@ export class NativeSonicareClient implements SonicareClient {
 
   private cancelSyncTransactions(): void {
     for (const transactionId of this.syncTransactions) {
-      void this.manager.cancelTransaction(transactionId).catch(() => undefined);
+      void this.managerInstance?.cancelTransaction(transactionId).catch(() => undefined);
     }
     this.syncTransactions.clear();
   }
@@ -641,7 +698,7 @@ export class NativeSonicareClient implements SonicareClient {
     this.operationGeneration += 1;
     this.cancelScan?.();
     this.cancelOperation?.();
-    this.manager.stopDeviceScan();
+    this.managerInstance?.stopDeviceScan();
     await this.resetConnection();
     this.events.onStatus("idle", "Disconnesso");
   }
@@ -651,7 +708,7 @@ export class NativeSonicareClient implements SonicareClient {
     this.operationGeneration += 1;
     this.cancelScan?.();
     this.cancelOperation?.();
-    this.manager.stopDeviceScan();
+    this.managerInstance?.stopDeviceScan();
     this.connectionGeneration += 1;
     this.cancelSyncTransactions();
     this.clearConnectionSubscriptions();
@@ -660,8 +717,10 @@ export class NativeSonicareClient implements SonicareClient {
     void this.device?.cancelConnection().catch(() => undefined);
     this.device = null;
     this.deviceInfo = null;
+    const manager = this.managerInstance;
+    if (!manager) return;
     try {
-      const result = this.manager.destroy() as unknown;
+      const result = manager.destroy() as unknown;
       if (result && typeof (result as PromiseLike<void>).then === "function") {
         void Promise.resolve(result).catch(() => undefined);
       }
