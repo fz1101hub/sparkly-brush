@@ -39,6 +39,31 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByTestId("history-session-0")).toContainText("0:05");
   });
 
+  test("svuota lo storico sul web solo dopo la conferma", async ({ page }) => {
+    await completeFirstRun(page);
+    await page.getByTestId("manual-start-stop").click();
+    await expect(page.getByTestId("session-reward-modal")).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("session-reward-dismiss").click();
+
+    await page.getByTestId("tab-history").click();
+    await expect(page.getByTestId("history-session-0")).toBeVisible();
+
+    page.once("dialog", (dialog) => void dialog.dismiss());
+    await page.getByTestId("history-clear").click();
+    await expect(page.getByTestId("history-session-0")).toBeVisible();
+
+    page.once("dialog", (dialog) => {
+      expect(dialog.type()).toBe("confirm");
+      void dialog.accept();
+    });
+    await page.getByTestId("history-clear").click();
+    await expect(page.getByText("Il viaggio inizia qui")).toBeVisible();
+    await expect(page.getByTestId("history-session-0")).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByText("Il viaggio inizia qui")).toBeVisible();
+  });
+
   test("rende raggiungibile la chiusura della ricompensa su schermo compatto", async ({
     page,
   }) => {

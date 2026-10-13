@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -8,6 +8,7 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
+import { confirmDestructive, showMessage } from "@/lib/dialogs";
 import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
 
 const LIGHT_CARD_FOREGROUND = "#17213A";
@@ -40,23 +41,22 @@ export default function DeviceScreen() {
   const busy = status === "scanning" || status === "connecting" || isForgettingToothbrush;
 
   const confirmForgetToothbrush = () => {
-    Alert.alert(t("device.forgetAlertTitle"), t("device.forgetAlertMessage"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("device.forgetAction"),
-        style: "destructive",
-        onPress: () =>
-          void forgetToothbrush().catch((error: unknown) => {
-            const detail = error instanceof Error ? error.message : "";
-            Alert.alert(
-              t("device.forgetFailureTitle"),
-              isKnownSonicareMessage(detail)
-                ? localizeSonicareMessage(detail, t)
-                : t("device.retryLater"),
-            );
-          }),
-      },
-    ]);
+    confirmDestructive({
+      title: t("device.forgetAlertTitle"),
+      message: t("device.forgetAlertMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.forgetAction"),
+      onConfirm: () =>
+        void forgetToothbrush().catch((error: unknown) => {
+          const detail = error instanceof Error ? error.message : "";
+          showMessage(
+            t("device.forgetFailureTitle"),
+            isKnownSonicareMessage(detail)
+              ? localizeSonicareMessage(detail, t)
+              : t("device.retryLater"),
+          );
+        }),
+    });
   };
 
   const renderLog = ({ item }: { item: DiagnosticLog }) => {

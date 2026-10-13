@@ -1,7 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import {
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -21,6 +20,7 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { BrushSession } from "@/lib/brush-types";
+import { confirmDestructive } from "@/lib/dialogs";
 
 export default function HistoryScreen() {
   const colors = useColors();
@@ -50,18 +50,13 @@ export default function HistoryScreen() {
     });
 
   const confirmClear = () => {
-    Alert.alert(
-      t("family.history.clearTitle"),
-      t("family.history.clearMessage"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("family.history.clearAction"),
-          style: "destructive",
-          onPress: () => void clearAllHistory(),
-        },
-      ],
-    );
+    confirmDestructive({
+      title: t("family.history.clearTitle"),
+      message: t("family.history.clearMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("family.history.clearAction"),
+      onConfirm: () => void clearAllHistory(),
+    });
   };
 
   const renderItem = ({
@@ -227,6 +222,7 @@ export default function HistoryScreen() {
                   {t("family.history.lastSessions")}
                 </Text>
                 <Pressable
+                  testID="history-clear"
                   accessibilityRole="button"
                   accessibilityLabel={t("family.history.clearButtonLabel")}
                   onPress={confirmClear}
