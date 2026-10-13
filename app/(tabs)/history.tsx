@@ -17,6 +17,7 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
+import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { BrushSession } from "@/lib/brush-types";
@@ -26,6 +27,7 @@ export default function HistoryScreen() {
   const colors = useColors();
   const router = useRouter();
   const { history, clearAllHistory, demoMode, setDemoMode } = useBrush();
+  const { settlePurchasesAfterHistoryReset } = useBrushling();
   const { t, formatDate, formatNumber } = useI18n();
   const completed = history.filter((session) => session.completed).length;
   const average = history.length
@@ -55,7 +57,13 @@ export default function HistoryScreen() {
       message: t("family.history.clearMessage"),
       cancelLabel: t("common.cancel"),
       confirmLabel: t("family.history.clearAction"),
-      onConfirm: () => void clearAllHistory(),
+      onConfirm: () => {
+        void (async () => {
+          // Clear first: an interruption must never leave settled prices with the old earnings.
+          await clearAllHistory();
+          if (!demoMode) await settlePurchasesAfterHistoryReset();
+        })();
+      },
     });
   };
 

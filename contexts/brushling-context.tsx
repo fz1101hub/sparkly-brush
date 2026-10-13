@@ -40,6 +40,7 @@ import {
   availableCoins,
   equipCustomization as equipCustomizationState,
   purchaseCustomization as purchaseCustomizationState,
+  settlePurchasesAfterHistoryReset as settlePurchasesState,
   type CustomizationItemId,
   type CustomizationState,
 } from "@/lib/customization";
@@ -83,6 +84,8 @@ type BrushlingContextValue = {
   buyCustomization: (id: CustomizationItemId) => Promise<PurchaseResult>;
   equipCustomization: (id: CustomizationItemId) => Promise<boolean>;
   restoreFromBackup: (profile: BrushlingProfile, customization: CustomizationState) => Promise<void>;
+  /** Call after clearing the real history: keeps owned items, wallet restarts from zero. */
+  settlePurchasesAfterHistoryReset: () => Promise<void>;
   setRestoreInProgress: (active: boolean) => void;
   dismissReward: () => void;
 };
@@ -263,6 +266,13 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     await restoreBrushlingState(profile, restoredCustomization);
   }, []);
 
+  const settlePurchasesAfterHistoryReset = useCallback(async () => {
+    if (demoMode) return;
+    const next = settlePurchasesState(customization);
+    setCustomization(next);
+    await saveCustomizationState(next);
+  }, [customization, demoMode]);
+
   const dismissReward = useCallback(() => {
     setReward(null);
     setDiscovery(null);
@@ -289,6 +299,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     buyCustomization,
     equipCustomization,
     restoreFromBackup,
+    settlePurchasesAfterHistoryReset,
     setRestoreInProgress,
     dismissReward,
   }), [
@@ -308,6 +319,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     reward,
     selectBrushling,
     selectedId,
+    settlePurchasesAfterHistoryReset,
     stats,
     totalEarnedCoins,
     walletCoins,

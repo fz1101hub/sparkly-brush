@@ -943,7 +943,7 @@ export const fr = {
   "game.reward.fantastic": "Fantastique !",
   "family.history.clearTitle": "Supprimer l'historique ?",
   "family.history.clearMessage":
-    "Les sessions enregistrées sur ce téléphone seront supprimées.",
+    "Les sessions enregistrées sur ce téléphone seront supprimées : niveau, XP, pièces, missions et créatures débloquées repartiront de zéro. Les objets déjà achetés sont conservés.",
   "family.history.clearAction": "Supprimer",
   "family.history.clearButtonLabel": "Vider l'historique",
   "family.history.sessionComplete": "Session complète",

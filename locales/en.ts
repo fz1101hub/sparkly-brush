@@ -928,7 +928,7 @@ export const en = {
 
   "family.history.clearTitle": "Delete history?",
   "family.history.clearMessage":
-    "Sessions saved on this phone will be removed.",
+    "Sessions saved on this phone will be removed: level, XP, coins, missions and unlocked creatures will start again from zero. Items already bought are kept.",
   "family.history.clearAction": "Delete",
   "family.history.clearButtonLabel": "Clear history",
   "family.history.sessionComplete": "Complete session",

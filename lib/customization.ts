@@ -261,6 +261,20 @@ export function availableCoins(totalEarnedCoins: number, state: CustomizationSta
   return Math.max(0, totalEarnedCoins - spentCoins(state));
 }
 
+/**
+ * Clearing the history also clears every coin it earned. Items already bought stay owned, but
+ * their price no longer counts against future earnings: otherwise the wallet would show 0 while
+ * new sessions silently repaid the old purchases. Entries are kept (price 0) because a missing
+ * entry is re-created at full price by normalizePurchaseLedger.
+ */
+export function settlePurchasesAfterHistoryReset(state: CustomizationState): CustomizationState {
+  return {
+    ...state,
+    purchaseLedger: normalizePurchaseLedger(state.purchaseLedger, state.ownedIds)
+      .map((purchase) => ({ ...purchase, pricePaid: 0 })),
+  };
+}
+
 export function purchaseCustomization(
   state: CustomizationState,
   itemId: CustomizationItemId,

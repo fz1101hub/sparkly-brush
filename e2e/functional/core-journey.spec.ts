@@ -64,6 +64,42 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByText("Il viaggio inizia qui")).toBeVisible();
   });
 
+  test("dopo Svuota storico conserva gli acquisti e il portafoglio riparte senza debito", async ({
+    page,
+  }) => {
+    const completeSession = async () => {
+      await page.goto("/");
+      await page.getByTestId("manual-start-stop").click();
+      await expect(page.getByTestId("session-reward-modal")).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("session-reward-dismiss").click();
+    };
+    // The wallet reads 0 until the reloaded page has hydrated history and progress.
+    const readWallet = async () => Number.parseInt(
+      (await page.getByTestId("habitat-wallet-value").innerText()).replace(/\D/g, ""),
+      10,
+    );
+    test.setTimeout(120_000);
+
+    await completeFirstRun(page);
+    await completeSession();
+    await completeSession();
+    await page.goto("/habitat");
+    await expect.poll(readWallet, { timeout: 15_000 }).toBeGreaterThanOrEqual(28);
+    const beforePurchase = await readWallet();
+    await page.getByTestId("habitat-item-fresh-garden").click();
+    await expect(page.getByTestId("habitat-wallet-value")).toHaveText(`${beforePurchase - 28} monete sorriso`);
+
+    await page.goto("/history");
+    page.once("dialog", (dialog) => void dialog.accept());
+    await page.getByTestId("history-clear").click();
+    await expect(page.getByText("Il viaggio inizia qui")).toBeVisible();
+
+    await completeSession();
+    await page.goto("/habitat");
+    await expect.poll(readWallet, { timeout: 15_000 }).toBeGreaterThanOrEqual(12);
+    await expect(page.getByTestId("habitat-item-fresh-garden")).toHaveAccessibleName(/^Equipaggiat/);
+  });
+
   test("rende raggiungibile la chiusura della ricompensa su schermo compatto", async ({
     page,
   }) => {

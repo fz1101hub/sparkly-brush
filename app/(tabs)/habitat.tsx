@@ -152,6 +152,7 @@ export default function HabitatScreen() {
               {t("game.habitat.wallet")}
             </Text>
             <Text
+              testID="habitat-wallet-value"
               style={[styles.walletValue, { color: LIGHT_CARD_FOREGROUND }]}
             >
               {t("game.habitat.walletValue", {
@@ -300,6 +301,7 @@ export default function HabitatScreen() {
                       )}
                     </View>
                     <Pressable
+                      testID={`habitat-item-${item.id}`}
                       accessibilityRole="button"
                       accessibilityLabel={t(
                         "game.habitat.customizationAction",

@@ -1,7 +1,7 @@
 export const itFamily = {
   "family.history.clearTitle": "Eliminare lo storico?",
   "family.history.clearMessage":
-    "Le sessioni salvate su questo telefono verranno rimosse.",
+    "Le sessioni salvate su questo telefono verranno rimosse: livello, XP, monete, missioni e creature sbloccate ripartiranno da zero. Gli oggetti già acquistati restano.",
   "family.history.clearAction": "Elimina",
   "family.history.clearButtonLabel": "Svuota lo storico",
   "family.history.sessionComplete": "Sessione completa",
