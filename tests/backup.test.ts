@@ -9,7 +9,7 @@ import {
 } from "@/lib/backup";
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
 import type { BrushSession } from "@/lib/brush-types";
-import { createLifetimeProgress } from "@/lib/lifetime-progress";
+import { createLifetimeProgress, type LifetimeProgress } from "@/lib/lifetime-progress";
 import { DEFAULT_APP_PREFERENCES } from "@/lib/preferences";
 
 const session: BrushSession = {
@@ -116,5 +116,71 @@ describe("portable Brushlings backup", () => {
     expect(restored.historyComplete).toBe(false);
     expect(restored.archivedSessionCount).toBe(120);
     expect(restored.lifetimeProgress.attemptedSessions).toBe(365);
+  });
+});
+
+describe("codici testuali v2 manipolati", () => {
+  const profile = { selectedId: "bloopi" as const, hasChosenStarter: true };
+  // Three perfect days: morning and evening sessions on 1–3 September.
+  const threeDays: BrushSession[] = Array.from({ length: 6 }, (_, index) => ({
+    ...session,
+    id: `day-${index}`,
+    startedAt: new Date(2026, 8, 1 + Math.floor(index / 2), index % 2 === 0 ? 8 : 20).getTime(),
+  }));
+
+  function codeFor(
+    history: BrushSession[],
+    progress: LifetimeProgress = createLifetimeProgress(history),
+  ): string {
+    return serializeBackup(
+      createBackup(history, profile, DEFAULT_CUSTOMIZATION_STATE, 123456, { lifetimeProgress: progress }),
+    );
+  }
+
+  it("accetta un codice genuino e ne conserva gli aggregati", () => {
+    const progress = createLifetimeProgress(threeDays);
+    const restored = parseBackup(codeFor(threeDays, progress));
+
+    expect(restored.lifetimeProgress).toEqual(progress);
+    expect(progress).toMatchObject({ completedSessions: 6, perfectDays: 3, longestStreakDays: 3 });
+  });
+
+  it("rifiuta aggregati che uno storico completo non giustifica", () => {
+    const genuine = createLifetimeProgress(threeDays);
+    const forgeries: Partial<LifetimeProgress>[] = [
+      { attemptedSessions: 500, completedSessions: 500 },
+      { totalBrushingSeconds: genuine.totalBrushingSeconds + 120 },
+      { xp: 6 * 60 + 1 },
+      { perfectDays: 4 },
+      { longestStreakDays: 7, currentStreakDays: 7 },
+    ];
+    for (const forged of forgeries) {
+      expect(() => parseBackup(codeFor(threeDays, { ...genuine, ...forged })))
+        .toThrow("Progressi del backup non coerenti con lo storico");
+    }
+  });
+
+  it("con lo storico troncato a 120 sessioni accetta solo aggregati compatibili con le regole", () => {
+    const longHistory: BrushSession[] = Array.from({ length: 130 }, (_, index) => ({
+      ...session,
+      id: `long-${index}`,
+      startedAt: session.startedAt + index * 43_200_000,
+    }));
+    const genuine = createLifetimeProgress(longHistory);
+    const restored = parseBackup(codeFor(longHistory, genuine));
+    expect(restored.history).toHaveLength(120);
+    expect(restored.lifetimeProgress.attemptedSessions).toBe(130);
+
+    const forgeries: Partial<LifetimeProgress>[] = [
+      { attemptedSessions: 100, completedSessions: 100 },
+      { completedSessions: genuine.attemptedSessions + 1 },
+      { perfectDays: 66 },
+      { dailyBonusCoins: 130 * 15 + 1 },
+      { itemCounts: { ...genuine.itemCounts, "smile-star": 500 } },
+    ];
+    for (const forged of forgeries) {
+      expect(() => parseBackup(codeFor(longHistory, { ...genuine, ...forged })))
+        .toThrow("Progressi del backup non coerenti con lo storico");
+    }
   });
 });

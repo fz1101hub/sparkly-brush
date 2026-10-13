@@ -21,6 +21,8 @@ import {
 
 export const BACKUP_PREFIX = "BRUSHLINGS-BACKUP-2:";
 const LEGACY_BACKUP_PREFIX = "BRUSHLINGS-BACKUP-1:";
+/** Text codes carry at most the 120 most recent sessions. */
+const LEGACY_BACKUP_HISTORY_LIMIT = 120;
 
 export type PortableBrushlingProfile = {
   selectedId: BrushlingId;
@@ -105,7 +107,7 @@ function normalizeHistory(value: unknown): BrushSession[] {
     };
   });
   const byId = new Map(sessions.map((session) => [session.id, session]));
-  return [...byId.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, 120);
+  return [...byId.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, LEGACY_BACKUP_HISTORY_LIMIT);
 }
 
 function normalizePreferences(value: unknown): AppPreferences {
@@ -147,7 +149,7 @@ export function createBackup(
   },
 ): BrushlingsBackup {
   const realHistory = history.filter((session) => session.source !== "demo");
-  const recentHistory = realHistory.slice(0, 120);
+  const recentHistory = realHistory.slice(0, LEGACY_BACKUP_HISTORY_LIMIT);
   return {
     format: "brushlings-backup",
     version: 2,
@@ -237,6 +239,40 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
   };
 }
 
+/**
+ * A text code is plain JSON, so its lifetime aggregates are only as trustworthy as their
+ * consistency with the sessions it carries. When the archived history is complete (codes keep
+ * the 120 most recent sessions) the counters must match it exactly; otherwise they must at least
+ * cover it. Every code must also respect the per-session rules, unchanged since v2 codes exist:
+ * at most 60 XP per completed and 20 per incomplete session, one collectible per completion,
+ * 30 daily-mission coins per day (two completions) and one perfect day per two completions.
+ */
+function assertLegacyProgressMatchesHistory(history: BrushSession[], progress: LifetimeProgress): void {
+  const completedInHistory = history.filter((session) => session.completed).length;
+  const secondsInHistory = history.reduce((total, session) => total + session.durationSeconds, 0);
+  const historyComplete = history.length < LEGACY_BACKUP_HISTORY_LIMIT;
+  const coversHistory = historyComplete
+    ? progress.attemptedSessions === history.length
+      && progress.completedSessions === completedInHistory
+      && progress.totalBrushingSeconds === secondsInHistory
+    : progress.attemptedSessions >= history.length
+      && progress.completedSessions >= completedInHistory
+      && progress.totalBrushingSeconds >= secondsInHistory;
+  const incompleteSessions = progress.attemptedSessions - progress.completedSessions;
+  const collectibles = Object.values(progress.itemCounts).reduce((total, count) => total + count, 0);
+  const withinRules = incompleteSessions >= 0
+    && progress.rewardedBrushingSeconds <= progress.totalBrushingSeconds
+    && progress.xp <= progress.completedSessions * 60 + incompleteSessions * 20
+    && collectibles <= progress.completedSessions
+    && progress.dailyBonusCoins <= progress.completedSessions * 15
+    && progress.perfectDays <= Math.floor(progress.completedSessions / 2)
+    && progress.longestStreakDays <= progress.completedSessions
+    && progress.currentStreakDays <= progress.longestStreakDays;
+  if (!coversHistory || !withinRules) {
+    throw new Error("Progressi del backup non coerenti con lo storico");
+  }
+}
+
 export function parseBackup(code: string): BrushlingsBackup {
   const trimmed = code.trim();
   const prefix = trimmed.startsWith(BACKUP_PREFIX)
@@ -274,6 +310,7 @@ export function parseBackup(code: string): BrushlingsBackup {
     ? normalizeLifetimeProgress(raw.lifetimeProgress)
     : createLifetimeProgress(history);
   if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
+  if (raw.version === 2) assertLegacyProgressMatchesHistory(history, lifetimeProgress);
 
   return {
     format: "brushlings-backup",
