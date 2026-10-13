@@ -26,7 +26,7 @@ overrides:
   picomatch@4.0.3: 4.0.4
   postcss: 8.5.23
   postcss-selector-parser@6.1.2: 6.1.3
-  shell-quote@1.8.3: 1.9.0
+  shell-quote@<1.11.0: 1.12.0
   source-map-js@1.2.1: 1.2.2
   tar@7.5.2: 7.5.21
   undici@6.22.0: 6.28.0
@@ -35,6 +35,9 @@ overrides:
   ws@7.5.10: 7.5.11
   ws@8.18.3: 8.21.0
   yaml@2.8.2: 2.8.3
+
+patchedDependencies:
+  query-string@7.1.3: 8d8b6285e340c21d5f6893d1d4b3767326cfce45de3b0d76296749c3c32733cd
 
 importers:
 
@@ -4498,8 +4501,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.9.0:
-    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
+  shell-quote@1.12.0:
+    resolution: {integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==}
     engines: {node: '>= 0.4'}
 
   side-channel-list@1.0.1:
@@ -8191,7 +8194,7 @@ snapshots:
       fast-deep-equal: 3.1.3
       invariant: 2.2.4
       nanoid: 3.3.19
-      query-string: 7.1.3
+      query-string: 7.1.3(patch_hash=8d8b6285e340c21d5f6893d1d4b3767326cfce45de3b0d76296749c3c32733cd)
       react: 19.2.3
       react-fast-compare: 3.2.2
       react-is: 19.3.0
@@ -9548,7 +9551,7 @@ snapshots:
       pngjs: 5.0.0
       yargs: 15.4.1
 
-  query-string@7.1.3:
+  query-string@7.1.3(patch_hash=8d8b6285e340c21d5f6893d1d4b3767326cfce45de3b0d76296749c3c32733cd):
     dependencies:
       decode-uri-component: 0.5.0
       filter-obj: 1.1.0
@@ -9563,7 +9566,7 @@ snapshots:
 
   react-devtools-core@6.1.5:
     dependencies:
-      shell-quote: 1.9.0
+      shell-quote: 1.12.0
       ws: 7.5.11
     transitivePeerDependencies:
       - bufferutil
@@ -10005,7 +10008,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.9.0: {}
+  shell-quote@1.12.0: {}
 
   side-channel-list@1.0.1:
     dependencies:

@@ -1,0 +1,16 @@
+diff --git a/index.js b/index.js
+index d45e67d91d38c91d05e68e8b338e4bc2de591dcc..9b292ba4d49447ed801e974d4fc66cb224686c17 100644
+--- a/index.js
++++ b/index.js
+@@ -1,6 +1,10 @@
+ 'use strict';
+ const strictUriEncode = require('strict-uri-encode');
+-const decodeComponent = require('decode-uri-component');
++const decodeUriComponentModule = require('decode-uri-component');
++// decode-uri-component >= 0.5 is ESM-only: require() returns its namespace, not the function.
++const decodeComponent = typeof decodeUriComponentModule === 'function'
++	? decodeUriComponentModule
++	: decodeUriComponentModule.default;
+ const splitOnFirst = require('split-on-first');
+ const filterObject = require('filter-obj');
+ 
