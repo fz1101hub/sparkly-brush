@@ -26,6 +26,10 @@ export const itCore = {
   "notFound.message": "Il collegamento che hai aperto non porta a nessuna schermata di Sparkly Brush.",
   "notFound.action": "Torna a Oggi",
   "notFound.actionLabel": "Torna alla schermata Oggi",
+  "error.title": "Qualcosa è andato storto",
+  "error.message": "L’app ha incontrato un problema inatteso. I tuoi dati sono al sicuro: riprova oppure chiudi e riapri l’app.",
+  "error.retry": "Riprova",
+  "error.detailsLabel": "Dettaglio tecnico",
   "common.actionFailedTitle": "Operazione non riuscita",
   "common.actionFailedMessage": "Riprova tra poco. Se il problema continua, chiudi e riapri l’app.",
   "recovery.inProgressMessage":

@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   loadProfile: vi.fn(),
   loadCustomization: vi.fn(),
   saveSelected: vi.fn(),
+  saveStarter: vi.fn(),
 }));
 
 vi.mock("@/contexts/brush-context", () => ({
@@ -40,7 +41,7 @@ vi.mock("@/lib/brushling-storage", () => ({
   loadCustomizationState: mocks.loadCustomization,
   saveSelectedBrushling: mocks.saveSelected,
   saveCustomizationState: vi.fn(),
-  saveStarterSelection: vi.fn(),
+  saveStarterSelection: mocks.saveStarter,
   restoreBrushlingState: vi.fn(),
 }));
 
@@ -207,6 +208,40 @@ describe("BrushlingProvider hydration race", () => {
     };
     await render();
     expect(current.reward).not.toBeNull();
+    await act(async () => renderer.unmount());
+  });
+});
+
+describe("scelta dello starter in modalità demo", () => {
+  it("viene salvata nel profilo anche se la demo è attiva", async () => {
+    vi.clearAllMocks();
+    mocks.loadProfile.mockResolvedValue({ selectedId: "bloopi", hasChosenStarter: false });
+    mocks.loadCustomization.mockResolvedValue(DEFAULT_CUSTOMIZATION_STATE);
+    mocks.brushState.lifetimeProgress = createEmptyLifetimeProgress();
+    mocks.brushState.historyReady = true;
+    mocks.brushState.demoMode = true;
+    let chooseStarter!: ReturnType<typeof useBrushling>["chooseStarter"];
+    function Probe() {
+      chooseStarter = useBrushling().chooseStarter;
+      return null;
+    }
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider>
+          <BrushlingProvider>
+            <Probe />
+          </BrushlingProvider>
+        </TestLocaleProvider>,
+      );
+    });
+
+    await act(async () => {
+      await chooseStarter("spriggo");
+    });
+
+    expect(mocks.saveStarter).toHaveBeenCalledWith("spriggo");
+    mocks.brushState.demoMode = false;
     await act(async () => renderer.unmount());
   });
 });

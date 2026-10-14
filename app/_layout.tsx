@@ -1,5 +1,5 @@
 import "@/global.css";
-import { Stack } from "expo-router";
+import { Stack, type ErrorBoundaryProps } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -17,6 +17,7 @@ import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import { AppLocaleProvider } from "@/contexts/app-locale-provider";
 import { useI18n } from "@/contexts/locale-context";
+import { AppErrorScreen } from "@/components/app-error-screen";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -28,6 +29,11 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+/** Replaces expo-router's English fallback for uncaught rendering errors. */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <AppErrorScreen {...props} />;
+}
 
 function RestoreOperationOverlay() {
   const { t } = useI18n();

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { translateDynamic } from "@/lib/i18n";
-import { localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+import { localizeSonicareMessage, sonicareMessageKey } from "@/lib/sonicare-message-i18n";
 
 const clientSource = fs.readFileSync(
   new URL("../lib/sonicare-client.native.ts", import.meta.url),
@@ -24,5 +24,14 @@ describe("messaggi del client BLE", () => {
     const english = (message: string) =>
       localizeSonicareMessage(message, (key, params) => translateDynamic("en", key, params));
     expect(clientMessages.filter((message) => english(message) === message)).toEqual([]);
+  });
+});
+
+describe("sonicareMessageKey", () => {
+  it("restituisce la chiave solo per i messaggi esatti del client", () => {
+    expect(sonicareMessageKey("Autorizzazione Bluetooth non concessa")).toBe("brush.client.permissionDenied");
+    expect(sonicareMessageKey("Bluetooth spento: attivalo e riprova")).toBe("brush.client.poweredOff");
+    expect(sonicareMessageKey("Trovato Sonicare4Kids")).toBeNull();
+    expect(sonicareMessageKey("toString")).toBeNull();
   });
 });

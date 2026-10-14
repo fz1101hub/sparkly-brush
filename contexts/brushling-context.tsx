@@ -218,9 +218,10 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     if (!STARTER_IDS.includes(id)) return false;
     setSelectedId(id);
     setHasChosenStarter(true);
-    if (!demoMode) await saveStarterSelection(id);
+    // The starter is profile data, not history: it is kept even when chosen during the demo.
+    await saveStarterSelection(id);
     return true;
-  }, [demoMode]);
+  }, []);
 
   const selectBrushling = useCallback(async (id: BrushlingId) => {
     if (!stats.unlockedIds.includes(id)) return false;

@@ -28,6 +28,10 @@ export const es = {
   "notFound.message": "El enlace que has abierto no lleva a ninguna pantalla de Sparkly Brush.",
   "notFound.action": "Volver a Hoy",
   "notFound.actionLabel": "Volver a la pantalla Hoy",
+  "error.title": "Algo ha salido mal",
+  "error.message": "La app ha encontrado un problema inesperado. Tus datos están a salvo: inténtalo de nuevo o cierra y vuelve a abrir la app.",
+  "error.retry": "Reintentar",
+  "error.detailsLabel": "Detalle técnico",
   "common.actionFailedTitle": "No se pudo completar",
   "common.actionFailedMessage": "Inténtalo en un momento. Si el problema continúa, cierra y vuelve a abrir la app.",
   "recovery.inProgressMessage":
@@ -249,6 +253,12 @@ export const es = {
   "device.changeHandleTitle": "¿Cambiar de mango?",
   "device.changeHandleMessage": "La app buscará un mango distinto del vinculado y a partir de ahora se conectará solo a ese. El historial, los progresos y las copias de seguridad se conservan.",
   "device.changeHandleAction": "Buscar otro mango",
+  "device.hint.permission": "El permiso de Bluetooth fue denegado: sin él no se puede buscar el cepillo. Puedes concederlo en los ajustes de la app.",
+  "device.hint.bluetoothOff": "El Bluetooth del teléfono está apagado: enciéndelo para buscar el cepillo.",
+  "device.hint.locationOff": "En esta versión de Android la búsqueda Bluetooth requiere la Ubicación activada en los ajustes del sistema.",
+  "device.openAppSettings": "Abrir ajustes de la app",
+  "device.openBluetoothSettings": "Abrir ajustes de Bluetooth",
+  "device.openLocationSettings": "Abrir ajustes de Ubicación",
   "device.demoEyebrow": "LABORATORIO SIN CEPILLO",
   "device.demoTitle": "Modo demo",
   "device.demoSummary":

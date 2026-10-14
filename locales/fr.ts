@@ -28,6 +28,10 @@ export const fr = {
   "notFound.message": "Le lien que tu as ouvert ne mène à aucun écran de Sparkly Brush.",
   "notFound.action": "Retour à Aujourd’hui",
   "notFound.actionLabel": "Revenir à l’écran Aujourd’hui",
+  "error.title": "Un problème est survenu",
+  "error.message": "L’app a rencontré un problème inattendu. Tes données sont en sécurité : réessaie, ou ferme puis rouvre l’app.",
+  "error.retry": "Réessayer",
+  "error.detailsLabel": "Détail technique",
   "common.actionFailedTitle": "Action impossible",
   "common.actionFailedMessage": "Réessaie dans un instant. Si le problème persiste, ferme puis rouvre l’app.",
   "recovery.inProgressMessage":
@@ -251,6 +255,12 @@ export const fr = {
   "device.changeHandleTitle": "Changer de manche ?",
   "device.changeHandleMessage": "L’app recherchera un manche différent de celui associé et ne se connectera désormais qu’à lui. L’historique, les progrès et les sauvegardes restent.",
   "device.changeHandleAction": "Chercher un autre manche",
+  "device.hint.permission": "L’autorisation Bluetooth a été refusée : sans elle, impossible de trouver la brosse à dents. Tu peux l’accorder dans les réglages de l’app.",
+  "device.hint.bluetoothOff": "Le Bluetooth du téléphone est désactivé : active-le pour rechercher la brosse à dents.",
+  "device.hint.locationOff": "Sur cette version d’Android, la recherche Bluetooth exige la localisation activée dans les réglages du système.",
+  "device.openAppSettings": "Ouvrir les réglages de l’app",
+  "device.openBluetoothSettings": "Ouvrir les réglages Bluetooth",
+  "device.openLocationSettings": "Ouvrir les réglages de localisation",
   "device.demoEyebrow": "LABORATOIRE SANS BROSSE À DENTS",
   "device.demoTitle": "Mode démo",
   "device.demoSummary":

@@ -80,6 +80,11 @@ const HANDLE_STATES: Record<string, TranslationKey> = {
   background: "device.handleState.background",
 };
 
+/** The translation key of an exact client message, for screens that react to a specific state. */
+export function sonicareMessageKey(message: string): TranslationKey | null {
+  return Object.prototype.hasOwnProperty.call(EXACT_MESSAGES, message) ? EXACT_MESSAGES[message] : null;
+}
+
 /** Only known protocol messages may be promoted to primary user feedback. */
 export function isKnownSonicareMessage(message: string): boolean {
   return Object.prototype.hasOwnProperty.call(EXACT_MESSAGES, message)

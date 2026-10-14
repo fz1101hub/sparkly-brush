@@ -54,6 +54,12 @@ export const itDevice = {
   "device.changeHandleTitle": "Cambiare manico?",
   "device.changeHandleMessage": "L’app cercherà un manico diverso da quello abbinato e da ora si collegherà solo a quello. Storico, progressi e backup restano.",
   "device.changeHandleAction": "Cerca un altro manico",
+  "device.hint.permission": "Il permesso Bluetooth è stato negato: senza non è possibile cercare lo spazzolino. Puoi concederlo dalle impostazioni dell’app.",
+  "device.hint.bluetoothOff": "Il Bluetooth del telefono è spento: accendilo per cercare lo spazzolino.",
+  "device.hint.locationOff": "Su questa versione di Android la ricerca Bluetooth richiede la Localizzazione attiva nelle impostazioni di sistema.",
+  "device.openAppSettings": "Apri impostazioni dell’app",
+  "device.openBluetoothSettings": "Apri impostazioni Bluetooth",
+  "device.openLocationSettings": "Apri impostazioni Localizzazione",
   "device.demoEyebrow": "LABORATORIO SENZA SPAZZOLINO",
   "device.demoTitle": "Modalità demo",
   "device.demoSummary":

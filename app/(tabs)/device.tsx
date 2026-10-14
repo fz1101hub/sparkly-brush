@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -10,7 +10,7 @@ import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
 import { confirmAction, confirmDestructive, showMessage } from "@/lib/dialogs";
-import { isKnownSonicareMessage, localizeSonicareMessage } from "@/lib/sonicare-message-i18n";
+import { isKnownSonicareMessage, localizeSonicareMessage, sonicareMessageKey } from "@/lib/sonicare-message-i18n";
 
 const LIGHT_CARD_FOREGROUND = "#17213A";
 const LIGHT_CARD_MUTED = "#56617D";
@@ -23,6 +23,7 @@ export default function DeviceScreen() {
   const {
     status,
     statusMessage,
+    statusDetail,
     adapterState,
     device,
     live,
@@ -43,6 +44,29 @@ export default function DeviceScreen() {
   const connected = status === "connected";
   const busy = status === "scanning" || status === "connecting" || isForgettingToothbrush;
   const shownDevice = device ?? pairedDevice;
+  // System-level blockers the parent can fix in the OS settings rather than in the app.
+  const detailKey = statusDetail ? sonicareMessageKey(statusDetail) : null;
+  const permissionBlocked = adapterState === "Unauthorized"
+    || detailKey === "brush.client.permissionDenied"
+    || detailKey === "brush.client.locationPermissionRequired";
+  const bluetoothOff = !permissionBlocked
+    && (adapterState === "PoweredOff" || detailKey === "brush.client.poweredOff");
+  const locationOff = detailKey === "brush.client.locationServicesDisabled";
+  const systemHint = permissionBlocked
+    ? { text: t("device.hint.permission"), action: t("device.openAppSettings"), open: () => Linking.openSettings() }
+    : locationOff
+      ? {
+          text: t("device.hint.locationOff"),
+          action: Platform.OS === "android" ? t("device.openLocationSettings") : null,
+          open: () => Linking.sendIntent("android.settings.LOCATION_SOURCE_SETTINGS"),
+        }
+      : bluetoothOff
+        ? {
+            text: t("device.hint.bluetoothOff"),
+            action: Platform.OS === "android" ? t("device.openBluetoothSettings") : null,
+            open: () => Linking.sendIntent("android.settings.BLUETOOTH_SETTINGS"),
+          }
+        : null;
   const canForget = (connected || pairedDevice !== null) && !demoMode && !isForgettingToothbrush;
 
   const confirmChangeHandle = () => {
@@ -157,6 +181,26 @@ export default function DeviceScreen() {
                 </View>
               </View>
             </View>
+
+            {systemHint && !demoMode ? (
+              <View testID="device-system-hint" style={styles.hintCard}>
+                <MaterialIcons name="settings-suggest" size={22} color="#7A4B00" />
+                <View style={styles.hintCopy}>
+                  <Text style={styles.hintText}>{systemHint.text}</Text>
+                  {systemHint.action ? (
+                    <Pressable
+                      testID="device-open-settings"
+                      accessibilityRole="button"
+                      accessibilityLabel={systemHint.action}
+                      onPress={() => runAction(systemHint.open())}
+                      style={({ pressed }) => [styles.hintButton, pressed && styles.pressed]}
+                    >
+                      <Text style={styles.hintButtonText}>{systemHint.action}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
 
             <View style={styles.actions}>
               <Pressable
@@ -620,6 +664,11 @@ const styles = StyleSheet.create({
   batteryBadge: { backgroundColor: "#11845B", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
   batteryText: { color: "#FFFFFF", fontSize: 10, lineHeight: 14, fontWeight: "900" },
   actions: { flexDirection: "row", gap: 10 },
+  hintCard: { borderRadius: 18, borderWidth: 1, borderColor: "#F2D588", backgroundColor: "#FFF8E8", padding: 12, flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  hintCopy: { flex: 1, gap: 8 },
+  hintText: { color: "#17213A", fontSize: 12, lineHeight: 17, fontWeight: "600" },
+  hintButton: { alignSelf: "flex-start", minHeight: 44, borderRadius: 13, backgroundColor: "#7A4B00", paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
+  hintButtonText: { color: "#FFFFFF", fontSize: 12, lineHeight: 16, fontWeight: "900" },
   primaryButton: { flex: 1, minHeight: 52, borderRadius: 17, backgroundColor: "#2457D6", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingHorizontal: 12 },
   disconnectButton: { backgroundColor: "#D33D5D" },
   primaryText: { color: "#FFFFFF", fontSize: 13, lineHeight: 18, fontWeight: "900" },

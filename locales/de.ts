@@ -29,6 +29,10 @@ export const de = {
   "notFound.message": "Der geöffnete Link führt zu keiner Ansicht von Sparkly Brush.",
   "notFound.action": "Zurück zu Heute",
   "notFound.actionLabel": "Zurück zur Ansicht Heute",
+  "error.title": "Etwas ist schiefgelaufen",
+  "error.message": "Die App ist auf ein unerwartetes Problem gestoßen. Deine Daten sind sicher: Versuch es erneut oder schließe die App und öffne sie wieder.",
+  "error.retry": "Erneut versuchen",
+  "error.detailsLabel": "Technisches Detail",
   "common.actionFailedTitle": "Aktion fehlgeschlagen",
   "common.actionFailedMessage": "Versuch es gleich noch einmal. Bleibt das Problem, schließe die App und öffne sie erneut.",
   "recovery.inProgressMessage":
@@ -253,6 +257,12 @@ export const de = {
   "device.changeHandleTitle": "Handgriff wechseln?",
   "device.changeHandleMessage": "Die App sucht einen anderen als den gekoppelten Handgriff und verbindet sich ab jetzt nur mit diesem. Verlauf, Fortschritt und Backups bleiben erhalten.",
   "device.changeHandleAction": "Anderen Handgriff suchen",
+  "device.hint.permission": "Die Bluetooth-Berechtigung wurde verweigert: Ohne sie kann die Zahnbürste nicht gefunden werden. Du kannst sie in den App-Einstellungen erteilen.",
+  "device.hint.bluetoothOff": "Bluetooth am Telefon ist aus: Schalte es ein, um die Zahnbürste zu suchen.",
+  "device.hint.locationOff": "Auf dieser Android-Version braucht die Bluetooth-Suche den eingeschalteten Standort in den Systemeinstellungen.",
+  "device.openAppSettings": "App-Einstellungen öffnen",
+  "device.openBluetoothSettings": "Bluetooth-Einstellungen öffnen",
+  "device.openLocationSettings": "Standort-Einstellungen öffnen",
   "device.demoEyebrow": "WERKSTATT OHNE ZAHNBÜRSTE",
   "device.demoTitle": "Demo-Modus",
   "device.demoSummary":

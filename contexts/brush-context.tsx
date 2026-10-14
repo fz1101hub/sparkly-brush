@@ -91,6 +91,8 @@ function useBrushTranslation(): BrushTranslate {
 type BrushContextValue = {
   status: ConnectionStatus;
   statusMessage: string;
+  /** Raw client message behind `statusMessage`, or null for the generic status text. */
+  statusDetail: string | null;
   adapterState: string;
   device: ToothbrushDevice | null;
   live: BrushLiveData;
@@ -910,6 +912,7 @@ export function BrushProvider({
     () => ({
       status,
       statusMessage,
+      statusDetail,
       adapterState,
       device,
       live,
@@ -983,6 +986,7 @@ export function BrushProvider({
       setDemoMode,
       startManual,
       status,
+      statusDetail,
       statusMessage,
       stopManual,
       syncLatest,
