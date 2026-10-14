@@ -1,0 +1,69 @@
+name: Preview APK
+
+# APK di prova per dispositivi reali: build release con la firma di debug (non pubblicabile),
+# scaricabile come artefatto del run per 14 giorni.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: preview-apk-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CI: "1"
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  apk:
+    name: APK release con firma di debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Android project
+        run: pnpm exec expo prebuild --platform android --clean --no-install
+      - name: Compile release APK (debug keystore)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Verify permissions in the compiled APK
+        run: |
+          set -euo pipefail
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          test -s "$apk"
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk"
+          analyzer=$(find "$sdk/cmdline-tools" -type f -name apkanalyzer -print | sort -V | tail -n 1)
+          test -n "$analyzer"
+          "$analyzer" manifest print "$apk" > /tmp/sparkly-apk-manifest.xml
+          python3 scripts/validate_android_manifest.py /tmp/sparkly-apk-manifest.xml
+      - name: Package the artifact
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/apk
+          cp android/app/build/outputs/apk/release/app-release.apk "artifacts/apk/sparkly-brush-preview-${GITHUB_SHA::7}.apk"
+          (cd artifacts/apk && sha256sum ./*.apk | tee SHA256SUMS.txt)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sparkly-brush-preview-apk
+          path: artifacts/apk
+          retention-days: 14
+          if-no-files-found: error
