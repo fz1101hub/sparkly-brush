@@ -901,9 +901,12 @@ export async function clearHistory(): Promise<void> {
   await queueWrite(async () => {
     const db = await getDatabase();
     await db.withExclusiveTransactionAsync(async (txn) => {
+      const before = await readProgress(txn);
       await txn.runAsync("DELETE FROM reward_ledger");
       await txn.runAsync("DELETE FROM sessions");
-      await writeProgress(txn, createEmptyLifetimeProgress());
+      // The handle still stores the records it already handed over: without the cursor the next
+      // sync would re-import the very sessions the family just deleted. Nothing stays pending.
+      await writeProgress(txn, { ...createEmptyLifetimeProgress(), deviceCursors: before.deviceCursors });
       await writeHistoryComplete(txn, true);
     });
     await db.execAsync("PRAGMA wal_checkpoint(TRUNCATE); VACUUM;");

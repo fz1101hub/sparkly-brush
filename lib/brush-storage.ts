@@ -9,6 +9,7 @@ import {
   advancePendingDeviceFallbackExpectationsForEarlierSession,
   applySessionToLifetime,
   clearPendingDeviceFallback,
+  createEmptyLifetimeProgress,
   createLifetimeProgress,
   deviceKey,
   forgetDeviceSessionState,
@@ -388,11 +389,18 @@ export async function replaceHistory(history: BrushSession[]): Promise<BrushSess
 }
 
 export async function clearHistory(): Promise<void> {
-  await queueHistoryWrite(() => AsyncStorage.multiRemove([
-    PROGRESS_STATE_KEY,
-    LEGACY_HISTORY_KEY,
-    LEGACY_LIFETIME_HISTORY_KEY,
-  ]));
+  await queueHistoryWrite(async () => {
+    // Keep the handle cursors: the sessions already read must not be imported again.
+    const current = await loadProgressStateUnlocked();
+    await persistProgressState({
+      recentHistory: [],
+      lifetimeProgress: {
+        ...createEmptyLifetimeProgress(),
+        deviceCursors: current.lifetimeProgress.deviceCursors,
+      },
+    });
+    await AsyncStorage.multiRemove([LEGACY_HISTORY_KEY, LEGACY_LIFETIME_HISTORY_KEY]);
+  });
 }
 
 export async function loadDemoHistory(): Promise<BrushSession[]> {

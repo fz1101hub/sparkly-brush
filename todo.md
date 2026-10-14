@@ -1,6 +1,6 @@
 # Stato del candidato Sparkly Brush — audit Claude Opus ed Expo 57
 
-Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs/sviluppo-autonomo-2026-10-13.md)). Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
+Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs/sviluppo-autonomo-2026-10-13.md); [audit indipendente del 14 ottobre](docs/audit-indipendente-2026-10-14.md) con checklist di pubblicazione). Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
@@ -54,13 +54,15 @@ Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs
 | 48 | Accessibilità minore | Corretto | Annunci VoiceOver/TalkBack (zone e ricompensa), riduci movimento, aree di tocco ≥ 44 pt, indicatore di connessione reale e accessibile, progressbar accessibili, feedback "Operazione non riuscita" per 31 azioni asincrone. |
 | 49 | Configurazione nativa (K9) | Corretto in config, da verificare in build | Verticale su iPad (`requireFullScreen`) e sugli schermi grandi di Android 16 (plugin), tema di sistema su entrambe le piattaforme con splash scuro, descrizione Bluetooth unica e tradotta, codici `react-native-ble-plx` tradotti (Localizzazione Android ≤ 11). Verificato con `expo config --type introspect`. |
 | 50 | Dipendenze e residui | Corretto | Rimossi `expo-image`, `@expo/ngrok`, `@types/qrcode` e il runtime web Manus. |
+| 51 | Audit del 14 ottobre: N1–N5 | Corretto | "Elimina storico" conserva i cursori del manico (le sessioni già lette non tornano); intestazione con stato reale in tutte le schermate; pagina non trovata leggibile in tema scuro e senza tab duplicata; selettore starter non più bloccato su errore; premi dei genitori normalizzati al caricamento. |
+| 52 | Audit del 14 ottobre: store (N6, N7) | Config pronta, decisioni al proprietario | iCloud per il picker dei backup, `eas.json` con profili e versioning remoto; bundle id definitivo, privacy policy, Data Safety / App Privacy, Kids/Families e listing restano al proprietario ([checklist](docs/audit-indipendente-2026-10-14.md)). |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **69 file e 407 test** al 14 ottobre, di cui 24 del progetto `native-sqlite` su SQLite reale (il 6 ottobre: 58 file e 352 test);
+- suite Vitest completa: **70 file e 409 test** al 14 ottobre, di cui 24 del progetto `native-sqlite` su SQLite reale (il 6 ottobre: 58 file e 352 test);
 - gate i18n dedicato: **93 test** su cataloghi (912 chiavi per catalogo, plurali inclusi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;

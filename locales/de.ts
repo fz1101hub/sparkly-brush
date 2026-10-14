@@ -968,7 +968,7 @@ export const de = {
   "game.reward.fantastic": "Fantastisch!",
   "family.history.clearTitle": "Verlauf löschen?",
   "family.history.clearMessage":
-    "Auf diesem Telefon gespeicherte Sitzungen werden entfernt: Level, XP, Münzen, Missionen und freigeschaltete Kreaturen beginnen wieder bei null. Bereits gekaufte Gegenstände bleiben erhalten.",
+    "Auf diesem Telefon gespeicherte Sitzungen werden entfernt: Level, XP, Münzen, Missionen und freigeschaltete Kreaturen beginnen wieder bei null. Bereits gekaufte Gegenstände bleiben erhalten. Bereits vom Handgriff gelesene Sitzungen kommen nicht zurück.",
   "family.history.clearAction": "Löschen",
   "family.history.clearButtonLabel": "Verlauf leeren",
   "family.history.sessionComplete": "Vollständige Sitzung",

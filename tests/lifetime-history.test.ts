@@ -43,6 +43,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 
 import {
   MAX_RECENT_HISTORY,
+  clearHistory,
   forgetDeviceWithLifetime,
   loadHistoryBundle,
   loadLastDevice,
@@ -779,5 +780,28 @@ describe("lifetime progress", () => {
         longestStreakDays: progress.longestStreakDays,
       })).toEqual(parentRewardProgress(reward, history));
     });
+  });
+});
+
+describe("Elimina storico e cursori del manico (storage web)", () => {
+  beforeEach(() => storage.clear());
+
+  it("azzera i progressi ma conserva il cursore, così le sessioni già lette non tornano", async () => {
+    await saveDeviceSessionsWithLifetime("brush-a", [{
+      sessionId: 41,
+      startedAt: baseTime,
+      timeConfidence: "reconstructed",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      mode: "clean",
+      intensity: "media",
+    }]);
+    await clearHistory();
+
+    const bundle = await loadHistoryBundle();
+    expect(bundle.recentHistory).toEqual([]);
+    expect(bundle.lifetimeProgress.attemptedSessions).toBe(0);
+    expect(bundle.lifetimeProgress.deviceCursors[deviceKey("brush-a")]).toMatchObject({ lastSessionId: 41 });
+    expect(bundle.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
   });
 });

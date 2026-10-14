@@ -951,7 +951,7 @@ export const es = {
   "game.reward.fantastic": "¡Fantástico!",
   "family.history.clearTitle": "¿Borrar el historial?",
   "family.history.clearMessage":
-    "Las sesiones guardadas en este teléfono se eliminarán: nivel, XP, monedas, misiones y criaturas desbloqueadas volverán a cero. Los objetos ya comprados se conservan.",
+    "Las sesiones guardadas en este teléfono se eliminarán: nivel, XP, monedas, misiones y criaturas desbloqueadas volverán a cero. Los objetos ya comprados se conservan. Las sesiones ya leídas del mango no volverán.",
   "family.history.clearAction": "Eliminar",
   "family.history.clearButtonLabel": "Vaciar historial",
   "family.history.sessionComplete": "Sesión completa",
