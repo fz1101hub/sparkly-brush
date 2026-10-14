@@ -343,7 +343,6 @@ export default function BackupScreen() {
             <AppHeader
               eyebrow={t("backup.eyebrow")}
               title={t("backup.title")}
-              connected={false}
             />
           </View>
         </View>

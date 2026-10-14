@@ -302,9 +302,7 @@ test.describe("percorso funzionale web", () => {
 
     await page.getByTestId("not-found-home").click();
     await expect(page.getByTestId("today-screen")).toBeVisible();
-
-    // The expo-router sitemap is disabled: it must not leak the route list.
-    await page.goto("/_sitemap");
-    await expect(page.getByTestId("not-found-screen")).toBeVisible();
+    // The sitemap route is disabled in app.config.ts; the development server still serves
+    // /_sitemap, so its absence is checked on the web export (no _sitemap.html) instead.
   });
 });

@@ -36,6 +36,8 @@ const config: ExpoConfig = {
     supportsTablet: true,
     // Portrait only also on iPad: without full screen, iPadOS multitasking ignores the lock.
     requireFullScreen: true,
+    // The backup picker must reach iCloud Drive, where families usually keep the .brushlings file.
+    usesIcloudStorage: true,
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
@@ -89,7 +91,7 @@ const config: ExpoConfig = {
     // The generated /_sitemap route must not ship: unknown links land on +not-found instead.
     ["expo-router", { sitemap: false }],
     "expo-asset",
-    "expo-document-picker",
+    ["expo-document-picker", { iCloudContainerEnvironment: "Production" }],
     "expo-font",
     "./plugins/with-android-orientation-compat",
     [

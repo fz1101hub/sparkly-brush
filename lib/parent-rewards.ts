@@ -91,19 +91,43 @@ export function rewardRequirementLabel(
   return t("family.rewardRequirement.streak", params);
 }
 
+const REQUIREMENTS = new Set<ParentRewardRequirement>(["completed-sessions", "perfect-days", "streak"]);
+
+/** Accepts only well-formed rewards and clips them to the limits the UI and backups enforce. */
+export function normalizeParentRewards(value: unknown): ParentReward[] {
+  if (!Array.isArray(value)) return [];
+  const rewards: ParentReward[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const raw = item as Partial<ParentReward>;
+    const title = typeof raw.title === "string" ? raw.title.trim().slice(0, MAX_PARENT_REWARD_TITLE_LENGTH) : "";
+    if (
+      typeof raw.id !== "string"
+      || !raw.id
+      || !title
+      || !REQUIREMENTS.has(raw.requirement as ParentRewardRequirement)
+      || typeof raw.target !== "number"
+      || !Number.isFinite(raw.target)
+      || raw.target < 1
+    ) continue;
+    rewards.push({
+      id: raw.id,
+      title,
+      requirement: raw.requirement as ParentRewardRequirement,
+      target: Math.floor(raw.target),
+      createdAt: typeof raw.createdAt === "number" && Number.isFinite(raw.createdAt) ? raw.createdAt : 0,
+      deliveredAt: typeof raw.deliveredAt === "number" && Number.isFinite(raw.deliveredAt) ? raw.deliveredAt : null,
+    });
+    if (rewards.length === MAX_PARENT_REWARDS) break;
+  }
+  return rewards;
+}
+
 export async function loadParentRewards(): Promise<ParentReward[]> {
   try {
     const raw = await AsyncStorage.getItem(PARENT_REWARDS_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as ParentReward[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) =>
-      item
-      && typeof item.id === "string"
-      && typeof item.title === "string"
-      && ["completed-sessions", "perfect-days", "streak"].includes(item.requirement)
-      && typeof item.target === "number"
-    );
+    return normalizeParentRewards(JSON.parse(raw));
   } catch {
     return [];
   }

@@ -147,7 +147,6 @@ export default function ParentDashboardScreen() {
             <AppHeader
               eyebrow={t("family.parent.localOnly")}
               title={t("family.parent.title")}
-              connected={false}
             />
           </View>
         </View>

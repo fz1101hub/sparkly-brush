@@ -1,6 +1,6 @@
 # Stato del candidato Sparkly Brush — audit Claude Opus ed Expo 57
 
-Aggiornato il 6 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
+Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs/sviluppo-autonomo-2026-10-13.md)). Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
@@ -43,24 +43,36 @@ Aggiornato il 6 ottobre 2026. Il ramo attivo è `fix/claude-ultracode-audit`, cr
 | 37 | Errore di inizializzazione dei dati | Corretto | Pulsante "Riprova" in `DataRecoveryGate` (audit S4). |
 | 38 | Titolo condivisione backup | Corretto | Tradotto nelle cinque lingue (audit L2). |
 | 39 | Advisory 6 ottobre | Parziale | `source-map-js` 1.2.2 (GHSA-68fv-2mgg-jv7q) via override; `node-forge` e il nuovo `braces` (GHSA-vfj7-8cjw-p6xm) senza versione corretta: gate `high` ancora rosso. |
+| 40 | Compatibilità `query-string` (K7) | Corretto | `shell-quote` 1.12.0 (advisory critico) e patch pnpm a `query-string` 7.1.3 per `decode-uri-component` 0.5 (ESM): senza patch `parse()` lanciava su ogni query. Test `dependency-compat`. |
+| 41 | Conferme sul web | Corretto | `lib/dialogs.ts`: "Svuota storico", "Dimentica manico", "Elimina premio", "Segna consegnato" e "Cambia manico" chiedono conferma anche su react-native-web, dove `Alert.alert` è vuoto. |
+| 42 | Codici testuali v1/v2 (S3) | Corretto | I codici con progressi incoerenti con lo storico vengono rifiutati; limite dei premi dei genitori condiviso con il backup. |
+| 43 | Economia e progressione (G3, G4, G8, G9, U7) | Corretto | Missioni e serie aggiornate anche su archivio parziale; nessun debito nascosto dopo "Elimina storico"; limiti premi e testi esatti; data del backup al momento dell'esportazione ed esito onesto. |
+| 44 | Lingue (L1, L3, L6) | Corretto | Plurali `{n\|uno\|altri}` in cinque lingue con regola francese; redazione multilingua del report hardware; tedesco corretto. |
+| 45 | Permesso Bluetooth iOS (B5) | Corretto | `BleManager` creato al primo "Cerca e collega"; attesa dell'adattatore (30 s) con messaggi distinti per spento, non autorizzato, non supportato. |
+| 46 | Abbinamento del manico (B3) | Corretto, da collaudare | La scansione accetta solo il manico ricordato; "Cambia manico" cerca un manico diverso; "Dimentica manico resettato" anche da disconnesso. Da provare sull'HX6322/04 (#3). |
+| 47 | Rotte e navigazione | Corretto | `+not-found` tradotta con ritorno a Oggi; sitemap disattivata (nessun `_sitemap.html` nell'export web); indietro con cronologia e fallback per i deep link. |
+| 48 | Accessibilità minore | Corretto | Annunci VoiceOver/TalkBack (zone e ricompensa), riduci movimento, aree di tocco ≥ 44 pt, indicatore di connessione reale e accessibile, progressbar accessibili, feedback "Operazione non riuscita" per 31 azioni asincrone. |
+| 49 | Configurazione nativa (K9) | Corretto in config, da verificare in build | Verticale su iPad (`requireFullScreen`) e sugli schermi grandi di Android 16 (plugin), tema di sistema su entrambe le piattaforme con splash scuro, descrizione Bluetooth unica e tradotta, codici `react-native-ble-plx` tradotti (Localizzazione Android ≤ 11). Verificato con `expo config --type introspect`. |
+| 50 | Dipendenze e residui | Corretto | Rimossi `expo-image`, `@expo/ngrok`, `@types/qrcode` e il runtime web Manus. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **58 file e 352 test** al 6 ottobre, di cui 22 del progetto `native-sqlite` su SQLite reale (sul candidato del 2 ottobre: 50 file e 323 test);
-- gate i18n dedicato: **74 test** su cataloghi (almeno 874 chiavi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- suite Vitest completa: **69 file e 407 test** al 14 ottobre, di cui 24 del progetto `native-sqlite` su SQLite reale (il 6 ottobre: 58 file e 352 test);
+- gate i18n dedicato: **93 test** su cataloghi (912 chiavi per catalogo, plurali inclusi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su **42 stati UI** chiari/scuri con starter alternativi, reward reale, confronto backup prima della conferma e settimana demo su Oggi, Storico e Area genitori, report separati per stato;
-- cinque percorsi Playwright funzionali superati, incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
+- Playwright + axe superato su **44 stati UI** (inclusa la pagina non trovata) chiari/scuri con starter alternativi, reward reale, confronto backup prima della conferma e settimana demo su Oggi, Storico e Area genitori, report separati per stato;
+- otto percorsi Playwright funzionali superati (anche svuotamento dello storico con conferma, portafoglio senza debito e pagina non trovata), incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
 - `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge e, dal 6 ottobre, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in braces, entrambi senza versione corretta; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;
-- `pnpm exec expo-doctor`: **21/21** con Expo 57.0.26;
+- `pnpm exec expo-doctor`: **19/21** con Expo 57.0.26 nel sandbox senza rete (i due controlli falliti, schema su `exp.host` e React Native Directory, richiedono la connessione; erano 21/21 il 6 ottobre con rete);
 - `pnpm exec expo install --check`;
-- export Expo web, iOS e Android;
+- export Expo web, iOS e Android (l'export web non contiene `_sitemap.html`);
+- `pnpm exec expo config --type introspect`: Info.plist e AndroidManifest generati con `UIRequiresFullScreen`, `UIUserInterfaceStyle=Automatic`, descrizione Bluetooth unica in inglese con `InfoPlist.strings` tradotti, `screenOrientation=portrait` e proprietà di compatibilità Android 16;
 - prebuild iOS/Android multilingua superato con cinque `InfoPlist.strings`, cinque directory Android `values-b+*` e rimozioni location `tools:node="remove"` nel manifest dell'app (non è l'APK merged);
 - build Android nativa debug e controllo del manifest APK **Expo 57.0.26 superati per `748f2ff` in GitHub Actions** con JDK 17; il sandbox corrente non contiene Android SDK né JDK 17, quindi non viene dichiarata una compilazione locale;
 - build iOS per simulatore con Xcode riuscita nel dispatch `36829538328`; nello stesso run entrambi i flow Android sono passati;

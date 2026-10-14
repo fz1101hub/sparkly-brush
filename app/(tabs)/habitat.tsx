@@ -131,7 +131,6 @@ export default function HabitatScreen() {
             <AppHeader
               eyebrow={t("game.habitat.eyebrow")}
               title={t("game.habitat.title")}
-              connected={false}
             />
           </View>
         </View>

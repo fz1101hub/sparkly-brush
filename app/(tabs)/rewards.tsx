@@ -59,7 +59,6 @@ export default function RewardsScreen() {
             <AppHeader
               eyebrow={t("game.rewards.eyebrow")}
               title={t("game.rewards.title")}
-              connected={false}
             />
           </View>
         </View>

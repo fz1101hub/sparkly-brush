@@ -50,7 +50,6 @@ export default function CollectionScreen() {
         <AppHeader
           eyebrow={t("game.collection.eyebrow")}
           title={t("game.collection.title")}
-          connected={false}
         />
 
         <View

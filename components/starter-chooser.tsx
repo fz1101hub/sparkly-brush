@@ -21,8 +21,11 @@ export function StarterChooser() {
 
   const confirm = async () => {
     setSaving(true);
-    await chooseStarter(candidate);
-    setSaving(false);
+    try {
+      await chooseStarter(candidate);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

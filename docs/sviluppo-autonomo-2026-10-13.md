@@ -32,9 +32,9 @@
 
 | Area | Correzione | Verifica |
 |---|---|---|
-| Rotte | `app/+not-found.tsx` tradotto con ritorno a Oggi; sitemap di expo-router disattivata (`/_sitemap` non espone più le rotte). | E2E web `collegamento-inesistente` e `/_sitemap`; stato axe `not-found` chiaro/scuro |
+| Rotte | `app/+not-found.tsx` tradotto con ritorno a Oggi (riemerge la tab sottostante senza duplicarla); sitemap di expo-router disattivata: l'export web non contiene `_sitemap.html`, mentre il server di sviluppo la serve ancora. | E2E web `collegamento-inesistente`; stato axe `not-found` chiaro/scuro (il pulsante usa il blu fisso `#2457D6`: il primario del tema scuro dava 2,3:1) |
 | Navigazione | `backBehavior="history"` sulle tab: le schermate nascoste tornano da dove sono state aperte; `useBack` sostituisce con Oggi quando non c'è cronologia (deep link). | `use-back.test` |
-| Intestazione | L'indicatore di connessione legge lo stato reale del manico in tutte le schermate ed è un elemento accessibile con ruolo immagine. | lint, test semantici |
+| Intestazione | L'indicatore di connessione legge lo stato reale del manico in tutte le schermate (otto passavano `connected={false}` fisso) ed è un elemento accessibile con ruolo immagine. | lint, test semantici |
 | Lettori di schermo | `announce()` (VoiceOver/TalkBack; regione live sul web) per il cambio di zona del timer e l'apertura del modal di ricompensa; progressbar `accessible`. | `announce.test` |
 | Riduci movimento | `useReducedMotion`: creatura ferma, niente coriandoli, niente dissolvenze nell'onboarding quando il sistema lo chiede. | `use-reduced-motion.test` |
 | Aree di tocco | Consegna/eliminazione premi 44 pt, interruttore demo con `hitSlop`, pulsanti indietro, "Riprova", opzioni lingua, oggetti della tana, stati del collaudo ≥ 44 pt. | lettura stili |

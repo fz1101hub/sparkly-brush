@@ -65,7 +65,6 @@ export default function MissionsScreen() {
             <AppHeader
               eyebrow={t("game.missions.eyebrow")}
               title={t("game.missions.title")}
-              connected={false}
             />
           </View>
         </View>

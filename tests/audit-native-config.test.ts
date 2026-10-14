@@ -49,6 +49,18 @@ describe("native permission configuration", () => {
     expect(pluginOptions("expo-router")).toMatchObject({ sitemap: false });
   });
 
+  it("lets the backup picker reach iCloud Drive and ships EAS profiles with remote build numbers", async () => {
+    expect(config.ios?.usesIcloudStorage).toBe(true);
+    expect(pluginOptions("expo-document-picker")).toMatchObject({ iCloudContainerEnvironment: "Production" });
+    const eas = (await import("../eas.json")).default as {
+      cli: { appVersionSource: string };
+      build: Record<string, { autoIncrement?: boolean; distribution?: string }>;
+    };
+    expect(eas.cli.appVersionSource).toBe("remote");
+    expect(eas.build.production.autoIncrement).toBe(true);
+    expect(eas.build.preview.distribution).toBe("internal");
+  });
+
   it("lists only plugins whose packages the app uses", () => {
     const names = (config.plugins ?? []).map((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin));
     expect(names).not.toContain("expo-image");

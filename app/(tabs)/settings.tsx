@@ -92,7 +92,6 @@ export default function SettingsScreen() {
             <AppHeader
               eyebrow={t("family.settings.eyebrow")}
               title={t("family.settings.title")}
-              connected={false}
             />
           </View>
         </View>

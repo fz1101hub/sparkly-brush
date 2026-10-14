@@ -64,7 +64,6 @@ export default function ExploreScreen() {
         <AppHeader
           eyebrow={t("game.explore.eyebrow")}
           title={t("game.explore.title")}
-          connected={false}
         />
         <View
           style={[
