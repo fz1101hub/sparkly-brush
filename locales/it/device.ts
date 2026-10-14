@@ -60,6 +60,10 @@ export const itDevice = {
   "device.openAppSettings": "Apri impostazioni dell’app",
   "device.openBluetoothSettings": "Apri impostazioni Bluetooth",
   "device.openLocationSettings": "Apri impostazioni Localizzazione",
+  "device.gap.message": "Il manico conserva più sessioni di quante l’app possa recuperare in una volta. Puoi riprendere dalle più recenti: quelle più vecchie non verranno importate.",
+  "device.gap.action": "Riprendi dalle ultime sessioni",
+  "device.gap.confirmTitle": "Riprendere dalle ultime sessioni?",
+  "device.gap.confirmMessage": "L’app importerà solo le sessioni più recenti che il manico conserva ancora e segnerà come perse quelle precedenti. Storico e progressi già salvati restano.",
   "device.demoEyebrow": "LABORATORIO SENZA SPAZZOLINO",
   "device.demoTitle": "Modalità demo",
   "device.demoSummary":
@@ -459,6 +463,7 @@ export const itDevice = {
   "brush.client.connectionFailedRetry": "Connessione allo spazzolino non riuscita: riprova",
   "brush.client.scanStartFailed": "Impossibile avviare la scansione Bluetooth: riprova tra poco",
   "brush.client.locationServicesDisabled": "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth",
+  "brush.client.gapSkipped": "Riallineamento: {count} {count|sessione del manico non recuperabile saltata|sessioni del manico non recuperabili saltate}",
   "brush.client.locationPermissionRequired":
     "Autorizzazione alla posizione necessaria per la scansione Bluetooth",
   "brush.client.connectionInProgress": "Connessione Bluetooth già in corso",

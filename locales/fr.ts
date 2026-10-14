@@ -261,6 +261,10 @@ export const fr = {
   "device.openAppSettings": "Ouvrir les réglages de l’app",
   "device.openBluetoothSettings": "Ouvrir les réglages Bluetooth",
   "device.openLocationSettings": "Ouvrir les réglages de localisation",
+  "device.gap.message": "Le manche conserve plus de séances que l’app ne peut en récupérer d’un coup. Tu peux reprendre à partir des plus récentes : les plus anciennes ne seront pas importées.",
+  "device.gap.action": "Reprendre aux dernières séances",
+  "device.gap.confirmTitle": "Reprendre aux dernières séances ?",
+  "device.gap.confirmMessage": "L’app importera uniquement les séances les plus récentes que le manche conserve encore et marquera les précédentes comme perdues. L’historique et les progrès déjà enregistrés restent.",
   "device.demoEyebrow": "LABORATOIRE SANS BROSSE À DENTS",
   "device.demoTitle": "Mode démo",
   "device.demoSummary":
@@ -1132,6 +1136,7 @@ export const fr = {
   "brush.client.connectionFailedRetry": "Connexion à la brosse à dents impossible : réessaie",
   "brush.client.scanStartFailed": "Impossible de lancer la recherche Bluetooth : réessaie dans un instant",
   "brush.client.locationServicesDisabled": "Active la localisation dans les réglages Android : elle est nécessaire à la recherche Bluetooth",
+  "brush.client.gapSkipped": "Réalignement : {count} {count|séance irrécupérable du manche ignorée|séances irrécupérables du manche ignorées}",
   "brush.client.locationPermissionRequired":
     "L’autorisation de localisation est nécessaire pour la recherche Bluetooth",
   "brush.client.connectionInProgress":

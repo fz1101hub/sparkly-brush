@@ -21,6 +21,7 @@ import {
   type ScanTarget,
   type SonicareClient,
   type StoredDeviceSession,
+  type SyncOptions,
   type ToothbrushDevice,
 } from "@/lib/brush-types";
 import {
@@ -119,6 +120,7 @@ type BrushContextValue = {
   disconnect: () => Promise<void>;
   forgetToothbrush: () => Promise<void>;
   syncLatest: () => Promise<void>;
+  resyncSkippingGap: () => Promise<void>;
   startManual: () => void;
   stopManual: () => Promise<void>;
   retryManualSession: () => Promise<void>;
@@ -672,7 +674,7 @@ export function BrushProvider({
     }
   }, [appendLog, appendTranslatedLog, disconnect, t]);
 
-  const syncLatest = useCallback(async () => {
+  const runSync = useCallback(async (options?: SyncOptions) => {
     if (forgettingToothbrushRef.current) {
       appendTranslatedLog("warning", "brush.log.waitForForget");
       return;
@@ -690,7 +692,7 @@ export function BrushProvider({
       setStatusDetail(null);
       const cursor =
         lifetimeProgressRef.current.deviceCursors[deviceKey(deviceId)] ?? null;
-      const stored = await clientRef.current?.syncStoredSessionsSince(cursor);
+      const stored = await clientRef.current?.syncStoredSessionsSince(cursor, options);
       if (stored?.length) {
         const persisted = await persistDeviceSessions(stored, deviceId);
         appendTranslatedLog(
@@ -713,6 +715,10 @@ export function BrushProvider({
       } else appendTranslatedLog("error", "brush.error.syncFailed");
     }
   }, [appendLog, appendTranslatedLog, demoMode, persistDeviceSessions]);
+
+  const syncLatest = useCallback(() => runSync(), [runSync]);
+  /** Audit B4: resumes from the records the handle still keeps when the gap is unrecoverable. */
+  const resyncSkippingGap = useCallback(() => runSync({ allowGap: true }), [runSync]);
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     if (forgettingToothbrushRef.current) {
@@ -938,6 +944,7 @@ export function BrushProvider({
       disconnect,
       forgetToothbrush,
       syncLatest,
+      resyncSkippingGap,
       startManual,
       stopManual,
       retryManualSession,
@@ -982,6 +989,7 @@ export function BrushProvider({
       reloadRealHistory,
       adoptRestoredHistory,
       restoreRealHistory,
+      resyncSkippingGap,
       retryManualSession,
       setDemoMode,
       startManual,

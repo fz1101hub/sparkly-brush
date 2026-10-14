@@ -1416,3 +1416,59 @@ describe("abbinamento del manico nel provider", () => {
     await act(async () => renderer.unmount());
   });
 });
+
+describe("riallineamento dopo intervallo non recuperabile nel provider", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.loadLastDevice.mockReset().mockResolvedValue(null);
+    mocks.saveLastDevice.mockReset().mockResolvedValue(undefined);
+    mocks.saveDeviceBatch.mockReset().mockResolvedValue({
+      recentHistory: [],
+      lifetimeProgress: createEmptyLifetimeProgress(),
+      event: null,
+      importedCount: 0,
+    });
+  });
+
+  it("chiede al client di saltare l'intervallo e ripulisce il blocco mostrato", async () => {
+    const holder: { client?: FakeClient } = {};
+    let brush!: ReturnType<typeof useBrush>;
+    function Probe() {
+      brush = useBrush();
+      return null;
+    }
+    const renderer = createRoot();
+    await act(async () => {
+      renderer.render(
+        <TestLocaleProvider locale="it">
+          <BrushProvider
+            clientFactory={(events) => {
+              holder.client = new FakeClient(events);
+              return holder.client;
+            }}
+          >
+            <Probe />
+          </BrushProvider>
+        </TestLocaleProvider>,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const client = holder.client!;
+    act(() => client.events.onDevice({ id: "brush-a", name: "Sonicare4Kids", model: "HX6322/04" }));
+    client.syncStoredSessionsSince.mockRejectedValueOnce(
+      new Error("Intervallo BLE non sicuro (290 sessioni): il cursore non è stato avanzato"),
+    );
+    await act(async () => {
+      await brush.syncLatest();
+    });
+    expect(brush.statusDetail).toBe("Intervallo BLE non sicuro (290 sessioni): il cursore non è stato avanzato");
+
+    client.syncStoredSessionsSince.mockResolvedValueOnce([]);
+    await act(async () => {
+      await brush.resyncSkippingGap();
+    });
+    expect(client.syncStoredSessionsSince).toHaveBeenLastCalledWith(null, { allowGap: true });
+    expect(brush.statusDetail).toBeNull();
+    await act(async () => renderer.unmount());
+  });
+});

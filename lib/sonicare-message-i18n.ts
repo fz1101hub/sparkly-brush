@@ -80,6 +80,17 @@ const HANDLE_STATES: Record<string, TranslationKey> = {
   background: "device.handleState.background",
 };
 
+const UNRECOVERABLE_GAP_PATTERNS = [
+  /^Il manico espone \d+ sessioni: sincronizzazione oltre il limite sicuro$/,
+  /^Intervallo BLE non sicuro \(\d+ sessioni\): il cursore non è stato avanzato$/,
+  /^Lo storico del manico non contiene più tutte le sessioni mancanti$/,
+];
+
+/** True when a sync stopped because the handle holds more than one batch can recover (audit B4). */
+export function isUnrecoverableGapMessage(message: string): boolean {
+  return UNRECOVERABLE_GAP_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 /** The translation key of an exact client message, for screens that react to a specific state. */
 export function sonicareMessageKey(message: string): TranslationKey | null {
   return Object.prototype.hasOwnProperty.call(EXACT_MESSAGES, message) ? EXACT_MESSAGES[message] : null;
@@ -89,7 +100,8 @@ export function sonicareMessageKey(message: string): TranslationKey | null {
 export function isKnownSonicareMessage(message: string): boolean {
   return Object.prototype.hasOwnProperty.call(EXACT_MESSAGES, message)
     || /^(?:Il manico espone \d+ sessioni: sincronizzazione oltre il limite sicuro|Intervallo BLE non sicuro \(\d+ sessioni\): il cursore non è stato avanzato|Record BLE \d+ mancante o non riconosciuto; cursore invariato)$/.test(message)
-    || /^(?:\d+ servizi GATT rilevati|\d+ sessioni BLE pronte per il salvataggio atomico)$/.test(message);
+    || /^(?:\d+ servizi GATT rilevati|\d+ sessioni BLE pronte per il salvataggio atomico)$/.test(message)
+    || /^Riallineamento: \d+ sessioni del manico non recuperabili saltate$/.test(message);
 }
 
 export function localizeSonicareMessage(
@@ -133,6 +145,9 @@ export function localizeSonicareMessage(
     message,
   );
   if (match) return t("brush.client.sessionsReady", { count: match[1] });
+
+  match = /^Riallineamento: (\d+) sessioni del manico non recuperabili saltate$/.exec(message);
+  if (match) return t("brush.client.gapSkipped", { count: match[1] });
 
   match =
     /^Il manico espone (\d+) sessioni: sincronizzazione oltre il limite sicuro$/.exec(

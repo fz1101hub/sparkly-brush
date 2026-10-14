@@ -258,6 +258,10 @@ export const en = {
   "device.openAppSettings": "Open app settings",
   "device.openBluetoothSettings": "Open Bluetooth settings",
   "device.openLocationSettings": "Open Location settings",
+  "device.gap.message": "The handle holds more sessions than the app can recover at once. You can resume from the most recent ones: older sessions will not be imported.",
+  "device.gap.action": "Resume from the latest sessions",
+  "device.gap.confirmTitle": "Resume from the latest sessions?",
+  "device.gap.confirmMessage": "The app will import only the most recent sessions the handle still keeps and mark the earlier ones as lost. History and progress already saved stay.",
   "device.demoEyebrow": "TOOTHBRUSH-FREE LAB",
   "device.demoTitle": "Demo mode",
   "device.demoSummary": "{count} {count|sample session|sample sessions} · real data stays safe",
@@ -1113,6 +1117,7 @@ export const en = {
   "brush.client.connectionFailedRetry": "Could not connect to the toothbrush: try again",
   "brush.client.scanStartFailed": "Could not start the Bluetooth scan: try again shortly",
   "brush.client.locationServicesDisabled": "Turn on Location in Android settings: it is required for Bluetooth scanning",
+  "brush.client.gapSkipped": "Realignment: {count} unrecoverable handle {count|session|sessions} skipped",
   "brush.client.locationPermissionRequired":
     "Location permission is required for Bluetooth scanning",
   "brush.client.connectionInProgress":

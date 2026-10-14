@@ -860,3 +860,71 @@ describe("errori react-native-ble-plx", () => {
     expect(events.onStatus).toHaveBeenLastCalledWith("error", "Scan failed");
   });
 });
+
+describe("riallineamento dopo un intervallo non recuperabile (B4)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function connectedClient(count: number | null) {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 300,
+      count: count ?? 0,
+      countError: count === null ? missingSessionCountError() : undefined,
+      handleTime: 1_000_000,
+      recordTimes: {},
+    });
+    return { client, events, device: manager.devices[0] };
+  }
+
+  it("senza richiesta esplicita l'intervallo troppo ampio continua a bloccare la sync", async () => {
+    const { client } = await connectedClient(128);
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 10, acceptNextSession: false }))
+      .rejects.toThrow("Intervallo BLE non sicuro (290 sessioni)");
+  });
+
+  it("su richiesta importa l'ultimo batch che il manico conserva e registra quante sessioni sono perse", async () => {
+    vi.useFakeTimers();
+    const { client, events } = await connectedClient(128);
+    const operation = client.syncStoredSessionsSince(
+      { lastSessionId: 10, acceptNextSession: false },
+      { allowGap: true },
+    );
+    // Each record waits for the handle to load it (180 ms): skip that wait for 128 records.
+    await vi.advanceTimersByTimeAsync(128 * 1_000);
+    const sessions = await operation;
+    vi.useRealTimers();
+    expect(sessions).toHaveLength(128);
+    expect(sessions[0].sessionId).toBe(173);
+    expect(sessions.at(-1)?.sessionId).toBe(300);
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 162 sessioni del manico non recuperabili saltate");
+  });
+
+  it("senza sessionCount riprende dal solo record più recente", async () => {
+    const { client, events } = await connectedClient(null);
+    const sessions = await client.syncStoredSessionsSince(
+      { lastSessionId: 10, acceptNextSession: false },
+      { allowGap: true },
+    );
+    expect(sessions.map((session) => session.sessionId)).toEqual([300]);
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 289 sessioni del manico non recuperabili saltate");
+  });
+
+  it("quando il manico ha scartato parte delle sessioni mancanti riprende da quelle ancora presenti", async () => {
+    const { client, events } = await connectedClient(20);
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 250, acceptNextSession: false }))
+      .rejects.toThrow("Lo storico del manico non contiene più tutte le sessioni mancanti");
+    vi.useFakeTimers();
+    const operation = client.syncStoredSessionsSince(
+      { lastSessionId: 250, acceptNextSession: false },
+      { allowGap: true },
+    );
+    await vi.advanceTimersByTimeAsync(20 * 1_000);
+    const sessions = await operation;
+    vi.useRealTimers();
+    expect(sessions.map((session) => session.sessionId)).toEqual(Array.from({ length: 20 }, (_, i) => 281 + i));
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 30 sessioni del manico non recuperabili saltate");
+  });
+});

@@ -263,6 +263,10 @@ export const de = {
   "device.openAppSettings": "App-Einstellungen öffnen",
   "device.openBluetoothSettings": "Bluetooth-Einstellungen öffnen",
   "device.openLocationSettings": "Standort-Einstellungen öffnen",
+  "device.gap.message": "Der Handgriff speichert mehr Sitzungen, als die App auf einmal abrufen kann. Du kannst mit den neuesten fortfahren: Ältere Sitzungen werden nicht importiert.",
+  "device.gap.action": "Mit den neuesten Sitzungen fortfahren",
+  "device.gap.confirmTitle": "Mit den neuesten Sitzungen fortfahren?",
+  "device.gap.confirmMessage": "Die App importiert nur die neuesten Sitzungen, die der Handgriff noch speichert, und markiert die früheren als verloren. Bereits gespeicherter Verlauf und Fortschritt bleiben.",
   "device.demoEyebrow": "WERKSTATT OHNE ZAHNBÜRSTE",
   "device.demoTitle": "Demo-Modus",
   "device.demoSummary":
@@ -1146,6 +1150,7 @@ export const de = {
   "brush.client.connectionFailedRetry": "Verbindung zur Zahnbürste fehlgeschlagen: Versuch es erneut",
   "brush.client.scanStartFailed": "Bluetooth-Suche konnte nicht gestartet werden: Versuch es gleich noch einmal",
   "brush.client.locationServicesDisabled": "Schalte den Standort in den Android-Einstellungen ein: Er ist für die Bluetooth-Suche nötig",
+  "brush.client.gapSkipped": "Neuabgleich: {count} nicht wiederherstellbare {count|Sitzung|Sitzungen} des Handgriffs übersprungen",
   "brush.client.locationPermissionRequired":
     "Für die Bluetooth-Suche ist die Standortberechtigung erforderlich",
   "brush.client.connectionInProgress":

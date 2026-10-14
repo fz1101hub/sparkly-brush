@@ -15,6 +15,7 @@ import {
   type ScanTarget,
   type SonicareClient,
   type StoredDeviceSession,
+  type SyncOptions,
 } from "@/lib/brush-types";
 import {
   decodeKidsSession,
@@ -550,26 +551,31 @@ export class NativeSonicareClient implements SonicareClient {
     latest: number,
     sessionCount: number | null,
     cursor?: DeviceSyncCursor | null,
-  ): number[] {
+    allowGap = false,
+  ): { sessionIds: number[]; skipped: number } {
+    const lastIds = (count: number) => Array.from(
+      { length: count },
+      (_, index) => (latest - count + index + 1 + 0x1_0000) & 0xffff,
+    );
     if (!cursor) {
-      if (sessionCount === 0) return [];
+      if (sessionCount === 0) return { sessionIds: [], skipped: 0 };
       if (sessionCount === null) {
         // A rejected read means the optional characteristic is not usable.  Do not infer
         // retention from latest: the only record that can be addressed without a count is latest.
-        return [latest];
+        return { sessionIds: [latest], skipped: 0 };
       }
       const available = sessionCount;
       if (available > MAX_SYNC_BATCH) {
-        throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+        if (!allowGap) {
+          throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+        }
+        return { sessionIds: lastIds(MAX_SYNC_BATCH), skipped: available - MAX_SYNC_BATCH };
       }
-      return Array.from(
-        { length: available },
-        (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
-      );
+      return { sessionIds: lastIds(available), skipped: 0 };
     }
 
     if (cursor.acceptNextSession) {
-      if (sessionCount === 0) return [];
+      if (sessionCount === 0) return { sessionIds: [], skipped: 0 };
       if (sessionCount === null) {
         throw new Error("Conteggio storico BLE non disponibile: il reset non può essere verificato");
       }
@@ -585,10 +591,10 @@ export class NativeSonicareClient implements SonicareClient {
         resetBaselineSessionId: cursor.resetBaselineSessionId,
         sessionIds,
       });
-      return sessionIds;
+      return { sessionIds, skipped: 0 };
     }
 
-    if (latest === cursor.lastSessionId) return [];
+    if (latest === cursor.lastSessionId) return { sessionIds: [], skipped: 0 };
     const rollover = cursor.lastSessionId >= 65_000 && latest <= 1_024;
     if (latest < cursor.lastSessionId && !rollover) {
       throw new Error("Il contatore del manico sembra essere stato azzerato: usa ‘Dimentica manico resettato’");
@@ -596,16 +602,30 @@ export class NativeSonicareClient implements SonicareClient {
     const distance = rollover
       ? 0x1_0000 - cursor.lastSessionId + latest
       : latest - cursor.lastSessionId;
-    if (distance <= 0 || distance > MAX_SYNC_BATCH) {
+    if (distance <= 0) {
       throw new Error(`Intervallo BLE non sicuro (${distance} sessioni): il cursore non è stato avanzato`);
     }
-    if (sessionCount !== null && distance > sessionCount) {
-      throw new Error("Lo storico del manico non contiene più tutte le sessioni mancanti");
+    const beyondBatch = distance > MAX_SYNC_BATCH;
+    const beyondRetention = sessionCount !== null && distance > sessionCount;
+    if (beyondBatch || beyondRetention) {
+      if (!allowGap) {
+        if (beyondBatch) {
+          throw new Error(`Intervallo BLE non sicuro (${distance} sessioni): il cursore non è stato avanzato`);
+        }
+        throw new Error("Lo storico del manico non contiene più tutte le sessioni mancanti");
+      }
+      // Explicit recovery (audit B4): without `40d2` only latest is addressable, otherwise the
+      // records the handle still keeps, capped to one safe batch. The rest is gone for good.
+      const available = sessionCount === null ? 1 : Math.min(sessionCount, MAX_SYNC_BATCH);
+      return { sessionIds: lastIds(available), skipped: distance - available };
     }
-    return Array.from(
-      { length: distance },
-      (_, index) => (cursor.lastSessionId + index + 1) & 0xffff,
-    );
+    return {
+      sessionIds: Array.from(
+        { length: distance },
+        (_, index) => (cursor.lastSessionId + index + 1) & 0xffff,
+      ),
+      skipped: 0,
+    };
   }
 
   private async readText(service: string, characteristic: string): Promise<string> {
@@ -617,6 +637,7 @@ export class NativeSonicareClient implements SonicareClient {
     device: Device,
     generation: number,
     cursor?: DeviceSyncCursor | null,
+    allowGap = false,
   ): Promise<StoredDeviceSession[]> {
     this.assertConnection(device, generation);
     const transactionPrefix = `sonicare-sync-${generation}-${++this.syncSequence}`;
@@ -680,7 +701,10 @@ export class NativeSonicareClient implements SonicareClient {
       this.events.onLog("warning", "Clock del manico non disponibile: data sessione approssimata");
     }
     const anchorWallTime = Math.floor((anchorBefore + Date.now()) / 2);
-    const sessionIds = this.sessionIdsToSync(latest, sessionCount, cursor);
+    const { sessionIds, skipped } = this.sessionIdsToSync(latest, sessionCount, cursor, allowGap);
+    if (skipped > 0) {
+      this.events.onLog("warning", `Riallineamento: ${skipped} sessioni del manico non recuperabili saltate`);
+    }
     if (!cursor && sessionCountReadFailed) {
       this.events.onLog(
         "warning",
@@ -742,11 +766,15 @@ export class NativeSonicareClient implements SonicareClient {
     return sessions;
   }
 
-  async syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]> {
+  async syncStoredSessionsSince(
+    cursor?: DeviceSyncCursor | null,
+    options?: SyncOptions,
+  ): Promise<StoredDeviceSession[]> {
     const device = this.device;
     if (!device) throw new Error("Collega prima lo spazzolino");
     const generation = this.connectionGeneration;
-    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation, cursor));
+    const allowGap = options?.allowGap === true;
+    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation, cursor, allowGap));
     this.syncQueue = operation.then(() => undefined, () => undefined);
     return operation;
   }

@@ -10,7 +10,12 @@ import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
 import { confirmAction, confirmDestructive, showMessage } from "@/lib/dialogs";
-import { isKnownSonicareMessage, localizeSonicareMessage, sonicareMessageKey } from "@/lib/sonicare-message-i18n";
+import {
+  isKnownSonicareMessage,
+  isUnrecoverableGapMessage,
+  localizeSonicareMessage,
+  sonicareMessageKey,
+} from "@/lib/sonicare-message-i18n";
 
 const LIGHT_CARD_FOREGROUND = "#17213A";
 const LIGHT_CARD_MUTED = "#56617D";
@@ -32,6 +37,7 @@ export default function DeviceScreen() {
     disconnect,
     forgetToothbrush,
     syncLatest,
+    resyncSkippingGap,
     demoMode,
     demoSessionCount,
     setDemoMode,
@@ -52,6 +58,17 @@ export default function DeviceScreen() {
   const bluetoothOff = !permissionBlocked
     && (adapterState === "PoweredOff" || detailKey === "brush.client.poweredOff");
   const locationOff = detailKey === "brush.client.locationServicesDisabled";
+  const gapBlocked = connected && statusDetail !== null && isUnrecoverableGapMessage(statusDetail);
+
+  const confirmResync = () => {
+    confirmAction({
+      title: t("device.gap.confirmTitle"),
+      message: t("device.gap.confirmMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.gap.action"),
+      onConfirm: () => runAction(resyncSkippingGap()),
+    });
+  };
   const systemHint = permissionBlocked
     ? { text: t("device.hint.permission"), action: t("device.openAppSettings"), open: () => Linking.openSettings() }
     : locationOff
@@ -198,6 +215,24 @@ export default function DeviceScreen() {
                       <Text style={styles.hintButtonText}>{systemHint.action}</Text>
                     </Pressable>
                   ) : null}
+                </View>
+              </View>
+            ) : null}
+
+            {gapBlocked && !demoMode ? (
+              <View testID="device-gap-hint" style={styles.hintCard}>
+                <MaterialIcons name="history-toggle-off" size={22} color="#7A4B00" />
+                <View style={styles.hintCopy}>
+                  <Text style={styles.hintText}>{t("device.gap.message")}</Text>
+                  <Pressable
+                    testID="device-resync-gap"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.gap.action")}
+                    onPress={confirmResync}
+                    style={({ pressed }) => [styles.hintButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.hintButtonText}>{t("device.gap.action")}</Text>
+                  </Pressable>
                 </View>
               </View>
             ) : null}

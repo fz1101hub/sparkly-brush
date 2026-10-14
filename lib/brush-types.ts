@@ -82,11 +82,19 @@ export type ScanTarget =
   | { mode: "paired"; deviceId: string }
   | { mode: "replace"; currentDeviceId: string };
 
+export type SyncOptions = {
+  /**
+   * Resume from the most recent records when the gap since the cursor exceeds what the handle
+   * still keeps or what one batch may import; the skipped sessions are lost and logged.
+   */
+  allowGap?: boolean;
+};
+
 export interface SonicareClient {
   initialize(): Promise<void>;
   scanAndConnect(target?: ScanTarget): Promise<void>;
   disconnect(): Promise<void>;
-  syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]>;
+  syncStoredSessionsSince(cursor?: DeviceSyncCursor | null, options?: SyncOptions): Promise<StoredDeviceSession[]>;
   destroy(): void;
 }
 

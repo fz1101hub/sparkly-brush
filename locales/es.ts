@@ -259,6 +259,10 @@ export const es = {
   "device.openAppSettings": "Abrir ajustes de la app",
   "device.openBluetoothSettings": "Abrir ajustes de Bluetooth",
   "device.openLocationSettings": "Abrir ajustes de Ubicación",
+  "device.gap.message": "El mango guarda más sesiones de las que la app puede recuperar de una vez. Puedes continuar desde las más recientes: las más antiguas no se importarán.",
+  "device.gap.action": "Continuar desde las últimas sesiones",
+  "device.gap.confirmTitle": "¿Continuar desde las últimas sesiones?",
+  "device.gap.confirmMessage": "La app importará solo las sesiones más recientes que el mango aún conserva y marcará como perdidas las anteriores. El historial y los progresos ya guardados se conservan.",
   "device.demoEyebrow": "LABORATORIO SIN CEPILLO",
   "device.demoTitle": "Modo demo",
   "device.demoSummary":
@@ -1123,6 +1127,7 @@ export const es = {
   "brush.client.connectionFailedRetry": "No se pudo conectar con el cepillo: inténtalo de nuevo",
   "brush.client.scanStartFailed": "No se pudo iniciar la búsqueda Bluetooth: inténtalo en un momento",
   "brush.client.locationServicesDisabled": "Activa la Ubicación en los ajustes de Android: es necesaria para la búsqueda Bluetooth",
+  "brush.client.gapSkipped": "Realineación: {count} {count|sesión irrecuperable del mango omitida|sesiones irrecuperables del mango omitidas}",
   "brush.client.locationPermissionRequired":
     "El permiso de ubicación es necesario para buscar por Bluetooth",
   "brush.client.connectionInProgress": "Ya hay una conexión Bluetooth en curso",
