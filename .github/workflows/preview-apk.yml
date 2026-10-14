@@ -1,9 +1,13 @@
 name: Preview APK
 
 # APK di prova per dispositivi reali: build release con la firma di debug (non pubblicabile),
-# scaricabile come artefatto del run per 14 giorni.
+# scaricabile come artefatto del run per 14 giorni. Avvio manuale da main, oppure da un
+# ramo di lavoro con un commit il cui messaggio contiene "[apk]" (GitHub registra i
+# workflow_dispatch solo dal ramo predefinito).
 on:
   workflow_dispatch:
+  push:
+    branches: ["ccr-2641c3c7-7vb0o0"]
 
 concurrency:
   group: preview-apk-${{ github.ref_name }}
@@ -16,6 +20,7 @@ env:
 jobs:
   apk:
     name: APK release con firma di debug
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
