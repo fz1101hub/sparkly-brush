@@ -328,9 +328,10 @@ test.describe("percorso funzionale web", () => {
     await page.getByTestId("parent-gate-confirm").click();
     await expect(page.getByText("Area genitori", { exact: true }).first()).toBeVisible();
 
-    // A solved challenge keeps the other parent areas open for a while.
-    await page.goto("/backup");
-    await expect(page.getByTestId("backup-screen")).toBeVisible();
+    // A solved challenge keeps the other parent areas open for a while (in-app navigation:
+    // a full page reload starts a new session and asks again).
+    await page.getByRole("button", { name: "Apri le impostazioni" }).click();
+    await expect(page.getByRole("switch", { name: "Blocco genitori" })).toBeVisible();
     await expect(page.getByTestId("parent-gate-card")).toHaveCount(0);
   });
 });
