@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
+import { ParentGuard } from "@/components/parent-guard";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
@@ -49,6 +50,13 @@ export default function SettingsScreen() {
 
   const rows = [
     {
+      key: "parentGateEnabled" as const,
+      icon: "lock" as const,
+      testID: "settings-parent-gate",
+      title: t("family.settings.parentGateTitle"),
+      text: t("family.settings.parentGateDescription"),
+    },
+    {
       key: "soundsEnabled" as const,
       icon: "volume-up" as const,
       title: t("family.settings.soundsTitle"),
@@ -70,6 +78,7 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer>
+      <ParentGuard>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -196,6 +205,7 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Switch
+                  testID={"testID" in row ? row.testID : undefined}
                   accessibilityLabel={row.title}
                   value={preferences[row.key]}
                   onValueChange={(value) => runAction(setPreference(row.key, value))}
@@ -224,6 +234,7 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+      </ParentGuard>
     </ScreenContainer>
   );
 }

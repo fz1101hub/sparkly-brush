@@ -32,6 +32,14 @@ export const fr = {
   "error.message": "L’app a rencontré un problème inattendu. Tes données sont en sécurité : réessaie, ou ferme puis rouvre l’app.",
   "error.retry": "Réessayer",
   "error.detailsLabel": "Détail technique",
+  "parentGate.title": "Réservé aux parents",
+  "parentGate.message": "Réponds pour continuer : ainsi les enfants ne changent rien par accident.",
+  "parentGate.question": "Combien font {first} × {second} ?",
+  "parentGate.inputLabel": "Résultat de la multiplication",
+  "parentGate.placeholder": "Résultat",
+  "parentGate.confirm": "Continuer",
+  "parentGate.wrong": "Mauvaise réponse : essaie avec la nouvelle question.",
+  "parentGate.back": "Revenir",
   "common.actionFailedTitle": "Action impossible",
   "common.actionFailedMessage": "Réessaie dans un instant. Si le problème persiste, ferme puis rouvre l’app.",
   "recovery.inProgressMessage":
@@ -1081,6 +1089,8 @@ export const fr = {
   "family.settings.hapticsTitle": "Vibration",
   "family.settings.hapticsDescription":
     "Retour haptique sur les appuis, à la fin de la session et lors des récompenses.",
+  "family.settings.parentGateTitle": "Verrou parental",
+  "family.settings.parentGateDescription": "Pose une multiplication avant d’ouvrir l’Espace parents, la Sauvegarde et les Réglages, et avant de supprimer l’historique ou le manche.",
   "family.settings.audioNote":
     "Les sons ne doivent jamais être nécessaires pour comprendre ce qui se passe : l’application fournit toujours du texte, des icônes et des retours visuels.",
   "brush.client.bluetoothState": "Bluetooth : {state}",

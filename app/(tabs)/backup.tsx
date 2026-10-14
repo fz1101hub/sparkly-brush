@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
+import { ParentGuard } from "@/components/parent-guard";
 import { ScreenContainer } from "@/components/screen-container";
 import { GOLD_BUTTON_BACKGROUND } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
@@ -328,6 +329,7 @@ export default function BackupScreen() {
 
   return (
     <ScreenContainer>
+      <ParentGuard>
       <ScrollView testID="backup-screen" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <Pressable
@@ -705,6 +707,7 @@ export default function BackupScreen() {
           </Text>
         </View>
       </ScrollView>
+      </ParentGuard>
     </ScreenContainer>
   );
 }

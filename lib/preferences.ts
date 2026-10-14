@@ -13,6 +13,8 @@ export type AppPreferences = {
   musicEnabled: boolean;
   hapticsEnabled: boolean;
   language: LanguagePreference;
+  /** Opt-in: parent areas and destructive actions ask a multiplication first. */
+  parentGateEnabled: boolean;
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
@@ -21,6 +23,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   musicEnabled: false,
   hapticsEnabled: true,
   language: "system",
+  parentGateEnabled: false,
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {
@@ -36,6 +39,7 @@ export async function loadAppPreferences(): Promise<AppPreferences> {
       language: isLanguagePreference(parsed.language)
         ? parsed.language
         : "system",
+      parentGateEnabled: parsed.parentGateEnabled === true,
     };
   } catch {
     return DEFAULT_APP_PREFERENCES;

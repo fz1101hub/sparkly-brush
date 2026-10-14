@@ -119,6 +119,7 @@ function normalizePreferences(value: unknown): AppPreferences {
     musicEnabled: raw.musicEnabled === true,
     hapticsEnabled: raw.hapticsEnabled !== false,
     language: isLanguagePreference(raw.language) ? raw.language : "system",
+    parentGateEnabled: raw.parentGateEnabled === true,
   };
 }
 

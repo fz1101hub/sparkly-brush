@@ -13,6 +13,7 @@ import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
+import { ParentGateProvider } from "@/contexts/parent-gate-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import { AppLocaleProvider } from "@/contexts/app-locale-provider";
@@ -118,6 +119,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PreferencesProvider>
         <AppLocaleProvider>
+          <ParentGateProvider>
           <DataRecoveryGate>
             <BrushProvider>
               <AudioFeedbackProvider>
@@ -134,6 +136,7 @@ export default function RootLayout() {
               </AudioFeedbackProvider>
             </BrushProvider>
           </DataRecoveryGate>
+          </ParentGateProvider>
         </AppLocaleProvider>
       </PreferencesProvider>
     </GestureHandlerRootView>

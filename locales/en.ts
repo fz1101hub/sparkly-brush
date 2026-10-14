@@ -32,6 +32,14 @@ export const en = {
   "error.message": "The app hit an unexpected problem. Your data is safe: try again, or close and reopen the app.",
   "error.retry": "Try again",
   "error.detailsLabel": "Technical detail",
+  "parentGate.title": "Parents only",
+  "parentGate.message": "Answer to continue: this keeps children from changing things by accident.",
+  "parentGate.question": "What is {first} × {second}?",
+  "parentGate.inputLabel": "Result of the multiplication",
+  "parentGate.placeholder": "Result",
+  "parentGate.confirm": "Continue",
+  "parentGate.wrong": "Wrong answer: try the new question.",
+  "parentGate.back": "Go back",
   "common.actionFailedTitle": "Something went wrong",
   "common.actionFailedMessage": "Try again shortly. If the problem continues, close and reopen the app.",
   "recovery.inProgressMessage":
@@ -1065,6 +1073,8 @@ export const en = {
   "family.settings.hapticsTitle": "Vibration",
   "family.settings.hapticsDescription":
     "Haptic feedback for taps, session completion, and rewards.",
+  "family.settings.parentGateTitle": "Parent lock",
+  "family.settings.parentGateDescription": "Asks a multiplication before opening the Parent area, Backup and Settings and before deleting the history or the handle.",
   "family.settings.audioNote":
     "Sounds should never be needed to understand what is happening: the app always keeps text, icons, and visual feedback.",
   "brush.client.bluetoothState": "Bluetooth: {state}",

@@ -12,6 +12,7 @@ import {
 
 import { AppHeader } from "@/components/app-header";
 import { DemoModeNotice } from "@/components/demo-mode-notice";
+import { ParentGuard } from "@/components/parent-guard";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
@@ -122,6 +123,7 @@ export default function ParentDashboardScreen() {
 
   return (
     <ScreenContainer>
+      <ParentGuard>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -696,6 +698,7 @@ export default function ParentDashboardScreen() {
           </Text>
         </View>
       </ScrollView>
+      </ParentGuard>
     </ScreenContainer>
   );
 }

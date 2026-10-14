@@ -237,3 +237,23 @@ test.describe("WCAG automatic audit in demo mode", () => {
     });
   }
 });
+
+test.describe("WCAG automatic audit of the parent gate", () => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test.describe(colorScheme, () => {
+      test.use({ colorScheme });
+
+      test(`challenge before the parent area in ${colorScheme}`, async ({ page }, testInfo) => {
+        await completeFirstRun(page);
+        await page.goto("/settings");
+        await page.getByRole("switch", { name: "Blocco genitori" }).click();
+        await page.goto("/parent");
+        await expect(page.getByTestId("parent-gate-card")).toBeVisible();
+        await page.getByTestId("parent-gate-input").fill("1");
+        await page.getByTestId("parent-gate-confirm").click();
+        await expect(page.getByTestId("parent-gate-wrong")).toBeVisible();
+        await scan(page, testInfo, `${colorScheme}-parent-gate`);
+      });
+    });
+  }
+});

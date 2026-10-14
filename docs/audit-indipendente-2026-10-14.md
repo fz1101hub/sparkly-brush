@@ -113,8 +113,21 @@
 
 | Rilievo | Stato | Perché |
 |---|---|---|
-| B4 — intervallo > 128 sessioni senza uscita | Latente | Serve conoscere la retention reale del manico; la via d'uscita è "Dimentica manico resettato" dopo un reset di fabbrica. |
-| M4 — timer manuale con manico non collegato | Decisione di prodotto | Il manico scollegato può registrare una sessione mentre il timer manuale gira; i due accrediti vengono distinti solo alla sync. |
+| B4 — intervallo > 128 sessioni senza uscita | **Chiuso** (§7) | "Riprendi dalle ultime sessioni" importa l'ultimo batch ancora leggibile e registra le sessioni perse; non serve più il reset di fabbrica. |
+| M4 — timer manuale con manico non collegato | **Chiuso** (§7) | Un record del manico che coincide nel tempo con una sessione del timer guidato sposta solo il cursore e non viene contato di nuovo. |
 | G2 — premi dei genitori contati dalla creazione | Decisione di prodotto | Semantica lifetime mantenuta e spiegata nella UI. |
 | Collaudo hardware (#3), CI (#9), advisory (#8, `braces`) | Esterni | Vedi §1 e §5. |
-| Parental gate, Kids/Families | Esclusi dal proprietario | Da riaprire se la candidatura sarà in categoria bambini. |
+| Parental gate, Kids/Families | Blocco genitori disponibile come opzione (§7); categoria da decidere | Attivabile dalle Impostazioni; se la candidatura sarà in categoria bambini va considerato di attivarlo per impostazione predefinita. |
+
+## 7. Migliorie successive all'audit (14 ottobre, stesso intervento)
+
+Richieste dal proprietario dopo la consegna dell'audit; tutte con test e gate verdi.
+
+| Tema | Cosa cambia | Verifica |
+|---|---|---|
+| Schermata di errore | `ErrorBoundary` nel layout radice: un errore di rendering mostra titolo, spiegazione, "Riprova" e dettaglio tecnico nella lingua del dispositivo, non la pagina inglese di expo-router. | `tests/app-error-screen.test.tsx` |
+| Permessi e stato del sistema | Nella scheda Spazzolino, con permesso Bluetooth negato, Bluetooth spento o (Android ≤ 11) Localizzazione disattivata, un suggerimento apre le impostazioni giuste (app, Bluetooth, Localizzazione). | `sonicareMessageKey` testato; UI letta |
+| B4 — intervallo non recuperabile | `syncStoredSessionsSince(cursor, { allowGap: true })`: importa l'ultimo batch che il manico conserva (solo il record più recente senza `sessionCount`), sposta il cursore e registra nel diario le sessioni perse; la scheda propone "Riprendi dalle ultime sessioni" con conferma. | 4 test del client, 1 del provider, messaggi |
+| M4 — timer guidato e manico | Un record del manico (con orario reale) che si sovrappone a una sessione del timer guidato già salvata, con tolleranza di due minuti, non viene inserito: sposta solo il cursore e il diario lo segnala. | `tests/native-sqlite/manual-overlap.test.ts`, storage web, `session-overlap` |
+| Blocco genitori (opt-in) | Interruttore in Impostazioni: Area genitori, Backup e Impostazioni (anche via deep link) e le azioni "Elimina storico", "Dimentica manico" e "Cambia manico" chiedono una moltiplicazione a una cifra; uno sblocco vale cinque minuti. Spento per impostazione predefinita. | `tests/parent-gate*.test.ts*`, E2E web, 2 stati axe |
+| Starter in demo | La scelta dello starter viene salvata anche con la demo attiva. | `brushling-hydration-race` |

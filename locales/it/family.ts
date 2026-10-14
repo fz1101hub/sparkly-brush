@@ -111,6 +111,8 @@ export const itFamily = {
   "family.settings.hapticsTitle": "Vibrazione",
   "family.settings.hapticsDescription":
     "Feedback aptico su tap, fine sessione e premi.",
+  "family.settings.parentGateTitle": "Blocco genitori",
+  "family.settings.parentGateDescription": "Chiede una moltiplicazione prima di aprire Area genitori, Backup e Impostazioni e prima di eliminare storico o manico.",
   "family.settings.audioNote":
     "I suoni non devono mai essere necessari per capire cosa succede: l’app mantiene sempre testo, icone e feedback visivi.",
 } as const;

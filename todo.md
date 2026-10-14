@@ -16,7 +16,7 @@ Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs
 | 10 | File condivisi Android | Corretto nel candidato | Backup e report restano in cache dopo l’handoff allo share sheet; gli errori prima dell’handoff eseguono cleanup. |
 | 11 | Privacy backup | Rafforzata | Alias BLE deterministici qualificati come pseudonimi; guardia runtime sugli ID portatili; nessun MAC/UUID grezzo ammesso. |
 | 12 | Collaudo hardware reale | Aperto | Checklist persistente di 13 casi; esecuzione fisica nell’issue #3 con HX6322/04, iPhone e Android. |
-| 13 | Parental gate | Escluso | Non sviluppato; da riaprire prima di una candidatura Kids/Families. |
+| 13 | Parental gate | Disponibile come opzione | "Blocco genitori" nelle Impostazioni (spento per impostazione predefinita): moltiplicazione prima di Area genitori, Backup, Impostazioni e delle azioni distruttive. Da valutare l'attivazione predefinita per una candidatura Kids/Families. |
 | 14 | Re-review audit Claude | Completata localmente | Re-review BLE e SQLite senza blocker, 166 test e build Android nativa pre-upgrade superati. Checkpoint `69c1c27` e PR #7 pubblicati; il merge richiede CI verde. |
 | 15 | Expo e Metro | Aggiornato a SDK 57 | Upgrade incrementale 54→55→56→57; React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57. `image-size` non è più nel grafo. |
 | 16 | Renderer dei test React | Modernizzato | `react-test-renderer` e i relativi tipi diretti rimossi; i test provider usano Test Renderer 1.2 compatibile con React 19.2. |
@@ -56,18 +56,22 @@ Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs
 | 50 | Dipendenze e residui | Corretto | Rimossi `expo-image`, `@expo/ngrok`, `@types/qrcode` e il runtime web Manus. |
 | 51 | Audit del 14 ottobre: N1–N5 | Corretto | "Elimina storico" conserva i cursori del manico (le sessioni già lette non tornano); intestazione con stato reale in tutte le schermate; pagina non trovata leggibile in tema scuro e senza tab duplicata; selettore starter non più bloccato su errore; premi dei genitori normalizzati al caricamento. |
 | 52 | Audit del 14 ottobre: store (N6, N7) | Config pronta, decisioni al proprietario | iCloud per il picker dei backup, `eas.json` con profili e versioning remoto; bundle id definitivo, privacy policy, Data Safety / App Privacy, Kids/Families e listing restano al proprietario ([checklist](docs/audit-indipendente-2026-10-14.md)). |
+| 53 | Schermata di errore e scorciatoie di sistema | Corretto | ErrorBoundary localizzato con "Riprova"; suggerimenti che aprono impostazioni app/Bluetooth/Localizzazione quando il collegamento è bloccato dal sistema. |
+| 54 | B4 — manico con più sessioni di un batch | Corretto | "Riprendi dalle ultime sessioni": importa l'ultimo batch leggibile, sposta il cursore, registra le sessioni perse. |
+| 55 | M4 — timer guidato e record del manico coincidenti | Corretto | Il record che si sovrappone a una sessione manuale già salvata sposta solo il cursore; nessun doppio accredito. |
+| 56 | Starter scelto in demo | Corretto | Salvato nel profilo anche con la demo attiva. |
 
 ## Gate software già superati sul candidato
 
 - `pnpm install --frozen-lockfile` con pnpm 12.5.1;
 - `pnpm peers check`;
 - `pnpm check`;
-- suite Vitest completa: **70 file e 409 test** al 14 ottobre, di cui 24 del progetto `native-sqlite` su SQLite reale (il 6 ottobre: 58 file e 352 test);
-- gate i18n dedicato: **93 test** su cataloghi (912 chiavi per catalogo, plurali inclusi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
+- suite Vitest completa: **75 file e 426 test** al 14 ottobre, di cui 24 del progetto `native-sqlite` su SQLite reale (il 6 ottobre: 58 file e 352 test);
+- gate i18n dedicato: **94 test** su cataloghi (938 chiavi per catalogo, plurali inclusi), placeholder, formati, hydration, persistenza, migrazione, report e lifecycle BLE;
 - regressioni dedicate per first-use BLE, schema SQLite e reward ledger non finito incluse nella suite;
 - stress pluriennale e multi-timezone superato;
-- Playwright + axe superato su **44 stati UI** (inclusa la pagina non trovata) chiari/scuri con starter alternativi, reward reale, confronto backup prima della conferma e settimana demo su Oggi, Storico e Area genitori, report separati per stato;
-- otto percorsi Playwright funzionali superati (anche svuotamento dello storico con conferma, portafoglio senza debito e pagina non trovata), incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
+- Playwright + axe superato su **46 stati UI** (inclusi pagina non trovata e blocco genitori) chiari/scuri con starter alternativi, reward reale, confronto backup prima della conferma e settimana demo su Oggi, Storico e Area genitori, report separati per stato;
+- nove percorsi Playwright funzionali superati (anche svuotamento dello storico con conferma, portafoglio senza debito, pagina non trovata e blocco genitori), incluso confronto di un backup più vecchio, annullamento/restore legacy con persistenza, viewport 320×640, cinque lingue e modalità Sistema;
 - contratto statico Maestro superato e **due flow Android reali su emulatore** riusciti;
 - `pnpm lint` a zero warning esteso a `app`, `components`, `contexts`, `lib`, `hooks`, `constants`;
 - `pnpm audit --prod --audit-level high`: **non superato dal 2 ottobre 2026** per [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in node-forge e, dal 6 ottobre, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in braces, entrambi senza versione corretta; l'esito verde degli audit precedenti appartiene a run anteriori all'aggiornamento advisory;

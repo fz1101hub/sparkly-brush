@@ -305,4 +305,32 @@ test.describe("percorso funzionale web", () => {
     // The sitemap route is disabled in app.config.ts; the development server still serves
     // /_sitemap, so its absence is checked on the web export (no _sitemap.html) instead.
   });
+
+  test("il blocco genitori chiede una moltiplicazione prima delle aree riservate", async ({ page }) => {
+    await completeFirstRun(page);
+
+    await page.goto("/settings");
+    await page.getByRole("switch", { name: "Blocco genitori" }).click();
+    await page.goto("/parent");
+    await expect(page.getByTestId("parent-gate-card")).toBeVisible();
+
+    const answer = async () => {
+      const question = (await page.getByTestId("parent-gate-question").textContent()) ?? "";
+      const [first, second] = question.match(/\d+/g)!.map(Number);
+      return first * second;
+    };
+    await page.getByTestId("parent-gate-input").fill(String((await answer()) + 1));
+    await page.getByTestId("parent-gate-confirm").click();
+    await expect(page.getByTestId("parent-gate-wrong")).toBeVisible();
+    await expect(page.getByText("Area genitori", { exact: true })).toHaveCount(0);
+
+    await page.getByTestId("parent-gate-input").fill(String(await answer()));
+    await page.getByTestId("parent-gate-confirm").click();
+    await expect(page.getByText("Area genitori", { exact: true }).first()).toBeVisible();
+
+    // A solved challenge keeps the other parent areas open for a while.
+    await page.goto("/backup");
+    await expect(page.getByTestId("backup-screen")).toBeVisible();
+    await expect(page.getByTestId("parent-gate-card")).toHaveCount(0);
+  });
 });

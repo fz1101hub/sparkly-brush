@@ -18,6 +18,7 @@ import {
 } from "@/constants/accessibility-colors";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useParentGate } from "@/contexts/parent-gate-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
@@ -31,6 +32,7 @@ export default function HistoryScreen() {
   const { settlePurchasesAfterHistoryReset } = useBrushling();
   const { t, formatDate, formatNumber } = useI18n();
   const runAction = useAsyncAction();
+  const { requireParent } = useParentGate();
   // The list holds only the most recent sessions; the totals come from the lifetime record,
   // except in demo mode where the simulated history is the whole story.
   const totals = demoMode || lifetimeProgress.attemptedSessions < history.length
@@ -61,7 +63,7 @@ export default function HistoryScreen() {
       minute: "2-digit",
     });
 
-  const confirmClear = () => {
+  const confirmClear = () => requireParent(() => {
     confirmDestructive({
       title: t("family.history.clearTitle"),
       message: t("family.history.clearMessage"),
@@ -75,7 +77,7 @@ export default function HistoryScreen() {
         })();
       },
     });
-  };
+  });
 
   const renderItem = ({
     item,

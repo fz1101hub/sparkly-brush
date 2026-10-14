@@ -37,6 +37,7 @@ const previous: RestoreSnapshot = {
     musicEnabled: false,
     hapticsEnabled: true,
     language: "system",
+    parentGateEnabled: false,
   },
   parentRewards: [],
 };

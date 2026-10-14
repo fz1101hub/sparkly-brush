@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
       musicEnabled: true,
       hapticsEnabled: true,
       language: "system" as AppPreferences["language"],
+      parentGateEnabled: false,
     },
     ready: false,
     setPreference: vi.fn(async () => undefined),

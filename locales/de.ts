@@ -33,6 +33,14 @@ export const de = {
   "error.message": "Die App ist auf ein unerwartetes Problem gestoßen. Deine Daten sind sicher: Versuch es erneut oder schließe die App und öffne sie wieder.",
   "error.retry": "Erneut versuchen",
   "error.detailsLabel": "Technisches Detail",
+  "parentGate.title": "Nur für Eltern",
+  "parentGate.message": "Antworte, um fortzufahren: So ändern Kinder nichts aus Versehen.",
+  "parentGate.question": "Was ist {first} × {second}?",
+  "parentGate.inputLabel": "Ergebnis der Multiplikation",
+  "parentGate.placeholder": "Ergebnis",
+  "parentGate.confirm": "Weiter",
+  "parentGate.wrong": "Falsche Antwort: Versuch es mit der neuen Frage.",
+  "parentGate.back": "Zurück",
   "common.actionFailedTitle": "Aktion fehlgeschlagen",
   "common.actionFailedMessage": "Versuch es gleich noch einmal. Bleibt das Problem, schließe die App und öffne sie erneut.",
   "recovery.inProgressMessage":
@@ -1093,6 +1101,8 @@ export const de = {
   "family.settings.hapticsTitle": "Vibration",
   "family.settings.hapticsDescription":
     "Haptisches Feedback zu Tippvorgängen, Sitzungsende und Belohnungen.",
+  "family.settings.parentGateTitle": "Elternsperre",
+  "family.settings.parentGateDescription": "Fragt eine Multiplikation ab, bevor Elternbereich, Backup und Einstellungen geöffnet oder Verlauf und Handgriff gelöscht werden.",
   "family.settings.audioNote":
     "Töne dürfen nie nötig sein, um zu verstehen, was passiert: Die App zeigt immer auch Text, Symbole und visuelles Feedback.",
   "brush.client.bluetoothState": "Bluetooth: {state}",

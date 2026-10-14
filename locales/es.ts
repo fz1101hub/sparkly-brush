@@ -32,6 +32,14 @@ export const es = {
   "error.message": "La app ha encontrado un problema inesperado. Tus datos están a salvo: inténtalo de nuevo o cierra y vuelve a abrir la app.",
   "error.retry": "Reintentar",
   "error.detailsLabel": "Detalle técnico",
+  "parentGate.title": "Solo para padres",
+  "parentGate.message": "Responde para continuar: así los niños no cambian nada sin querer.",
+  "parentGate.question": "¿Cuánto es {first} × {second}?",
+  "parentGate.inputLabel": "Resultado de la multiplicación",
+  "parentGate.placeholder": "Resultado",
+  "parentGate.confirm": "Continuar",
+  "parentGate.wrong": "Respuesta incorrecta: prueba con la nueva pregunta.",
+  "parentGate.back": "Volver",
   "common.actionFailedTitle": "No se pudo completar",
   "common.actionFailedMessage": "Inténtalo en un momento. Si el problema continúa, cierra y vuelve a abrir la app.",
   "recovery.inProgressMessage":
@@ -1073,6 +1081,8 @@ export const es = {
   "family.settings.hapticsTitle": "Vibración",
   "family.settings.hapticsDescription":
     "Retroalimentación háptica en toques, fin de sesión y recompensas.",
+  "family.settings.parentGateTitle": "Bloqueo parental",
+  "family.settings.parentGateDescription": "Pide una multiplicación antes de abrir el Área de padres, la Copia de seguridad y los Ajustes, y antes de eliminar el historial o el mango.",
   "family.settings.audioNote":
     "Los sonidos nunca deben ser necesarios para entender lo que ocurre: la app siempre mantiene texto, iconos y retroalimentación visual.",
   "brush.client.bluetoothState": "Bluetooth: {state}",

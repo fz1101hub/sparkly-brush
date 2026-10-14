@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useParentGate } from "@/contexts/parent-gate-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
@@ -25,6 +26,7 @@ export default function DeviceScreen() {
   const router = useRouter();
   const { t, formatDate } = useI18n();
   const runAction = useAsyncAction();
+  const { requireParent } = useParentGate();
   const {
     status,
     statusMessage,
@@ -86,7 +88,7 @@ export default function DeviceScreen() {
         : null;
   const canForget = (connected || pairedDevice !== null) && !demoMode && !isForgettingToothbrush;
 
-  const confirmChangeHandle = () => {
+  const confirmChangeHandle = () => requireParent(() => {
     confirmAction({
       title: t("device.changeHandleTitle"),
       message: t("device.changeHandleMessage"),
@@ -94,9 +96,9 @@ export default function DeviceScreen() {
       confirmLabel: t("device.changeHandleAction"),
       onConfirm: () => runAction(connect({ replaceHandle: true })),
     });
-  };
+  });
 
-  const confirmForgetToothbrush = () => {
+  const confirmForgetToothbrush = () => requireParent(() => {
     confirmDestructive({
       title: t("device.forgetAlertTitle"),
       message: t("device.forgetAlertMessage"),
@@ -113,7 +115,7 @@ export default function DeviceScreen() {
           );
         }),
     });
-  };
+  });
 
   const renderLog = ({ item }: { item: DiagnosticLog }) => {
     const message = item.translationKey
