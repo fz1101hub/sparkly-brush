@@ -72,3 +72,6 @@ Thumbs.db
 .webdev/
 .project-config.json
 
+
+# Local Playwright overrides (e.g. a preinstalled Chromium path); never committed
+playwright.local-*.config.ts
