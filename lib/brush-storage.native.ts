@@ -12,6 +12,7 @@ import {
 } from "@/lib/backup-integrity";
 import { runHistoryOperation } from "@/lib/history-operation";
 import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
+import { MANUAL_OVERLAP_TOLERANCE_MS, sessionsOverlap } from "@/lib/session-overlap";
 import {
   containsLikelyRawDeviceId,
   sanitizeDeviceSessionId,
@@ -73,6 +74,8 @@ export type HistorySaveResult = HistoryBundle & {
 
 export type HistoryBatchSaveResult = HistorySaveResult & {
   importedCount: number;
+  /** Handle records that matched a guided-timer session already saved (audit M4). */
+  supersededManualCount: number;
 };
 
 export type CompleteBackupFile = {
@@ -116,6 +119,7 @@ type BackupFieldLengthsRow = {
   max_ledger_kind: number | null;
   max_ledger_details: number | null;
 };
+type ManualIntervalRow = { started_at: number; duration_seconds: number };
 type MaxStartedRow = { max_started_at: number | null };
 type SessionIdRow = { id: string };
 type SQLiteSchemaRow = { type: string; name: string; table_name: string };
@@ -717,6 +721,7 @@ export async function saveDeviceSessionsWithLifetime(
     const db = await getDatabase();
     let lastEvent: LifetimeProgressEvent | null = null;
     let importedCount = 0;
+    let supersededManualCount = 0;
     await db.withExclusiveTransactionAsync(async (txn) => {
       let progress = await readProgress(txn);
       const historyComplete = await readHistoryComplete(txn);
@@ -786,6 +791,30 @@ export async function saveDeviceSessionsWithLifetime(
           completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
           source: "device",
         };
+        if (session.timeConfidence !== "approximate" && !fallback) {
+          const manualRows = await txn.getAllAsync<ManualIntervalRow>(
+            `SELECT started_at, duration_seconds FROM sessions
+             WHERE source = 'manual' AND started_at <= ? AND started_at + duration_seconds * 1000 >= ?`,
+            session.startedAt + session.durationSeconds * 1_000 + MANUAL_OVERLAP_TOLERANCE_MS,
+            session.startedAt - MANUAL_OVERLAP_TOLERANCE_MS,
+          );
+          if (manualRows.some((row) => sessionsOverlap(session, {
+            startedAt: row.started_at,
+            durationSeconds: row.duration_seconds,
+          }))) {
+            // Audit M4: the guided timer already credited this brushing; the record only moves
+            // the cursor so the handle does not offer it again.
+            progress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+              allocation.progress,
+              deviceId,
+              stored.sessionId,
+              observedStartedAt,
+              stored.durationSeconds,
+            );
+            supersededManualCount += 1;
+            continue;
+          }
+        }
         const maxRow = await txn.getFirstAsync<MaxStartedRow>(
           "SELECT MAX(started_at) AS max_started_at FROM sessions",
         );
@@ -843,7 +872,7 @@ export async function saveDeviceSessionsWithLifetime(
       await writeProgress(txn, progress);
     });
     const bundle = await loadBundleFromDatabase(db);
-    return { ...bundle, event: lastEvent, importedCount };
+    return { ...bundle, event: lastEvent, importedCount, supersededManualCount };
   }));
 }
 

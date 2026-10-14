@@ -346,10 +346,11 @@ describe("lifetime progress", () => {
       completed: true,
       source: "device",
     });
+    // One brushing per hour: sessions one second apart would overlap the handle record (M4).
     for (let index = 1; index <= 121; index += 1) {
       await saveSessionWithLifetime({
         ...completeSession(index),
-        startedAt: baseTime + index * 1_000,
+        startedAt: baseTime + index * 3_600_000,
       });
     }
     const canonical = await saveDeviceSessionWithLifetime("brush-a", storedDeviceSession(42), baseTime);
@@ -803,5 +804,47 @@ describe("Elimina storico e cursori del manico (storage web)", () => {
     expect(bundle.lifetimeProgress.attemptedSessions).toBe(0);
     expect(bundle.lifetimeProgress.deviceCursors[deviceKey("brush-a")]).toMatchObject({ lastSessionId: 41 });
     expect(bundle.lifetimeProgress.pendingDeviceFallbacks).toEqual({});
+  });
+});
+
+describe("record del manico coincidenti con il timer guidato (storage web, M4)", () => {
+  beforeEach(() => storage.clear());
+
+  it("non accredita due volte la stessa spazzolata ma sposta il cursore", async () => {
+    const manualStart = new Date(2026, 9, 6, 8, 0, 0).getTime();
+    await saveSessionWithLifetime({
+      id: "manual-1",
+      startedAt: manualStart,
+      timeConfidence: "exact",
+      rewardPolicy: "completed-only",
+      durationSeconds: 120,
+      targetSeconds: 120,
+      completed: true,
+      source: "manual",
+    });
+    const record = (sessionId: number, startedAt: number, timeConfidence: "reconstructed" | "approximate" = "reconstructed") => ({
+      sessionId,
+      startedAt,
+      timeConfidence,
+      durationSeconds: 118,
+      targetSeconds: 120,
+      mode: "clean" as const,
+      intensity: "media" as const,
+    });
+
+    const overlapping = await saveDeviceSessionsWithLifetime("brush-a", [record(50, manualStart + 20_000)]);
+    expect(overlapping.importedCount).toBe(0);
+    expect(overlapping.supersededManualCount).toBe(1);
+    expect(overlapping.lifetimeProgress.attemptedSessions).toBe(1);
+    expect(overlapping.lifetimeProgress.deviceCursors[deviceKey("brush-a")]).toMatchObject({ lastSessionId: 50 });
+
+    const evening = await saveDeviceSessionsWithLifetime("brush-a", [record(51, new Date(2026, 9, 6, 20, 0).getTime())]);
+    expect(evening.importedCount).toBe(1);
+    expect(evening.lifetimeProgress.attemptedSessions).toBe(2);
+
+    // Without a handle clock the record has no real time: it is imported as before.
+    const approximate = await saveDeviceSessionsWithLifetime("brush-a", [record(52, manualStart + 30_000, "approximate")]);
+    expect(approximate.importedCount).toBe(1);
+    expect(approximate.supersededManualCount).toBe(0);
   });
 });

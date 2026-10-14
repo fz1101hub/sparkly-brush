@@ -21,6 +21,7 @@ import {
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
+import { sessionsOverlap } from "@/lib/session-overlap";
 
 const LEGACY_HISTORY_KEY = "sparkly-brush.history.v1";
 const LEGACY_LIFETIME_HISTORY_KEY = "sparkly-brush.lifetime-history.v1";
@@ -41,6 +42,8 @@ export type HistorySaveResult = HistoryBundle & {
 
 export type HistoryBatchSaveResult = HistorySaveResult & {
   importedCount: number;
+  /** Handle records that matched a guided-timer session already saved (audit M4). */
+  supersededManualCount: number;
 };
 
 type PersistedProgressState = {
@@ -299,6 +302,7 @@ export async function saveDeviceSessionsWithLifetime(
       let recentHistory = [...bundle.recentHistory];
     let event: LifetimeProgressEvent | null = null;
     let importedCount = 0;
+    let supersededManualCount = 0;
     let reconciledAny = false;
 
     for (const stored of storedSessions) {
@@ -318,6 +322,22 @@ export async function saveDeviceSessionsWithLifetime(
         completed: stored.durationSeconds >= Math.min(stored.targetSeconds, 120) * 0.9,
         source: "device",
       };
+      if (
+        session.timeConfidence !== "approximate"
+        && !fallback
+        && recentHistory.some((item) => item.source === "manual" && sessionsOverlap(session, item))
+      ) {
+        // Audit M4: already credited by the guided timer; only the cursor moves on.
+        progress = advancePendingDeviceFallbackExpectationsForEarlierSession(
+          allocation.progress,
+          deviceId,
+          stored.sessionId,
+          observedStartedAt,
+          stored.durationSeconds,
+        );
+        supersededManualCount += 1;
+        continue;
+      }
       const replacement = fallback
         ? replacePendingDeviceFallbackProgress(allocation.progress, deviceId, fallback.sessionId, session)
         : null;
@@ -341,7 +361,7 @@ export async function saveDeviceSessionsWithLifetime(
       importedCount += 1;
     }
     const persisted = await persistProgressState({ recentHistory, lifetimeProgress: progress });
-    return { ...persisted, event: reconciledAny ? null : event, importedCount };
+    return { ...persisted, event: reconciledAny ? null : event, importedCount, supersededManualCount };
   }));
 }
 

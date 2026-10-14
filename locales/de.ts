@@ -589,6 +589,7 @@ export const de = {
     "Die BLE-Synchronisierung ist im Demomodus deaktiviert",
   "brush.error.connectFirst": "Verbinde zuerst deine Zahnbürste",
   "brush.log.sessionsSynced": "{count} {count|synchronisierte Sitzung|synchronisierte Sitzungen}",
+  "brush.log.manualSuperseded": "{count} {count|Aufzeichnung des Handgriffs stimmt mit einer bereits gespeicherten Sitzung des geführten Timers überein und wurde nicht erneut gezählt|Aufzeichnungen des Handgriffs stimmen mit bereits gespeicherten Sitzungen des geführten Timers überein und wurden nicht erneut gezählt}",
   "brush.log.noNewSessions": "Keine neuen Sitzungen verfügbar",
   "brush.error.syncFailed": "Die Synchronisierung ist fehlgeschlagen",
   "brush.log.retryPreviousSave":

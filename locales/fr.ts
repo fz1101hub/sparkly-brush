@@ -585,6 +585,7 @@ export const fr = {
     "La synchronisation BLE est désactivée en mode démo",
   "brush.error.connectFirst": "Connectez d'abord la brosse à dents",
   "brush.log.sessionsSynced": "{count} {count|session synchronisée|sessions synchronisées}",
+  "brush.log.manualSuperseded": "{count} {count|enregistrement du manche correspond à une séance du minuteur guidé déjà enregistrée et n’a pas été compté une seconde fois|enregistrements du manche correspondent à des séances du minuteur guidé déjà enregistrées et n’ont pas été comptés une seconde fois}",
   "brush.log.noNewSessions": "Aucune nouvelle session disponible",
   "brush.error.syncFailed": "Échec de la synchronisation",
   "brush.log.retryPreviousSave":

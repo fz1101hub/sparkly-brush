@@ -388,6 +388,7 @@ export const itDevice = {
     "La sincronizzazione BLE è disattivata in modalità demo",
   "brush.error.connectFirst": "Collega prima lo spazzolino",
   "brush.log.sessionsSynced": "{count} {count|sessione sincronizzata|sessioni sincronizzate}",
+  "brush.log.manualSuperseded": "{count} {count|record del manico coincide con una sessione del timer guidato già salvata e non è stato contato di nuovo|record del manico coincidono con sessioni del timer guidato già salvate e non sono stati contati di nuovo}",
   "brush.log.noNewSessions": "Nessuna nuova sessione disponibile",
   "brush.error.syncFailed": "Sincronizzazione non riuscita",
   "brush.log.retryPreviousSave":

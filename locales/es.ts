@@ -582,6 +582,7 @@ export const es = {
     "La sincronización BLE está desactivada en modo demo",
   "brush.error.connectFirst": "Conecta primero el cepillo",
   "brush.log.sessionsSynced": "{count} {count|sesión sincronizada|sesiones sincronizadas}",
+  "brush.log.manualSuperseded": "{count} {count|registro del mango coincide con una sesión del temporizador guiado ya guardada y no se ha contado de nuevo|registros del mango coinciden con sesiones del temporizador guiado ya guardadas y no se han contado de nuevo}",
   "brush.log.noNewSessions": "No hay nuevas sesiones disponibles",
   "brush.error.syncFailed": "Sincronización fallida",
   "brush.log.retryPreviousSave":

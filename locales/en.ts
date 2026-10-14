@@ -577,6 +577,7 @@ export const en = {
   "brush.log.syncDisabledInDemo": "BLE sync is disabled in demo mode",
   "brush.error.connectFirst": "Connect the toothbrush first",
   "brush.log.sessionsSynced": "{count} {count|session|sessions} synchronized",
+  "brush.log.manualSuperseded": "{count} handle {count|record matches a guided-timer session already saved and was not counted again|records match guided-timer sessions already saved and were not counted again}",
   "brush.log.noNewSessions": "No new sessions available",
   "brush.error.syncFailed": "Synchronization failed",
   "brush.log.retryPreviousSave": "Try saving the previous session first",

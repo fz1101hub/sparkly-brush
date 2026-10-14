@@ -430,7 +430,12 @@ export function BrushProvider({
             pending.cancelSync = null;
           }
         }
-        if (stored?.length) await persistDeviceSessions(stored, pending.deviceId);
+        if (stored?.length) {
+          const persisted = await persistDeviceSessions(stored, pending.deviceId);
+          if (persisted.supersededManualCount > 0) {
+            appendTranslatedLog("info", "brush.log.manualSuperseded", { count: persisted.supersededManualCount });
+          }
+        }
         const fallbackId = `ble-live:${pending.deviceId}:${pending.startedAt}`;
         if (pendingDeviceFallbacks(lifetimeProgressRef.current, pending.deviceId)
           .some((fallback) => fallback.sessionId === fallbackId)) {
@@ -695,6 +700,9 @@ export function BrushProvider({
       const stored = await clientRef.current?.syncStoredSessionsSince(cursor, options);
       if (stored?.length) {
         const persisted = await persistDeviceSessions(stored, deviceId);
+        if (persisted.supersededManualCount > 0) {
+          appendTranslatedLog("info", "brush.log.manualSuperseded", { count: persisted.supersededManualCount });
+        }
         appendTranslatedLog(
           persisted.importedCount > 0 ? "success" : "warning",
           persisted.importedCount > 0
