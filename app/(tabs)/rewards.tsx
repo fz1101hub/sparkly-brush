@@ -26,7 +26,7 @@ export default function RewardsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Torna alla mappa"
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, { backgroundColor: colors.surface }, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
@@ -35,7 +35,7 @@ export default function RewardsScreen() {
           </View>
         </View>
 
-        <View style={[styles.hero, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#F2D588" }]}>
           <MaterialIcons name="stars" size={34} color="#B98A00" />
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>
@@ -63,7 +63,7 @@ export default function RewardsScreen() {
                 style={[
                   styles.itemCard,
                   {
-                    backgroundColor: count > 0 ? item.soft : colors.surface,
+                    backgroundColor: count > 0 ? colors.primarySoft : colors.surface,
                     borderColor: count > 0 ? item.accent : colors.border,
                     opacity: count > 0 ? 1 : 0.55,
                   },
@@ -73,7 +73,7 @@ export default function RewardsScreen() {
                   <MaterialIcons name={item.icon} size={25} color="#FFFFFF" />
                 </View>
                 <Text style={[styles.itemName, { color: colors.foreground }]}>{item.name}</Text>
-                <Text style={[styles.itemCount, { color: count > 0 ? item.accent : colors.muted }]}>
+                <Text style={[styles.itemCount, { color: count > 0 ? colors.primary : colors.muted }]}>
                   {count > 0 ? `x${count}` : "???"}
                 </Text>
                 <Text style={[styles.itemDescription, { color: colors.muted }]} numberOfLines={3}>
@@ -104,13 +104,13 @@ export default function RewardsScreen() {
                 style={[
                   styles.eggCard,
                   {
-                    backgroundColor: egg.found ? egg.soft : colors.surface,
+                    backgroundColor: egg.found ? colors.primarySoft : colors.surface,
                     borderColor: egg.hatched ? creature.accent : egg.found ? egg.accent : colors.border,
                     opacity: egg.found ? 1 : 0.58,
                   },
                 ]}
               >
-                <View style={[styles.eggVisual, { backgroundColor: egg.found ? "#FFFFFFAA" : "#ECEEF3" }]}>
+                <View style={[styles.eggVisual, { backgroundColor: egg.found ? colors.primarySoft : "#ECEEF3" }]}>
                   {egg.hatched ? (
                     <BrushlingAvatar creature={creature} size={92} level={1} />
                   ) : (
@@ -123,7 +123,7 @@ export default function RewardsScreen() {
                 </View>
 
                 <View style={styles.eggCopy}>
-                  <Text style={[styles.eggEyebrow, { color: egg.found ? egg.accent : colors.muted }]}>
+                  <Text style={[styles.eggEyebrow, { color: egg.found ? colors.primary : colors.muted }]}>
                     {egg.hatched ? "SCHIUSO" : egg.found ? "IN COVA" : "NON ANCORA TROVATO"}
                   </Text>
                   <Text style={[styles.eggName, { color: colors.foreground }]}>
@@ -139,7 +139,7 @@ export default function RewardsScreen() {
 
                   {egg.found && !egg.hatched ? (
                     <>
-                      <View style={[styles.progressTrack, { backgroundColor: "#FFFFFFAA" }]}>
+                      <View style={[styles.progressTrack, { backgroundColor: colors.primarySoft }]}>
                         <View style={[styles.progressFill, { width: progressWidth, backgroundColor: egg.accent }]} />
                       </View>
                       <Text style={[styles.progressText, { color: colors.muted }]}>
@@ -158,7 +158,7 @@ export default function RewardsScreen() {
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.footerCard,
-            { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" },
+            { backgroundColor: colors.primarySoft, borderColor: "#DCE3FF" },
             pressed && styles.pressed,
           ]}
         >
@@ -229,3 +229,4 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 10, lineHeight: 15, fontWeight: "600", marginTop: 2 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
 });
+

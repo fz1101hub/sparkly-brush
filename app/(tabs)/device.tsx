@@ -79,7 +79,7 @@ export default function DeviceScreen() {
           <View style={styles.headerContent}>
             <AppHeader eyebrow="Bluetooth Low Energy" title="Spazzolino" connected={connected} />
 
-            <View style={[styles.heroCard, { backgroundColor: connected ? "#E1F7EF" : "#E7EEFF" }]}>
+            <View style={[styles.heroCard, { backgroundColor: colors.primarySoft }]}>
               <View style={styles.toothbrushVisual}>
                 <View style={styles.brushHead}>
                   <View style={styles.bristles} />
@@ -148,7 +148,7 @@ export default function DeviceScreen() {
               </View>
             </Pressable>
 
-            <View style={[styles.demoCard, { backgroundColor: demoMode ? "#FFF4C9" : "#F4F6FF", borderColor: demoMode ? "#E8BE38" : "#DCE3FF" }]}>
+            <View style={[styles.demoCard, { backgroundColor: colors.primarySoft, borderColor: demoMode ? "#E8BE38" : "#DCE3FF" }]}>
               <View style={styles.demoTop}>
                 <View style={styles.demoHeading}>
                   <View style={[styles.demoIcon, { backgroundColor: demoMode ? "#E8BE38" : "#2457D6" }]}>
@@ -180,19 +180,19 @@ export default function DeviceScreen() {
 
               {demoMode ? (
                 <View style={styles.demoActions}>
-                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
                   </Pressable>
-                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
                   </Pressable>
-                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
                   </Pressable>
-                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
                   </Pressable>
@@ -204,7 +204,7 @@ export default function DeviceScreen() {
               onPress={() => router.push("/(tabs)/hardware-test")}
               style={({ pressed }) => [
                 styles.hardwareCard,
-                { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" },
+                { backgroundColor: colors.primarySoft, borderColor: "#B9E4CC" },
                 pressed && styles.pressed,
               ]}
             >
@@ -223,7 +223,7 @@ export default function DeviceScreen() {
               onPress={() => router.push("/(tabs)/backup")}
               style={({ pressed }) => [
                 styles.backupCard,
-                { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" },
+                { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" },
                 pressed && styles.pressed,
               ]}
             >
@@ -231,7 +231,7 @@ export default function DeviceScreen() {
                 <MaterialIcons name="settings-backup-restore" size={26} color="#2457D6" />
               </View>
               <View style={styles.backupCopy}>
-                <Text style={[styles.backupEyebrow, { color: "#2457D6" }]}>DATI & TRASFERIMENTO</Text>
+                <Text style={[styles.backupEyebrow, { color: colors.primary }]}>DATI & TRASFERIMENTO</Text>
                 <Text style={[styles.backupTitle, { color: colors.foreground }]}>Proteggi il Brushling</Text>
                 <Text style={[styles.backupText, { color: colors.muted }]}>Backup portatile per ritrovare progressi e compagno su un nuovo telefono.</Text>
               </View>
@@ -349,3 +349,4 @@ const styles = StyleSheet.create({
   emptyLog: { borderWidth: 1, borderStyle: "dashed", borderRadius: 18, padding: 18, alignItems: "center" },
   emptyLogText: { fontSize: 12, lineHeight: 17 },
 });
+

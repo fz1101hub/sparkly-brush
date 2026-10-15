@@ -13,11 +13,13 @@ export function BrushlingAvatar({
   size = 120,
   level = 1,
   stageIndex,
+  framed = true,
 }: {
   creature: BrushlingDefinition;
   size?: number;
   level?: number;
   stageIndex?: number;
+  framed?: boolean;
 }) {
   const resolvedStage = Math.min(
     creature.evolutions.length - 1,
@@ -37,14 +39,15 @@ export function BrushlingAvatar({
           backgroundColor: creature.soft,
           borderColor: creature.accent,
         },
+        !framed && { backgroundColor: "transparent", borderWidth: 0, shadowOpacity: 0, elevation: 0 },
       ]}
     >
       <Svg width={size} height={size} viewBox="0 0 120 120">
-        <Circle cx="60" cy="60" r="48" fill="#FFFFFF" opacity={0.58} />
+        {framed ? <Circle cx="60" cy="60" r="48" fill="#FFFFFF" opacity={0.58} /> : null}
         <CreatureArt id={creature.id} stage={resolvedStage} accent={creature.accent} />
       </Svg>
 
-      {level !== undefined ? (
+      {framed && level !== undefined ? (
         <View style={[styles.levelBadge, { backgroundColor: creature.accent }]}>
           <Text style={styles.levelText}>Lv {level}</Text>
         </View>
@@ -225,3 +228,4 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+

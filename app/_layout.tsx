@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { ActivityIndicator, BackHandler, Platform, StyleSheet, Text, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
-import { ThemeProvider } from "@/lib/theme-provider";
+import { ThemeProvider, useThemeContext } from "@/lib/theme-provider";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -31,6 +31,11 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+function ThemedStatusBar() {
+  const { colorScheme } = useThemeContext();
+  return <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />;
+}
 
 function DataRecoveryGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -153,7 +158,7 @@ export default function RootLayout() {
                   </Stack>
                   <OnboardingOverlay />
                   <RestoreOperationOverlay />
-                  <StatusBar style="dark" />
+                  <ThemedStatusBar />
                 </ParentRewardsProvider>
               </BrushlingProvider>
             </AudioFeedbackProvider>
@@ -185,3 +190,4 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+

@@ -40,7 +40,7 @@ export default function HistoryScreen() {
 
   const renderItem = ({ item }: { item: BrushSession }) => (
     <View style={[styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={[styles.sessionIcon, { backgroundColor: item.completed ? "#E1F7EF" : "#FFF0E4" }]}>
+      <View style={[styles.sessionIcon, { backgroundColor: item.completed ? colors.primarySoft : "#FFF0E4" }]}>
         <MaterialIcons name={item.completed ? "verified" : "timelapse"} size={24} color={item.completed ? colors.success : colors.warning} />
       </View>
       <View style={styles.sessionCopy}>
@@ -73,7 +73,7 @@ export default function HistoryScreen() {
               onPress={() => router.push("/(tabs)/parent")}
               style={({ pressed }) => [
                 styles.parentCard,
-                { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" },
+                { backgroundColor: colors.primarySoft, borderColor: "#DCE3FF" },
                 pressed && styles.pressed,
               ]}
             >
@@ -91,15 +91,15 @@ export default function HistoryScreen() {
             </Pressable>
 
             <View style={styles.statsRow}>
-              <View style={[styles.summaryCard, { backgroundColor: "#E7EEFF" }]}>
+              <View style={[styles.summaryCard, { backgroundColor: colors.primarySoft }]}>
                 <Text style={[styles.summaryValue, { color: colors.primary }]}>{history.length}</Text>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>sessioni</Text>
               </View>
-              <View style={[styles.summaryCard, { backgroundColor: "#E1F7EF" }]}>
+              <View style={[styles.summaryCard, { backgroundColor: colors.primarySoft }]}>
                 <Text style={[styles.summaryValue, { color: colors.success }]}>{completed}</Text>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>complete</Text>
               </View>
-              <View style={[styles.summaryCard, { backgroundColor: "#FFF0E4" }]}>
+              <View style={[styles.summaryCard, { backgroundColor: colors.primarySoft }]}>
                 <Text style={[styles.summaryValue, { color: colors.warning }]}>{Math.round(average / 60)}m</Text>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>media</Text>
               </View>
@@ -169,3 +169,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
   pressed: { opacity: 0.65 },
 });
+

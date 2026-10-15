@@ -48,7 +48,7 @@ export default function ParentDashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel="Torna indietro"
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, { backgroundColor: colors.surface }, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
@@ -57,7 +57,7 @@ export default function ParentDashboardScreen() {
           </View>
         </View>
 
-        <View style={[styles.privacyCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+        <View style={[styles.privacyCard, { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" }]}>
           <MaterialIcons name="lock-outline" size={22} color="#2457D6" />
           <Text style={[styles.privacyText, { color: colors.foreground }]}>
             Questa dashboard usa soltanto lo storico locale dell’app. Non invia dati a un account o a un server.
@@ -65,20 +65,20 @@ export default function ParentDashboardScreen() {
         </View>
 
         <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
-            <Text style={[styles.statValue, { color: "#2E8A60" }]}>{percentage(dashboard.adherenceRate)}</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{percentage(dashboard.adherenceRate)}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>routine mattina/sera</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#E7EEFF" }]}>
+          <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>
             <Text style={[styles.statValue, { color: colors.primary }]}>{dashboard.completedSessions}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>sessioni complete</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#FFF0E4" }]}>
+          <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>
             <Text style={[styles.statValue, { color: "#BA4E13" }]}>{dashboard.totalMinutes}m</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>tempo registrato</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#F0ECFF" }]}>
-            <Text style={[styles.statValue, { color: "#7357C7" }]}>{dashboard.daysWithBoth}</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{dashboard.daysWithBoth}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>giorni completi</Text>
           </View>
         </View>
@@ -91,7 +91,7 @@ export default function ParentDashboardScreen() {
         </View>
 
         <View style={[styles.weekCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.weekHeader}>
+          <View style={[styles.weekHeader, { backgroundColor: colors.primarySoft }]}>
             <Text style={[styles.dayHeader, { color: colors.muted }]}>Giorno</Text>
             <Text style={[styles.slotHeader, { color: colors.muted }]}>Mattina</Text>
             <Text style={[styles.slotHeader, { color: colors.muted }]}>Sera</Text>
@@ -153,7 +153,7 @@ export default function ParentDashboardScreen() {
           </Text>
         ) : null}
 
-        <View style={[styles.progressCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View style={[styles.progressCard, { backgroundColor: colors.primarySoft, borderColor: "#F2D588" }]}>
           <MaterialIcons name="emoji-events" size={26} color="#B98A00" />
           <View style={styles.progressCopy}>
             <Text style={[styles.progressTitle, { color: colors.foreground }]}>Progressione gioco</Text>
@@ -177,7 +177,7 @@ export default function ParentDashboardScreen() {
             onChangeText={setRewardTitle}
             placeholder="Es. scegli il film di stasera"
             placeholderTextColor={colors.muted}
-            style={[styles.rewardInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: "#F8F9FC" }]}
+            style={[styles.rewardInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.primarySoft }]}
           />
 
           <View style={styles.requirementRow}>
@@ -195,7 +195,7 @@ export default function ParentDashboardScreen() {
                 style={({ pressed }) => [
                   styles.requirementButton,
                   {
-                    backgroundColor: requirement === value ? "#EEF4FF" : "#FFFFFF",
+                    backgroundColor: requirement === value ? colors.primarySoft : colors.surface,
                     borderColor: requirement === value ? colors.primary : colors.border,
                   },
                   pressed && styles.pressed,
@@ -342,7 +342,7 @@ export default function ParentDashboardScreen() {
           onPress={() => router.push("/(tabs)/settings")}
           style={({ pressed }) => [
             styles.settingsCard,
-            { backgroundColor: "#F0ECFF", borderColor: "#D4C9F5" },
+            { backgroundColor: colors.primarySoft, borderColor: "#D4C9F5" },
             pressed && styles.pressed,
           ]}
         >
@@ -356,7 +356,7 @@ export default function ParentDashboardScreen() {
           <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
         </Pressable>
 
-        <View style={[styles.noteCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
+        <View style={[styles.noteCard, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <MaterialIcons name="info-outline" size={20} color={colors.muted} />
           <Text style={[styles.noteText, { color: colors.muted }]}>
             I dati mostrano soltanto ciò che l’app ha registrato e non costituiscono una valutazione odontoiatrica o clinica.
@@ -437,3 +437,4 @@ const styles = StyleSheet.create({
   noteText: { flex: 1, fontSize: 10, lineHeight: 15 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
 });
+

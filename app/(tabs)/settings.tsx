@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
+import { ThemePicker } from "@/components/theme-picker";
 import { ScreenContainer } from "@/components/screen-container";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";
@@ -22,7 +23,7 @@ export default function SettingsScreen() {
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+          <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.back, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
           <View style={styles.headerWrap}>
@@ -30,7 +31,9 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={[styles.hero, { backgroundColor: "#F0ECFF", borderColor: "#D4C9F5" }]}>
+        <ThemePicker />
+
+        <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <MaterialIcons name="tune" size={28} color="#7357C7" />
           <View style={styles.heroCopy}>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>Il gioco deve adattarsi alla famiglia</Text>
@@ -44,7 +47,7 @@ export default function SettingsScreen() {
           {rows.map((row, index) => (
             <View key={row.key}>
               <View style={styles.row}>
-                <View style={styles.rowIcon}>
+                <View style={[styles.rowIcon, { backgroundColor: colors.primarySoft }]}>
                   <MaterialIcons name={row.icon} size={22} color={colors.primary} />
                 </View>
                 <View style={styles.rowCopy}>
@@ -54,8 +57,8 @@ export default function SettingsScreen() {
                 <Switch
                   value={preferences[row.key]}
                   onValueChange={(value) => void setPreference(row.key, value)}
-                  trackColor={{ false: "#D3D7E0", true: "#9EC0FF" }}
-                  thumbColor={preferences[row.key] ? "#2457D6" : "#F5F5F5"}
+                  trackColor={{ false: colors.border, true: colors.primarySoft }}
+                  thumbColor={preferences[row.key] ? colors.primary : colors.muted}
                 />
               </View>
               {index < rows.length - 1 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
@@ -63,7 +66,7 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        <View style={[styles.note, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View style={[styles.note, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <MaterialIcons name="hearing" size={21} color="#B98A00" />
           <Text style={[styles.noteText, { color: colors.foreground }]}>
             I suoni non devono mai essere necessari per capire cosa succede: l’app mantiene sempre testo, icone e feedback visivi.

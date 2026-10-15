@@ -22,7 +22,7 @@ export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; titl
           width: 52,
           height: 52,
           borderRadius: 18,
-          backgroundColor: connected ? "#E1F7EF" : "#E7EEFF",
+          backgroundColor: colors.primarySoft,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -32,3 +32,4 @@ export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; titl
     </View>
   );
 }
+

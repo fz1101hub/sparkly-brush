@@ -49,7 +49,7 @@ export function StarterChooser() {
               style={({ pressed }) => [
                 styles.starterCard,
                 {
-                  backgroundColor: selected ? "#FFFFFF" : "#FFFFFF20",
+                  backgroundColor: selected ? colors.surface : "#FFFFFF20",
                   borderColor: selected ? creature.accent : "#FFFFFF55",
                 },
                 pressed && styles.pressed,
@@ -59,7 +59,7 @@ export function StarterChooser() {
               <Text style={[styles.starterName, { color: selected ? colors.foreground : "#FFFFFF" }]}>
                 {creature.name}
               </Text>
-              <Text style={[styles.starterType, { color: selected ? creature.accent : "#DDEBFF" }]}>
+              <Text style={[styles.starterType, { color: selected ? colors.primary : "#DDEBFF" }]}>
                 {creature.element}
               </Text>
               {selected ? (
@@ -72,7 +72,7 @@ export function StarterChooser() {
         })}
       </View>
 
-      <View style={[styles.choiceNote, { backgroundColor: chosen.soft }]}>
+      <View style={[styles.choiceNote, { backgroundColor: colors.primarySoft }]}>
         <BrushlingAvatar creature={chosen} size={62} level={1} />
         <View style={styles.choiceCopy}>
           <Text style={[styles.choiceName, { color: colors.foreground }]}>{chosen.name}</Text>
@@ -160,3 +160,4 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   disabled: { opacity: 0.6 },
 });
+

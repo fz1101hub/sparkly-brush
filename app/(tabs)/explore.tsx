@@ -40,9 +40,9 @@ export default function ExploreScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader eyebrow="Avventura" title="Isola Sorridente" connected={false} />
 
-        <View style={[styles.hero, { backgroundColor: "#EAF6FF", borderColor: "#B8DFFF" }]}>
+        <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#B8DFFF" }]}>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroEyebrow, { color: "#0B67B2" }]}>OGNI SPAZZOLATA TI PORTA PIÙ LONTANO</Text>
+            <Text style={[styles.heroEyebrow, { color: colors.primary }]}>OGNI SPAZZOLATA TI PORTA PIÙ LONTANO</Text>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>
               {hasChosenStarter ? `${evolution.name} esplora con te` : "Scegli prima il tuo compagno"}
             </Text>
@@ -58,12 +58,12 @@ export default function ExploreScreen() {
         <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.progressTop}>
             <View>
-              <Text style={[styles.progressEyebrow, { color: currentZone.accent }]}>ZONA ATTUALE</Text>
+              <Text style={[styles.progressEyebrow, { color: colors.primary }]}>ZONA ATTUALE</Text>
               <Text style={[styles.progressTitle, { color: colors.foreground }]}>{currentZone.name}</Text>
             </View>
-            <View style={[styles.sessionBadge, { backgroundColor: currentZone.soft }]}>
+            <View style={[styles.sessionBadge, { backgroundColor: colors.primarySoft }]}>
               <MaterialIcons name="done-all" size={17} color={currentZone.accent} />
-              <Text style={[styles.sessionBadgeText, { color: currentZone.accent }]}>
+              <Text style={[styles.sessionBadgeText, { color: colors.primary }]}>
                 {stats.completedSessions} sessioni
               </Text>
             </View>
@@ -76,7 +76,7 @@ export default function ExploreScreen() {
           onPress={() => router.push("/(tabs)/rewards")}
           style={({ pressed }) => [
             styles.inventoryCard,
-            { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
+            { backgroundColor: colors.primarySoft, borderColor: "#F2D588" },
             pressed && styles.pressed,
           ]}
         >
@@ -84,7 +84,7 @@ export default function ExploreScreen() {
             <MaterialIcons name="card-giftcard" size={28} color="#B98A00" />
           </View>
           <View style={styles.inventoryCopy}>
-            <Text style={[styles.inventoryEyebrow, { color: "#B98A00" }]}>IL TUO ZAINO</Text>
+            <Text style={[styles.inventoryEyebrow, { color: colors.primary }]}>IL TUO ZAINO</Text>
             <Text style={[styles.inventoryTitle, { color: colors.foreground }]}>Premi e uova</Text>
             <Text style={[styles.inventoryText, { color: colors.muted }]}>
               {inventory.eggs.filter((egg) => egg.found).length} uova trovate · {inventory.hatchedBrushlingIds.length} nuovi Brushlings nati
@@ -128,7 +128,7 @@ export default function ExploreScreen() {
                     style={[
                       styles.zoneCard,
                       {
-                        backgroundColor: unlocked ? zone.soft : colors.surface,
+                        backgroundColor: unlocked ? colors.primarySoft : colors.surface,
                         borderColor: active ? zone.accent : colors.border,
                         opacity: unlocked ? 1 : 0.66,
                       },
@@ -157,7 +157,7 @@ export default function ExploreScreen() {
                         ) : null}
                       </View>
                       <Text style={[styles.zoneSubtitle, { color: colors.muted }]}>{zone.subtitle}</Text>
-                      <Text style={[styles.zoneStatus, { color: unlocked ? zone.accent : colors.muted }]}>
+                      <Text style={[styles.zoneStatus, { color: unlocked ? colors.primary : colors.muted }]}>
                         {unlocked
                           ? "Zona sbloccata"
                           : `Si apre tra ${remaining} session${remaining === 1 ? "e" : "i"}`}
@@ -189,7 +189,7 @@ export default function ExploreScreen() {
                 style={[
                   styles.encounterCard,
                   {
-                    backgroundColor: egg.found ? egg.soft : colors.surface,
+                    backgroundColor: egg.found ? colors.primarySoft : colors.surface,
                     borderColor: egg.hatched ? creature.accent : egg.found ? egg.accent : colors.border,
                     opacity: egg.found ? 1 : 0.6,
                   },
@@ -199,13 +199,13 @@ export default function ExploreScreen() {
                   {egg.hatched ? (
                     <BrushlingAvatar creature={creature} size={88} level={1} />
                   ) : (
-                    <View style={[styles.eggBubble, { backgroundColor: egg.found ? "#FFFFFFAA" : "#E8EAF0" }]}>
+                    <View style={[styles.eggBubble, { backgroundColor: egg.found ? colors.primarySoft : "#E8EAF0" }]}>
                       <MaterialIcons name={egg.found ? "radio-button-unchecked" : "lock"} size={45} color={egg.found ? egg.accent : "#858C9B"} />
                     </View>
                   )}
                 </View>
                 <View style={styles.encounterCopy}>
-                  <Text style={[styles.encounterEyebrow, { color: egg.hatched ? creature.accent : egg.accent }]}>
+                  <Text style={[styles.encounterEyebrow, { color: egg.hatched ? colors.primary : egg.accent }]}>
                     {egg.hatched ? "NUOVO BRUSHLING" : egg.found ? "UOVO TROVATO" : "INCONTRO SEGRETO"}
                   </Text>
                   <Text style={[styles.encounterTitle, { color: colors.foreground }]}>
@@ -224,7 +224,7 @@ export default function ExploreScreen() {
           })}
         </View>
 
-        <View style={[styles.futureCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View style={[styles.futureCard, { backgroundColor: colors.primarySoft, borderColor: "#F2D588" }]}>
           <MaterialIcons name="card-giftcard" size={25} color="#B98A00" />
           <View style={styles.futureCopy}>
             <Text style={[styles.futureTitle, { color: colors.foreground }]}>Prossimo passo: uova e incontri</Text>
@@ -343,3 +343,4 @@ const styles = StyleSheet.create({
   futureTitle: { fontSize: 14, lineHeight: 19, fontWeight: "900" },
   futureText: { fontSize: 11, lineHeight: 17, marginTop: 3 },
 });
+

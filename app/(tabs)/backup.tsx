@@ -257,7 +257,7 @@ export default function BackupScreen() {
             accessibilityRole="button"
             accessibilityLabel="Torna indietro"
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, { backgroundColor: colors.surface }, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
@@ -266,7 +266,7 @@ export default function BackupScreen() {
           </View>
         </View>
 
-        <View style={[styles.hero, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+        <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#B9E4CC" }]}>
           <View style={styles.heroIcon}>
             <MaterialIcons name="cloud-done" size={31} color="#2E8A60" />
           </View>
@@ -279,7 +279,7 @@ export default function BackupScreen() {
         </View>
 
         {demoMode ? (
-          <View style={[styles.demoWarning, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
+          <View style={[styles.demoWarning, { backgroundColor: colors.primarySoft, borderColor: "#E8BE38" }]}>
             <MaterialIcons name="science" size={22} color="#9A7200" />
             <View style={styles.demoWarningCopy}>
               <Text style={[styles.demoWarningTitle, { color: colors.foreground }]}>Modalità demo attiva</Text>
@@ -293,13 +293,13 @@ export default function BackupScreen() {
           </View>
         ) : null}
         {!demoMode && !backupReady ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View style={[styles.messageCard, { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="hourglass-top" size={20} color="#2457D6" />
             <Text style={[styles.messageText, { color: colors.foreground }]}>Caricamento dei dati in corso…</Text>
           </View>
         ) : null}
         {message ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View style={[styles.messageCard, { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
             <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
           </View>
@@ -353,10 +353,10 @@ export default function BackupScreen() {
           </Pressable>
 
           {filePreview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+            <View style={[styles.previewCard, { backgroundColor: colors.primarySoft, borderColor: "#B9E4CC" }]}>
               <MaterialIcons name="verified-user" size={27} color="#2E8A60" />
               <View style={styles.previewCopy}>
-                <Text style={[styles.previewEyebrow, { color: "#2E8A60" }]}>
+                <Text style={[styles.previewEyebrow, { color: colors.primary }]}>
                   {filePreview.manifest.historyComplete ? "FILE COMPLETO VERIFICATO" : "BACKUP LEGACY VERIFICATO"}
                 </Text>
                 <Text style={[styles.previewTitle, { color: colors.foreground }]}>
@@ -419,17 +419,17 @@ export default function BackupScreen() {
           </View>
 
           {error ? (
-            <View style={[styles.errorCard, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
+            <View style={[styles.errorCard, { backgroundColor: colors.primarySoft, borderColor: "#F0BEC8" }]}>
               <MaterialIcons name="error-outline" size={20} color="#C43D58" />
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             </View>
           ) : null}
 
           {preview ? (
-            <View style={[styles.previewCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+            <View style={[styles.previewCard, { backgroundColor: colors.primarySoft, borderColor: "#F2D588" }]}>
               <MaterialIcons name="inventory-2" size={27} color="#B98A00" />
               <View style={styles.previewCopy}>
-                <Text style={[styles.previewEyebrow, { color: "#8A6900" }]}>BACKUP VALIDO</Text>
+                <Text style={[styles.previewEyebrow, { color: colors.primary }]}>BACKUP VALIDO</Text>
                 <Text style={[styles.previewTitle, { color: colors.foreground }]}>
                   {preview.profile.selectedId} · {preview.lifetimeProgress.completedSessions} sessioni
                 </Text>
@@ -453,7 +453,7 @@ export default function BackupScreen() {
           ) : null}
         </View>
 
-        <View style={[styles.privacyCard, { backgroundColor: "#F7F8FA", borderColor: colors.border }]}>
+        <View style={[styles.privacyCard, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <MaterialIcons name="privacy-tip" size={21} color={colors.muted} />
           <Text style={[styles.privacyText, { color: colors.muted }]}>
             Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.
@@ -526,3 +526,4 @@ const styles = StyleSheet.create({
   privacyText: { flex: 1, fontSize: 10, lineHeight: 15 },
   pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
 });
+
