@@ -22,6 +22,9 @@ import {
 } from "@/lib/sonicare-codec";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
+import { getActiveProfileId } from "@/lib/profile-scope";
+import { claimToothbrush } from "@/lib/toothbrush-profile";
+
 const SCAN_TIMEOUT_MS = 14_000;
 const MAX_SYNC_BATCH = 128;
 
@@ -62,6 +65,7 @@ function isSonicare(device: Device): boolean {
 }
 
 export class NativeSonicareClient implements SonicareClient {
+  private readonly profileId = getActiveProfileId();
   private readonly manager: BleManager;
   private readonly events: BleClientEvents;
   private device: Device | null = null;
@@ -170,6 +174,8 @@ export class NativeSonicareClient implements SonicareClient {
       }));
       this.assertOperation(operationGeneration);
 
+      await guard(claimToothbrush(found.id, this.profileId));
+      this.assertOperation(operationGeneration);
       this.events.onStatus("connecting", "Connessione e lettura dei servizi");
       this.events.onLog("success", `Trovato ${found.name ?? found.localName ?? "Sonicare"}`);
 
@@ -617,3 +623,4 @@ export class NativeSonicareClient implements SonicareClient {
 export function createSonicareClient(events: BleClientEvents): SonicareClient {
   return new NativeSonicareClient(events);
 }
+

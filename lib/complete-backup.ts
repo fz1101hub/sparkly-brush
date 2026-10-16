@@ -12,6 +12,7 @@ const unavailable = "Il backup completo su file è disponibile nell’app iOS e 
 
 export async function exportAndShareCompleteBackup(
   _manifest: BrushlingsBackupManifest,
+  _profileId?: string,
 ): Promise<{ sessionCount: number; size: number }> {
   throw new Error(unavailable);
 }
@@ -23,6 +24,7 @@ export async function pickAndInspectCompleteBackup(): Promise<CompleteBackupPrev
 export async function restoreCompleteBackup(
   _preview: CompleteBackupPreview,
   _restoreId: string,
+  _profileId?: string,
 ): Promise<HistoryBundle> {
   throw new Error(unavailable);
 }
@@ -30,3 +32,4 @@ export async function restoreCompleteBackup(
 export function discardCompleteBackupPreview(_preview: CompleteBackupPreview): void {
   // No temporary native file exists on web.
 }
+

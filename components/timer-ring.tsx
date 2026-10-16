@@ -24,11 +24,12 @@ export function TimerRing({ elapsed, target, active }: TimerRingProps) {
 
   return (
     <View
+      accessible
       accessibilityRole="timer"
-      accessibilityLabel={`${formatTime(elapsed)} su ${formatTime(target)}`}
+      accessibilityLabel={`${formatTime(Math.max(0, target - elapsed))} rimanenti su ${formatTime(target)}`}
       style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
     >
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
+      <Svg accessible={false} width={size} height={size} style={{ position: "absolute" }}>
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -42,20 +43,21 @@ export function TimerRing({ elapsed, target, active }: TimerRingProps) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={active ? "#2457D6" : "#8DA2D8"}
+          stroke={colors.primary}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={circumference * (1 - progress)}
+          strokeDashoffset={circumference * progress}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
       <Text style={{ color: colors.foreground, fontSize: 45, lineHeight: 54, fontWeight: "800" }}>
-        {formatTime(elapsed)}
+        {formatTime(Math.max(0, target - elapsed))}
       </Text>
       <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 20, fontWeight: "600" }}>
-        obiettivo {formatTime(target)}
+        {active ? "tempo rimanente" : "due minuti per il tuo sorriso"}
       </Text>
     </View>
   );
 }
+

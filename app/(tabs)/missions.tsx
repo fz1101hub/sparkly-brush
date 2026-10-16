@@ -22,7 +22,7 @@ export default function MissionsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Torna indietro"
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, { backgroundColor: colors.surface }, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
@@ -31,12 +31,12 @@ export default function MissionsScreen() {
           </View>
         </View>
 
-        <View style={[styles.hero, { backgroundColor: "#EAF6FF", borderColor: "#B8DFFF" }]}>
+        <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#B8DFFF" }]}>
           <View style={styles.heroIcon}>
             <MaterialIcons name="flag" size={32} color="#0B67B2" />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={[styles.heroEyebrow, { color: "#0B67B2" }]}>OGGI</Text>
+            <Text style={[styles.heroEyebrow, { color: colors.primary }]}>OGGI</Text>
             <Text style={[styles.heroTitle, { color: colors.foreground }]}>
               {today.completedCount}/3 missioni complete
             </Text>
@@ -57,7 +57,7 @@ export default function MissionsScreen() {
                 style={[
                   styles.missionCard,
                   {
-                    backgroundColor: mission.completed ? "#E8F8EF" : colors.surface,
+                    backgroundColor: mission.completed ? colors.primarySoft : colors.surface,
                     borderColor: mission.completed ? "#55B987" : colors.border,
                   },
                 ]}
@@ -65,7 +65,7 @@ export default function MissionsScreen() {
                 <View
                   style={[
                     styles.missionIcon,
-                    { backgroundColor: mission.completed ? "#55B987" : "#E7EEFF" },
+                    { backgroundColor: mission.completed ? "#55B987" : colors.primarySoft },
                   ]}
                 >
                   <MaterialIcons
@@ -79,11 +79,11 @@ export default function MissionsScreen() {
                     <Text style={[styles.missionTitle, { color: colors.foreground }]}>{mission.title}</Text>
                     <View style={styles.coinMini}>
                       <MaterialIcons name="stars" size={14} color="#B98A00" />
-                      <Text style={styles.coinMiniText}>+{mission.rewardCoins}</Text>
+                      <Text style={[styles.coinMiniText, { color: colors.warning }]}>+{mission.rewardCoins}</Text>
                     </View>
                   </View>
                   <Text style={[styles.missionText, { color: colors.muted }]}>{mission.description}</Text>
-                  <View style={[styles.track, { backgroundColor: "#E6E9F0" }]}>
+                  <View style={[styles.track, { backgroundColor: colors.primarySoft }]}>
                     <View
                       style={[
                         styles.fill,
@@ -107,7 +107,7 @@ export default function MissionsScreen() {
           style={[
             styles.chestCard,
             {
-              backgroundColor: today.allCompleted ? "#FFF4C9" : "#F5F6F9",
+              backgroundColor: colors.primarySoft,
               borderColor: today.allCompleted ? "#E8BE38" : colors.border,
             },
           ]}
@@ -151,7 +151,7 @@ export default function MissionsScreen() {
                 style={[
                   styles.achievementCard,
                   {
-                    backgroundColor: achievement.unlocked ? "#F2EEFF" : colors.surface,
+                    backgroundColor: achievement.unlocked ? colors.primarySoft : colors.surface,
                     borderColor: achievement.unlocked ? "#9C86E8" : colors.border,
                     opacity: achievement.unlocked ? 1 : 0.76,
                   },
@@ -176,13 +176,13 @@ export default function MissionsScreen() {
                     </Text>
                     <View style={styles.coinMini}>
                       <MaterialIcons name="stars" size={14} color="#B98A00" />
-                      <Text style={styles.coinMiniText}>+{achievement.rewardCoins}</Text>
+                      <Text style={[styles.coinMiniText, { color: colors.warning }]}>+{achievement.rewardCoins}</Text>
                     </View>
                   </View>
                   <Text style={[styles.achievementText, { color: colors.muted }]}>
                     {achievement.description}
                   </Text>
-                  <View style={[styles.track, { backgroundColor: "#E6E9F0" }]}>
+                  <View style={[styles.track, { backgroundColor: colors.primarySoft }]}>
                     <View
                       style={[
                         styles.fill,
@@ -209,7 +209,7 @@ export default function MissionsScreen() {
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.walletCard,
-            { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
+            { backgroundColor: colors.primarySoft, borderColor: "#F2D588" },
             pressed && styles.pressed,
           ]}
         >
@@ -281,3 +281,4 @@ const styles = StyleSheet.create({
   walletText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
 });
+

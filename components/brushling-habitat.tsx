@@ -1,6 +1,8 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ThemeScene } from "@/components/theme-scene";
+import { useThemeContext } from "@/lib/theme-provider";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 import {
@@ -19,18 +21,20 @@ export function BrushlingHabitat({
   customization: CustomizationState;
   height?: number;
 }) {
+  const { theme } = useThemeContext();
   const habitat = getCustomizationItem(customization.equippedHabitatId);
   const accessory = getCustomizationItem(customization.equippedAccessoryId);
   const decor = getCustomizationItem(customization.equippedDecorId);
 
   return (
-    <View
+    <ThemeScene
+      themeId={theme.id}
       style={[
         styles.scene,
         {
           minHeight: height,
-          backgroundColor: habitat?.soft ?? creature.soft,
-          borderColor: habitat?.accent ?? creature.accent,
+          backgroundColor: theme.colors.primarySoft,
+          borderColor: theme.colors.border,
         },
       ]}
     >
@@ -61,7 +65,7 @@ export function BrushlingHabitat({
             <MaterialIcons name={accessory.icon} size={24} color="#FFFFFF" />
           </View>
         ) : null}
-        <BrushlingAvatar creature={creature} size={152} level={level} />
+        <BrushlingAvatar framed={false} creature={creature} size={152} level={level} />
       </View>
 
       <View style={[styles.ground, { backgroundColor: habitat?.accent ?? creature.accent }]} />
@@ -69,7 +73,7 @@ export function BrushlingHabitat({
       <View style={styles.label}>
         <Text style={styles.labelText}>{habitat?.name ?? "La tua tana"}</Text>
       </View>
-    </View>
+    </ThemeScene>
   );
 }
 
@@ -154,3 +158,4 @@ const styles = StyleSheet.create({
   },
   labelText: { color: "#17213C", fontSize: 10, lineHeight: 14, fontWeight: "900" },
 });
+

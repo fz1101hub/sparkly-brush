@@ -3,9 +3,8 @@ import { File } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
 import {
-  createCompleteBackupDatabase,
+  getBrushStorage,
   inspectCompleteBackupDatabase,
-  restoreCompleteBackupDatabase,
   type HistoryBundle,
 } from "./brush-storage.native";
 import {
@@ -31,8 +30,9 @@ function fileName(manifest: BrushlingsBackupManifest): string {
 
 export async function exportAndShareCompleteBackup(
   manifest: BrushlingsBackupManifest,
+  profileId?: string,
 ): Promise<{ sessionCount: number; size: number }> {
-  const file = await createCompleteBackupDatabase(JSON.stringify(manifest), fileName(manifest));
+  const file = await getBrushStorage(profileId).createCompleteBackupDatabase(JSON.stringify(manifest), fileName(manifest));
   try {
     if (!(await Sharing.isAvailableAsync())) {
       throw new Error("La condivisione file non è disponibile su questo dispositivo");
@@ -78,11 +78,13 @@ export async function pickAndInspectCompleteBackup(): Promise<CompleteBackupPrev
 export async function restoreCompleteBackup(
   preview: CompleteBackupPreview,
   restoreId: string,
+  profileId?: string,
 ): Promise<HistoryBundle> {
-  return restoreCompleteBackupDatabase(preview.uri, restoreId);
+  return getBrushStorage(profileId).restoreCompleteBackupDatabase(preview.uri, restoreId);
 }
 
 export function discardCompleteBackupPreview(preview: CompleteBackupPreview): void {
   const temporary = new File(preview.uri);
   if (temporary.exists) temporary.delete();
 }
+

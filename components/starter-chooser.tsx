@@ -14,13 +14,16 @@ export function StarterChooser() {
     STARTER_IDS.includes(selectedId) ? selectedId : STARTER_IDS[0],
   );
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const chosen = getBrushling(candidate);
 
   const confirm = async () => {
     setSaving(true);
-    await chooseStarter(candidate);
-    setSaving(false);
+    setError(null);
+    try { await chooseStarter(candidate); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Non riesco a salvare il compagno. Riprova."); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -36,20 +39,22 @@ export function StarterChooser() {
         Ogni grande avventura inizia con un piccolo compagno. Potrai cambiare squadra più avanti.
       </Text>
 
-      <View style={styles.starterRow}>
+      <View accessibilityRole="radiogroup" accessibilityLabel="Primo compagno" style={styles.starterRow}>
         {STARTER_IDS.map((id) => {
           const creature = getBrushling(id);
           const selected = candidate === id;
           return (
             <Pressable
               key={id}
-              accessibilityRole="button"
+              accessibilityRole="radio"
+              aria-checked={selected}
+              accessibilityState={{ checked: selected }}
               accessibilityLabel={`Scegli ${creature.name}, tipo ${creature.element}`}
               onPress={() => setCandidate(id)}
               style={({ pressed }) => [
                 styles.starterCard,
                 {
-                  backgroundColor: selected ? "#FFFFFF" : "#FFFFFF20",
+                  backgroundColor: selected ? colors.surface : "#FFFFFF20",
                   borderColor: selected ? creature.accent : "#FFFFFF55",
                 },
                 pressed && styles.pressed,
@@ -59,7 +64,7 @@ export function StarterChooser() {
               <Text style={[styles.starterName, { color: selected ? colors.foreground : "#FFFFFF" }]}>
                 {creature.name}
               </Text>
-              <Text style={[styles.starterType, { color: selected ? creature.accent : "#DDEBFF" }]}>
+              <Text style={[styles.starterType, { color: selected ? colors.primary : "#DDEBFF" }]}>
                 {creature.element}
               </Text>
               {selected ? (
@@ -72,7 +77,7 @@ export function StarterChooser() {
         })}
       </View>
 
-      <View style={[styles.choiceNote, { backgroundColor: chosen.soft }]}>
+      <View style={[styles.choiceNote, { backgroundColor: colors.primarySoft }]}>
         <BrushlingAvatar creature={chosen} size={62} level={1} />
         <View style={styles.choiceCopy}>
           <Text style={[styles.choiceName, { color: colors.foreground }]}>{chosen.name}</Text>
@@ -82,18 +87,20 @@ export function StarterChooser() {
 
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={saving ? "Salvo il compagno" : `Parti con ${chosen.name}`}
         disabled={saving}
         onPress={() => void confirm()}
         style={({ pressed }) => [
           styles.confirmButton,
-          { backgroundColor: chosen.accent },
+          { backgroundColor: colors.primary },
           pressed && styles.pressed,
           saving && styles.disabled,
         ]}
       >
-        <MaterialIcons name="favorite" size={20} color="#FFFFFF" />
-        <Text style={styles.confirmText}>{saving ? "Salvo..." : `Parti con ${chosen.name}`}</Text>
+        <MaterialIcons name="favorite" size={20} color={colors.primaryText} />
+        <Text style={[styles.confirmText, { color: colors.primaryText }]}>{saving ? "Salvo..." : `Parti con ${chosen.name}`}</Text>
       </Pressable>
+      {error ? <Text accessibilityRole="alert" style={{ color: "#FFFFFF", marginTop: 12, fontSize: 14, lineHeight: 22 }}>{error}</Text> : null}
     </View>
   );
 }
@@ -110,12 +117,14 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   sparkleRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
-  eyebrow: { color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },
+  eyebrow: { flexShrink: 1, textAlign: "center", color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },
   title: { color: "#FFFFFF", fontSize: 27, lineHeight: 33, fontWeight: "900", textAlign: "center", marginTop: 8 },
   copy: { color: "#DDEBFF", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 6 },
-  starterRow: { flexDirection: "row", gap: 8, marginTop: 18 },
+  starterRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 18 },
   starterCard: {
     flex: 1,
+    minWidth: 100,
+    flexBasis: "30%",
     minHeight: 145,
     borderWidth: 2,
     borderRadius: 20,
@@ -149,6 +158,8 @@ const styles = StyleSheet.create({
   choiceTagline: { fontSize: 11, lineHeight: 16, fontWeight: "600", marginTop: 2 },
   confirmButton: {
     minHeight: 54,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderRadius: 18,
     marginTop: 14,
     flexDirection: "row",
@@ -156,7 +167,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  confirmText: { color: "#FFFFFF", fontSize: 15, lineHeight: 20, fontWeight: "900" },
+  confirmText: { flexShrink: 1, textAlign: "center", color: "#FFFFFF", fontSize: 15, lineHeight: 20, fontWeight: "900" },
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   disabled: { opacity: 0.6 },
 });
+

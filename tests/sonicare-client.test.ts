@@ -1,3 +1,4 @@
+vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => undefined) } }));
 import { fromByteArray, toByteArray } from "base64-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -278,9 +279,7 @@ describe("NativeSonicareClient", () => {
     const client = new NativeSonicareClient(events, manager as never);
 
     const connecting = client.scanAndConnect();
-    for (let attempt = 0; attempt < 12 && !manager.devices[0]?.connect.mock.calls.length; attempt += 1) {
-      await Promise.resolve();
-    }
+    await vi.waitFor(() => expect(manager.devices[0]?.connect).toHaveBeenCalledTimes(1));
     const candidate = manager.devices[0];
     expect(candidate).toBeDefined();
     expect(candidate.connect).toHaveBeenCalledTimes(1);
@@ -464,3 +463,4 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 });
+

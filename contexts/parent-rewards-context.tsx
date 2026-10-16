@@ -1,15 +1,7 @@
-import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState , useRef } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
-import {
-  loadParentRewards,
-  parentRewardProgress,
-  parentRewardProgressFromMetrics,
-  saveParentRewards,
-  type ParentReward,
-  type ParentRewardProgress,
-  type ParentRewardRequirement,
-} from "@/lib/parent-rewards";
+import { getParentRewardsStorage, parentRewardProgress, parentRewardProgressFromMetrics, type ParentReward, type ParentRewardProgress, type ParentRewardRequirement } from "@/lib/parent-rewards";
 
 type ParentRewardsContextValue = {
   rewards: ParentRewardProgress[];
@@ -25,12 +17,15 @@ type ParentRewardsContextValue = {
 const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(null);
 
 export function ParentRewardsProvider({ children }: PropsWithChildren) {
+  const storage = useRef(getParentRewardsStorage());
   const { history, lifetimeProgress, demoMode } = useBrush();
   const [definitions, setDefinitions] = useState<ParentReward[]>([]);
   const [ready, setReady] = useState(false);
+  const current = useRef<ParentReward[]>([]);
+  const writes = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    void loadParentRewards().then(setDefinitions).finally(() => setReady(true));
+    void storage.current.loadParentRewards().then(value => { current.current = value; setDefinitions(value); }).finally(() => setReady(true));
   }, []);
 
   const rewards = useMemo(
@@ -49,45 +44,28 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
     [rewards],
   );
 
-  const addReward = useCallback(async (
-    title: string,
-    requirement: ParentRewardRequirement,
-    target: number,
-  ) => {
+  const mutate = useCallback((transform: (previous: ParentReward[]) => ParentReward[]) => {
+    const operation = writes.current.catch(() => {}).then(async () => {
+      const next = transform(current.current);
+      await storage.current.saveParentRewards(next);
+      current.current = next;
+      setDefinitions(next);
+    });
+    writes.current = operation;
+    return operation;
+  }, []);
+
+  const addReward = useCallback((title: string, requirement: ParentRewardRequirement, target: number) => {
     const cleanTitle = title.trim();
-    if (!cleanTitle || target < 1) return;
-    const next: ParentReward[] = [
-      ...definitions,
-      {
-        id: "parent-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6),
-        title: cleanTitle,
-        requirement,
-        target,
-        createdAt: Date.now(),
-        deliveredAt: null,
-      },
-    ];
-    setDefinitions(next);
-    await saveParentRewards(next);
-  }, [definitions]);
-
-  const removeReward = useCallback(async (id: string) => {
-    const next = definitions.filter((reward) => reward.id !== id);
-    setDefinitions(next);
-    await saveParentRewards(next);
-  }, [definitions]);
-
+    if (!cleanTitle || cleanTitle.length > 100 || !Number.isInteger(target) || target < 1 || target > 365) return Promise.reject(new Error("Inserisci un titolo e un obiettivo valido"));
+    return mutate(previous => [...previous, { id: "parent-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8), title: cleanTitle, requirement, target, createdAt: Date.now(), deliveredAt: null }]);
+  }, [mutate]);
+  const removeReward = useCallback((id: string) => mutate(previous => previous.filter(reward => reward.id !== id)), [mutate]);
   const markDelivered = useCallback(async (id: string) => {
     if (demoMode) return;
-    const next = definitions.map((reward) => reward.id === id ? { ...reward, deliveredAt: Date.now() } : reward);
-    setDefinitions(next);
-    await saveParentRewards(next);
-  }, [definitions, demoMode]);
-
-  const restoreRewards = useCallback(async (restored: ParentReward[]) => {
-    setDefinitions(restored);
-    await saveParentRewards(restored);
-  }, []);
+    await mutate(previous => previous.map(reward => reward.id === id ? { ...reward, deliveredAt: Date.now() } : reward));
+  }, [demoMode, mutate]);
+  const restoreRewards = useCallback((restored: ParentReward[]) => mutate(() => restored), [mutate]);
 
   const value = useMemo(() => ({ rewards, definitions, nextReward, ready, addReward, removeReward, markDelivered, restoreRewards }), [
     addReward,
@@ -108,3 +86,4 @@ export function useParentRewards(): ParentRewardsContextValue {
   if (!value) throw new Error("useParentRewards deve essere usato dentro ParentRewardsProvider");
   return value;
 }
+
