@@ -87,6 +87,7 @@ export function StarterChooser() {
 
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={saving ? "Salvo il compagno" : `Parti con ${chosen.name}`}
         disabled={saving}
         onPress={() => void confirm()}
         style={({ pressed }) => [
