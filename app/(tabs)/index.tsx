@@ -1,5 +1,4 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -15,11 +14,12 @@ import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useColors } from "@/hooks/use-colors";
+import { useSessionKeepAwake } from "@/hooks/use-session-keep-awake";
 import { getEvolution } from "@/lib/brushlings";
 import { getBrushlingDialogue, inferDialogueContext } from "@/lib/brushling-dialogue";
 import { useThemeContext } from "@/lib/theme-provider";
 
-function KeepAwake() { useKeepAwake(); return null; }
+function KeepAwake() { useSessionKeepAwake(); return null; }
 
 export default function TodayScreen() {
   const colors = useColors();

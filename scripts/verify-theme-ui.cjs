@@ -57,6 +57,12 @@ async function contrastIssues(page) {
   const errors = [], failures = [], checked = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('requestfailed', request => errors.push(request.url() + ': ' + request.failure()?.errorText));
+  // Exercise denied wake-lock permission consistently, including on developer browsers.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: {
+      request: () => Promise.reject(new DOMException('Wake Lock permission request denied', 'NotAllowedError')),
+    } });
+  });
   await page.clock.install({ time: new Date('2026-10-15T08:00:00+02:00') });
   await page.goto(origin, { waitUntil: 'networkidle' });
   for (let i = 0; i < 3; i++) await page.getByText('Continua', { exact: true }).click();

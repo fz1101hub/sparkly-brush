@@ -8,7 +8,7 @@ Il flusso verificato parte dalla scelta del tema nelle Impostazioni, salva la pr
 | --- | --- |
 | Installazione dal lockfile con Node 22 e pnpm 12.5.1 | Passata |
 | TypeScript | Passato |
-| Vitest | 146 test, 27 file, tutti passati |
+| Vitest | 150 test, 28 file, tutti passati |
 | Lint Expo, zero warning | Passato |
 | Expo Doctor | 18/18 |
 | Export web | Passato, 26 route statiche |
@@ -26,6 +26,7 @@ Il test automatico è in `scripts/verify-theme-ui.cjs`; la procedura è in `docs
 ## Correzioni emerse nel collaudo
 
 - Stato `aria-checked` esplicito per i selettori web dei temi e degli esiti hardware, mantenendo lo stato nativo.
+- Permesso wake lock negato gestito senza errori: la sessione continua e i lock arrivati dopo la chiusura vengono rilasciati. Quattro test dedicati coprono diniego, rilascio, attivazione tardiva ed errore di rilascio; il collaudo browser simula esplicitamente il diniego.
 - Contrasto corretto per badge di livello, stato della mappa, monete, prezzi, controlli habitat e stati del collaudo.
 - Aggiornamenti compatibili degli override per rimuovere la vulnerabilità critica di `shell-quote` e altre segnalazioni transitive correggibili senza migrazioni di API.
 

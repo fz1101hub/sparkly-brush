@@ -20,7 +20,7 @@ La preferenza usa la chiave locale `brushlings.appearance.v1`, separata da sessi
 
 Test dedicati in `tests/app-themes.test.ts`: elenco dei sei temi, contrasto delle palette, salvataggio/ricaricamento, fallback e mancata scrittura. I controlli sul contrasto verificano almeno 4,5:1 per testi principali/secondari e pulsanti.
 
-Il repository dichiara Node 22 in `.nvmrc` e pnpm 12.5.1 in `packageManager`. Verificati: TypeScript, 146 test in 27 file, lint, Expo Doctor (18/18) e bundle web/iOS/Android.
+Il repository dichiara Node 22 in `.nvmrc`; la CI fissa pnpm 12.5.1 e installa dal lockfile congelato. Verificati: TypeScript, 150 test in 28 file, lint, Expo Doctor (18/18) e bundle web/iOS/Android.
 
 Il collaudo Playwright attraversa tutte le 12 schermate per ciascuno dei sei temi (72 combinazioni), misura il contrasto dei testi, verifica lo stato accessibile della selezione, il caricamento delle immagini e la persistenza dopo riapertura. Controlla inoltre isolamento dei progressi, errore di scrittura simulato, sessione manuale completa, progressi dopo reload e viewport da 320 punti con riduzione movimento attiva.
 
