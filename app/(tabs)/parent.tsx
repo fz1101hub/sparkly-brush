@@ -74,7 +74,7 @@ export default function ParentDashboardScreen() {
             <Text style={[styles.statLabel, { color: colors.muted }]}>sessioni complete</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>
-            <Text style={[styles.statValue, { color: "#BA4E13" }]}>{dashboard.totalMinutes}m</Text>
+            <Text style={[styles.statValue, { color: colors.warning }]}>{dashboard.totalMinutes}m</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>tempo registrato</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.primarySoft }]}>

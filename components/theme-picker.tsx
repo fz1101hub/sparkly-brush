@@ -22,7 +22,7 @@ export function ThemePicker() {
     <View style={styles.section}>
       <Text accessibilityRole="header" style={[styles.heading, { color: colors.foreground }]}>Scegli il tuo mondo</Text>
       <Text style={[styles.copy, { color: colors.muted }]}>Sei temi, la stessa avventura. Puoi cambiarli quando vuoi.</Text>
-      <View style={styles.grid}>
+      <View accessibilityRole="radiogroup" accessibilityLabel="Temi dell’app" style={styles.grid}>
         {APP_THEMES.map((item) => {
           const selected = theme.id === item.id;
           return (
@@ -30,6 +30,7 @@ export function ThemePicker() {
               key={item.id}
               accessibilityRole="radio"
               accessibilityState={{ checked: selected, disabled: pending !== null }}
+              aria-checked={selected}
               accessibilityLabel={item.name + ". " + item.description}
               disabled={pending !== null}
               onPress={() => void choose(item.id)}

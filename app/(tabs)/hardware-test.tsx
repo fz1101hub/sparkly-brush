@@ -38,12 +38,11 @@ const STATUS_OPTIONS: readonly {
   status: HardwareTestStatus;
   label: string;
   icon: React.ComponentProps<typeof MaterialIcons>["name"];
-  color: string;
 }[] = [
-  { status: "passed", label: "Superato", icon: "check-circle", color: "#14845B" },
-  { status: "failed", label: "Fallito", icon: "cancel", color: "#C43D58" },
-  { status: "blocked", label: "Bloccato", icon: "pause-circle", color: "#B27700" },
-  { status: "pending", label: "Da fare", icon: "radio-button-unchecked", color: "#68758A" },
+  { status: "passed", label: "Superato", icon: "check-circle" },
+  { status: "failed", label: "Fallito", icon: "cancel" },
+  { status: "blocked", label: "Bloccato", icon: "pause-circle" },
+  { status: "pending", label: "Da fare", icon: "radio-button-unchecked" },
 ];
 
 function currentPlatform(): HardwareValidationRun["platform"] {
@@ -192,8 +191,8 @@ export default function HardwareTestScreen() {
     return (
       <View style={[styles.testCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.testHeading}>
-          <View style={[styles.testNumber, { backgroundColor: result.status === "passed" ? "#14845B" : colors.primary }]}>
-            <Text style={styles.testNumberText}>{index + 1}</Text>
+          <View style={[styles.testNumber, { backgroundColor: result.status === "passed" ? colors.success : colors.primary }]}>
+            <Text style={[styles.testNumberText, { color: result.status === "passed" ? colors.background : colors.primaryText }]}>{index + 1}</Text>
           </View>
           <View style={styles.testTitleWrap}>
             <Text style={[styles.testTitle, { color: colors.foreground }]}>{item.title}</Text>
@@ -213,21 +212,23 @@ export default function HardwareTestScreen() {
         >
           {STATUS_OPTIONS.map((option) => {
             const selected = result.status === option.status;
+            const optionColor = option.status === "passed" ? colors.success : option.status === "failed" ? colors.error : option.status === "blocked" ? colors.warning : colors.muted;
             return (
               <Pressable
                 key={option.status}
                 accessibilityRole="radio"
                 accessibilityLabel={`${item.title}: ${option.label}`}
                 accessibilityState={{ checked: selected }}
+                aria-checked={selected}
                 onPress={() => updateResult(item, { status: option.status })}
                 style={({ pressed }) => [
                   styles.statusButton,
-                  { borderColor: selected ? option.color : colors.border, backgroundColor: selected ? `${option.color}18` : colors.background },
+                  { borderColor: selected ? optionColor : colors.border, backgroundColor: selected ? colors.primarySoft : colors.background },
                   pressed && styles.pressed,
                 ]}
               >
-                <MaterialIcons name={option.icon} size={17} color={selected ? option.color : colors.muted} />
-                <Text style={[styles.statusLabel, { color: selected ? option.color : colors.muted }]}>{option.label}</Text>
+                <MaterialIcons name={option.icon} size={17} color={selected ? optionColor : colors.muted} />
+                <Text style={[styles.statusLabel, { color: selected ? optionColor : colors.muted }]}>{option.label}</Text>
               </Pressable>
             );
           })}

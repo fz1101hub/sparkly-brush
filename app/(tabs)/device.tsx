@@ -212,7 +212,7 @@ export default function DeviceScreen() {
                 <MaterialIcons name="fact-check" size={26} color="#14845B" />
               </View>
               <View style={styles.hardwareCopy}>
-                <Text style={styles.hardwareEyebrow}>COLLAUDO HX6322/04</Text>
+                <Text style={[styles.hardwareEyebrow, { color: colors.success }]}>COLLAUDO HX6322/04</Text>
                 <Text style={[styles.hardwareTitle, { color: colors.foreground }]}>Prova guidata e report</Text>
                 <Text style={[styles.hardwareText, { color: colors.muted }]}>Matrice iOS/Android persistente con diagnostica sanitizzata.</Text>
               </View>
@@ -243,7 +243,7 @@ export default function DeviceScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Diagnostica BLE</Text>
                 <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Utile per validare il tuo HX6322/04 reale</Text>
               </View>
-              <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>
+              <View style={[styles.liveBadge, { backgroundColor: colors.primarySoft }]}><View style={styles.liveDot} /><Text style={[styles.liveText, { color: colors.success }]}>LIVE</Text></View>
             </View>
           </View>
         }

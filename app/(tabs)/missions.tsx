@@ -79,7 +79,7 @@ export default function MissionsScreen() {
                     <Text style={[styles.missionTitle, { color: colors.foreground }]}>{mission.title}</Text>
                     <View style={styles.coinMini}>
                       <MaterialIcons name="stars" size={14} color="#B98A00" />
-                      <Text style={styles.coinMiniText}>+{mission.rewardCoins}</Text>
+                      <Text style={[styles.coinMiniText, { color: colors.warning }]}>+{mission.rewardCoins}</Text>
                     </View>
                   </View>
                   <Text style={[styles.missionText, { color: colors.muted }]}>{mission.description}</Text>
@@ -176,7 +176,7 @@ export default function MissionsScreen() {
                     </Text>
                     <View style={styles.coinMini}>
                       <MaterialIcons name="stars" size={14} color="#B98A00" />
-                      <Text style={styles.coinMiniText}>+{achievement.rewardCoins}</Text>
+                      <Text style={[styles.coinMiniText, { color: colors.warning }]}>+{achievement.rewardCoins}</Text>
                     </View>
                   </View>
                   <Text style={[styles.achievementText, { color: colors.muted }]}>

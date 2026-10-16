@@ -166,7 +166,7 @@ export default function HabitatScreen() {
                       ) : (
                         <View style={styles.costRow}>
                           <MaterialIcons name="stars" size={15} color="#B98A00" />
-                          <Text style={[styles.cost, { color: owned || affordable ? "#8A6900" : "#A14C4C" }]}>
+                          <Text style={[styles.cost, { color: owned || affordable ? colors.warning : colors.error }]}>
                             {item.cost}
                           </Text>
                         </View>
@@ -181,12 +181,12 @@ export default function HabitatScreen() {
                         styles.itemButton,
                         {
                           backgroundColor: equipped
-                            ? item.accent
+                            ? colors.primary
                             : owned
-                              ? "#FFFFFF"
+                              ? colors.surface
                               : affordable || item.cost === 0
-                                ? item.accent
-                                : "#D9DCE4",
+                                ? colors.primary
+                                : colors.primarySoft,
                           borderColor: equipped || !owned ? item.accent : colors.border,
                         },
                         pressed && styles.pressed,
@@ -195,7 +195,7 @@ export default function HabitatScreen() {
                       <Text
                         style={[
                           styles.itemButtonText,
-                          { color: equipped || !owned ? "#FFFFFF" : colors.foreground },
+                          { color: equipped || (!owned && (affordable || item.cost === 0)) ? colors.primaryText : colors.foreground },
                         ]}
                       >
                         {equipped

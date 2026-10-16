@@ -20,6 +20,18 @@ La preferenza usa la chiave locale `brushlings.appearance.v1`, separata da sessi
 
 Test dedicati in `tests/app-themes.test.ts`: elenco dei sei temi, contrasto delle palette, salvataggio/ricaricamento, fallback e mancata scrittura. I controlli sul contrasto verificano almeno 4,5:1 per testi principali/secondari e pulsanti.
 
-Eseguire nel runtime del repository (Node 22, pnpm 12.5.1): `pnpm check`, `pnpm test`, `pnpm lint` e gli export Expo web/iOS/Android previsti dalla CI.
+Il repository dichiara Node 22 in `.nvmrc` e pnpm 12.5.1 in `packageManager`. Verificati: TypeScript, 146 test in 27 file, lint, Expo Doctor (18/18) e bundle web/iOS/Android.
 
-Revisione visiva ancora necessaria su schermo piccolo, testo ingrandito, passaggio ripetuto tra i sei temi, riavvio, modalità demo, errore di salvataggio e sessioni BLE. I controlli su contrasto e persistenza eseguiti senza dipendenze non sostituiscono la compilazione o questa revisione.
+Il collaudo Playwright attraversa tutte le 12 schermate per ciascuno dei sei temi (72 combinazioni), misura il contrasto dei testi, verifica lo stato accessibile della selezione, il caricamento delle immagini e la persistenza dopo riapertura. Controlla inoltre isolamento dei progressi, errore di scrittura simulato, sessione manuale completa, progressi dopo reload e viewport da 320 punti con riduzione movimento attiva.
+
+Per ripeterlo:
+
+```bash
+pnpm exec playwright install chromium
+pnpm exec expo export --platform web --output-dir dist
+BRUSHLINGS_TEST_BUILD_DIR=dist pnpm test:ui
+```
+
+In alternativa, con il dev server avviato, usare `BRUSHLINGS_TEST_URL=http://127.0.0.1:8081 pnpm test:ui`. Il test usa un profilo browser nuovo e non modifica i dati del browser abituale. Gli screenshot, la tavola comparativa e il rapporto JSON sono in `test-results/themes`; la CI li pubblica come artifact `theme-review`.
+
+Le prove con caratteri ingranditi sul dispositivo e con lo spazzolino HX6322/04 reale restano nel piano di collaudo hardware. La compilazione nativa e i test BLE con periferica simulata non costituiscono una prova del manico fisico.

@@ -48,7 +48,7 @@ export function BrushlingAvatar({
       </Svg>
 
       {framed && level !== undefined ? (
-        <View style={[styles.levelBadge, { backgroundColor: creature.accent }]}>
+        <View style={[styles.levelBadge, { backgroundColor: "#17213C" }]}>
           <Text style={styles.levelText}>Lv {level}</Text>
         </View>
       ) : null}

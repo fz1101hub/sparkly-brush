@@ -151,8 +151,8 @@ export default function ExploreScreen() {
                       <View style={styles.zoneTitleRow}>
                         <Text style={[styles.zoneTitle, { color: colors.foreground }]}>{zone.name}</Text>
                         {active ? (
-                          <View style={[styles.hereBadge, { backgroundColor: zone.accent }]}>
-                            <Text style={styles.hereText}>SEI QUI</Text>
+                          <View style={[styles.hereBadge, { backgroundColor: colors.primary }]}>
+                            <Text style={[styles.hereText, { color: colors.primaryText }]}>SEI QUI</Text>
                           </View>
                         ) : null}
                       </View>
@@ -205,7 +205,7 @@ export default function ExploreScreen() {
                   )}
                 </View>
                 <View style={styles.encounterCopy}>
-                  <Text style={[styles.encounterEyebrow, { color: egg.hatched ? colors.primary : egg.accent }]}>
+                  <Text style={[styles.encounterEyebrow, { color: colors.primary }]}>
                     {egg.hatched ? "NUOVO BRUSHLING" : egg.found ? "UOVO TROVATO" : "INCONTRO SEGRETO"}
                   </Text>
                   <Text style={[styles.encounterTitle, { color: colors.foreground }]}>
