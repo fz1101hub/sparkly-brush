@@ -1,0 +1,26 @@
+name: Prepare notifications lockfile
+on:
+  push:
+    branches: [maintenance/notifications-lock-20261016]
+permissions:
+  contents: write
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: Save generated lockfile
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml; then
+            git add pnpm-lock.yaml
+            git -c user.name="Brushlings build" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Lock Expo local notifications dependency"
+            git push origin HEAD:maintenance/notifications-lock-20261016
+          fi
