@@ -29,7 +29,7 @@ export function SessionRewardModal() {
       reward.completed
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Warning,
-    );
+    ).catch(() => {});
   }, [playSuccess, preferences.hapticsEnabled, reward]);
 
   if (!reward) return null;

@@ -1,4 +1,6 @@
 import React from "react";
+import * as Haptics from "expo-haptics";
+import { PreferencesProvider, usePreferences } from "@/contexts/preferences-context";
 import TestRenderer, { act } from "react-test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +11,7 @@ import { applySessionToLifetime, createEmptyLifetimeProgress } from "@/lib/lifet
 
 const mocks = vi.hoisted(() => ({
   journal: new Map<string, string>(),
+  os: "web",
   forgetDevice: vi.fn(),
   saveDeviceBatch: vi.fn(),
   saveFallback: vi.fn(),
@@ -23,12 +26,12 @@ vi.mock("@react-native-async-storage/async-storage", () => ({ default: {
   removeItem: vi.fn(async (key: string) => { mocks.journal.delete(key); }),
 } }));
 
-vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
+vi.mock("react-native", () => ({ Platform: { get OS() { return mocks.os; } }, AppState: { addEventListener: vi.fn(() => ({ remove: vi.fn() })) } }));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light" },
   NotificationFeedbackType: { Success: "success" },
-  impactAsync: vi.fn(),
-  notificationAsync: vi.fn(),
+  impactAsync: vi.fn(async () => {}),
+  notificationAsync: vi.fn(async () => {}),
 }));
 vi.mock("@/lib/brush-storage", async () => {
   const { createEmptyLifetimeProgress } = await import("@/lib/lifetime-progress");
@@ -70,6 +73,7 @@ describe("BrushProvider BLE integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.journal.clear();
+    mocks.os = "web";
     const empty = createEmptyLifetimeProgress();
     mocks.forgetDevice.mockReset().mockResolvedValue({
       recentHistory: [],
@@ -806,6 +810,27 @@ describe("BrushProvider BLE integration", () => {
     expect(mocks.saveSession).not.toHaveBeenCalled();
     await act(async () => renderer.unmount());
     vi.useRealTimers();
+  });
+
+  it("respects disabled haptics and still connects when native haptic feedback rejects", async () => {
+    mocks.os = "android";
+    mocks.journal.set("sparkly-brush.preferences.v1", JSON.stringify({ onboardingCompleted: true, hapticsEnabled: false }));
+    let brush!: ReturnType<typeof useBrush>;
+    let preferences!: ReturnType<typeof usePreferences>;
+    let client!: FakeClient;
+    function Probe() { brush = useBrush(); preferences = usePreferences(); return null; }
+    const factory = (events: BleClientEvents) => { client = new FakeClient(events); return client; };
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<PreferencesProvider><BrushProvider clientFactory={factory}><Probe /></BrushProvider></PreferencesProvider>); });
+    await act(async () => { await brush.startManual(); });
+    expect(brush.manualActive).toBe(true);
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    await act(async () => { await brush.stopManual(); await preferences.setPreference("hapticsEnabled", true); });
+    vi.mocked(Haptics.impactAsync).mockRejectedValueOnce(new Error("Haptics unavailable"));
+    await act(async () => { await brush.connect(); });
+    expect(Haptics.impactAsync).toHaveBeenCalledOnce();
+    expect(client.scanAndConnect).toHaveBeenCalledOnce();
+    await act(async () => renderer.unmount());
   });
 
 });

@@ -6,6 +6,7 @@ const path = require('node:path');
 let origin = process.env.BRUSHLINGS_TEST_URL || 'http://127.0.0.1:8081';
 let activeServer;
 let activeBrowser;
+let activePage;
 const themes = [['adventure', 'Avventura'], ['arcade', 'Arcade'], ['cosmos', 'Cosmo'], ['garden', 'Giardino'], ['bubbles', 'Bolle'], ['underwater', 'Sottomarino']];
 const out = path.resolve(process.env.BRUSHLINGS_TEST_ARTIFACTS || 'test-results/themes');
 fs.mkdirSync(out, { recursive: true });
@@ -52,10 +53,10 @@ async function contrastIssues(page) {
     origin = 'http://127.0.0.1:' + activeServer.address().port;
   }
   const browser = activeBrowser = await chromium.launch({ executablePath: process.env.BRUSHLINGS_CHROMIUM_PATH || undefined, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, reducedMotion: 'reduce', timezoneId: 'Europe/Rome' });
+  const page = activePage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, reducedMotion: 'reduce', timezoneId: 'Europe/Rome' });
   page.setDefaultTimeout(15000);
   const errors = [], failures = [], checked = [];
-  page.on('pageerror', e => errors.push(e.message));
+  page.on('pageerror', e => { errors.push(e.message); console.error('Browser error:', e.message); });
   page.on('requestfailed', request => errors.push(request.url() + ': ' + request.failure()?.errorText));
   // Exercise denied wake-lock permission consistently, including on developer browsers.
   await page.addInitScript(() => {
@@ -154,6 +155,8 @@ async function contrastIssues(page) {
 
   await page.getByRole('textbox', { name: 'Nome del nuovo profilo' }).fill('Emma');
   await page.getByRole('button', { name: 'Crea profilo', exact: true }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('brushlings.family.v1')).activeId !== 'primary');
+  console.log('New profile persisted');
   await page.getByRole('button', { name: 'Parti con Bloopi', exact: true }).click();
   await page.getByRole('button', { name: /^Profilo attivo: Emma/ }).waitFor();
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'adventure');
@@ -208,4 +211,4 @@ async function contrastIssues(page) {
   await gallery.screenshot({ path: out + '/themes-overview.png', fullPage: true });
   await browser.close();
   activeServer?.close();
-})().catch(async e => { console.error(e); fs.writeFileSync(out + '/result.json', JSON.stringify({ status: 'failed', message: e.message }, null, 2)); await activeBrowser?.close(); activeServer?.close(); process.exitCode = 1; });
+})().catch(async e => { console.error(e); fs.writeFileSync(out + '/result.json', JSON.stringify({ status: 'failed', message: e.message }, null, 2)); if (activePage) { console.error('Failed page:', activePage.url(), await activePage.locator('body').innerText().catch(() => 'unavailable')); await activePage.screenshot({ path: out + '/failure.png', fullPage: true }).catch(() => {}); } await activeBrowser?.close(); activeServer?.close(); process.exitCode = 1; });

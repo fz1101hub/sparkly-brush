@@ -56,8 +56,10 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
 
+export function useOptionalPreferences() { return useContext(PreferencesContext); }
+
 export function usePreferences(): PreferencesContextValue {
-  const value = useContext(PreferencesContext);
+  const value = useOptionalPreferences();
   if (!value) throw new Error("usePreferences deve essere usato dentro PreferencesProvider");
   return value;
 }

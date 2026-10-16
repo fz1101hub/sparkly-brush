@@ -152,8 +152,8 @@ function ProfileLayout() {
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DataRecoveryGate>
-        <BrushProvider>
-          <PreferencesProvider>
+        <PreferencesProvider>
+          <BrushProvider>
             <AudioFeedbackProvider>
               <BrushlingProvider>
                 <ParentRewardsProvider>
@@ -168,8 +168,8 @@ function ProfileLayout() {
                 </ParentRewardsProvider>
               </BrushlingProvider>
             </AudioFeedbackProvider>
-          </PreferencesProvider>
-        </BrushProvider>
+          </BrushProvider>
+        </PreferencesProvider>
       </DataRecoveryGate>
     </GestureHandlerRootView>
   );

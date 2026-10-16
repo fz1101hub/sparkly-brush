@@ -12,7 +12,7 @@
 
 `createProfileStorage` e le factory dei repository catturano l’identità al momento della creazione. Ogni provider conserva la propria istanza: una scrittura ritardata non può finire nel profilo appena selezionato. I database SQLite, i journal di restore e quelli del timer sono separati per bambino. La selezione del profilo cambia solo dopo il salvataggio del registro famiglia e il caricamento dei provider precede il ritorno alla Home.
 
-Preferenze, acquisti e premi familiari serializzano le modifiche e pubblicano il nuovo stato solo dopo il salvataggio. Un errore conserva la scelta o il saldo precedente e viene mostrato nell’interfaccia. Le modifiche ai promemoria annullano solo le due notifiche del profilo interessato e ripristinano la configurazione precedente quando il salvataggio fallisce.
+Preferenze, acquisti e premi familiari serializzano le modifiche e pubblicano il nuovo stato solo dopo il salvataggio. Un errore conserva la scelta o il saldo precedente e viene mostrato nell’interfaccia. Le vibrazioni di avvio e dei premi rispettano le preferenze del bambino; errori del feedback aptico non interrompono il timer o la connessione. Le modifiche ai promemoria annullano solo le due notifiche del profilo interessato e ripristinano la configurazione precedente quando il salvataggio fallisce.
 
 I backup restano per bambino: selezionare il destinatario prima di importare. Temi e promemoria sono impostazioni del dispositivo e non fanno parte dell’archivio portatile. Non sono stati introdotti account, servizi remoti o raccolta dei dati dei bambini.
 

@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   sparkleRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
-  eyebrow: { color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },
+  eyebrow: { flexShrink: 1, textAlign: "center", color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },
   title: { color: "#FFFFFF", fontSize: 27, lineHeight: 33, fontWeight: "900", textAlign: "center", marginTop: 8 },
   copy: { color: "#DDEBFF", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 6 },
   starterRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 18 },
@@ -157,6 +157,8 @@ const styles = StyleSheet.create({
   choiceTagline: { fontSize: 11, lineHeight: 16, fontWeight: "600", marginTop: 2 },
   confirmButton: {
     minHeight: 54,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderRadius: 18,
     marginTop: 14,
     flexDirection: "row",
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  confirmText: { color: "#FFFFFF", fontSize: 15, lineHeight: 20, fontWeight: "900" },
+  confirmText: { flexShrink: 1, textAlign: "center", color: "#FFFFFF", fontSize: 15, lineHeight: 20, fontWeight: "900" },
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   disabled: { opacity: 0.6 },
 });

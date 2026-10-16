@@ -6,21 +6,21 @@ import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 // Appearance is device-local and independent of game state and backups.
 export const THEME_STORAGE_KEY = "brushlings.appearance.v1";
 function buildProfileStorage(profileId: string) {
-const AsyncStorage = createProfileStorage(profileId);
+  const AsyncStorage = createProfileStorage(profileId);
 
-async function loadThemeId(): Promise<AppThemeId> {
-  try {
-    const value = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-    return isAppThemeId(value) ? value : DEFAULT_THEME_ID;
-  } catch {
-    return DEFAULT_THEME_ID;
+  async function loadThemeId(): Promise<AppThemeId> {
+    try {
+      const value = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+      return isAppThemeId(value) ? value : DEFAULT_THEME_ID;
+    } catch {
+      return DEFAULT_THEME_ID;
+    }
   }
-}
-async function saveThemeId(themeId: AppThemeId): Promise<void> {
-  if (!isAppThemeId(themeId)) throw new Error("Tema non disponibile");
-  await AsyncStorage.setItem(THEME_STORAGE_KEY, themeId);
-}
-return { loadThemeId, saveThemeId };
+  async function saveThemeId(themeId: AppThemeId): Promise<void> {
+    if (!isAppThemeId(themeId)) throw new Error("Tema non disponibile");
+    await AsyncStorage.setItem(THEME_STORAGE_KEY, themeId);
+  }
+  return { loadThemeId, saveThemeId };
 }
 
 export const getThemeStorage = createProfileStore(buildProfileStorage);

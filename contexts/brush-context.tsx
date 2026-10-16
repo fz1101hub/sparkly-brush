@@ -24,6 +24,7 @@ import {
 } from "@/lib/brush-types";
 import { getBrushStorage } from "@/lib/brush-storage";
 import { getManualSessionStorage, type ManualCheckpoint } from "@/lib/manual-session";
+import { useOptionalPreferences } from "@/contexts/preferences-context";
 import { useOptionalFamily } from "@/contexts/family-context";
 import { createSonicareClient } from "@/lib/sonicare-client";
 import {
@@ -131,6 +132,9 @@ export function BrushProvider({
   syncDelayMs = 450,
 }: BrushProviderProps) {
   const storage = useRef(getBrushStorage());
+  const preferences = useOptionalPreferences();
+  const hapticsAllowed = useRef(false);
+  hapticsAllowed.current = !!preferences?.ready && preferences.preferences.hapticsEnabled;
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("Pronto per cercare lo spazzolino");
   const [adapterState, setAdapterState] = useState("Unknown");
@@ -435,9 +439,6 @@ export function BrushProvider({
           session.completed ? "success" : "info",
           `${sessionIsDemo ? "Sessione demo" : "Sessione manuale"} salvata (${session.durationSeconds}s)`,
         );
-        if (session.completed && Platform.OS !== "web") {
-          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
         return true;
       } catch (error) {
         manualSavedRef.current = false;
@@ -492,8 +493,8 @@ export function BrushProvider({
       appendLog("warning", "Disattiva la modalità demo per collegare lo spazzolino reale");
       return;
     }
-    if (Platform.OS !== "web") {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web" && hapticsAllowed.current) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
     await clientRef.current?.scanAndConnect().catch(() => undefined);
   }, [appendLog, demoMode]);
@@ -589,7 +590,7 @@ export function BrushProvider({
       setManualElapsed(0);
       setManualActive(true);
       appendLog("info", demoMode ? "Timer demo avviato" : "Timer guidato avviato");
-      if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      if (Platform.OS !== "web" && hapticsAllowed.current) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch (error) {
       setManualSaveError(error instanceof Error ? error.message : "Non riesco a proteggere la sessione. Riprova.");
     } finally { startingManual.current = false; setManualStartPending(false); }
