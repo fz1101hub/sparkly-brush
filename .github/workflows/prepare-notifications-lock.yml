@@ -17,10 +17,15 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: Prepare package for the offline workspace
+        run: |
+          mkdir -p .maintenance
+          npm pack expo-notifications@0.32.17 --pack-destination /tmp
+          base64 -w 0 /tmp/expo-notifications-0.32.17.tgz > .maintenance/expo-notifications.tgz.base64
       - name: Save generated lockfile
         run: |
-          if ! git diff --quiet -- pnpm-lock.yaml; then
-            git add pnpm-lock.yaml
+          git add pnpm-lock.yaml .maintenance/expo-notifications.tgz.base64
+          if ! git diff --cached --quiet; then
             git -c user.name="Brushlings build" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Lock Expo local notifications dependency"
             git push origin HEAD:maintenance/notifications-lock-20261016
           fi
