@@ -148,7 +148,7 @@ async function contrastIssues(page) {
   await page.evaluate(() => { window.__setItem = Storage.prototype.setItem; Storage.prototype.setItem = function(k,v) { if (k === 'sparkly-brush.preferences.v1') throw Error('Simulated full storage'); return window.__setItem.call(this,k,v); }; });
   await page.getByRole('switch', { name: 'Musica', exact: true }).click();
   await page.getByText(/Non riesco a salvare la preferenza/).waitFor();
-  assert.equal(await page.getByRole('switch', { name: 'Musica', exact: true }).getAttribute('aria-checked'), 'false');
+  assert.equal(await page.getByRole('switch', { name: 'Musica', exact: true }).isChecked(), false);
   await page.evaluate(() => { Storage.prototype.setItem = window.__setItem; });
   const primaryProgress = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('sparkly-brush.') && key !== 'sparkly-brush.hardware-validation.v1')));
 
@@ -159,7 +159,7 @@ async function contrastIssues(page) {
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'adventure');
   assert.deepEqual(await page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('sparkly-brush.') && key !== 'sparkly-brush.hardware-validation.v1'))), primaryProgress);
   await page.getByRole('button', { name: /^Profilo attivo:/ }).click();
-  assert.equal(await page.getByRole('switch', { name: 'Suoni', exact: true }).getAttribute('aria-checked'), 'true');
+  assert.equal(await page.getByRole('switch', { name: 'Suoni', exact: true }).isChecked(), true);
   await page.getByRole('radio', { name: /^Giardino\./ }).click();
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'garden');
   await page.goto(origin, { waitUntil: 'networkidle' });
