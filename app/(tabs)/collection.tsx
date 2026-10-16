@@ -1,3 +1,4 @@
+import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -17,6 +18,7 @@ import {
 
 export default function CollectionScreen() {
   const colors = useColors();
+  const [saveError, setSaveError] = useState<string | null>(null);
   const router = useRouter();
   const { selectedId, selected, stats, walletCoins, customization, selectBrushling } = useBrushling();
   const starters = BRUSHLINGS.filter((creature) => STARTER_IDS.includes(creature.id));
@@ -24,6 +26,7 @@ export default function CollectionScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {saveError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{saveError}</Text> : null}
         <AppHeader eyebrow="Brushlings" title="La tua squadra" connected={false} />
 
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -167,7 +170,7 @@ export default function CollectionScreen() {
                 <Pressable
                   accessibilityRole="button"
                   disabled={!unlocked || selected}
-                  onPress={() => void selectBrushling(creature.id)}
+                  onPress={() => { setSaveError(null); void selectBrushling(creature.id).catch(() => setSaveError("Non riesco a salvare il compagno. La scelta precedente è rimasta attiva.")); }}
                   style={({ pressed }) => [
                     styles.selectButton,
                     {

@@ -176,7 +176,7 @@ export default function HabitatScreen() {
                     <Pressable
                       accessibilityRole="button"
                       disabled={equipped}
-                      onPress={() => void handleItem(item)}
+                      onPress={() => void handleItem(item).catch(() => setMessage("Non riesco a salvare l’oggetto. Nessuna moneta è stata spesa."))}
                       style={({ pressed }) => [
                         styles.itemButton,
                         {

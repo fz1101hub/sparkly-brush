@@ -51,6 +51,7 @@ export function ScreenContainer({
   const colors = useColors();
   return (
     <View
+      role="main"
       className={cn(
         "flex-1",
         "bg-background",

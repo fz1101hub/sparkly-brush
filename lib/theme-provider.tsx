@@ -4,7 +4,7 @@ import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { type ColorScheme, type ThemeColorPalette } from "@/constants/theme";
 import { DEFAULT_THEME_ID, getAppTheme, type AppTheme, type AppThemeId, type AppThemePalette } from "@/lib/app-themes";
-import { loadThemeId, saveThemeId } from "@/lib/theme-storage";
+import { getThemeStorage } from "@/lib/theme-storage";
 
 type ThemeContextValue = {
   theme: AppTheme;
@@ -16,6 +16,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const storage = useRef(getThemeStorage());
   const [themeId, setThemeId] = useState<AppThemeId>(DEFAULT_THEME_ID);
   const [ready, setReady] = useState(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
@@ -23,7 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    void loadThemeId().then((id) => {
+    void storage.current.loadThemeId().then((id) => {
       if (mounted) { setThemeId(id); setReady(true); }
     });
     return () => { mounted = false; };
@@ -32,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = useCallback((id: AppThemeId) => {
     // Serialize writes so quick successive choices cannot persist out of order.
     const next = writes.current.catch(() => undefined).then(async () => {
-      await saveThemeId(id);
+      await storage.current.saveThemeId(id);
       setThemeId(id);
     });
     writes.current = next;

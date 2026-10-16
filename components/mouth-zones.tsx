@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { useEffect } from "react";
+import { AccessibilityInfo, Platform, Text, View } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { useColors } from "@/hooks/use-colors";
 
@@ -19,6 +20,9 @@ const TEETH = [
 export function MouthZones({ activeZone, isActive }: { activeZone: number; isActive: boolean }) {
   const colors = useColors();
   const zone = Math.min(3, Math.max(0, activeZone));
+  useEffect(() => {
+    if (isActive && Platform.OS !== "web") AccessibilityInfo.announceForAccessibility(`Zona ${zone + 1} di 4: ${ZONES[zone]}`);
+  }, [isActive, zone]);
   return (
     <View style={{ gap: 10 }}>
       <Svg accessible={false} width="100%" height={150} viewBox="0 0 240 154">

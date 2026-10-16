@@ -1,3 +1,4 @@
+import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -10,6 +11,7 @@ import { MouthZones } from "@/components/mouth-zones";
 import { ScreenContainer } from "@/components/screen-container";
 import { ThemeHomeHero } from "@/components/theme-home-hero";
 import { TimerRing } from "@/components/timer-ring";
+import { useFamily } from "@/contexts/family-context";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
@@ -23,6 +25,8 @@ function KeepAwake() { useSessionKeepAwake(); return null; }
 
 export default function TodayScreen() {
   const colors = useColors();
+  const [modeError, setModeError] = useState<string | null>(null);
+  const family = useFamily();
   const { theme } = useThemeContext();
   const router = useRouter();
   const { selected, stats, walletCoins, missionCenter, profileReady, hasChosenStarter } = useBrushling();
@@ -30,11 +34,12 @@ export default function TodayScreen() {
   const evolution = getEvolution(selected, stats.level);
   const {
     status, statusMessage, device, isActive, activeElapsed, activeTarget, activeZone,
+    manualRecoveryReady, manualStartPending, recoveredManualSession, resumeManual, pauseManual, discardManualRecovery,
     manualActive, manualSaveError, hasPendingManualSession, isSavingManualSession,
     demoMode, setDemoMode, connect, startManual, stopManual, retryManualSession,
   } = useBrush();
   const connecting = status === "scanning" || status === "connecting";
-  const actionDisabled = (isActive && !manualActive) || hasPendingManualSession || isSavingManualSession;
+  const actionDisabled = (isActive && !manualActive) || hasPendingManualSession || isSavingManualSession || manualStartPending || !manualRecoveryReady || !!recoveredManualSession || family.busy;
   const dialogue = getBrushlingDialogue(selected.id, inferDialogueContext(isActive), stats.completedSessions, stats.level);
 
   if (!profileReady || !hasChosenStarter) {
@@ -50,12 +55,12 @@ export default function TodayScreen() {
       accessibilityLabel={manualActive ? "Termina sessione" : "Inizia una sessione manuale di due minuti"}
       accessibilityState={{ disabled: actionDisabled }}
       disabled={actionDisabled}
-      onPress={manualActive ? () => void stopManual() : startManual}
+      onPress={manualActive ? () => void stopManual() : () => void startManual()}
       style={({ pressed }) => [styles.primaryButton, { backgroundColor: manualActive ? colors.error : colors.primary }, actionDisabled && styles.disabled, pressed && styles.pressed]}
     >
       <MaterialIcons name={manualActive ? "stop-circle" : "play-arrow"} size={24} color={manualActive ? colors.background : colors.primaryText} />
       <Text style={[styles.buttonText, { color: manualActive ? colors.background : colors.primaryText }]}>
-        {manualActive ? "Termina sessione" : isSavingManualSession ? "Salvataggio in corso…" : hasPendingManualSession ? "Sessione da salvare" : isActive ? "Sessione dallo spazzolino" : "Inizia · 2 minuti"}
+        {manualActive ? "Termina sessione" : manualStartPending ? "Preparo la sessione…" : isSavingManualSession ? "Salvataggio in corso…" : hasPendingManualSession ? "Sessione da salvare" : isActive ? "Sessione dallo spazzolino" : "Inizia · 2 minuti"}
       </Text>
     </Pressable>
   );
@@ -65,11 +70,23 @@ export default function TodayScreen() {
       {isActive ? <KeepAwake /> : null}
       <SessionRewardModal />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {modeError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{modeError}</Text> : null}
+        {recoveredManualSession && !hasPendingManualSession ? <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text accessibilityRole="header" style={[styles.label, { color: colors.foreground }]}>La tua sessione ti aspetta</Text>
+          <Text style={[styles.small, { color: colors.muted }]}>{recoveredManualSession.elapsedSeconds} secondi già spazzolati. Il tempo trascorso ad app chiusa non viene contato.</Text>
+          <Pressable accessibilityRole="button" disabled={isActive || manualStartPending || family.busy} onPress={() => void resumeManual()} style={[styles.primaryButton, { backgroundColor: colors.primary }]}><Text style={[styles.buttonText, { color: colors.primaryText }]}>Riprendi sessione</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => void discardManualRecovery()} style={styles.textAction}><Text style={[styles.label, { color: colors.primary }]}>Scarta sessione interrotta</Text></Pressable>
+        </View> : null}
+        {manualSaveError && !hasPendingManualSession ? <View style={[styles.card, { borderColor: colors.error, backgroundColor: colors.surface }]}>
+          <Text accessibilityRole="alert" style={[styles.small, { color: colors.error }]}>{manualSaveError}</Text>
+          {!manualRecoveryReady ? <Pressable accessibilityRole="button" onPress={() => void discardManualRecovery()} style={styles.textAction}><Text style={[styles.label, { color: colors.primary }]}>Scarta la sessione illeggibile</Text></Pressable> : null}
+        </View> : null}
+
         <View style={styles.header}>
-          <View style={{ flex: 1 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Profilo attivo: ${family.active.name}. Cambia profilo`} onPress={() => router.push("/(tabs)/settings")} style={{ flex: 1, minWidth: 130, minHeight: 48 }}>
             <Text style={[styles.brand, { color: colors.foreground }]}>Brushlings</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>{isActive ? "Spazzola con " + evolution.name : theme.name}</Text>
-          </View>
+            <Text style={[styles.small, { color: colors.muted }]}>{isActive ? "Spazzola con " + evolution.name : family.active.name + " · " + theme.name}</Text>
+          </Pressable>
           <View style={[styles.coin, { backgroundColor: colors.primarySoft }]} accessibilityLabel={walletCoins + " monete sorriso"}>
             <MaterialIcons name="stars" size={21} color={colors.warning} />
             <Text style={[styles.label, { color: colors.foreground }]}>{walletCoins}</Text>
@@ -80,7 +97,7 @@ export default function TodayScreen() {
         {demoMode ? <View style={[styles.card, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <Text style={[styles.label, { color: colors.foreground }]}>Demo · dati simulati</Text>
           <Text style={[styles.small, { color: colors.muted }]}>Queste sessioni restano separate dai progressi reali.</Text>
-          <Pressable accessibilityRole="button" onPress={() => void setDemoMode(false)} style={styles.textAction}><Text style={[styles.label, { color: colors.primary }]}>Esci dalla demo</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => { setModeError(null); void setDemoMode(false).catch(error => setModeError(error instanceof Error ? error.message : "Non riesco a cambiare modalità")); }} style={styles.textAction}><Text style={[styles.label, { color: colors.primary }]}>Esci dalla demo</Text></Pressable>
         </View> : null}
 
         {isActive ? (
@@ -88,6 +105,7 @@ export default function TodayScreen() {
             <Text accessibilityRole="header" style={[styles.title, { color: colors.foreground }]}>Un sorriso, una zona alla volta</Text>
             <View style={styles.center}><TimerRing elapsed={activeElapsed} target={activeTarget} active /></View>
             <MouthZones activeZone={activeZone} isActive />
+            {manualActive ? <Pressable accessibilityRole="button" onPress={() => void pauseManual()} style={styles.textAction}><Text style={[styles.label, { color: colors.primary, textAlign: "center" }]}>Metti in pausa</Text></Pressable> : null}
             <View style={styles.cheer}><AnimatedBrushling framed={false} creature={selected} level={stats.level} size={76} active /><Text style={[styles.cheerText, { color: colors.foreground }]}>{dialogue}</Text></View>
             {manualActive ? sessionButton : <Text style={[styles.small, { color: colors.muted }]}>Sessione guidata dallo spazzolino. Arrestalo per terminare.</Text>}
           </View>
@@ -143,7 +161,7 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 40, gap: 16 },
-  header: { flexDirection: "row", alignItems: "center", gap: 10 },
+  header: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 },
   brand: { fontSize: 29, lineHeight: 36, fontWeight: "900" },
   coin: { borderRadius: 99, flexDirection: "row", alignItems: "center", gap: 5, padding: 10 },
   themeButton: { minWidth: 48, minHeight: 48, borderRadius: 16, borderWidth: 1, alignItems: "center", justifyContent: "center" },

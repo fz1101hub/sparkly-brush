@@ -15,11 +15,14 @@ import {
 } from "react-native-safe-area-context";
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
+import { FamilyProvider, useFamily } from "@/contexts/family-context";
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
+import { ProfileNavigation } from "@/components/profile-navigation";
+import { ReminderLifecycle } from "@/components/reminder-lifecycle";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { initializeHistoryStorage } from "@/lib/brush-storage";
@@ -109,7 +112,8 @@ const recoveryStyles = StyleSheet.create({
   },
 });
 
-export default function RootLayout() {
+function ProfileLayout() {
+  const { active } = useFamily();
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
@@ -157,6 +161,8 @@ export default function RootLayout() {
                     <Stack.Screen name="(tabs)" />
                   </Stack>
                   <OnboardingOverlay />
+                  <ReminderLifecycle />
+                  <ProfileNavigation />
                   <RestoreOperationOverlay />
                   <ThemedStatusBar />
                 </ParentRewardsProvider>
@@ -172,7 +178,7 @@ export default function RootLayout() {
 
   if (shouldOverrideSafeArea) {
     return (
-      <ThemeProvider>
+      <ThemeProvider key={active.id}>
         <SafeAreaProvider initialMetrics={providerInitialMetrics}>
           <SafeAreaFrameContext.Provider value={frame}>
             <SafeAreaInsetsContext.Provider value={insets}>
@@ -185,9 +191,13 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider key={active.id}>
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
     </ThemeProvider>
   );
 }
 
+
+export default function RootLayout() {
+  return <FamilyProvider><ProfileLayout /></FamilyProvider>;
+}

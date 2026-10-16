@@ -75,6 +75,7 @@ const config: ExpoConfig = {
     "expo-asset",
     "expo-document-picker",
     "expo-font",
+    "expo-notifications",
     "expo-sqlite",
     [
       "expo-audio",
@@ -120,3 +121,4 @@ const config: ExpoConfig = {
 };
 
 export default config;
+

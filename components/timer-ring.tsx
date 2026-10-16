@@ -24,11 +24,12 @@ export function TimerRing({ elapsed, target, active }: TimerRingProps) {
 
   return (
     <View
+      accessible
       accessibilityRole="timer"
       accessibilityLabel={`${formatTime(Math.max(0, target - elapsed))} rimanenti su ${formatTime(target)}`}
       style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
     >
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
+      <Svg accessible={false} width={size} height={size} style={{ position: "absolute" }}>
         <Circle
           cx={size / 2}
           cy={size / 2}

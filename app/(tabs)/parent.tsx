@@ -28,6 +28,8 @@ export default function ParentDashboardScreen() {
   const { history, demoMode } = useBrush();
   const { stats, missionCenter } = useBrushling();
   const { rewards, addReward, removeReward, markDelivered } = useParentRewards();
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingReward, setSavingReward] = useState(false);
   const [rewardTitle, setRewardTitle] = useState("");
   const [requirement, setRequirement] = useState<ParentRewardRequirement>("perfect-days");
   const [target, setTarget] = useState("3");
@@ -36,8 +38,10 @@ export default function ParentDashboardScreen() {
   const createReward = async () => {
     const parsedTarget = Math.max(1, Math.min(30, Number.parseInt(target, 10) || 1));
     if (!rewardTitle.trim()) return;
-    await addReward(rewardTitle, requirement, parsedTarget);
-    setRewardTitle("");
+    setSaveError(null); setSavingReward(true);
+    try { await addReward(rewardTitle, requirement, parsedTarget); setRewardTitle(""); }
+    catch { setSaveError("Premio non salvato. Riprova: le ricompense precedenti sono rimaste attive."); }
+    finally { setSavingReward(false); }
   };
 
   return (
@@ -173,6 +177,8 @@ export default function ParentDashboardScreen() {
         <View style={[styles.rewardBuilder, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.builderEyebrow, { color: colors.primary }]}>NUOVO PREMIO</Text>
           <TextInput
+            accessibilityLabel="Nome del premio"
+            maxLength={100}
             value={rewardTitle}
             onChangeText={setRewardTitle}
             placeholder="Es. scegli il film di stasera"
@@ -217,6 +223,7 @@ export default function ParentDashboardScreen() {
               </Text>
             </View>
             <TextInput
+              accessibilityLabel="Obiettivo del premio"
               value={target}
               onChangeText={(value) => setTarget(value.replace(/[^0-9]/g, "").slice(0, 2))}
               keyboardType="number-pad"
@@ -226,7 +233,7 @@ export default function ParentDashboardScreen() {
 
           <Pressable
             accessibilityRole="button"
-            disabled={!rewardTitle.trim()}
+            disabled={!rewardTitle.trim() || savingReward}
             onPress={() => void createReward()}
             style={({ pressed }) => [
               styles.addRewardButton,
@@ -239,6 +246,7 @@ export default function ParentDashboardScreen() {
           </Pressable>
         </View>
 
+        {saveError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{saveError}</Text> : null}
         {rewards.length ? (
           <View style={styles.rewardStack}>
             {rewards.map((reward) => (
@@ -308,7 +316,7 @@ export default function ParentDashboardScreen() {
                   {reward.unlocked && !reward.deliveredAt ? (
                     <Pressable
                       disabled={demoMode}
-                      onPress={() => void markDelivered(reward.id)}
+                      onPress={() => void markDelivered(reward.id).catch(() => setSaveError("Non riesco a segnare il premio come consegnato. Riprova."))}
                       style={({ pressed }) => [
                         styles.deliverButton,
                         demoMode && styles.disabled,
@@ -319,7 +327,7 @@ export default function ParentDashboardScreen() {
                     </Pressable>
                   ) : null}
                   <Pressable
-                    onPress={() => void removeReward(reward.id)}
+                    onPress={() => void removeReward(reward.id).catch(() => setSaveError("Non riesco a rimuovere il premio. Riprova."))}
                     style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
                   >
                     <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />

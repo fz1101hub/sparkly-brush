@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
+import { useFamily } from "@/contexts/family-context";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
@@ -38,6 +39,8 @@ function formatBytes(bytes: number): string {
 
 export default function BackupScreen() {
   const colors = useColors();
+  const { active } = useFamily();
+  const profileId = useRef(active.id);
   const router = useRouter();
   const {
     lifetimeProgress,
@@ -92,7 +95,7 @@ export default function BackupScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await exportAndShareCompleteBackup(currentManifest);
+      const result = await exportAndShareCompleteBackup(currentManifest, profileId.current);
       setMessage(`Backup completo: ${result.sessionCount} sessioni, ${formatBytes(result.size)}.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Backup non riuscito");
@@ -216,7 +219,7 @@ export default function BackupScreen() {
           await restoreFromBackup(next.profile, next.customization);
           await restorePreferences(next.preferences);
           await restoreRewards(next.parentRewards);
-          const restored = await restoreCompleteBackup(selectedPreview, restoreId);
+          const restored = await restoreCompleteBackup(selectedPreview, restoreId, profileId.current);
           databaseCommitted = true;
           adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
           await completeApplicationRestore(restoreId);
@@ -266,6 +269,7 @@ export default function BackupScreen() {
           </View>
         </View>
 
+        <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>Backup del profilo {active.name}. Crea un backup per ciascun bambino che vuoi trasferire. I promemoria si configurano sul telefono di destinazione.</Text>
         <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#B9E4CC" }]}>
           <View style={styles.heroIcon}>
             <MaterialIcons name="cloud-done" size={31} color="#2E8A60" />
@@ -287,7 +291,7 @@ export default function BackupScreen() {
                 I backup usano solo i dati reali. Esci dalla demo prima di esportare o ripristinare.
               </Text>
             </View>
-            <Pressable onPress={() => void setDemoMode(false)} style={({ pressed }) => [styles.demoWarningButton, pressed && styles.pressed]}>
+            <Pressable onPress={() => void setDemoMode(false).catch(caught => setError(caught instanceof Error ? caught.message : "Non riesco a cambiare modalità"))} style={({ pressed }) => [styles.demoWarningButton, pressed && styles.pressed]}>
               <Text style={styles.demoWarningButtonText}>Esci demo</Text>
             </Pressable>
           </View>

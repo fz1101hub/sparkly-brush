@@ -10,7 +10,7 @@ import {
 
 const nativeState = vi.hoisted(() => ({
   metadata: new Map<string, string>(),
-  sessions: [] as Array<{
+  sessions: [] as {
     id: string;
     started_at: number;
     time_confidence: string;
@@ -20,7 +20,7 @@ const nativeState = vi.hoisted(() => ({
     completed: number;
     source: "manual" | "device";
     device_session_id: number | null;
-  }>,
+  }[],
   ledgerSessionIds: [] as string[],
 }));
 
@@ -219,3 +219,4 @@ describe("native SQLite partial lifetime reconciliation", () => {
     expect(fakeDatabase.getEachAsync).not.toHaveBeenCalled();
   });
 });
+

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
@@ -11,6 +12,12 @@ import { HANDLE_STATE_LABELS } from "@/lib/sonicare-uuids";
 
 export default function DeviceScreen() {
   const colors = useColors();
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const runDemo = async (operation: () => Promise<void>) => {
+    setDemoError(null);
+    try { await operation(); }
+    catch (caught) { setDemoError(caught instanceof Error ? caught.message : "Non riesco a salvare la modifica demo"); }
+  };
   const router = useRouter();
   const {
     status,
@@ -78,6 +85,7 @@ export default function DeviceScreen() {
         ListHeaderComponent={
           <View style={styles.headerContent}>
             <AppHeader eyebrow="Bluetooth Low Energy" title="Spazzolino" connected={connected} />
+            {demoError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{demoError}</Text> : null}
 
             <View style={[styles.heroCard, { backgroundColor: colors.primarySoft }]}>
               <View style={styles.toothbrushVisual}>
@@ -166,8 +174,9 @@ export default function DeviceScreen() {
                 </View>
                 <Pressable
                   accessibilityRole="switch"
+                  accessibilityLabel="Modalità demo"
                   accessibilityState={{ checked: demoMode }}
-                  onPress={() => void setDemoMode(!demoMode)}
+                  onPress={() => void runDemo(() => setDemoMode(!demoMode))}
                   style={({ pressed }) => [
                     styles.demoToggle,
                     { backgroundColor: demoMode ? "#2E9B67" : "#C8CDD8" },
@@ -180,19 +189,19 @@ export default function DeviceScreen() {
 
               {demoMode ? (
                 <View style={styles.demoActions}>
-                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void runDemo(() => addDemoSession("morning"))} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
                   </Pressable>
-                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void runDemo(() => addDemoSession("evening"))} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
                   </Pressable>
-                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void runDemo(generateDemoWeek)} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
                   </Pressable>
-                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+                  <Pressable onPress={() => void runDemo(clearDemoData)} style={({ pressed }) => [styles.demoAction, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
                     <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
                     <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
                   </Pressable>
