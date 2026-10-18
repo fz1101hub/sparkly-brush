@@ -1,4 +1,21 @@
 {
-  "status": "failed",
-  "message": "Expected values to be strictly equal:\n\nnull !== 'true'\n"
+  "approvedReferenceBoardsUnchanged": true,
+  "approvedHomeSessionComparisons": 6,
+  "fourTabNavigation": true,
+  "visualAcceptance": "Requires inspection of comparisons; functional success alone does not certify fidelity",
+  "themes": 6,
+  "routes": 72,
+  "persistentSelection": true,
+  "gameIsolation": true,
+  "saveFailure": true,
+  "manualSession": true,
+  "progressAfterReload": true,
+  "recoveryAfterReload": true,
+  "activeProfileGuard": true,
+  "profileIsolation": true,
+  "preferenceFailure": true,
+  "enlargedText": true,
+  "smallScreen": true,
+  "reducedMotion": true,
+  "errors": []
 }
