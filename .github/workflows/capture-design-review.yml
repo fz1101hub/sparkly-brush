@@ -20,6 +20,8 @@ jobs:
           REVIEW_RUN=$(cat .maintenance/review-run.txt)
           [[ "$REVIEW_RUN" =~ ^[0-9]+$ ]]
           for attempt in $(seq 1 50); do
+            ARTIFACTS=$(gh api "repos/fz1101hub/sparkly-brush/actions/runs/$REVIEW_RUN/artifacts" --jq '[.artifacts[] | select(.name == "theme-review")] | length')
+            if [ "$ARTIFACTS" -gt 0 ]; then break; fi
             STATUS=$(gh api "repos/fz1101hub/sparkly-brush/actions/runs/$REVIEW_RUN" --jq .status)
             if [ "$STATUS" = completed ]; then break; fi
             sleep 15
