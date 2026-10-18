@@ -62,23 +62,29 @@ export function MouthZones({
           style={{
             color: design.ink,
             fontFamily: "BrushlingsDisplay",
-            fontSize: 23,
-            lineHeight: 28,
+            fontSize: 28,
+            lineHeight: 34,
             textAlign: "center",
           }}
         >
           {isActive ? ZONES[zone] : "Quattro zone, la stessa attenzione"}
         </Text>
-        <Text
-          style={{
-            color: design.ink,
-            fontFamily: "BrushlingsBody",
-            fontSize: 14,
-            lineHeight: 20,
-          }}
-        >
-          {isActive ? `Zona ${zone + 1} di 4` : "30 secondi per zona"}
-        </Text>
+        {theme.id !== "arcade" ? (
+          <Text
+            style={{
+              color: design.ink,
+              fontFamily: "BrushlingsBody",
+              fontSize: 18,
+              lineHeight: 24,
+            }}
+          >
+            {isActive
+              ? theme.id === "adventure"
+                ? "Spazzola per 30 secondi"
+                : `Zona ${zone + 1} di 4`
+              : "30 secondi per zona"}
+          </Text>
+        ) : null}
       </View>
       {showSteps ? (
         <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>

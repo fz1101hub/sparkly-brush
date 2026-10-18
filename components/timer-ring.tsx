@@ -32,7 +32,8 @@ export function TimerRing({
   const d = APPROVED_DESIGN[theme.id];
   const remaining = Math.max(0, Math.min(1, 1 - elapsed / Math.max(1, target)));
   const gap = d.segments === 1 ? 0.2 : d.segments === 12 ? 3 : 5;
-  const step = 360 / d.segments;
+  const open = theme.id === "adventure" || theme.id === "arcade";
+  const step = (open ? 270 : 360) / d.segments;
   const showCaption = theme.id === "arcade";
   return (
     <View
@@ -63,7 +64,7 @@ export function TimerRing({
           </LinearGradient>
         </Defs>
         {Array.from({ length: d.segments }, (_, i) => {
-          const start = -90 + i * step + gap / 2;
+          const start = (open ? 135 : -90) + i * step + gap / 2;
           const end = start + step - gap;
           const filled = Math.max(0, Math.min(1, remaining * d.segments - i));
           return (
@@ -82,8 +83,8 @@ export function TimerRing({
         style={{
           color: d.ink,
           fontFamily: "BrushlingsDisplay",
-          fontSize: size * 0.205,
-          lineHeight: size * 0.255,
+          fontSize: size * 0.27,
+          lineHeight: size * 0.32,
         }}
       >
         {formatTime(target - elapsed)}
@@ -93,7 +94,7 @@ export function TimerRing({
           style={{
             color: d.ink,
             fontFamily: "BrushlingsBody",
-            fontSize: 13,
+            fontSize: 16,
             marginTop: 3,
           }}
         >

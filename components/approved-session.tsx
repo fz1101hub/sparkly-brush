@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import {
   Pressable,
@@ -26,13 +27,16 @@ export function ApprovedSession() {
   const d = APPROVED_DESIGN[theme.id];
   const { width, height: windowHeight, fontScale } = useWindowDimensions();
   const [height, setHeight] = useState(windowHeight);
+  const insets = useSafeAreaInsets();
+  const footerPadding = Math.max(16, insets.bottom + 8);
+  const footerHeight = 64 + footerPadding;
   const family = useFamily();
   const brush = useBrush();
   const { selected, stats } = useBrushling();
   const router = useRouter();
   const showSteps = theme.id === "adventure" || theme.id === "arcade";
-  const timerSize = Math.min(width * 0.66, height * (showSteps ? 0.247 : 0.25));
-  const mouthSize = Math.min(width * 0.67, height * (showSteps ? 0.225 : 0.24));
+  const timerSize = Math.min(width * 0.72, height * 0.29);
+  const mouthSize = Math.min(width * 0.8, height * 0.3);
   const decoration = (
     {
       adventure: { sheet: "ac", rect: [287, 321, 28, 90] },
@@ -109,15 +113,16 @@ export function ApprovedSession() {
         />
       </View>
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
-          minHeight: height - 32,
+          minHeight: Math.max(0, height - footerHeight),
           paddingHorizontal: 22,
           paddingTop: 5,
-          paddingBottom: 16,
+          paddingBottom: 0,
           alignItems: "center",
-          gap: showSteps ? 6 : 10,
+          gap: 4,
         }}
       >
         <View
@@ -166,7 +171,7 @@ export function ApprovedSession() {
           active={brush.isActive}
           size={timerSize}
         />
-        <View style={{ marginTop: showSteps ? -22 : 0 }}>
+        <View style={{ marginTop: showSteps ? -42 : 0 }}>
           <MouthZones
             activeZone={brush.activeZone}
             isActive={brush.isActive}
@@ -179,7 +184,7 @@ export function ApprovedSession() {
           style={{
             width: "100%",
             alignItems: "center",
-            minHeight: showSteps ? 180 : 210,
+            minHeight: showSteps ? 150 : 180,
             justifyContent: "center",
           }}
         >
@@ -188,7 +193,7 @@ export function ApprovedSession() {
             <ReferenceArtwork
               region={d.buddy}
               width={width - 8}
-              height={showSteps ? 180 : 210}
+              height={showSteps ? 150 : 180}
               fit="contain"
             />
           ) : (
@@ -201,24 +206,6 @@ export function ApprovedSession() {
             />
           )}
         </View>
-        <View style={{ width: "100%", marginTop: 3 }}>
-          <DesignButton
-            label={brush.manualActive ? "Termina sessione" : "Apri spazzolino"}
-            secondary={
-              theme.id === "adventure" ||
-              theme.id === "arcade" ||
-              theme.id === "cosmos" ||
-              theme.id === "bubbles"
-            }
-            onPress={() =>
-              brush.manualActive
-                ? void brush.stopManual()
-                : router.push("/(tabs)/device")
-            }
-          >
-            {brush.manualActive ? "Termina" : "Apri spazzolino"}
-          </DesignButton>
-        </View>
         {fontScale > 1.4 ? (
           <Text
             style={{ color: d.ink, fontFamily: "BrushlingsBody", fontSize: 14 }}
@@ -227,6 +214,30 @@ export function ApprovedSession() {
           </Text>
         ) : null}
       </ScrollView>
+      <View
+        style={{
+          paddingHorizontal: 22,
+          paddingTop: 6,
+          paddingBottom: footerPadding,
+        }}
+      >
+        <DesignButton
+          label={brush.manualActive ? "Termina sessione" : "Apri spazzolino"}
+          secondary={
+            theme.id === "adventure" ||
+            theme.id === "arcade" ||
+            theme.id === "cosmos" ||
+            theme.id === "bubbles"
+          }
+          onPress={() =>
+            brush.manualActive
+              ? void brush.stopManual()
+              : router.push("/(tabs)/device")
+          }
+        >
+          {brush.manualActive ? "Termina" : "Apri spazzolino"}
+        </DesignButton>
+      </View>
     </View>
   );
 }

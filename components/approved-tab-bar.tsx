@@ -97,6 +97,9 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
                 fontFamily: "BrushlingsBody",
                 fontSize: 12,
                 lineHeight: 18,
+                maxWidth: "100%",
+                flexShrink: 1,
+                textAlign: "center",
               }}
             >
               {item.title}

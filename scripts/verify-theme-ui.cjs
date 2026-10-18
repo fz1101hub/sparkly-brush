@@ -121,10 +121,20 @@ async function approvedComparisons(browser) {
     await button.click();
     await page.getByRole('button', { name: 'Termina sessione' }).waitFor();
     await page.clock.fastForward(28000);
+    assert.match(await page.getByRole('timer').getAttribute('aria-label'), /^01:32 rimanenti/, id + ': timer must use actual elapsed seconds');
+    const stopBox = await page.getByRole('button', { name: 'Termina sessione' }).boundingBox();
+    assert.ok(stopBox && stopBox.y >= 0 && stopBox.y + stopBox.height <= 844, id + ': stop must stay visible');
+    const sessionContrast = await contrastIssues(page);
+    if (sessionContrast.length) failures.push({ theme: id, route: '/session', issues: sessionContrast });
     await page.screenshot({ path: out + '/approved-session-' + id + '.png' });
     await page.getByRole('button', { name: 'Metti in pausa', exact: true }).click();
     await page.getByRole('button', { name: 'Scarta sessione interrotta', exact: true }).click();
     await page.getByRole('button', { name: 'Inizia una sessione manuale di due minuti' }).click({ trial: true });
+    for (const [label, route] of [['Mondo', '/collection'], ['Premi', '/rewards'], ['Famiglia', '/parent'], ['Oggi', '/']]) {
+      await page.getByRole('tab', { name: label, exact: true }).click();
+      await page.waitForFunction(route => location.pathname === route, route);
+      assert.equal(await page.getByRole('tab', { name: label, exact: true }).getAttribute('aria-selected'), 'true');
+    }
 
     for (const route of ['/', '/collection', '/explore', '/history', '/device', '/parent', '/settings', '/habitat', '/missions', '/rewards', '/backup', '/hardware-test']) {
       if (route !== '/') await page.goto(origin + route, { waitUntil: 'networkidle' });

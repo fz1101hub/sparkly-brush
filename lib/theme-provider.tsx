@@ -17,7 +17,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [fontsReady, fontsError] = useFonts({ BrushlingsDisplay: require("@/assets/fonts/LilitaOne-Regular.ttf"), BrushlingsBody: require("@/assets/fonts/Nunito-700.ttf"), BrushlingsBlack: require("@/assets/fonts/Nunito-900.ttf") });
+  const [fontsReady, fontsError] = useFonts({ BrushlingsDisplay: require("@/assets/fonts/BrushlingsRound-Bold.ttf"), BrushlingsBody: require("@/assets/fonts/Nunito-700.ttf"), BrushlingsBlack: require("@/assets/fonts/Nunito-900.ttf") });
   const storage = useRef(getThemeStorage());
   const [themeId, setThemeId] = useState<AppThemeId>(DEFAULT_THEME_ID);
   const [ready, setReady] = useState(false);

@@ -37,6 +37,7 @@ export function ApprovedHome() {
     Math.max(680, screenHeight - insets.top - 82),
   );
   const [error, setError] = useState<string | null>(null);
+  const [logoWidth, setLogoWidth] = useState(Math.min(width * 0.5, 222));
   const brush = useBrush();
   const { selected, stats, walletCoins, missionCenter } = useBrushling();
   const useApprovedPose =
@@ -47,12 +48,12 @@ export function ApprovedHome() {
   const artTop = arcade ? 246 : 112;
   const artHeight = Math.max(220, pageHeight * (arcade ? 0.78 : 0.66) - artTop);
   const sky = {
-    adventure: "#B7EEEB",
-    arcade: "#0B0D34",
-    cosmos: "#202044",
-    garden: "#FFF5DC",
-    bubbles: "#9CDDF8",
-    underwater: "#075F72",
+    adventure: "#C0F2F0",
+    arcade: "#0A0D35",
+    cosmos: "#181E4F",
+    garden: "#FCF2D9",
+    bubbles: "#68C2FD",
+    underwater: "#42B8C8",
   }[theme.id];
   const disabled =
     brush.hasPendingManualSession ||
@@ -120,7 +121,7 @@ export function ApprovedHome() {
                 region={d.scene}
                 width={width}
                 height={artHeight}
-                anchorY={arcade ? 0 : 1}
+                anchorY={arcade ? 0 : theme.id === "underwater" ? 0.3 : 1}
               />
             ) : (
               <ThemeScene
@@ -145,6 +146,22 @@ export function ApprovedHome() {
               </ThemeScene>
             )}
           </View>
+          {!arcade ? (
+            <Svg
+              accessible={false}
+              width={width}
+              height={38}
+              style={{ position: "absolute", top: artTop - 1 }}
+            >
+              <Defs>
+                <LinearGradient id="scene-top" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={sky} />
+                  <Stop offset="1" stopColor={sky} stopOpacity="0" />
+                </LinearGradient>
+              </Defs>
+              <Rect width={width} height={38} fill="url(#scene-top)" />
+            </Svg>
+          ) : null}
           {!arcade ? (
             <Svg
               accessible={false}
@@ -177,11 +194,17 @@ export function ApprovedHome() {
               accessibilityRole="button"
               accessibilityLabel={`Profilo attivo: ${family.active.name}. Cambia profilo`}
               onPress={() => router.push("/(tabs)/settings")}
-              style={{ minHeight: 48, minWidth: 150, justifyContent: "center" }}
+              onLayout={(event) => setLogoWidth(event.nativeEvent.layout.width)}
+              style={{
+                flex: 1,
+                minHeight: 48,
+                minWidth: 0,
+                justifyContent: "center",
+              }}
             >
               <ReferenceArtwork
                 region={d.logo}
-                width={Math.min(width * 0.58, 222)}
+                width={Math.min(logoWidth, 222)}
                 height={54}
                 fit="contain"
               />
@@ -192,7 +215,8 @@ export function ApprovedHome() {
               onPress={() => router.push("/(tabs)/rewards")}
               style={{
                 minHeight: 44,
-                minWidth: 82,
+                maxWidth: "35%",
+                flexShrink: 0,
                 borderRadius: 25,
                 flexDirection: "row",
                 alignItems: "center",
@@ -210,7 +234,10 @@ export function ApprovedHome() {
             >
               <SmileCoin size={27} />
               <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
                 style={{
+                  flexShrink: 1,
                   fontFamily: "BrushlingsBlack",
                   fontSize: 18,
                   color: "#122637",
@@ -240,6 +267,7 @@ export function ApprovedHome() {
               borderWidth: 1,
               borderColor: "#FFFFFFA0",
               flexDirection: "row",
+              flexWrap: "wrap",
               alignItems: "center",
               gap: 8,
             }}
@@ -257,6 +285,7 @@ export function ApprovedHome() {
                 color: arcade || theme.id === "cosmos" ? "#FFFFFF" : "#142F3E",
                 fontFamily: "BrushlingsBlack",
                 fontSize: 17,
+                flexShrink: 1,
               }}
             >
               Livello {stats.level}
@@ -266,6 +295,7 @@ export function ApprovedHome() {
               accessibilityLabel={`${Math.round(stats.levelProgress * 100)} per cento verso il prossimo livello`}
               style={{
                 flex: 1,
+                minWidth: 24,
                 height: 12,
                 backgroundColor:
                   arcade || theme.id === "cosmos" ? "#6B5981" : "#DDDCCB",
