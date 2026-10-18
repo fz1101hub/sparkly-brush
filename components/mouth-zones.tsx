@@ -54,6 +54,8 @@ export function MouthZones({
         style={{
           transform: [{ scaleX: FLIPS[zone][0] }, { scaleY: FLIPS[zone][1] }],
           opacity: isActive ? 1 : 0.7,
+          borderRadius: size / 2,
+          overflow: "hidden",
         }}
       >
         <ReferenceArtwork
