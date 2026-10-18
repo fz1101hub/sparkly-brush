@@ -1,0 +1,38 @@
+name: Prepare approved design fonts
+on:
+  push:
+    branches: [maintenance/design-fonts-20261018]
+    paths: [.github/workflows/prepare-design-fonts.yml]
+permissions:
+  contents: write
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch licensed font sources
+        run: |
+          mkdir -p assets/fonts
+          curl -fL --retry 3 https://raw.githubusercontent.com/google/fonts/main/ofl/lilitaone/LilitaOne-Regular.ttf -o assets/fonts/LilitaOne-Regular.ttf
+          curl -fL --retry 3 https://raw.githubusercontent.com/google/fonts/main/ofl/nunito/Nunito%5Bwght%5D.ttf -o /tmp/Nunito.ttf
+          curl -fL --retry 3 https://raw.githubusercontent.com/google/fonts/main/ofl/lilitaone/OFL.txt -o assets/fonts/LilitaOne-OFL.txt
+          curl -fL --retry 3 https://raw.githubusercontent.com/google/fonts/main/ofl/nunito/OFL.txt -o assets/fonts/Nunito-OFL.txt
+          python -m pip install fonttools
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+          from fontTools.ttLib import TTFont
+          from fontTools.varLib.instancer import instantiateVariableFont
+          for weight in [700, 900]:
+              font = instantiateVariableFont(TTFont('/tmp/Nunito.ttf'), {'wght': weight}, inplace=False)
+              font.save(f'assets/fonts/Nunito-{weight}.ttf')
+          for font in Path('assets/fonts').glob('*.ttf'):
+              font.with_suffix('.ttf.base64').write_text(base64.b64encode(font.read_bytes()).decode())
+          PY
+      - name: Save reproducible font assets
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add assets/fonts
+          git commit -m "Prepare licensed Lilita One and Nunito fonts"
+          git push
