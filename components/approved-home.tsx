@@ -38,6 +38,7 @@ export function ApprovedHome() {
   );
   const [error, setError] = useState<string | null>(null);
   const [logoWidth, setLogoWidth] = useState(Math.min(width * 0.5, 222));
+  const [contentTop, setContentTop] = useState<number | null>(null);
   const brush = useBrush();
   const { selected, stats, walletCoins, missionCenter } = useBrushling();
   const useApprovedPose =
@@ -45,12 +46,12 @@ export function ApprovedHome() {
   const arcade = theme.id === "arcade";
   const longText = fontScale > 1.3;
   const pageHeight = Math.max(height, longText ? 1060 : 680);
-  const artTop = arcade ? 264 : 112;
-  const controlsExtra = theme.id === "adventure" ? 86 : arcade ? 40 : 34;
-  const artHeight = Math.max(
-    220,
-    pageHeight * (arcade ? 0.78 : 0.66) - artTop - controlsExtra,
-  );
+  const artBottom =
+    contentTop ??
+    pageHeight - (arcade ? 207 : theme.id === "adventure" ? 345 : 292);
+  const naturalArtHeight = (width * d.scene.rect[3]) / d.scene.rect[2];
+  const artTop = Math.max(arcade ? 264 : 112, artBottom - naturalArtHeight);
+  const artHeight = Math.max(120, artBottom - artTop);
   const sky = {
     adventure: "#C0F2F0",
     arcade: "#0A0D35",
@@ -249,9 +250,14 @@ export function ApprovedHome() {
             >
               <ReferenceArtwork
                 region={d.logo}
-                width={Math.min(logoWidth, 222)}
-                height={54}
+                width={Math.min(
+                  logoWidth,
+                  arcade || theme.id === "adventure" ? 222 : 238,
+                )}
+                height={arcade || theme.id === "adventure" ? 54 : 72}
                 fit="contain"
+                fadeColor={sky}
+                fadeSize={4}
               />
             </Pressable>
             <Pressable
@@ -416,7 +422,10 @@ export function ApprovedHome() {
           ) : null}
           <View style={{ flex: 1, minHeight: arcade ? 220 : 220 }} />
 
-          <View style={{ paddingHorizontal: 24, paddingBottom: 7, gap: 12 }}>
+          <View
+            onLayout={(event) => setContentTop(event.nativeEvent.layout.y)}
+            style={{ paddingHorizontal: 24, paddingBottom: 7, gap: 12 }}
+          >
             {!arcade ? (
               <Text
                 accessibilityRole="header"

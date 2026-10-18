@@ -226,16 +226,18 @@ export function RoutinePills({
               : "transparent",
           }}
         >
-          <Text
-            style={{
-              fontSize: 23,
-              lineHeight: 26,
-              color: index ? "#7C79B4" : "#F6AE22",
-            }}
-            accessible={false}
-          >
-            {index ? "☾" : "☀"}
-          </Text>
+          {theme.id === "adventure" || theme.id === "arcade" || underwater ? (
+            <Text
+              style={{
+                fontSize: 23,
+                lineHeight: 26,
+                color: index ? "#7C79B4" : "#F6AE22",
+              }}
+              accessible={false}
+            >
+              {index ? "☾" : "☀"}
+            </Text>
+          ) : null}
           <Text
             style={{
               color: underwater ? (complete ? "#FFFFFF" : "#073449") : d.ink,
