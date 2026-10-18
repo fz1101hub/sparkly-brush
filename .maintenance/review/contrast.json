@@ -1,0 +1,76 @@
+[
+  {
+    "theme": "bubbles",
+    "route": "/",
+    "issues": [
+      {
+        "text": "le bolle?",
+        "ratio": 2.9,
+        "color": "rgb(239, 104, 85)",
+        "background": [
+          236,
+          250,
+          255
+        ]
+      },
+      {
+        "text": "Oggi",
+        "ratio": 4.06,
+        "color": "rgb(216, 78, 59)",
+        "background": [
+          248,
+          254,
+          255
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "bubbles",
+    "route": "/collection",
+    "issues": [
+      {
+        "text": "Mondo",
+        "ratio": 4.06,
+        "color": "rgb(216, 78, 59)",
+        "background": [
+          248,
+          254,
+          255
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "bubbles",
+    "route": "/parent",
+    "issues": [
+      {
+        "text": "Famiglia",
+        "ratio": 4.06,
+        "color": "rgb(216, 78, 59)",
+        "background": [
+          248,
+          254,
+          255
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "bubbles",
+    "route": "/rewards",
+    "issues": [
+      {
+        "text": "Premi",
+        "ratio": 4.06,
+        "color": "rgb(216, 78, 59)",
+        "background": [
+          248,
+          254,
+          255
+        ]
+      }
+    ]
+  }
+]
