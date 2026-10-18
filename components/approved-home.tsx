@@ -11,6 +11,7 @@ import {
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedBrushling } from "@/components/animated-brushling";
+import { BrushlingAvatar } from "@/components/brushling-avatar";
 import {
   DesignButton,
   RoutinePills,
@@ -43,7 +44,16 @@ export function ApprovedHome() {
   const arcade = theme.id === "arcade";
   const longText = fontScale > 1.3;
   const pageHeight = Math.max(height, longText ? 1060 : 680);
-  const artHeight = pageHeight * (theme.id === "adventure" ? 0.65 : 0.69);
+  const artTop = arcade ? 246 : 112;
+  const artHeight = Math.max(220, pageHeight * (arcade ? 0.78 : 0.66) - artTop);
+  const sky = {
+    adventure: "#B7EEEB",
+    arcade: "#0B0D34",
+    cosmos: "#202044",
+    garden: "#FFF5DC",
+    bubbles: "#9CDDF8",
+    underwater: "#075F72",
+  }[theme.id];
   const disabled =
     brush.hasPendingManualSession ||
     brush.isSavingManualSession ||
@@ -88,18 +98,29 @@ export function ApprovedHome() {
             pointerEvents="none"
             style={{
               position: "absolute",
-              top: arcade ? 185 : 0,
+              top: 0,
               left: 0,
               right: 0,
-              height: arcade ? artHeight - 185 : artHeight,
+              height: artTop + 15,
+              backgroundColor: sky,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: artTop,
+              left: 0,
+              right: 0,
+              height: artHeight,
             }}
           >
             {useApprovedPose ? (
               <ReferenceArtwork
                 region={d.scene}
                 width={width}
-                height={arcade ? artHeight - 185 : artHeight}
-                anchorY={1}
+                height={artHeight}
+                anchorY={arcade ? 0 : 1}
               />
             ) : (
               <ThemeScene
@@ -129,7 +150,7 @@ export function ApprovedHome() {
               accessible={false}
               width={width}
               height={90}
-              style={{ position: "absolute", top: artHeight - 30 }}
+              style={{ position: "absolute", top: artTop + artHeight - 28 }}
             >
               <Defs>
                 <LinearGradient id="scene-bottom" x1="0" y1="0" x2="0" y2="1">
@@ -171,6 +192,7 @@ export function ApprovedHome() {
               onPress={() => router.push("/(tabs)/rewards")}
               style={{
                 minHeight: 44,
+                minWidth: 82,
                 borderRadius: 25,
                 flexDirection: "row",
                 alignItems: "center",
@@ -206,10 +228,10 @@ export function ApprovedHome() {
             onPress={() => router.push("/(tabs)/settings")}
             style={{
               minHeight: 38,
-              marginHorizontal: 36,
+              marginHorizontal: width * 0.14,
               borderRadius: 22,
               paddingHorizontal: 14,
-              paddingVertical: 7,
+              paddingVertical: arcade || theme.id === "adventure" ? 4 : 7,
               backgroundColor: arcade
                 ? "#28245CBF"
                 : theme.id === "cosmos"
@@ -219,14 +241,22 @@ export function ApprovedHome() {
               borderColor: "#FFFFFFA0",
               flexDirection: "row",
               alignItems: "center",
-              gap: 12,
+              gap: 8,
             }}
           >
+            {arcade || theme.id === "adventure" ? (
+              <BrushlingAvatar
+                creature={selected}
+                level={stats.level}
+                size={36}
+                framed={false}
+              />
+            ) : null}
             <Text
               style={{
                 color: arcade || theme.id === "cosmos" ? "#FFFFFF" : "#142F3E",
                 fontFamily: "BrushlingsBlack",
-                fontSize: 14,
+                fontSize: 17,
               }}
             >
               Livello {stats.level}
@@ -252,6 +282,14 @@ export function ApprovedHome() {
                 }}
               />
             </View>
+            {arcade || theme.id === "adventure" ? (
+              <MaterialIcons
+                accessible={false}
+                name="star"
+                size={22}
+                color="#E7AD2F"
+              />
+            ) : null}
           </Pressable>
 
           {arcade ? (
@@ -296,8 +334,8 @@ export function ApprovedHome() {
                   color: d.ink,
                   fontFamily: "BrushlingsDisplay",
                   textAlign: "center",
-                  fontSize: theme.id === "adventure" ? 33 : 36,
-                  lineHeight: theme.id === "adventure" ? 35 : 39,
+                  fontSize: theme.id === "adventure" ? 40 : 39,
+                  lineHeight: theme.id === "adventure" ? 41 : 42,
                   marginBottom: 3,
                   textShadowColor:
                     theme.scheme === "dark" ? "#09173C" : "#FFFFFF",
@@ -313,7 +351,7 @@ export function ApprovedHome() {
                       (theme.id === "bubbles" || theme.id === "cosmos")
                         ? {
                             color:
-                              theme.id === "cosmos" ? "#FFC09A" : "#EF6855",
+                              theme.id === "cosmos" ? "#FFC09A" : "#E35F4D",
                           }
                         : undefined
                     }
@@ -430,6 +468,7 @@ export function ApprovedHome() {
               disabled={disabled}
             >
               {stateCopy}
+              {arcade || theme.id === "adventure" ? "  →" : ""}
             </DesignButton>
             <Pressable
               accessibilityRole="button"

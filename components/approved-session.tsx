@@ -1,5 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import {
   Pressable,
   ScrollView,
@@ -22,56 +24,89 @@ import { useThemeContext } from "@/lib/theme-provider";
 export function ApprovedSession() {
   const { theme } = useThemeContext();
   const d = APPROVED_DESIGN[theme.id];
-  const { width, height, fontScale } = useWindowDimensions();
+  const { width, height: windowHeight, fontScale } = useWindowDimensions();
+  const [height, setHeight] = useState(windowHeight);
   const family = useFamily();
   const brush = useBrush();
   const { selected, stats } = useBrushling();
   const router = useRouter();
   const showSteps = theme.id === "adventure" || theme.id === "arcade";
-  const timerSize = Math.min(width * 0.66, height * (showSteps ? 0.247 : 0.27));
-  const mouthSize = Math.min(width * 0.67, height * (showSteps ? 0.225 : 0.25));
-  const [sx, sy, sw, sh] = d.session.rect;
-  const edge = (right: boolean): ArtworkRegion => ({
-    sheet: d.session.sheet,
-    rect: [right ? sx + sw - 20 : sx, sy + 70, 20, sh - 110],
-  });
+  const timerSize = Math.min(width * 0.66, height * (showSteps ? 0.247 : 0.25));
+  const mouthSize = Math.min(width * 0.67, height * (showSteps ? 0.225 : 0.24));
+  const decoration = (
+    {
+      adventure: { sheet: "ac", rect: [287, 321, 28, 90] },
+      arcade: { sheet: "ac", rect: [1295, 310, 16, 100] },
+      cosmos: { sheet: "def", rect: [331, 259, 33, 132] },
+      garden: { sheet: "def", rect: [907, 295, 31, 151] },
+      bubbles: { sheet: "def", rect: [1489, 244, 35, 138] },
+      underwater: { sheet: "i", rect: [1288, 437, 28, 160] },
+    } satisfies Record<string, ArtworkRegion>
+  )[theme.id];
+  const background =
+    theme.id === "adventure"
+      ? "#D8F4EB"
+      : theme.id === "bubbles"
+        ? "#E1F6FF"
+        : d.base;
+  const lowerBackground = {
+    adventure: "#A6E5D9",
+    arcade: "#10143C",
+    cosmos: "#282043",
+    garden: "#F4EDBE",
+    bubbles: "#D8F4FF",
+    underwater: "#034356",
+  }[theme.id];
   const name = getEvolution(selected, stats.level).name;
   return (
     <View
       testID={`approved-session-${theme.id}`}
+      onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
       style={{
         flex: 1,
-        backgroundColor:
-          theme.id === "adventure"
-            ? "#D8F4EB"
-            : theme.id === "bubbles"
-              ? "#E1F6FF"
-              : d.base,
+        backgroundColor: background,
       }}
     >
+      <Svg
+        accessible={false}
+        width={width}
+        height={height}
+        style={{ position: "absolute" }}
+      >
+        <Defs>
+          <LinearGradient id="session-sky" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={background} />
+            <Stop offset="1" stopColor={lowerBackground} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={width} height={height} fill="url(#session-sky)" />
+      </Svg>
       <View
         pointerEvents="none"
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          opacity: 0.95,
-        }}
+        style={{ position: "absolute", left: 0, top: height * 0.16 }}
       >
-        <ReferenceArtwork region={edge(false)} width={33} height={height} />
+        <ReferenceArtwork
+          region={decoration}
+          width={30}
+          height={166}
+          fit="contain"
+        />
       </View>
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
           right: 0,
-          top: 0,
-          bottom: 0,
-          opacity: 0.95,
+          top: height * 0.46,
+          transform: [{ scaleX: -1 }],
         }}
       >
-        <ReferenceArtwork region={edge(true)} width={33} height={height} />
+        <ReferenceArtwork
+          region={decoration}
+          width={30}
+          height={166}
+          fit="contain"
+        />
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -131,18 +166,20 @@ export function ApprovedSession() {
           active={brush.isActive}
           size={timerSize}
         />
-        <MouthZones
-          activeZone={brush.activeZone}
-          isActive={brush.isActive}
-          size={mouthSize}
-          showSteps={showSteps}
-        />
+        <View style={{ marginTop: showSteps ? -22 : 0 }}>
+          <MouthZones
+            activeZone={brush.activeZone}
+            isActive={brush.isActive}
+            size={mouthSize}
+            showSteps={showSteps}
+          />
+        </View>
         <View style={{ flex: 1, minHeight: 4 }} />
         <View
           style={{
             width: "100%",
             alignItems: "center",
-            minHeight: showSteps ? 94 : 124,
+            minHeight: showSteps ? 180 : 210,
             justifyContent: "center",
           }}
         >
@@ -150,8 +187,8 @@ export function ApprovedSession() {
           getEvolutionIndex(selected, stats.level) === 0 ? (
             <ReferenceArtwork
               region={d.buddy}
-              width={showSteps ? 165 : 210}
-              height={showSteps ? 105 : 140}
+              width={width - 8}
+              height={showSteps ? 180 : 210}
               fit="contain"
             />
           ) : (

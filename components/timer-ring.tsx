@@ -33,7 +33,7 @@ export function TimerRing({
   const remaining = Math.max(0, Math.min(1, 1 - elapsed / Math.max(1, target)));
   const gap = d.segments === 1 ? 0.2 : d.segments === 12 ? 3 : 5;
   const step = 360 / d.segments;
-  const showCaption = theme.id === "adventure" || theme.id === "arcade";
+  const showCaption = theme.id === "arcade";
   return (
     <View
       accessible

@@ -47,7 +47,7 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
             : theme.id === "cosmos"
               ? "#FFC09B"
               : theme.id === "bubbles"
-                ? "#D84E3B"
+                ? "#C84232"
                 : theme.id === "underwater"
                   ? "#83F0D7"
                   : d.ink

@@ -38,26 +38,27 @@ async function approvedComparisons(browser) {
   const manifest = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'assets/approved/references.json'), 'utf8'));
   const crypto = require('node:crypto');
   const sizes = { ac: [1536, 1024], def: [1774, 887], i: [1536, 1024] };
-  const css = [];
+  const sheets = {};
   for (const [key, board] of Object.entries(manifest.boards)) {
     const data = fs.readFileSync(path.resolve(process.cwd(), 'assets/approved', board.file));
     assert.equal(crypto.createHash('sha256').update(data).digest('hex'), board.sha256, 'Approved board pixels must remain unchanged');
-    css.push('--sheet-' + key + ':url(data:image/png;base64,' + data.toString('base64') + ')');
+    sheets[key] = 'data:image/png;base64,' + data.toString('base64');
   }
   const review = await browser.newPage({ viewport: { width: 1200, height: 1000 }, deviceScaleFactor: 1 });
-  const style = '<style>:root{' + css.join(';') + '}body{margin:0;padding:24px;background:#eceef3;color:#13203c;font:15px Arial,sans-serif}h1{font-size:26px;margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}p{line-height:1.5;margin:0 0 18px}main{display:grid;grid-template-columns:repeat(4,260px);gap:18px;align-items:start}.reference{overflow:hidden;background-repeat:no-repeat;border-radius:16px;box-shadow:0 2px 12px #12234420}img{display:block;width:260px;border-radius:16px;box-shadow:0 2px 12px #12234420}section{margin-bottom:34px}h3{font-size:14px;margin:0 0 10px}</style>';
+  const style = '<style>body{margin:0;padding:24px;background:#eceef3;color:#13203c;font:15px Arial,sans-serif}h1{font-size:26px;margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}p{line-height:1.5;margin:0 0 18px}main{display:grid;grid-template-columns:repeat(4,260px);gap:18px;align-items:start}.reference{position:relative;overflow:hidden;border-radius:16px;box-shadow:0 2px 12px #12234420}.reference img{position:absolute;max-width:none;border-radius:0;box-shadow:none}img{display:block;width:260px;border-radius:16px;box-shadow:0 2px 12px #12234420}section{margin-bottom:34px}h3{font-size:14px;margin:0 0 10px}</style>';
   const sections = [];
   for (const [id, name] of themes) {
     if (!fs.existsSync(out + '/home-' + id + '.png') || !fs.existsSync(out + '/approved-session-' + id + '.png')) continue;
     const reference = manifest.screens[id];
     const source = kind => {
       const [x,y,w,h] = reference[kind], [sw,sh] = sizes[reference.board], scale = 260 / w;
-      return '<div class="reference" style="width:260px;height:' + h*scale + 'px;background-image:var(--sheet-' + reference.board + ');background-size:' + sw*scale + 'px ' + sh*scale + 'px;background-position:-' + x*scale + 'px -' + y*scale + 'px"></div>';
+      return '<div class="reference" style="width:260px;height:' + h*scale + 'px"><img alt="Originale approvato" src="' + sheets[reference.board] + '" style="left:-' + x*scale + 'px;top:-' + y*scale + 'px;width:' + sw*scale + 'px;height:' + sh*scale + 'px" /></div>';
     };
     const actual = kind => '<img src="data:image/png;base64,' + fs.readFileSync(out + '/' + (kind === 'home' ? 'home-' : 'approved-session-') + id + '.png').toString('base64') + '" />';
     const section = '<section><h2>' + reference.letter + ' · ' + name + '</h2><main><article><h3>Home · originale approvato</h3>' + source('home') + '</article><article><h3>Home · app funzionante</h3>' + actual('home') + '</article><article><h3>Sessione · originale approvato</h3>' + source('session') + '</article><article><h3>Sessione · app funzionante</h3>' + actual('session') + '</article></main></section>';
     sections.push(section);
     await review.setContent('<!doctype html><html lang="it"><meta charset="utf-8">' + style + '<h1>Brushlings · confronto con gli originali</h1><p>Proporzioni originali conservate. Livello, monete e tempo nell’app provengono dai dati reali.</p>' + section + '</html>');
+    await review.evaluate(() => Promise.all([...document.images].map(img => img.decode())));
     await review.screenshot({ path: out + '/comparison-' + id + '.png', fullPage: true });
   }
   fs.writeFileSync(out + '/approved-comparison.html', '<!doctype html><html lang="it"><meta charset="utf-8">' + style + '<h1>Brushlings · originali e applicazione</h1><p>Questo confronto rende visibili anche le differenze ancora presenti; il superamento dei test funzionali non costituisce approvazione grafica.</p>' + sections.join('') + '</html>');
