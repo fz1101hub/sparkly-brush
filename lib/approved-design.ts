@@ -36,6 +36,8 @@ type ApprovedDesign = {
   mouth: ArtworkRegion;
   buddy: ArtworkRegion;
   ink: string;
+  sky: string;
+  sessionBase: string;
   base: string;
   panel: string;
   button: readonly [string, string];
@@ -58,6 +60,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "ac", rect: [300, 417, 190, 162] },
     buddy: { sheet: "ac", rect: [294, 691, 204, 116] },
     ink: "#111B51",
+    sky: "#C0F2F0",
+    sessionBase: "#D8F4EB",
     base: "#FFF7E5",
     panel: "#FFFDF2",
     button: ["#FF9273", "#F3634F"],
@@ -76,6 +80,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "ac", rect: [1300, 422, 199, 171] },
     buddy: { sheet: "ac", rect: [1296, 695, 211, 122] },
     ink: "#FFFDF2",
+    sky: "#0A0D35",
+    sessionBase: "#11133F",
     base: "#11133F",
     panel: "#15183F",
     button: ["#E1FF49", "#C5F312"],
@@ -94,6 +100,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "def", rect: [375, 398, 162, 140] },
     buddy: { sheet: "def", rect: [328, 605, 256, 144] },
     ink: "#FFF8E7",
+    sky: "#181E4F",
+    sessionBase: "#17183E",
     base: "#17183E",
     panel: "#3D3165",
     button: ["#FFC297", "#FF9B72"],
@@ -112,6 +120,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "def", rect: [956, 399, 160, 137] },
     buddy: { sheet: "def", rect: [907, 605, 251, 143] },
     ink: "#073F29",
+    sky: "#FCF2D9",
+    sessionBase: "#FFF5D8",
     base: "#FFF5D8",
     panel: "#FFFCEE",
     button: ["#278655", "#00532C"],
@@ -130,6 +140,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "def", rect: [1535, 398, 161, 139] },
     buddy: { sheet: "def", rect: [1488, 605, 256, 145] },
     ink: "#073B69",
+    sky: "#68C2FD",
+    sessionBase: "#E1F6FF",
     base: "#ECFAFF",
     panel: "#F8FEFF",
     button: ["#FF947B", "#F36351"],
@@ -148,6 +160,8 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     mouth: { sheet: "i", rect: [1319, 435, 181, 155] },
     buddy: { sheet: "i", rect: [1288, 660, 228, 146] },
     ink: "#FFFBE8",
+    sky: "#42B8C8",
+    sessionBase: "#034D62",
     base: "#034D62",
     panel: "#034254",
     button: ["#9AF3DD", "#4CD5BE"],

@@ -52,14 +52,7 @@ export function ApprovedHome() {
   const naturalArtHeight = (width * d.scene.rect[3]) / d.scene.rect[2];
   const artTop = Math.max(arcade ? 264 : 112, artBottom - naturalArtHeight);
   const artHeight = Math.max(120, artBottom - artTop);
-  const sky = {
-    adventure: "#C0F2F0",
-    arcade: "#0A0D35",
-    cosmos: "#181E4F",
-    garden: "#FCF2D9",
-    bubbles: "#68C2FD",
-    underwater: "#42B8C8",
-  }[theme.id];
+  const sky = d.sky;
   const lowerArt = (
     {
       adventure: { sheet: "ac", rect: [33, 640, 22, 90] },

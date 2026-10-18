@@ -10,12 +10,16 @@ import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useColors } from "@/hooks/use-colors";
 import { useSessionKeepAwake } from "@/hooks/use-session-keep-awake";
+import { useThemeContext } from "@/lib/theme-provider";
+import { APPROVED_DESIGN } from "@/lib/approved-design";
 function KeepAwake() {
   useSessionKeepAwake();
   return null;
 }
 export default function TodayScreen() {
   const colors = useColors();
+  const { theme } = useThemeContext();
+  const design = APPROVED_DESIGN[theme.id];
   const { status, isActive } = useBrush();
   const { profileReady, hasChosenStarter } = useBrushling();
   if (!profileReady || !hasChosenStarter)
@@ -42,7 +46,9 @@ export default function TodayScreen() {
       </ScreenContainer>
     );
   return (
-    <ScreenContainer>
+    <ScreenContainer
+      style={{ backgroundColor: isActive ? design.sessionBase : design.sky }}
+    >
       {isActive ? <KeepAwake /> : null}
       <SessionRewardModal />
       {isActive ? <ApprovedSession /> : <ApprovedHome />}

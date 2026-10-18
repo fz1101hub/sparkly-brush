@@ -47,12 +47,7 @@ export function ApprovedSession() {
       underwater: { sheet: "i", rect: [1288, 437, 28, 160] },
     } satisfies Record<string, ArtworkRegion>
   )[theme.id];
-  const background =
-    theme.id === "adventure"
-      ? "#D8F4EB"
-      : theme.id === "bubbles"
-        ? "#E1F6FF"
-        : d.base;
+  const background = d.sessionBase;
   const lowerBackground = {
     adventure: "#A6E5D9",
     arcade: "#10143C",
