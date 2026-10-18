@@ -1,0 +1,55 @@
+name: Capture design review
+on:
+  push:
+    paths:
+      - '.maintenance/review-run.txt'
+      - '.github/workflows/capture-design-review.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read review artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REVIEW_RUN=$(cat .maintenance/review-run.txt)
+          [[ "$REVIEW_RUN" =~ ^[0-9]+$ ]]
+          for attempt in $(seq 1 50); do
+            STATUS=$(gh api "repos/fz1101hub/sparkly-brush/actions/runs/$REVIEW_RUN" --jq .status)
+            if [ "$STATUS" = completed ]; then break; fi
+            sleep 15
+          done
+          gh run download "$REVIEW_RUN" -R fz1101hub/sparkly-brush -n theme-review -D /tmp/design-review
+      - name: Preserve review images as readable text
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, pathlib, shutil
+          target = pathlib.Path('.maintenance/review')
+          if target.exists(): shutil.rmtree(target)
+          target.mkdir(parents=True)
+          index = {'run': pathlib.Path('.maintenance/review-run.txt').read_text().strip(), 'images': {}}
+          for source in pathlib.Path('/tmp/design-review').rglob('*'):
+              if source.suffix == '.png':
+                  data = source.read_bytes()
+                  encoded = base64.b64encode(data).decode()
+                  parts = []
+                  for offset in range(0, len(encoded), 262144):
+                      name = source.name + '.' + str(offset // 262144) + '.base64'
+                      (target / name).write_text(encoded[offset:offset + 262144])
+                      parts.append(name)
+                  index['images'][source.name] = {'parts': parts, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+              elif source.suffix == '.json':
+                  shutil.copyfile(source, target / source.name)
+          (target / 'index.json').write_text(json.dumps(index, indent=2))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .maintenance/review
+          git diff --cached --quiet && exit 0
+          git commit -m "Preserve rendered design review evidence"
+          git push
