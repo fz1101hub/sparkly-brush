@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import { ThemeScene } from "@/components/theme-scene";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { useThemeContext } from "@/lib/theme-provider";

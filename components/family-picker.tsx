@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import { useFamily } from "@/contexts/family-context";
 import { useBrush } from "@/contexts/brush-context";
 import { useColors } from "@/hooks/use-colors";

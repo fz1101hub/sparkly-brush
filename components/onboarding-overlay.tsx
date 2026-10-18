@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import { AnimatedBrushling } from "@/components/animated-brushling";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useColors } from "@/hooks/use-colors";

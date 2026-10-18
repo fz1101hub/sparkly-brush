@@ -1,7 +1,9 @@
+import { FamilyNavigation } from "@/components/family-navigation";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -364,6 +366,7 @@ export default function ParentDashboardScreen() {
           <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
         </Pressable>
 
+        <FamilyNavigation />
         <View style={[styles.noteCard, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
           <MaterialIcons name="info-outline" size={20} color={colors.muted} />
           <Text style={[styles.noteText, { color: colors.muted }]}>

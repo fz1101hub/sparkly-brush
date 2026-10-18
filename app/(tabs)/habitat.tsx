@@ -1,7 +1,8 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingHabitat } from "@/components/brushling-habitat";

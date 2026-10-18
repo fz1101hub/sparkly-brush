@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import { useColors } from "@/hooks/use-colors";
 
 export function QuickGuide() {

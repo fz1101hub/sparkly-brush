@@ -1,50 +1,115 @@
 import { useEffect } from "react";
 import { AccessibilityInfo, Platform, Text, View } from "react-native";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
-import { useColors } from "@/hooks/use-colors";
+import { ReferenceArtwork } from "@/components/reference-artwork";
+import { useThemeContext } from "@/lib/theme-provider";
+import { APPROVED_DESIGN } from "@/lib/approved-design";
 
-const ZONES = ["Alto a destra", "Alto a sinistra", "Basso a sinistra", "Basso a destra"];
-const QUADRANTS = [
-  "M114 8 C48 8 12 33 12 71 L114 71 Z",
-  "M126 8 C192 8 228 33 228 71 L126 71 Z",
-  "M126 83 L228 83 C228 122 192 146 126 146 Z",
-  "M114 83 L12 83 C12 122 48 146 114 146 Z",
+const ZONES = [
+  "In alto a destra",
+  "In alto a sinistra",
+  "In basso a sinistra",
+  "In basso a destra",
 ];
-const TEETH = [
-  [[96, 20], [73, 25], [51, 36], [34, 53]],
-  [[133, 20], [156, 25], [178, 36], [195, 53]],
-  [[133, 117], [156, 112], [178, 101], [195, 84]],
-  [[96, 117], [73, 112], [51, 101], [34, 84]],
+const FLIPS = [
+  [1, 1],
+  [-1, 1],
+  [-1, -1],
+  [1, -1],
 ];
-
-export function MouthZones({ activeZone, isActive }: { activeZone: number; isActive: boolean }) {
-  const colors = useColors();
+export function MouthZones({
+  activeZone,
+  isActive,
+  size = 215,
+  showSteps = false,
+}: {
+  activeZone: number;
+  isActive: boolean;
+  size?: number;
+  showSteps?: boolean;
+}) {
+  const { theme } = useThemeContext();
+  const design = APPROVED_DESIGN[theme.id];
   const zone = Math.min(3, Math.max(0, activeZone));
   useEffect(() => {
-    if (isActive && Platform.OS !== "web") AccessibilityInfo.announceForAccessibility(`Zona ${zone + 1} di 4: ${ZONES[zone]}`);
+    if (isActive && Platform.OS !== "web")
+      AccessibilityInfo.announceForAccessibility(
+        `Zona ${zone + 1} di 4: ${ZONES[zone]}`,
+      );
   }, [isActive, zone]);
   return (
-    <View style={{ gap: 10 }}>
-      <Svg accessible={false} width="100%" height={150} viewBox="0 0 240 154">
-        {QUADRANTS.map((path, index) => (
-          <Path key={path} d={path} fill={isActive && index === zone ? colors.primarySoft : colors.background}
-            stroke={isActive && index === zone ? colors.primary : colors.border} strokeWidth={isActive && index === zone ? 3 : 1.5} />
-        ))}
-        {TEETH.flatMap((teeth, index) => teeth.map(([x, y], tooth) => (
-          <Rect key={index + "-" + tooth} x={x} y={y} width={15} height={18} rx={5}
-            fill={isActive && index === zone ? colors.primary : colors.surface} stroke={colors.border} />
-        )))}
-        {isActive ? <Circle cx={[98, 142, 142, 98][zone]} cy={[54, 54, 100, 100][zone]} r={5} fill={colors.primary} /> : null}
-      </Svg>
-      <View accessibilityLiveRegion="polite">
-        <Text style={{ color: colors.foreground, fontSize: 21, lineHeight: 28, fontWeight: "900", textAlign: "center" }}>
+    <View style={{ alignItems: "center", gap: 6 }}>
+      <View
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={`Dentatura divisa in quattro zone. ${ZONES[zone]} evidenziata`}
+        style={{
+          transform: [{ scaleX: FLIPS[zone][0] }, { scaleY: FLIPS[zone][1] }],
+          opacity: isActive ? 1 : 0.7,
+        }}
+      >
+        <ReferenceArtwork
+          region={design.mouth}
+          width={size}
+          height={(size * design.mouth.rect[3]) / design.mouth.rect[2]}
+          fit="contain"
+        />
+      </View>
+      <View
+        accessibilityLiveRegion="polite"
+        style={{ alignItems: "center", gap: 3 }}
+      >
+        <Text
+          style={{
+            color: design.ink,
+            fontFamily: "BrushlingsDisplay",
+            fontSize: 23,
+            lineHeight: 28,
+            textAlign: "center",
+          }}
+        >
           {isActive ? ZONES[zone] : "Quattro zone, la stessa attenzione"}
         </Text>
-        <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 4 }}>
-          {isActive ? "Zona " + (zone + 1) + " di 4 · 30 secondi per zona" : "30 secondi per zona"}
+        <Text
+          style={{
+            color: design.ink,
+            fontFamily: "BrushlingsBody",
+            fontSize: 14,
+            lineHeight: 20,
+          }}
+        >
+          {isActive ? `Zona ${zone + 1} di 4` : "30 secondi per zona"}
         </Text>
       </View>
+      {showSteps ? (
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
+          {FLIPS.map(([x, y], index) => (
+            <View
+              key={index}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 22,
+                borderWidth: index === zone ? 2 : 1,
+                borderColor: index === zone ? design.timer : "#FFFFFF80",
+                backgroundColor: design.panel,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                opacity: index === zone ? 1 : 0.6,
+              }}
+            >
+              <View style={{ transform: [{ scaleX: x }, { scaleY: y }] }}>
+                <ReferenceArtwork
+                  region={design.mouth}
+                  width={29}
+                  height={29}
+                  fit="contain"
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
-

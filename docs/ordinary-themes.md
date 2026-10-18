@@ -10,10 +10,12 @@ La preferenza usa la chiave locale `brushlings.appearance.v1`, separata da sessi
 
 ## Interfaccia
 
-- Fondali originali inclusi nel bundle, disponibili anche offline. Non contengono testo o creature: il compagno scelto e le sue evoluzioni continuano a usare gli avatar SVG del prodotto.
+La ricostruzione grafica segue ora le tavole originali A–C–D–E–F–I: riferimento e criteri di confronto sono in [visual-reference-contract.md](visual-reference-contract.md). I rapporti storici di collaudo descrivono la versione precedente e non certificano la fedeltà della ricostruzione.
+
+- Tavole originali conservate nel bundle e ritagliate dichiarativamente per mantenere le illustrazioni e i marchi approvati. Personaggi ed evoluzioni usano grafica tridimensionale; i contatori e i controlli sono componenti reali.
 - Home con avanzamento del livello, routine mattina/sera e avvio manuale in primo piano. Il Bluetooth rimane accessibile separatamente.
 - Sessione focalizzata su tempo rimanente e quattro zone. Il timer manuale può essere terminato dall'app; una sessione hardware si arresta dallo spazzolino.
-- Palette condivise tra schermate, schede, risultato e barra di navigazione. Le illustrazioni non modificano habitat posseduti, accessori o premi.
+- Quattro destinazioni: Oggi, Mondo, Premi e Famiglia. Palette e tipografia condivise tra schermate, risultato e barra di navigazione. Le illustrazioni non modificano habitat posseduti, accessori o premi.
 - Animazioni del compagno e dei festeggiamenti rispettano «Riduci movimento» del sistema.
 
 ## Verifica

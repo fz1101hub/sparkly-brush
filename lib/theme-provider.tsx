@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useFonts } from "expo-font";
 import { ActivityIndicator, View } from "react-native";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
@@ -16,6 +17,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [fontsReady, fontsError] = useFonts({ BrushlingsDisplay: require("@/assets/fonts/LilitaOne-Regular.ttf"), BrushlingsBody: require("@/assets/fonts/Nunito-700.ttf"), BrushlingsBlack: require("@/assets/fonts/Nunito-900.ttf") });
   const storage = useRef(getThemeStorage());
   const [themeId, setThemeId] = useState<AppThemeId>(DEFAULT_THEME_ID);
   const [ready, setReady] = useState(false);
@@ -66,7 +68,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={value}>
       <View style={[{ flex: 1, backgroundColor: colors.background }, themeVariables]}>
-        {ready ? children : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator accessibilityLabel="Carico il tuo tema" color={colors.primary} /></View>}
+        {ready && (fontsReady || fontsError) ? children : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator accessibilityLabel="Carico il tuo tema" color={colors.primary} /></View>}
       </View>
     </ThemeContext.Provider>
   );

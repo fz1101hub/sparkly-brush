@@ -5,10 +5,10 @@ import {
   Pressable,
   StyleSheet,
   Switch,
-  Text,
   TextInput,
   View,
 } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import { useFamily } from "@/contexts/family-context";
 import { useColors } from "@/hooks/use-colors";
 import {

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -27,8 +28,11 @@ export default function CollectionScreen() {
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {saveError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{saveError}</Text> : null}
-        <AppHeader eyebrow="Brushlings" title="La tua squadra" connected={false} />
+        <AppHeader eyebrow="Brushlings" title="Il tuo mondo" connected={false} />
 
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {([{ title: "Esplora il mondo", route: "/(tabs)/explore" }, { title: "Missioni di oggi", route: "/(tabs)/missions" }] as const).map(item => <Pressable key={item.route} accessibilityRole="button" onPress={() => router.push(item.route)} style={{ flex: 1, minWidth: 140, minHeight: 54, borderRadius: 20, backgroundColor: colors.primarySoft, padding: 14, justifyContent: "center" }}><Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "900", textAlign: "center" }}>{item.title}</Text></Pressable>)}
+        </View>
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.summaryItem}>
             <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
