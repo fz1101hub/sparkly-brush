@@ -30,6 +30,15 @@ export function MouthZones({
   const { theme } = useThemeContext();
   const design = APPROVED_DESIGN[theme.id];
   const zone = Math.min(3, Math.max(0, activeZone));
+  const stepSize = Math.min(62, Math.max(38, size * 0.235));
+  const labelPanel =
+    theme.id === "cosmos"
+      ? "#211A3B"
+      : theme.id === "garden"
+        ? "#FFE39B"
+        : theme.id === "bubbles"
+          ? "#CFEFFF"
+          : undefined;
   useEffect(() => {
     if (isActive && Platform.OS !== "web")
       AccessibilityInfo.announceForAccessibility(
@@ -37,7 +46,7 @@ export function MouthZones({
       );
   }, [isActive, zone]);
   return (
-    <View style={{ alignItems: "center", gap: 6 }}>
+    <View style={{ alignItems: "center", gap: 6, maxWidth: "100%" }}>
       <View
         accessible
         accessibilityRole="image"
@@ -64,19 +73,31 @@ export function MouthZones({
       </View>
       <View
         accessibilityLiveRegion="polite"
-        style={{ alignItems: "center", gap: 3 }}
+        style={{ alignItems: "center", gap: 3, maxWidth: "100%" }}
       >
-        <Text
+        <View
           style={{
-            color: design.ink,
-            fontFamily: "BrushlingsDisplay",
-            fontSize: 28,
-            lineHeight: 34,
-            textAlign: "center",
+            maxWidth: "100%",
+            borderRadius: 28,
+            paddingHorizontal: labelPanel ? 20 : 0,
+            paddingVertical: labelPanel ? 4 : 0,
+            backgroundColor: labelPanel,
+            borderWidth: labelPanel ? 1 : 0,
+            borderColor: theme.id === "cosmos" ? "#B99CD4" : "#FFFFFFA0",
           }}
         >
-          {isActive ? ZONES[zone] : "Quattro zone, la stessa attenzione"}
-        </Text>
+          <Text
+            style={{
+              color: design.ink,
+              fontFamily: "BrushlingsDisplay",
+              fontSize: 28,
+              lineHeight: 34,
+              textAlign: "center",
+            }}
+          >
+            {isActive ? ZONES[zone] : "Quattro zone, la stessa attenzione"}
+          </Text>
+        </View>
         {theme.id !== "arcade" ? (
           <Text
             style={{
@@ -100,9 +121,9 @@ export function MouthZones({
             <View
               key={index}
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 22,
+                width: stepSize,
+                height: stepSize,
+                borderRadius: stepSize / 2,
                 borderWidth: index === zone ? 2 : 1,
                 borderColor: index === zone ? design.timer : "#FFFFFF80",
                 backgroundColor: design.panel,
@@ -115,11 +136,24 @@ export function MouthZones({
               <View style={{ transform: [{ scaleX: x }, { scaleY: y }] }}>
                 <ReferenceArtwork
                   region={design.mouth}
-                  width={29}
-                  height={29}
+                  width={stepSize * 0.82}
+                  height={stepSize * 0.82}
                   fit="contain"
                 />
               </View>
+              {index !== zone ? (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    backgroundColor: "#6C9CEF66",
+                  }}
+                />
+              ) : null}
             </View>
           ))}
         </View>

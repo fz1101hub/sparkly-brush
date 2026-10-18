@@ -65,6 +65,19 @@ async function approvedComparisons(browser) {
   await review.close();
 }
 
+async function doubleText(page) {
+  await page.evaluate(() => {
+    for (const element of document.querySelectorAll('div,span,button,a,input')) {
+      if (![...element.childNodes].some(node => node.nodeType === 3 && node.textContent.trim()) && element.tagName !== 'INPUT') continue;
+      const style = getComputedStyle(element);
+      if (style.fontFamily.includes('Material')) continue;
+      element.style.fontSize = parseFloat(style.fontSize) * 2 + 'px';
+      if (style.lineHeight !== 'normal') element.style.lineHeight = parseFloat(style.lineHeight) * 2 + 'px';
+    }
+  });
+  await page.waitForTimeout(100);
+}
+
 (async () => {
   if (process.env.BRUSHLINGS_TEST_BUILD_DIR) {
     const root = path.resolve(process.env.BRUSHLINGS_TEST_BUILD_DIR);
@@ -238,18 +251,19 @@ async function approvedComparisons(browser) {
   assert.ok((await page.getByRole('button', { name: 'Inizia una sessione manuale di due minuti' }).boundingBox()).width > 0);
   await page.screenshot({ path: out + '/home-small.png' });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.getByRole('button', { name: 'Inizia una sessione manuale di due minuti' }).click();
+  await page.getByRole('button', { name: 'Termina sessione' }).waitFor();
+  await doubleText(page);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Session: enlarged text must not cause horizontal page overflow');
+  const enlargedStop = await page.getByRole('button', { name: 'Termina sessione' }).boundingBox();
+  assert.ok(enlargedStop && enlargedStop.y >= 0 && enlargedStop.y + enlargedStop.height <= 740, 'Session: enlarged text must keep stop visible');
+  await page.screenshot({ path: out + '/large-text-session.png' });
+  await page.getByRole('button', { name: 'Metti in pausa', exact: true }).click();
+  await page.getByRole('button', { name: 'Scarta sessione interrotta', exact: true }).click();
   // Stress the web layout at twice the text size; native OS scaling is checked separately on devices.
   for (const route of ['/', '/settings', '/collection', '/parent']) {
     await page.goto(origin + route, { waitUntil: 'networkidle' });
-    await page.evaluate(() => {
-      for (const element of document.querySelectorAll('div,span,button,a,input')) {
-        if (![...element.childNodes].some(node => node.nodeType === 3 && node.textContent.trim()) && element.tagName !== 'INPUT') continue;
-        const style = getComputedStyle(element);
-        if (style.fontFamily.includes('Material')) continue;
-        element.style.fontSize = parseFloat(style.fontSize) * 2 + 'px';
-        if (style.lineHeight !== 'normal') element.style.lineHeight = parseFloat(style.lineHeight) * 2 + 'px';
-      }
-    });
+    await doubleText(page);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, route + ': enlarged text must not cause horizontal page overflow');
     await page.screenshot({ path: out + '/large-text-' + (route === '/' ? 'home' : route.slice(1)) + '.png', fullPage: true });
   }

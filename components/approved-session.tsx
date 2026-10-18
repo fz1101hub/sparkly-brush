@@ -30,6 +30,10 @@ export function ApprovedSession() {
   const insets = useSafeAreaInsets();
   const footerPadding = Math.max(16, insets.bottom + 8);
   const footerHeight = 64 + footerPadding;
+  const [measuredFooterHeight, setMeasuredFooterHeight] =
+    useState(footerHeight);
+  const [headerHeight, setHeaderHeight] = useState(44);
+  const [zoneHeight, setZoneHeight] = useState(300);
   const family = useFamily();
   const brush = useBrush();
   const { selected, stats } = useBrushling();
@@ -37,6 +41,20 @@ export function ApprovedSession() {
   const showSteps = theme.id === "adventure" || theme.id === "arcade";
   const timerSize = Math.min(width * 0.72, height * 0.29);
   const mouthSize = Math.min(width * 0.8, height * 0.3);
+  const buddyHeight = Math.min(
+    showSteps ? 150 : 180,
+    Math.max(
+      80,
+      height -
+        measuredFooterHeight -
+        headerHeight -
+        timerSize -
+        zoneHeight -
+        25 +
+        (showSteps ? 42 : 0) -
+        (fontScale > 1.4 ? 44 : 0),
+    ),
+  );
   const decoration = (
     {
       adventure: { sheet: "ac", rect: [287, 321, 28, 90] },
@@ -126,7 +144,7 @@ export function ApprovedSession() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
-          minHeight: Math.max(0, height - footerHeight),
+          minHeight: Math.max(0, height - measuredFooterHeight),
           paddingHorizontal: 22,
           paddingTop: 5,
           paddingBottom: 0,
@@ -135,6 +153,7 @@ export function ApprovedSession() {
         }}
       >
         <View
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           style={{
             width: "100%",
             flexDirection: "row",
@@ -180,7 +199,10 @@ export function ApprovedSession() {
           active={brush.isActive}
           size={timerSize}
         />
-        <View style={{ marginTop: showSteps ? -42 : 0 }}>
+        <View
+          onLayout={(event) => setZoneHeight(event.nativeEvent.layout.height)}
+          style={{ marginTop: showSteps ? -42 : 0, maxWidth: "100%" }}
+        >
           <MouthZones
             activeZone={brush.activeZone}
             isActive={brush.isActive}
@@ -193,7 +215,7 @@ export function ApprovedSession() {
           style={{
             width: "100%",
             alignItems: "center",
-            minHeight: showSteps ? 150 : 180,
+            minHeight: buddyHeight,
             justifyContent: "center",
           }}
         >
@@ -202,7 +224,7 @@ export function ApprovedSession() {
             <ReferenceArtwork
               region={d.buddy}
               width={width - 8}
-              height={showSteps ? 150 : 180}
+              height={buddyHeight}
               fit="contain"
               fadeColor={colorAt(0.8)}
             />
@@ -210,7 +232,10 @@ export function ApprovedSession() {
             <AnimatedBrushling
               creature={selected}
               level={stats.level}
-              size={showSteps ? 106 : 138}
+              size={Math.min(
+                showSteps ? 106 : 138,
+                Math.max(60, buddyHeight - 8),
+              )}
               framed={false}
               active
             />
@@ -225,6 +250,9 @@ export function ApprovedSession() {
         ) : null}
       </ScrollView>
       <View
+        onLayout={(event) =>
+          setMeasuredFooterHeight(event.nativeEvent.layout.height)
+        }
         style={{
           paddingHorizontal: 22,
           paddingTop: 6,

@@ -56,8 +56,8 @@ export function ApprovedHome() {
   const lowerArt = (
     {
       adventure: { sheet: "ac", rect: [33, 640, 22, 90] },
-      arcade: { sheet: "ac", rect: [1295, 310, 16, 100] },
-      cosmos: { sheet: "def", rect: [331, 259, 33, 132] },
+      arcade: { sheet: "ac", rect: [1480, 432, 24, 28] },
+      cosmos: { sheet: "def", rect: [339, 361, 35, 37] },
       garden: { sheet: "def", rect: [907, 295, 31, 151] },
       bubbles: { sheet: "def", rect: [1489, 244, 35, 138] },
       underwater: { sheet: "i", rect: [1035, 504, 28, 162] },
@@ -189,15 +189,19 @@ export function ApprovedHome() {
 
           <View
             pointerEvents="none"
-            style={{ position: "absolute", left: 0, top: pageHeight * 0.54 }}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: artBottom + (arcade || theme.id === "cosmos" ? 30 : 2),
+            }}
           >
             <ReferenceArtwork
               region={lowerArt}
               width={40}
-              height={220}
+              height={arcade || theme.id === "cosmos" ? 42 : 220}
               fit="contain"
               fadeColor={d.base}
-              fadeSize={6}
+              fadeSize={12}
             />
           </View>
           <View
@@ -205,17 +209,17 @@ export function ApprovedHome() {
             style={{
               position: "absolute",
               right: 0,
-              top: pageHeight * 0.65,
+              top: artBottom + 120,
               transform: [{ scaleX: -1 }],
             }}
           >
             <ReferenceArtwork
               region={lowerArt}
               width={40}
-              height={220}
+              height={arcade || theme.id === "cosmos" ? 42 : 220}
               fit="contain"
               fadeColor={d.base}
-              fadeSize={6}
+              fadeSize={12}
             />
           </View>
           <View
@@ -298,9 +302,14 @@ export function ApprovedHome() {
             accessibilityHint={`Tema ${theme.name}. Livello ${stats.level}, ${stats.xp} punti esperienza`}
             onPress={() => router.push("/(tabs)/settings")}
             style={{
-              minHeight: 38,
+              minHeight: theme.id === "underwater" ? 52 : 38,
               marginHorizontal:
-                width * (arcade || theme.id === "adventure" ? 0.14 : 0.18),
+                width *
+                (theme.id === "underwater"
+                  ? 0.06
+                  : arcade || theme.id === "adventure"
+                    ? 0.14
+                    : 0.18),
               borderRadius: 22,
               paddingHorizontal: 14,
               paddingVertical: arcade || theme.id === "adventure" ? 4 : 7,
@@ -329,7 +338,7 @@ export function ApprovedHome() {
               style={{
                 color: arcade || theme.id === "cosmos" ? "#FFFFFF" : "#142F3E",
                 fontFamily: "BrushlingsBlack",
-                fontSize: 18,
+                fontSize: theme.id === "underwater" ? 20 : 18,
                 flexShrink: 1,
               }}
             >
@@ -341,7 +350,7 @@ export function ApprovedHome() {
               style={{
                 flex: 1,
                 minWidth: 24,
-                height: 14,
+                height: theme.id === "underwater" ? 18 : 14,
                 backgroundColor:
                   arcade || theme.id === "cosmos" ? "#6B5981" : "#DDDCCB",
                 borderRadius: 10,
