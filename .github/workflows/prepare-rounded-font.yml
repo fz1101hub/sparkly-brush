@@ -1,0 +1,33 @@
+name: Prepare rounded display font
+on:
+  push:
+    paths: ['.github/workflows/prepare-rounded-font.yml']
+permissions:
+  contents: write
+jobs:
+  font:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -fLsS 'https://raw.githubusercontent.com/google/fonts/main/ofl/fredoka/Fredoka%5Bwdth,wght%5D.ttf' -o /tmp/fredoka.ttf
+          curl -fLsS 'https://raw.githubusercontent.com/google/fonts/main/ofl/fredoka/OFL.txt' -o assets/fonts/BrushlingsRound-OFL.txt
+          python3 -m pip install fonttools
+          python3 - <<'PY'
+          import base64,pathlib
+          from fontTools.ttLib import TTFont
+          from fontTools.varLib.instancer import instantiateVariableFont
+          font=instantiateVariableFont(TTFont('/tmp/fredoka.ttf'),{'wght':700,'wdth':100},inplace=True)
+          names={1:'Brushlings Round',2:'Bold',3:'BrushlingsRound-Bold',4:'Brushlings Round Bold',6:'BrushlingsRound-Bold',16:'Brushlings Round',17:'Bold'}
+          for record in font['name'].names:
+              if record.nameID in names:
+                  record.string=names[record.nameID].encode(record.getEncoding())
+          target=pathlib.Path('assets/fonts/BrushlingsRound-Bold.ttf')
+          font.save(target)
+          pathlib.Path('assets/fonts/BrushlingsRound-Bold.ttf.base64').write_text(base64.b64encode(target.read_bytes()).decode())
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/fonts
+          git commit -m 'Prepare licensed rounded display font for approved UI'
+          git push
