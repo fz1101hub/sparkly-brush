@@ -52,6 +52,14 @@ export function MouthZones({
           width={size}
           height={(size * design.mouth.rect[3]) / design.mouth.rect[2]}
           fit="contain"
+          fadeColor={
+            theme.id === "adventure"
+              ? "#C4EEE4"
+              : theme.id === "bubbles"
+                ? "#DDF5FF"
+                : design.base
+          }
+          fadeSize={8}
         />
       </View>
       <View

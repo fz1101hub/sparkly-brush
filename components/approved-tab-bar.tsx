@@ -86,6 +86,8 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
               width={36}
               height={36}
               fit="contain"
+              fadeColor={d.panel}
+              fadeSize={4}
             />
             <Text
               style={{

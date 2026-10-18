@@ -8,7 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedBrushling } from "@/components/animated-brushling";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -21,7 +21,7 @@ import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useBrush } from "@/contexts/brush-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useFamily } from "@/contexts/family-context";
-import { APPROVED_DESIGN } from "@/lib/approved-design";
+import { APPROVED_DESIGN, type ArtworkRegion } from "@/lib/approved-design";
 import { getEvolutionIndex } from "@/lib/brushlings";
 import { useThemeContext } from "@/lib/theme-provider";
 import { ThemeScene } from "@/components/theme-scene";
@@ -46,7 +46,7 @@ export function ApprovedHome() {
   const longText = fontScale > 1.3;
   const pageHeight = Math.max(height, longText ? 1060 : 680);
   const artTop = arcade ? 264 : 112;
-  const controlsExtra = theme.id === "adventure" ? 36 : arcade ? 40 : 16;
+  const controlsExtra = theme.id === "adventure" ? 86 : arcade ? 40 : 34;
   const artHeight = Math.max(
     220,
     pageHeight * (arcade ? 0.78 : 0.66) - artTop - controlsExtra,
@@ -59,6 +59,16 @@ export function ApprovedHome() {
     bubbles: "#68C2FD",
     underwater: "#42B8C8",
   }[theme.id];
+  const lowerArt = (
+    {
+      adventure: { sheet: "ac", rect: [33, 640, 22, 90] },
+      arcade: { sheet: "ac", rect: [1295, 310, 16, 100] },
+      cosmos: { sheet: "def", rect: [331, 259, 33, 132] },
+      garden: { sheet: "def", rect: [907, 295, 31, 151] },
+      bubbles: { sheet: "def", rect: [1489, 244, 35, 138] },
+      underwater: { sheet: "i", rect: [1035, 504, 28, 162] },
+    } satisfies Record<string, ArtworkRegion>
+  )[theme.id];
   const disabled =
     brush.hasPendingManualSession ||
     brush.isSavingManualSession ||
@@ -183,6 +193,37 @@ export function ApprovedHome() {
             </Svg>
           ) : null}
 
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", left: 0, top: pageHeight * 0.54 }}
+          >
+            <ReferenceArtwork
+              region={lowerArt}
+              width={40}
+              height={220}
+              fit="contain"
+              fadeColor={d.base}
+              fadeSize={6}
+            />
+          </View>
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              right: 0,
+              top: pageHeight * 0.65,
+              transform: [{ scaleX: -1 }],
+            }}
+          >
+            <ReferenceArtwork
+              region={lowerArt}
+              width={40}
+              height={220}
+              fit="contain"
+              fadeColor={d.base}
+              fadeSize={6}
+            />
+          </View>
           <View
             style={{
               flexDirection: "row",
@@ -342,6 +383,7 @@ export function ApprovedHome() {
                 shadowOpacity: 0.9,
                 shadowRadius: 14,
                 shadowOffset: { width: 0, height: 0 },
+                transform: [{ rotate: "-3deg" }],
               }}
             >
               <Text
@@ -357,6 +399,19 @@ export function ApprovedHome() {
                 Pronto{"\n"}per la{" "}
                 <Text style={{ color: "#D7FB32" }}>missione?</Text>
               </Text>
+              <Svg
+                accessible={false}
+                width={38}
+                height={32}
+                style={{ position: "absolute", right: 30, bottom: -25 }}
+              >
+                <Path
+                  d="M3 1 H30 Q21 23 6 27 Q12 12 3 1Z"
+                  fill="#101C57"
+                  stroke="#58C7FF"
+                  strokeWidth={2}
+                />
+              </Svg>
             </View>
           ) : null}
           <View style={{ flex: 1, minHeight: arcade ? 220 : 220 }} />

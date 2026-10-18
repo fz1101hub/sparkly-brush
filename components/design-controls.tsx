@@ -29,8 +29,22 @@ export function DesignButton({
 }) {
   const { theme } = useThemeContext();
   const design = APPROVED_DESIGN[theme.id];
-  const fills = secondary ? [design.panel, design.panel] : design.button;
-  const text = secondary ? design.ink : design.buttonText;
+  const secondaryColors =
+    theme.id === "bubbles"
+      ? ["#06416D", "#002B52"]
+      : theme.id === "arcade"
+        ? ["#353D7C", "#272B62"]
+        : theme.id === "cosmos"
+          ? ["#7C63A5", "#56407F"]
+          : theme.id === "underwater"
+            ? ["#287D8D", "#155E70"]
+            : [design.panel, design.panel];
+  const fills = secondary ? secondaryColors : design.button;
+  const text = secondary
+    ? theme.id === "bubbles"
+      ? "#FFFFFF"
+      : design.ink
+    : design.buttonText;
   return (
     <Pressable
       accessibilityRole="button"
@@ -51,7 +65,7 @@ export function DesignButton({
         paddingHorizontal: 18,
         paddingVertical: 12,
         backgroundColor: secondary
-          ? design.panel
+          ? fills[1]
           : theme.id === "adventure"
             ? "#E8624F"
             : fills[1],

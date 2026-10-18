@@ -61,6 +61,18 @@ export function ApprovedSession() {
     bubbles: "#D8F4FF",
     underwater: "#034356",
   }[theme.id];
+  const colorAt = (fraction: number) =>
+    "#" +
+    [1, 3, 5]
+      .map((offset) =>
+        Math.round(
+          parseInt(background.slice(offset, offset + 2), 16) * (1 - fraction) +
+            parseInt(lowerBackground.slice(offset, offset + 2), 16) * fraction,
+        )
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("");
   const name = getEvolution(selected, stats.level).name;
   return (
     <View
@@ -94,6 +106,7 @@ export function ApprovedSession() {
           width={30}
           height={166}
           fit="contain"
+          fadeColor={colorAt(0.25)}
         />
       </View>
       <View
@@ -110,6 +123,7 @@ export function ApprovedSession() {
           width={30}
           height={166}
           fit="contain"
+          fadeColor={colorAt(0.55)}
         />
       </View>
       <ScrollView
@@ -195,6 +209,7 @@ export function ApprovedSession() {
               width={width - 8}
               height={showSteps ? 150 : 180}
               fit="contain"
+              fadeColor={colorAt(0.8)}
             />
           ) : (
             <AnimatedBrushling
@@ -224,12 +239,7 @@ export function ApprovedSession() {
         <DesignButton
           compact
           label={brush.manualActive ? "Termina sessione" : "Apri spazzolino"}
-          secondary={
-            theme.id === "adventure" ||
-            theme.id === "arcade" ||
-            theme.id === "cosmos" ||
-            theme.id === "bubbles"
-          }
+          secondary={theme.id !== "garden"}
           onPress={() =>
             brush.manualActive
               ? void brush.stopManual()
