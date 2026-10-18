@@ -1,4 +1,4 @@
 {
   "status": "failed",
-  "message": "/: enlarged text must not cause horizontal page overflow\n\nfalse !== true\n"
+  "message": "Expected values to be strictly equal:\n\nnull !== 'true'\n"
 }
