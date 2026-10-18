@@ -1,5 +1,5 @@
 {
-  "run": "39146137298",
+  "run": "39147282416",
   "images": {
     "large-text-collection.png": {
       "parts": [
@@ -13,15 +13,15 @@
         "approved-session-cosmos.png.0.base64",
         "approved-session-cosmos.png.1.base64"
       ],
-      "bytes": 210669,
-      "sha256": "b05d007f8b7d5201bebc4fcbf00023c660408515ccda4d780db31289a7ee1d08"
+      "bytes": 197365,
+      "sha256": "faf1d71d5d67c55b0ee4f1b441add4fff88e8d641c838e33128e352604fab88d"
     },
     "approved-session-adventure.png": {
       "parts": [
         "approved-session-adventure.png.0.base64"
       ],
-      "bytes": 159262,
-      "sha256": "201e100b0bd7e520fa3c89a9e4e8b6e13a2a5070e513a27f3d00c709184ea111"
+      "bytes": 162968,
+      "sha256": "925829762b3daafc43cae31f84666a4c60d1f697728f16e19d113995ba2f9199"
     },
     "comparison-garden.png": {
       "parts": [
@@ -31,8 +31,8 @@
         "comparison-garden.png.3.base64",
         "comparison-garden.png.4.base64"
       ],
-      "bytes": 854924,
-      "sha256": "c5824bc5630928c49edc37db19fb39b3a0ee9feaafb992b4d393993802134c1c"
+      "bytes": 847631,
+      "sha256": "023db0a33356143a59d6f010e58483ca21ca6cb6155f865b1a458e8e6234bdf7"
     },
     "comparison-underwater.png": {
       "parts": [
@@ -42,39 +42,38 @@
         "comparison-underwater.png.3.base64",
         "comparison-underwater.png.4.base64"
       ],
-      "bytes": 867036,
-      "sha256": "20256147e00b7c98ed61fd0061988b95ac1e64fa39f9892702a81a7d9bd90fa3"
+      "bytes": 861724,
+      "sha256": "26186731951200522592a0c81a42a22237ab497d35c921f5e21c926d10db7337"
     },
     "home-bubbles.png": {
       "parts": [
         "home-bubbles.png.0.base64",
         "home-bubbles.png.1.base64"
       ],
-      "bytes": 267653,
-      "sha256": "d10b620e416aca93d73886b8e27fe377260cd068f61b84acbbfc85ea5de332d5"
+      "bytes": 268694,
+      "sha256": "2ed972917ac6fa88933130f07c2d3a348c0597db181769b6e20502d64f16b990"
     },
     "approved-session-garden.png": {
       "parts": [
-        "approved-session-garden.png.0.base64",
-        "approved-session-garden.png.1.base64"
+        "approved-session-garden.png.0.base64"
       ],
-      "bytes": 206795,
-      "sha256": "fddd396d54e97b3293d33425e936f67be100bddf386937dd8c3bdfe2fe4c61ca"
+      "bytes": 194179,
+      "sha256": "7ec3492ebd5b3f4734ff7c1fc6c7aa849d874d5aa23bce3b968862ef043aba91"
     },
     "approved-session-bubbles.png": {
       "parts": [
         "approved-session-bubbles.png.0.base64"
       ],
-      "bytes": 183818,
-      "sha256": "95dc2a822af27bd3ff043ca28dd00f3c548a75e5c9f0394a25d1004dd17cd2c4"
+      "bytes": 170598,
+      "sha256": "87ee13206ce1db3e71816f5593ea1c8c1d303e3ba110ab22d0607041bde85c91"
     },
     "home-adventure.png": {
       "parts": [
         "home-adventure.png.0.base64",
         "home-adventure.png.1.base64"
       ],
-      "bytes": 236957,
-      "sha256": "ef1e5ae209740117e2f60e43d940fd1e1720748792c235abfd5819299c2d4cc8"
+      "bytes": 236949,
+      "sha256": "2dc45978ec9ffa5b67f214831492edf933c6adae58d657fac00ec3cca7f3f16e"
     },
     "comparison-bubbles.png": {
       "parts": [
@@ -83,24 +82,22 @@
         "comparison-bubbles.png.2.base64",
         "comparison-bubbles.png.3.base64"
       ],
-      "bytes": 743386,
-      "sha256": "f92b3f077a62773d98e7db9b2724f294a70fbf2348843cf6b3e2d9091e4fd05c"
+      "bytes": 736720,
+      "sha256": "1ffb1195dd15948e528909188a7e8658511d5003233b224acb6debc654e8c2cc"
     },
     "large-text-home.png": {
       "parts": [
-        "large-text-home.png.0.base64",
-        "large-text-home.png.1.base64"
+        "large-text-home.png.0.base64"
       ],
-      "bytes": 204148,
-      "sha256": "004750bd3b071b0bf582aac0d794c1b2fc9bc298e3a207281aa6623eb8c8372a"
+      "bytes": 195887,
+      "sha256": "3f1fa57942c7b09724eab0929fa8a8f49eed490c374625744c27b6cbbb7edafc"
     },
     "session-underwater.png": {
       "parts": [
-        "session-underwater.png.0.base64",
-        "session-underwater.png.1.base64"
+        "session-underwater.png.0.base64"
       ],
-      "bytes": 196760,
-      "sha256": "673c993d41a90d907c32fe8094d8ecf7ea335d552d5a2ee5d9af446498e3532d"
+      "bytes": 191034,
+      "sha256": "d3a7c4629781d0873bfb74b1002e096cc53a5ad4700c7e81d798a55513509d96"
     },
     "comparison-arcade.png": {
       "parts": [
@@ -109,8 +106,8 @@
         "comparison-arcade.png.2.base64",
         "comparison-arcade.png.3.base64"
       ],
-      "bytes": 735667,
-      "sha256": "24bdd6caa9186e540c93c5b768805f1faecc4e0c65de8a74ebb4bd4120d6e655"
+      "bytes": 742698,
+      "sha256": "f7c3e35225a97a1fa834990aec25418c11daa66b3fd125ede59f423f3f60935b"
     },
     "comparison-adventure.png": {
       "parts": [
@@ -119,47 +116,53 @@
         "comparison-adventure.png.2.base64",
         "comparison-adventure.png.3.base64"
       ],
-      "bytes": 711884,
-      "sha256": "1c6423443d2601fc23fdd814384dbad1c999b2d58c128b56066f2d7163bee36a"
+      "bytes": 713355,
+      "sha256": "fddf08c228292fa706980a16b72a32d1972d2194d34915b542811d721040e869"
+    },
+    "large-text-session.png": {
+      "parts": [
+        "large-text-session.png.0.base64"
+      ],
+      "bytes": 108389,
+      "sha256": "abd29c2326b4fdeb565a789ee01d10885c3e96783a54ff67311f29d61c766a79"
     },
     "approved-session-underwater.png": {
       "parts": [
-        "approved-session-underwater.png.0.base64",
-        "approved-session-underwater.png.1.base64"
+        "approved-session-underwater.png.0.base64"
       ],
-      "bytes": 196805,
-      "sha256": "190bf428481c70f303278de5dd47cf4643c179561ee73e85ab54418399edf079"
+      "bytes": 191145,
+      "sha256": "64b47904e1abc35ce64bc214b934ad7643fab1bc24f91fe784e0cc0180290e50"
     },
     "home-arcade.png": {
       "parts": [
         "home-arcade.png.0.base64",
         "home-arcade.png.1.base64"
       ],
-      "bytes": 225442,
-      "sha256": "08055e30142222d45301bf83ff40174f3114231e52761e60894a67075e1a0344"
+      "bytes": 227345,
+      "sha256": "b71d66667140ee6c5ec3ac367090b65ed001bcf12966f9e082635c9bea342862"
     },
     "result-underwater.png": {
       "parts": [
         "result-underwater.png.0.base64"
       ],
-      "bytes": 105345,
-      "sha256": "ee2dbc2a15ecb38953a9a819173e1b0477c1f3cf735f0c0ece69adfa359932f2"
+      "bytes": 105206,
+      "sha256": "9a560afc8de4278bf730f66110b0f46afd72ba80692f8b6347fe2eb1e61e0f49"
     },
     "home-cosmos.png": {
       "parts": [
         "home-cosmos.png.0.base64",
         "home-cosmos.png.1.base64"
       ],
-      "bytes": 291971,
-      "sha256": "dc8c3d0f590f6ce1c0a4d9b54756a7c42b5aac3f992506f74a65803facb1851c"
+      "bytes": 284781,
+      "sha256": "1022e842e7368e174db284b7208d412c98e420446d721e34ab82af63a40d1da9"
     },
     "session-recovery.png": {
       "parts": [
         "session-recovery.png.0.base64",
         "session-recovery.png.1.base64"
       ],
-      "bytes": 231218,
-      "sha256": "d0003e76b7239c94755301c480981a08839900cd6eb8553f92d507fdd2bfbe85"
+      "bytes": 234206,
+      "sha256": "cc77a6d66b5a1e94d691619e466a32cb4c192ceb6ed7a58323f3be89518e959c"
     },
     "themes-overview.png": {
       "parts": [
@@ -168,47 +171,47 @@
         "themes-overview.png.2.base64",
         "themes-overview.png.3.base64"
       ],
-      "bytes": 741082,
-      "sha256": "7ac08edeff440d3c14bde249f41edf40ad7726b96da9cae2deb06cecc15400ea"
+      "bytes": 738379,
+      "sha256": "d96bd188b3e4d776e0475dc0873a4ad5ecad606eac214fd395c47ae91b5ea9a8"
     },
     "approved-session-arcade.png": {
       "parts": [
         "approved-session-arcade.png.0.base64"
       ],
-      "bytes": 176703,
-      "sha256": "e7359f693794857820b116440dab513774b80e3c7d5f05970df873918e790405"
+      "bytes": 187547,
+      "sha256": "59f2bba2eaaa4aec323a39274142492041dbc59a0552fc89b8dc38ad16d4ad97"
     },
     "home-small.png": {
       "parts": [
         "home-small.png.0.base64",
         "home-small.png.1.base64"
       ],
-      "bytes": 247211,
-      "sha256": "4bfde11ca49064dbbad1a59154e5f5070a8a7254b2aa621b97a519477d7412e7"
+      "bytes": 241425,
+      "sha256": "da5589d59959f0200075819b4fbdccef8779dc7283c97b9a5d4ce3e03b2a08de"
     },
     "home-underwater.png": {
       "parts": [
         "home-underwater.png.0.base64",
         "home-underwater.png.1.base64"
       ],
-      "bytes": 290173,
-      "sha256": "3931b524c70cc4c8418737539cfc5bbbabd4b82ec178c737c54053278bfe9cea"
+      "bytes": 286125,
+      "sha256": "1d7e4a5034d6eebf80711c3d45f581fed85debfcbf35c2359ab3343c1f443cbb"
     },
     "family-primary-restored.png": {
       "parts": [
         "family-primary-restored.png.0.base64",
         "family-primary-restored.png.1.base64"
       ],
-      "bytes": 286774,
-      "sha256": "bb3d9ee49199b95df59442f0fd043b01ec8f8ed26e85a016158bb0b653c75132"
+      "bytes": 282773,
+      "sha256": "3fd9d3d914f9979a2fbce161f0598207becce5b8588f6c9b482133e043241c24"
     },
     "home-garden.png": {
       "parts": [
         "home-garden.png.0.base64",
         "home-garden.png.1.base64"
       ],
-      "bytes": 326346,
-      "sha256": "a1ee7efa3918d576c0342a1d076f1912aa1ae0d52999c66621ece0e9a5315b8b"
+      "bytes": 326519,
+      "sha256": "c6e9422aa786922a894be6765e1ab161bb9823180b0a4371d9a3ee2ff99f275e"
     },
     "large-text-parent.png": {
       "parts": [
@@ -232,8 +235,8 @@
         "comparison-cosmos.png.3.base64",
         "comparison-cosmos.png.4.base64"
       ],
-      "bytes": 808666,
-      "sha256": "0b10eb3f2ae2e65c9d23080a613b4ac6592d7cbcd0c94b73460d055739eea145"
+      "bytes": 798029,
+      "sha256": "28bb133a28c7b6cd8a15d96049cc8888e22d89aa699565ae29b1fa649a03465f"
     }
   }
 }
