@@ -4,7 +4,7 @@ Sei temi disponibili liberamente: Avventura (iniziale), Arcade, Cosmo, Giardino,
 
 ## Uso
 
-Dalla Home, toccare la tavolozza in alto a destra oppure aprire Impostazioni dall'area di gestione. «Scegli il tuo mondo» mostra i sei fondali con le rispettive palette. La scelta si applica dopo il salvataggio; se il salvataggio fallisce, il tema precedente rimane attivo e viene mostrato un messaggio per riprovare.
+Dalla Home, toccare la barra del livello («Scegli il tema») oppure aprire Famiglia → Profili e temi. «Scegli il tuo mondo» mostra i sei fondali con le rispettive palette. La scelta si applica dopo il salvataggio; se il salvataggio fallisce, il tema precedente rimane attivo e viene mostrato un messaggio per riprovare.
 
 La preferenza usa la chiave locale `brushlings.appearance.v1`, separata da sessioni, progressi e preferenze di gioco. Non viene trasferita con i backup. Dati mancanti, non validi o non leggibili usano Avventura. Ogni tema include il proprio aspetto chiaro o scuro; non segue automaticamente l'aspetto del sistema.
 
@@ -20,11 +20,11 @@ La ricostruzione grafica segue ora le tavole originali A–C–D–E–F–I: ri
 
 ## Verifica
 
-Test dedicati in `tests/app-themes.test.ts`: elenco dei sei temi, contrasto delle palette, salvataggio/ricaricamento, fallback e mancata scrittura. I controlli sul contrasto verificano almeno 4,5:1 per testi principali/secondari e pulsanti.
+Test dedicati in `tests/app-themes.test.ts`: elenco dei sei temi, contrasto delle palette, salvataggio/ricaricamento, fallback e mancata scrittura. Il controllo nel browser misura i colori dei testi e degli sfondi nel DOM, con soglia 4,5:1 per testo normale e 3:1 per testo grande; non misura i pixel delle illustrazioni o degli sfondi SVG.
 
-Il repository dichiara Node 22 in `.nvmrc`; la CI fissa pnpm 12.5.1 e installa dal lockfile congelato. Verificati: TypeScript, 150 test in 28 file, lint, Expo Doctor (18/18) e bundle web/iOS/Android.
+Il repository dichiara Node 22 in `.nvmrc`; la CI fissa pnpm 12.5.1 e installa dal lockfile congelato. La verifica include TypeScript, 184 test in 35 file, lint, Expo Doctor e bundle web/iOS/Android, oltre alla compilazione Android debug e iOS simulator.
 
-Il collaudo Playwright attraversa tutte le 12 schermate per ciascuno dei sei temi (72 combinazioni), misura il contrasto dei testi, verifica lo stato accessibile della selezione, il caricamento delle immagini e la persistenza dopo riapertura. Controlla inoltre isolamento dei progressi, errore di scrittura simulato, sessione manuale completa, progressi dopo reload e viewport da 320 punti con riduzione movimento attiva.
+Il collaudo Playwright attraversa tutte le 12 schermate per ciascuno dei sei temi (72 combinazioni), misura il contrasto dei testi, verifica lo stato accessibile della selezione, il caricamento delle immagini e la persistenza dopo riapertura. Tocca inoltre tutte e quattro le voci della navigazione, verifica timer e pulsante di arresto visibile, isolamento dei progressi, errori di scrittura simulati, sessione manuale completa e recuperabile, progressi dopo reload, viewport da 320 punti e testo raddoppiato con riduzione movimento attiva. Gli originali e gli screenshot reali di Home e sessione sono affiancati in `approved-comparison.html` e nei sei file `comparison-*.png`; il test controlla gli SHA-256 delle tavole originali, mentre l'accettazione grafica richiede l'ispezione dei confronti.
 
 Per ripeterlo:
 
