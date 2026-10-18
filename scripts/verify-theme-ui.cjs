@@ -133,6 +133,7 @@ async function approvedComparisons(browser) {
     for (const [label, route] of [['Mondo', '/collection'], ['Premi', '/rewards'], ['Famiglia', '/parent'], ['Oggi', '/']]) {
       await page.getByRole('tab', { name: label, exact: true }).click();
       await page.waitForFunction(route => location.pathname === route, route);
+      await page.getByRole('tab', { name: label, exact: true, selected: true }).waitFor();
       assert.equal(await page.getByRole('tab', { name: label, exact: true }).getAttribute('aria-selected'), 'true');
     }
 

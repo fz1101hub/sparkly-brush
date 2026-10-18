@@ -222,6 +222,7 @@ export function ApprovedSession() {
         }}
       >
         <DesignButton
+          compact
           label={brush.manualActive ? "Termina sessione" : "Apri spazzolino"}
           secondary={
             theme.id === "adventure" ||

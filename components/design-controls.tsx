@@ -18,12 +18,14 @@ export function DesignButton({
   onPress,
   disabled = false,
   secondary = false,
+  compact = false,
 }: {
   children: ReactNode;
   label: string;
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
+  compact?: boolean;
 }) {
   const { theme } = useThemeContext();
   const design = APPROVED_DESIGN[theme.id];
@@ -37,8 +39,13 @@ export function DesignButton({
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: 58,
-        borderRadius: 30,
+        minHeight:
+          compact || secondary
+            ? 58
+            : theme.id === "adventure" || theme.id === "arcade"
+              ? 78
+              : 68,
+        borderRadius: 40,
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 18,
@@ -94,8 +101,8 @@ export function DesignButton({
       <Text
         style={{
           fontFamily: "BrushlingsDisplay",
-          fontSize: 24,
-          lineHeight: 30,
+          fontSize: compact || secondary ? 24 : 27,
+          lineHeight: compact || secondary ? 30 : 34,
           textAlign: "center",
           color: text,
           textShadowColor: text === "#FFFFFF" ? "#A23D32" : "transparent",
@@ -164,16 +171,17 @@ export function RoutinePills({
 }) {
   const { theme } = useThemeContext();
   const d = APPROVED_DESIGN[theme.id];
+  const underwater = theme.id === "underwater";
   return (
     <View
       style={{
         flexDirection: "row",
         flexWrap: "wrap",
         borderRadius: 28,
-        backgroundColor: d.panel,
+        backgroundColor: underwater ? "#8AD6DC" : d.panel,
         borderColor: "#FFFFFFA0",
         borderWidth: 1,
-        minHeight: 46,
+        minHeight: theme.id === "adventure" || theme.id === "arcade" ? 54 : 50,
         overflow: "hidden",
       }}
     >
@@ -196,9 +204,11 @@ export function RoutinePills({
             gap: 8,
             padding: 9,
             backgroundColor: complete
-              ? theme.id === "arcade" || theme.id === "underwater"
-                ? "#89E2C333"
-                : "#FFE8B5"
+              ? underwater
+                ? "#09566A"
+                : theme.id === "arcade"
+                  ? "#89E2C333"
+                  : "#FFE8B5"
               : "transparent",
           }}
         >
@@ -213,14 +223,24 @@ export function RoutinePills({
             {index ? "☾" : "☀"}
           </Text>
           <Text
-            style={{ color: d.ink, fontFamily: "BrushlingsBody", fontSize: 16 }}
+            style={{
+              color: underwater ? (complete ? "#FFFFFF" : "#073449") : d.ink,
+              fontFamily: "BrushlingsBody",
+              fontSize: 18,
+            }}
           >
             {name}
           </Text>
           <Text
             accessible={false}
             style={{
-              color: complete ? "#087F87" : d.ink,
+              color: underwater
+                ? complete
+                  ? "#A9FFE8"
+                  : "#073449"
+                : complete
+                  ? "#087F87"
+                  : d.ink,
               fontFamily: "BrushlingsBlack",
               fontSize: 20,
             }}

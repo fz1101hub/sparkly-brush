@@ -77,7 +77,7 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     buddy: { sheet: "ac", rect: [1296, 695, 211, 122] },
     ink: "#FFFDF2",
     base: "#11133F",
-    panel: "#252659",
+    panel: "#15183F",
     button: ["#E1FF49", "#C5F312"],
     buttonText: "#12184A",
     timer: "#D0F924",
@@ -149,7 +149,7 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     buddy: { sheet: "i", rect: [1288, 660, 228, 146] },
     ink: "#FFFBE8",
     base: "#034D62",
-    panel: "#075B70",
+    panel: "#034254",
     button: ["#9AF3DD", "#4CD5BE"],
     buttonText: "#092740",
     timer: "#86EDD6",
@@ -158,3 +158,22 @@ export const APPROVED_DESIGN: Record<AppThemeId, ApprovedDesign> = {
     headline: ["Un tuffo", "nel sorriso"],
   },
 };
+
+const TAB_ICONS: Record<
+  AppThemeId,
+  { x: readonly number[]; y: number; size: number }
+> = {
+  adventure: { x: [52, 111, 168, 219], y: 845, size: 29 },
+  arcade: { x: [1054, 1112, 1168, 1221], y: 846, size: 29 },
+  cosmos: { x: [51, 115, 179, 243], y: 775, size: 27 },
+  garden: { x: [638, 702, 766, 830], y: 775, size: 27 },
+  bubbles: { x: [1212, 1277, 1343, 1408], y: 775, size: 27 },
+  underwater: { x: [1051, 1108, 1166, 1223], y: 822, size: 29 },
+};
+export function getTabArtwork(theme: AppThemeId, index: number): ArtworkRegion {
+  const icons = TAB_ICONS[theme];
+  return {
+    sheet: APPROVED_DESIGN[theme].home.sheet,
+    rect: [icons.x[index], icons.y, icons.size, icons.size],
+  };
+}

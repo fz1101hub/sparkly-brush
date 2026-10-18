@@ -45,8 +45,12 @@ export function ApprovedHome() {
   const arcade = theme.id === "arcade";
   const longText = fontScale > 1.3;
   const pageHeight = Math.max(height, longText ? 1060 : 680);
-  const artTop = arcade ? 246 : 112;
-  const artHeight = Math.max(220, pageHeight * (arcade ? 0.78 : 0.66) - artTop);
+  const artTop = arcade ? 264 : 112;
+  const controlsExtra = theme.id === "adventure" ? 36 : arcade ? 40 : 16;
+  const artHeight = Math.max(
+    220,
+    pageHeight * (arcade ? 0.78 : 0.66) - artTop - controlsExtra,
+  );
   const sky = {
     adventure: "#C0F2F0",
     arcade: "#0A0D35",
@@ -221,7 +225,7 @@ export function ApprovedHome() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 5,
-                backgroundColor: "#FFFDF2",
+                backgroundColor: arcade ? "#101640" : "#FFFDF2",
                 paddingVertical: 6,
                 paddingHorizontal: 10,
                 borderWidth: 1,
@@ -240,7 +244,7 @@ export function ApprovedHome() {
                   flexShrink: 1,
                   fontFamily: "BrushlingsBlack",
                   fontSize: 18,
-                  color: "#122637",
+                  color: arcade ? "#FFFFFF" : "#122637",
                 }}
               >
                 {walletCoins}
@@ -255,7 +259,8 @@ export function ApprovedHome() {
             onPress={() => router.push("/(tabs)/settings")}
             style={{
               minHeight: 38,
-              marginHorizontal: width * 0.14,
+              marginHorizontal:
+                width * (arcade || theme.id === "adventure" ? 0.14 : 0.18),
               borderRadius: 22,
               paddingHorizontal: 14,
               paddingVertical: arcade || theme.id === "adventure" ? 4 : 7,
@@ -276,7 +281,7 @@ export function ApprovedHome() {
               <BrushlingAvatar
                 creature={selected}
                 level={stats.level}
-                size={36}
+                size={52}
                 framed={false}
               />
             ) : null}
@@ -284,7 +289,7 @@ export function ApprovedHome() {
               style={{
                 color: arcade || theme.id === "cosmos" ? "#FFFFFF" : "#142F3E",
                 fontFamily: "BrushlingsBlack",
-                fontSize: 17,
+                fontSize: 18,
                 flexShrink: 1,
               }}
             >
@@ -296,7 +301,7 @@ export function ApprovedHome() {
               style={{
                 flex: 1,
                 minWidth: 24,
-                height: 12,
+                height: 14,
                 backgroundColor:
                   arcade || theme.id === "cosmos" ? "#6B5981" : "#DDDCCB",
                 borderRadius: 10,
@@ -316,7 +321,7 @@ export function ApprovedHome() {
               <MaterialIcons
                 accessible={false}
                 name="star"
-                size={22}
+                size={28}
                 color="#E7AD2F"
               />
             ) : null}

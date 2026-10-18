@@ -1,9 +1,9 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBrush } from "@/contexts/brush-context";
-import { APPROVED_DESIGN } from "@/lib/approved-design";
+import { APPROVED_DESIGN, getTabArtwork } from "@/lib/approved-design";
+import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useThemeContext } from "@/lib/theme-provider";
 
 const DESTINATIONS = [
@@ -31,12 +31,12 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
         borderColor: theme.scheme === "dark" ? "#FFFFFF60" : "#E6DCC1",
         paddingTop: 7,
         paddingBottom: Math.max(9, insets.bottom),
-        minHeight: 76 + Math.max(0, fontScale - 1) * 20,
+        minHeight: 84 + Math.max(0, fontScale - 1) * 20,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
       }}
     >
-      {DESTINATIONS.map((item) => {
+      {DESTINATIONS.map((item, index) => {
         const selected = item.route === activeRoute;
         const route = state.routes.find(
           (candidate) => candidate.name === item.route,
@@ -60,6 +60,7 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityRole="tab"
             accessibilityLabel={item.title}
             accessibilityState={{ selected }}
+            aria-selected={selected}
             onPress={() => {
               const event = navigation.emit({
                 type: "tabPress",
@@ -80,23 +81,18 @@ export function ApprovedTabBar({ state, navigation }: BottomTabBarProps) {
               gap: 3,
             }}
           >
-            <MaterialIcons
-              accessible={false}
-              name={item.icon}
-              size={30}
-              color={color}
-              style={{
-                textShadowColor: selected ? "#FFFFFF70" : "transparent",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 1,
-              }}
+            <ReferenceArtwork
+              region={getTabArtwork(theme.id, index)}
+              width={36}
+              height={36}
+              fit="contain"
             />
             <Text
               style={{
                 color,
                 fontFamily: "BrushlingsBody",
-                fontSize: 12,
-                lineHeight: 18,
+                fontSize: 14,
+                lineHeight: 20,
                 maxWidth: "100%",
                 flexShrink: 1,
                 textAlign: "center",
