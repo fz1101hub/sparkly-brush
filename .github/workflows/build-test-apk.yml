@@ -19,7 +19,7 @@ jobs:
       - name: Checkout verified application revision
         uses: actions/checkout@v4
         with:
-          ref: 8da068237bdb116721657f6df43eaddc39834dca
+          ref: ${{ github.sha }}
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -48,6 +48,8 @@ jobs:
           assert "signingConfig signingConfigs.debug" in release, "Expected Expo test signing configuration"
           PY
       - name: Compile standalone test APK
+        env:
+          NODE_ENV: production
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
       - name: Verify and package APK
@@ -71,7 +73,8 @@ jobs:
               assert "lib/arm64-v8a/libreactnative.so" in names
               assert "lib/armeabi-v7a/libreactnative.so" in names
           report = {
-              "sourceCommit": "8da068237bdb116721657f6df43eaddc39834dca",
+              "visualBaseCommit": "8da068237bdb116721657f6df43eaddc39834dca",
+              "sourceCommit": "${{ github.sha }}",
               "file": apk.name, "bytes": apk.stat().st_size,
               "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
               "package": "com.app.sparklybrush", "version": "1.0.0",
@@ -81,7 +84,7 @@ jobs:
           Path("apk/build-info.json").write_text(json.dumps(report, indent=2) + "\n")
           Path("apk/LEGGIMI.txt").write_text(
               "Brushlings — APK di prova\n"
-              "Revisione: 8da068237bdb116721657f6df43eaddc39834dca\n"
+              "Revisione: ${{ github.sha }}\n"
               "Richiede Android 7 o successivo (telefono ARM). Non richiede Expo Go o un server Metro.\n"
               "Aprire il file APK sul telefono e consentire l’installazione da questa sorgente se Android lo richiede.\n"
               "Il nome mostrato da Android può essere Sparkly Brush. Pacchetto: com.app.sparklybrush.\n"
