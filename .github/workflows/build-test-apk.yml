@@ -1,0 +1,101 @@
+name: Build Brushlings test APK
+
+on:
+  push:
+    branches: [build/android-apk-8da0682]
+
+permissions:
+  contents: read
+
+env:
+  CI: "1"
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout verified application revision
+        uses: actions/checkout@v4
+        with:
+          ref: 8da068237bdb116721657f6df43eaddc39834dca
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Android project
+        run: pnpm exec expo prebuild --platform android --clean --no-install
+      - name: Verify test signing configuration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path("android/app/build.gradle").read_text()
+          release = text.split("buildTypes {", 1)[1].split("release {", 1)[1]
+          assert "signingConfig signingConfigs.debug" in release, "Expected Expo test signing configuration"
+          PY
+      - name: Compile standalone test APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Verify and package APK
+        run: |
+          mkdir -p apk
+          cp android/app/build/outputs/apk/release/app-release.apk apk/Brushlings-1.0.0-8da0682.apk
+          TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$TOOLS_DIR/apksigner" verify --verbose --print-certs apk/*.apk > apk/signature.txt
+          "$TOOLS_DIR/aapt" dump badging apk/*.apk > apk/package.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import hashlib, json
+          apk = Path("apk/Brushlings-1.0.0-8da0682.apk")
+          metadata = Path("apk/package.txt").read_text()
+          assert "name='com.app.sparklybrush'" in metadata
+          assert "application-debuggable" not in metadata
+          with ZipFile(apk) as bundle:
+              names = bundle.namelist()
+              assert "assets/index.android.bundle" in names, "Standalone JS bundle missing"
+              assert "lib/arm64-v8a/libreactnative.so" in names
+              assert "lib/armeabi-v7a/libreactnative.so" in names
+          report = {
+              "sourceCommit": "8da068237bdb116721657f6df43eaddc39834dca",
+              "file": apk.name, "bytes": apk.stat().st_size,
+              "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
+              "package": "com.app.sparklybrush", "version": "1.0.0",
+              "minimumAndroid": "7.0 (API 24)", "architectures": ["arm64-v8a", "armeabi-v7a"],
+              "standaloneBundle": True, "debuggable": False, "signing": "Expo Android test key"
+          }
+          Path("apk/build-info.json").write_text(json.dumps(report, indent=2) + "\n")
+          Path("apk/LEGGIMI.txt").write_text(
+              "Brushlings — APK di prova\n"
+              "Revisione: 8da068237bdb116721657f6df43eaddc39834dca\n"
+              "Richiede Android 7 o successivo (telefono ARM). Non richiede Expo Go o un server Metro.\n"
+              "Aprire il file APK sul telefono e consentire l’installazione da questa sorgente se Android lo richiede.\n"
+              "Il nome mostrato da Android può essere Sparkly Brush. Pacchetto: com.app.sparklybrush.\n"
+              "Versione firmata con chiave di test. Non è una pubblicazione sul Play Store.\n"
+              "Se una vecchia installazione segnala un conflitto di firma, salvare prima i dati con il backup famiglia.\n"
+              "Per il Bluetooth: attivarlo e concedere l’accesso ai dispositivi nelle vicinanze quando richiesto.\n"
+          )
+          print(json.dumps(report))
+          PY
+          cat apk/build-info.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Brushlings-1.0.0-8da0682-android
+          path: apk/
+          if-no-files-found: error
+          retention-days: 30
