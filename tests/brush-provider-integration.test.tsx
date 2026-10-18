@@ -1,4 +1,6 @@
 import React from "react";
+import * as Haptics from "expo-haptics";
+import { PreferencesProvider, usePreferences } from "@/contexts/preferences-context";
 import TestRenderer, { act } from "react-test-renderer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +10,8 @@ import { applySessionToLifetime, createEmptyLifetimeProgress } from "@/lib/lifet
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => ({
+  journal: new Map<string, string>(),
+  os: "web",
   forgetDevice: vi.fn(),
   saveDeviceBatch: vi.fn(),
   saveFallback: vi.fn(),
@@ -16,16 +20,22 @@ const mocks = vi.hoisted(() => ({
   saveLastDevice: vi.fn(),
 }));
 
-vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
+vi.mock("@react-native-async-storage/async-storage", () => ({ default: {
+  getItem: vi.fn(async (key: string) => mocks.journal.get(key) ?? null),
+  setItem: vi.fn(async (key: string, value: string) => { mocks.journal.set(key, value); }),
+  removeItem: vi.fn(async (key: string) => { mocks.journal.delete(key); }),
+} }));
+
+vi.mock("react-native", () => ({ Platform: { get OS() { return mocks.os; } }, AppState: { addEventListener: vi.fn(() => ({ remove: vi.fn() })) } }));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light" },
   NotificationFeedbackType: { Success: "success" },
-  impactAsync: vi.fn(),
-  notificationAsync: vi.fn(),
+  impactAsync: vi.fn(async () => {}),
+  notificationAsync: vi.fn(async () => {}),
 }));
 vi.mock("@/lib/brush-storage", async () => {
   const { createEmptyLifetimeProgress } = await import("@/lib/lifetime-progress");
-  return {
+  const storage = {
     loadHistoryBundle: vi.fn(async () => ({ recentHistory: [], lifetimeProgress: createEmptyLifetimeProgress() })),
     loadDemoHistory: vi.fn(async () => []),
     loadDemoMode: vi.fn(async () => false),
@@ -41,6 +51,7 @@ vi.mock("@/lib/brush-storage", async () => {
     saveDemoSession: mocks.saveDemo,
     saveSessionWithLifetime: mocks.saveSession,
   };
+  return { ...storage, getBrushStorage: () => storage };
 });
 
 import { BrushProvider, useBrush } from "@/contexts/brush-context";
@@ -61,6 +72,8 @@ class FakeClient implements SonicareClient {
 describe("BrushProvider BLE integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.journal.clear();
+    mocks.os = "web";
     const empty = createEmptyLifetimeProgress();
     mocks.forgetDevice.mockReset().mockResolvedValue({
       recentHistory: [],
@@ -487,7 +500,7 @@ describe("BrushProvider BLE integration", () => {
       );
       await Promise.resolve();
     });
-    act(() => startManual());
+    await act(async () => { await startManual(); });
     vi.setSystemTime(startedAt + 45_000);
     await act(async () => stopManual());
 
@@ -541,7 +554,7 @@ describe("BrushProvider BLE integration", () => {
       );
       await Promise.resolve();
     });
-    act(() => startManual());
+    await act(async () => { await startManual(); });
     vi.setSystemTime(startedAt + 45_000);
     await act(async () => stopManual());
 
@@ -591,7 +604,7 @@ describe("BrushProvider BLE integration", () => {
       await Promise.resolve();
     });
     await act(async () => setDemoMode(true));
-    act(() => startManual());
+    await act(async () => { await startManual(); });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(120_000);
       await Promise.resolve();
@@ -727,4 +740,98 @@ describe("BrushProvider BLE integration", () => {
     expect(mocks.saveLastDevice).toHaveBeenLastCalledWith(expect.objectContaining({ id: "brush-b" }));
     await act(async () => renderer.unmount());
   });
+  it("recovers a paused checkpoint after remount without counting closed-app time", async () => {
+    vi.useFakeTimers();
+    const startedAt = new Date(2026, 9, 16, 8).getTime();
+    vi.setSystemTime(startedAt);
+    let value!: ReturnType<typeof useBrush>;
+    function Probe() { value = useBrush(); return null; }
+    const factory = (events: BleClientEvents) => new FakeClient(events);
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<BrushProvider clientFactory={factory}><Probe /></BrushProvider>); });
+    await act(async () => { await value.startManual(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(42000); });
+    await act(async () => renderer.unmount());
+    vi.setSystemTime(startedAt + 600000);
+    await act(async () => { renderer = TestRenderer.create(<BrushProvider clientFactory={factory}><Probe /></BrushProvider>); });
+    expect(value.manualActive).toBe(false);
+    expect(value.recoveredManualSession?.elapsedSeconds).toBe(42);
+    await act(async () => { await value.resumeManual(); });
+    expect(value.activeElapsed).toBe(42);
+    await act(async () => { await vi.advanceTimersByTimeAsync(78000); });
+    expect(mocks.saveSession).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ startedAt, durationSeconds: 120, completed: true }));
+    expect(value.hasPendingManualSession).toBe(false);
+    expect(mocks.journal.has("sparkly-brush.manual-session.v1")).toBe(false);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("recovers a completed but unsaved session after remount and retries the same identity", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 16, 8));
+    let value!: ReturnType<typeof useBrush>;
+    function Probe() { value = useBrush(); return null; }
+    const factory = (events: BleClientEvents) => new FakeClient(events);
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<BrushProvider clientFactory={factory}><Probe /></BrushProvider>); });
+    mocks.saveSession.mockRejectedValueOnce(new Error("Disk full"));
+    await act(async () => { await value.startManual(); await vi.advanceTimersByTimeAsync(45000); });
+    await act(async () => { await value.stopManual(); });
+    expect(value.hasPendingManualSession).toBe(true);
+    const savedId = mocks.saveSession.mock.calls[0][0].id;
+    await act(async () => renderer.unmount());
+    await act(async () => { renderer = TestRenderer.create(<BrushProvider clientFactory={factory}><Probe /></BrushProvider>); });
+    expect(value.hasPendingManualSession).toBe(true);
+    await act(async () => { await value.retryManualSession(); });
+    expect(mocks.saveSession.mock.calls[1][0].id).toBe(savedId);
+    expect(value.hasPendingManualSession).toBe(false);
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("pauses a manual timer when the physical handle starts and blocks mode changes until recovery is resolved", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 16, 8));
+    let value!: ReturnType<typeof useBrush>;
+    let client!: FakeClient;
+    function Probe() { value = useBrush(); return null; }
+    const factory = (events: BleClientEvents) => { client = new FakeClient(events); return client; };
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<BrushProvider clientFactory={factory}><Probe /></BrushProvider>); });
+    await act(async () => { await value.startManual(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(23000); });
+    await act(async () => { client.events.onLiveData({ handleState: 2, isBrushing: true, elapsedSeconds: 1, routineSeconds: 120, mode: "clean", intensity: "media" }); });
+    expect(value.manualActive).toBe(false);
+    expect(value.recoveredManualSession?.elapsedSeconds).toBe(23);
+    await expect(value.setDemoMode(true)).rejects.toThrow("Termina e salva");
+    await act(async () => { await vi.advanceTimersByTimeAsync(120000); await value.resumeManual(); });
+    expect(value.manualActive).toBe(false);
+    expect(value.recoveredManualSession?.elapsedSeconds).toBe(23);
+    expect(mocks.saveSession).not.toHaveBeenCalled();
+    await act(async () => renderer.unmount());
+    vi.useRealTimers();
+  });
+
+  it("respects disabled haptics and still connects when native haptic feedback rejects", async () => {
+    mocks.os = "android";
+    mocks.journal.set("sparkly-brush.preferences.v1", JSON.stringify({ onboardingCompleted: true, hapticsEnabled: false }));
+    let brush!: ReturnType<typeof useBrush>;
+    let preferences!: ReturnType<typeof usePreferences>;
+    let client!: FakeClient;
+    function Probe() { brush = useBrush(); preferences = usePreferences(); return null; }
+    const factory = (events: BleClientEvents) => { client = new FakeClient(events); return client; };
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<PreferencesProvider><BrushProvider clientFactory={factory}><Probe /></BrushProvider></PreferencesProvider>); });
+    await act(async () => { await brush.startManual(); });
+    expect(brush.manualActive).toBe(true);
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    await act(async () => { await brush.stopManual(); await preferences.setPreference("hapticsEnabled", true); });
+    vi.mocked(Haptics.impactAsync).mockRejectedValueOnce(new Error("Haptics unavailable"));
+    await act(async () => { await brush.connect(); });
+    expect(Haptics.impactAsync).toHaveBeenCalledOnce();
+    expect(client.scanAndConnect).toHaveBeenCalledOnce();
+    await act(async () => renderer.unmount());
+  });
+
 });
+

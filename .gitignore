@@ -7,6 +7,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+/test-results/
 expo-env.d.ts
 
 # Native
@@ -69,3 +70,4 @@ Thumbs.db
 
 # Manus runtime logs
 .manus-logs/
+

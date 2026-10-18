@@ -8,10 +8,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { ScreenContainer } from "@/components/screen-container";
@@ -38,12 +38,11 @@ const STATUS_OPTIONS: readonly {
   status: HardwareTestStatus;
   label: string;
   icon: React.ComponentProps<typeof MaterialIcons>["name"];
-  color: string;
 }[] = [
-  { status: "passed", label: "Superato", icon: "check-circle", color: "#14845B" },
-  { status: "failed", label: "Fallito", icon: "cancel", color: "#C43D58" },
-  { status: "blocked", label: "Bloccato", icon: "pause-circle", color: "#B27700" },
-  { status: "pending", label: "Da fare", icon: "radio-button-unchecked", color: "#68758A" },
+  { status: "passed", label: "Superato", icon: "check-circle" },
+  { status: "failed", label: "Fallito", icon: "cancel" },
+  { status: "blocked", label: "Bloccato", icon: "pause-circle" },
+  { status: "pending", label: "Da fare", icon: "radio-button-unchecked" },
 ];
 
 function currentPlatform(): HardwareValidationRun["platform"] {
@@ -192,8 +191,8 @@ export default function HardwareTestScreen() {
     return (
       <View style={[styles.testCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.testHeading}>
-          <View style={[styles.testNumber, { backgroundColor: result.status === "passed" ? "#14845B" : colors.primary }]}>
-            <Text style={styles.testNumberText}>{index + 1}</Text>
+          <View style={[styles.testNumber, { backgroundColor: result.status === "passed" ? colors.success : colors.primary }]}>
+            <Text style={[styles.testNumberText, { color: result.status === "passed" ? colors.background : colors.primaryText }]}>{index + 1}</Text>
           </View>
           <View style={styles.testTitleWrap}>
             <Text style={[styles.testTitle, { color: colors.foreground }]}>{item.title}</Text>
@@ -201,9 +200,9 @@ export default function HardwareTestScreen() {
           </View>
         </View>
 
-        <View style={[styles.successBox, { backgroundColor: "#E8F8EF" }]}>
+        <View style={[styles.successBox, { backgroundColor: colors.primarySoft }]}>
           <MaterialIcons name="verified" size={17} color="#14845B" />
-          <Text style={styles.successText}>{item.success}</Text>
+          <Text style={[styles.successText, { color: colors.success }]}>{item.success}</Text>
         </View>
 
         <View
@@ -213,21 +212,23 @@ export default function HardwareTestScreen() {
         >
           {STATUS_OPTIONS.map((option) => {
             const selected = result.status === option.status;
+            const optionColor = option.status === "passed" ? colors.success : option.status === "failed" ? colors.error : option.status === "blocked" ? colors.warning : colors.muted;
             return (
               <Pressable
                 key={option.status}
                 accessibilityRole="radio"
                 accessibilityLabel={`${item.title}: ${option.label}`}
                 accessibilityState={{ checked: selected }}
+                aria-checked={selected}
                 onPress={() => updateResult(item, { status: option.status })}
                 style={({ pressed }) => [
                   styles.statusButton,
-                  { borderColor: selected ? option.color : colors.border, backgroundColor: selected ? `${option.color}18` : colors.background },
+                  { borderColor: selected ? optionColor : colors.border, backgroundColor: selected ? colors.primarySoft : colors.background },
                   pressed && styles.pressed,
                 ]}
               >
-                <MaterialIcons name={option.icon} size={17} color={selected ? option.color : colors.muted} />
-                <Text style={[styles.statusLabel, { color: selected ? option.color : colors.muted }]}>{option.label}</Text>
+                <MaterialIcons name={option.icon} size={17} color={selected ? optionColor : colors.muted} />
+                <Text style={[styles.statusLabel, { color: selected ? optionColor : colors.muted }]}>{option.label}</Text>
               </Pressable>
             );
           })}
@@ -274,7 +275,7 @@ export default function HardwareTestScreen() {
               </View>
             </View>
 
-            <View style={[styles.hero, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+            <View style={[styles.hero, { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" }]}>
               <View style={styles.heroIcon}>
                 <MaterialIcons name="fact-check" size={30} color="#2457D6" />
               </View>
@@ -285,7 +286,7 @@ export default function HardwareTestScreen() {
             </View>
 
             {demoMode ? (
-              <View style={[styles.warning, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
+              <View style={[styles.warning, { backgroundColor: colors.primarySoft, borderColor: "#E8BE38" }]}>
                 <MaterialIcons name="science" size={21} color="#9A7200" />
                 <Text style={[styles.warningText, { color: colors.foreground }]}>Disattiva la demo prima delle prove con il manico reale.</Text>
               </View>
@@ -312,21 +313,21 @@ export default function HardwareTestScreen() {
             </View>
 
             {message ? (
-              <View style={[styles.feedback, { backgroundColor: "#E8F8EF", borderColor: "#B9E4CC" }]}>
+              <View style={[styles.feedback, { backgroundColor: colors.primarySoft, borderColor: "#B9E4CC" }]}>
                 <MaterialIcons name="check-circle" size={20} color="#14845B" />
-                <Text style={styles.feedbackSuccess}>{message}</Text>
+                <Text style={[styles.feedbackSuccess, { color: colors.success }]}>{message}</Text>
               </View>
             ) : null}
             {error ? (
-              <View style={[styles.feedback, { backgroundColor: "#FFF0F2", borderColor: "#F0BEC8" }]}>
+              <View style={[styles.feedback, { backgroundColor: colors.primarySoft, borderColor: "#F0BEC8" }]}>
                 <MaterialIcons name="error-outline" size={20} color="#C43D58" />
-                <Text style={styles.feedbackError}>{error}</Text>
+                <Text style={[styles.feedbackError, { color: colors.error }]}>{error}</Text>
               </View>
             ) : null}
             {persistenceError ? (
-              <View style={[styles.feedback, { backgroundColor: "#FFF4C9", borderColor: "#E8BE38" }]}>
+              <View style={[styles.feedback, { backgroundColor: colors.primarySoft, borderColor: "#E8BE38" }]}>
                 <MaterialIcons name="sync-problem" size={20} color="#9A7200" />
-                <Text style={styles.feedbackWarning}>Il dato è visibile ma non ancora salvato: {persistenceError}</Text>
+                <Text style={[styles.feedbackWarning, { color: colors.warning }]}>Il dato è visibile ma non ancora salvato: {persistenceError}</Text>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Riprova il salvataggio del collaudo"
@@ -436,3 +437,4 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 10, lineHeight: 14, fontWeight: "900" },
   noteInput: { minHeight: 72, borderWidth: 1, borderRadius: 14, paddingHorizontal: 11, paddingVertical: 9, fontSize: 11, lineHeight: 16 },
 });
+

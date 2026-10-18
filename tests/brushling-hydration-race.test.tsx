@@ -19,17 +19,21 @@ const mocks = vi.hoisted(() => ({
   loadProfile: vi.fn(),
   loadCustomization: vi.fn(),
   saveSelected: vi.fn(),
+  saveCustomization: vi.fn(),
 }));
 
 vi.mock("@/contexts/brush-context", () => ({ useBrush: () => mocks.brushState }));
-vi.mock("@/lib/brushling-storage", () => ({
+vi.mock("@/lib/brushling-storage", () => {
+ const storage = {
   loadBrushlingProfile: mocks.loadProfile,
   loadCustomizationState: mocks.loadCustomization,
   saveSelectedBrushling: mocks.saveSelected,
-  saveCustomizationState: vi.fn(),
+  saveCustomizationState: mocks.saveCustomization,
   saveStarterSelection: vi.fn(),
   restoreBrushlingState: vi.fn(),
-}));
+ };
+ return { ...storage, getBrushlingStorage: () => storage };
+});
 
 import { BrushlingProvider, useBrushling } from "@/contexts/brushling-context";
 
@@ -102,4 +106,30 @@ describe("BrushlingProvider hydration race", () => {
   it("non sostituisce Moonbit quando il profilo arriva prima dello storico", async () => {
     await verifyUnlockedSelectionSurvivesProfileFirst("moonbit", 10);
   });
+  it("serializes purchases against the latest balance and preserves it after failed writes", async () => {
+    mocks.loadProfile.mockResolvedValue({ selectedId: "bloopi", hasChosenStarter: true });
+    mocks.loadCustomization.mockResolvedValue(DEFAULT_CUSTOMIZATION_STATE);
+    mocks.saveCustomization.mockResolvedValue(undefined);
+    mocks.brushState.historyReady = true;
+    mocks.brushState.lifetimeProgress = { ...createEmptyLifetimeProgress(), dailyBonusCoins: 30 };
+    let value!: ReturnType<typeof useBrushling>;
+    function Probe() { value = useBrushling(); return null; }
+    let renderer!: TestRenderer.ReactTestRenderer;
+    await act(async () => { renderer = TestRenderer.create(<BrushlingProvider><Probe /></BrushlingProvider>); });
+    const before = value.walletCoins;
+    expect(before).toBe(30);
+    mocks.saveCustomization.mockRejectedValueOnce(new Error("Disk full"));
+    await act(async () => { await expect(value.buyCustomization("blue-scarf")).rejects.toThrow("Disk full"); });
+    expect(value.walletCoins).toBe(before);
+    expect(value.customization.ownedIds).not.toContain("blue-scarf");
+    let results!: string[];
+    await act(async () => { results = await Promise.all([value.buyCustomization("blue-scarf"), value.buyCustomization("fresh-garden")]); });
+    expect(results).toEqual(["purchased", "insufficient"]);
+    expect(value.walletCoins).toBe(12);
+    expect(value.customization.ownedIds).toContain("blue-scarf");
+    expect(value.customization.ownedIds).not.toContain("fresh-garden");
+    await act(async () => renderer.unmount());
+  });
+
 });
+

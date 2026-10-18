@@ -1,7 +1,8 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingHabitat } from "@/components/brushling-habitat";
@@ -75,7 +76,7 @@ export default function HabitatScreen() {
             accessibilityRole="button"
             accessibilityLabel="Torna indietro"
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, { backgroundColor: colors.surface }, pressed && styles.pressed]}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
@@ -91,12 +92,12 @@ export default function HabitatScreen() {
           height={320}
         />
 
-        <View style={[styles.walletCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View style={[styles.walletCard, { backgroundColor: colors.primarySoft, borderColor: "#F2D588" }]}>
           <View style={styles.walletIcon}>
             <MaterialIcons name="stars" size={27} color="#B98A00" />
           </View>
           <View style={styles.walletCopy}>
-            <Text style={[styles.walletEyebrow, { color: "#B98A00" }]}>PORTAFOGLIO</Text>
+            <Text style={[styles.walletEyebrow, { color: colors.primary }]}>PORTAFOGLIO</Text>
             <Text style={[styles.walletValue, { color: colors.foreground }]}>{walletCoins} monete sorriso</Text>
             <Text style={[styles.walletText, { color: colors.muted }]}>
               Le guadagni spazzolando; ciò che acquisti resta salvato su questo telefono.
@@ -104,7 +105,7 @@ export default function HabitatScreen() {
           </View>
         </View>
 
-        <View style={[styles.infoCard, { backgroundColor: selected.soft, borderColor: selected.accent }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.primarySoft, borderColor: selected.accent }]}>
           <MaterialIcons name="pets" size={24} color={selected.accent} />
           <View style={styles.infoCopy}>
             <Text style={[styles.infoTitle, { color: colors.foreground }]}>{evolution.name}</Text>
@@ -115,7 +116,7 @@ export default function HabitatScreen() {
         </View>
 
         {message ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View style={[styles.messageCard, { backgroundColor: colors.primarySoft, borderColor: "#C8D9FF" }]}>
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
             <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
           </View>
@@ -146,12 +147,12 @@ export default function HabitatScreen() {
                     style={[
                       styles.itemCard,
                       {
-                        backgroundColor: owned ? item.soft : colors.surface,
+                        backgroundColor: owned ? colors.primarySoft : colors.surface,
                         borderColor: equipped ? item.accent : colors.border,
                       },
                     ]}
                   >
-                    <View style={[styles.itemIcon, { backgroundColor: item.soft }]}>
+                    <View style={[styles.itemIcon, { backgroundColor: colors.primarySoft }]}>
                       <MaterialIcons name={item.icon} size={27} color={item.accent} />
                     </View>
 
@@ -162,11 +163,11 @@ export default function HabitatScreen() {
 
                     <View style={styles.itemMeta}>
                       {item.cost === 0 ? (
-                        <Text style={[styles.cost, { color: item.accent }]}>Incluso</Text>
+                        <Text style={[styles.cost, { color: colors.primary }]}>Incluso</Text>
                       ) : (
                         <View style={styles.costRow}>
                           <MaterialIcons name="stars" size={15} color="#B98A00" />
-                          <Text style={[styles.cost, { color: owned || affordable ? "#8A6900" : "#A14C4C" }]}>
+                          <Text style={[styles.cost, { color: owned || affordable ? colors.warning : colors.error }]}>
                             {item.cost}
                           </Text>
                         </View>
@@ -176,17 +177,17 @@ export default function HabitatScreen() {
                     <Pressable
                       accessibilityRole="button"
                       disabled={equipped}
-                      onPress={() => void handleItem(item)}
+                      onPress={() => void handleItem(item).catch(() => setMessage("Non riesco a salvare l’oggetto. Nessuna moneta è stata spesa."))}
                       style={({ pressed }) => [
                         styles.itemButton,
                         {
                           backgroundColor: equipped
-                            ? item.accent
+                            ? colors.primary
                             : owned
-                              ? "#FFFFFF"
+                              ? colors.surface
                               : affordable || item.cost === 0
-                                ? item.accent
-                                : "#D9DCE4",
+                                ? colors.primary
+                                : colors.primarySoft,
                           borderColor: equipped || !owned ? item.accent : colors.border,
                         },
                         pressed && styles.pressed,
@@ -195,7 +196,7 @@ export default function HabitatScreen() {
                       <Text
                         style={[
                           styles.itemButtonText,
-                          { color: equipped || !owned ? "#FFFFFF" : colors.foreground },
+                          { color: equipped || (!owned && (affordable || item.cost === 0)) ? colors.primaryText : colors.foreground },
                         ]}
                       >
                         {equipped
@@ -307,3 +308,4 @@ const styles = StyleSheet.create({
   currentText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
   pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
 });
+

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -17,6 +19,7 @@ import {
 
 export default function CollectionScreen() {
   const colors = useColors();
+  const [saveError, setSaveError] = useState<string | null>(null);
   const router = useRouter();
   const { selectedId, selected, stats, walletCoins, customization, selectBrushling } = useBrushling();
   const starters = BRUSHLINGS.filter((creature) => STARTER_IDS.includes(creature.id));
@@ -24,8 +27,12 @@ export default function CollectionScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader eyebrow="Brushlings" title="La tua squadra" connected={false} />
+        {saveError ? <Text accessibilityRole="alert" style={{ color: colors.error, fontSize: 16, lineHeight: 24 }}>{saveError}</Text> : null}
+        <AppHeader eyebrow="Brushlings" title="Il tuo mondo" connected={false} />
 
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {([{ title: "Esplora il mondo", route: "/(tabs)/explore" }, { title: "Missioni di oggi", route: "/(tabs)/missions" }] as const).map(item => <Pressable key={item.route} accessibilityRole="button" onPress={() => router.push(item.route)} style={{ flex: 1, minWidth: 140, minHeight: 54, borderRadius: 20, backgroundColor: colors.primarySoft, padding: 14, justifyContent: "center" }}><Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "900", textAlign: "center" }}>{item.title}</Text></Pressable>)}
+        </View>
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.summaryItem}>
             <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
@@ -49,15 +56,15 @@ export default function CollectionScreen() {
           onPress={() => router.push("/(tabs)/habitat")}
           style={({ pressed }) => [
             styles.habitatCard,
-            { backgroundColor: selected.soft, borderColor: selected.accent },
+            { backgroundColor: colors.primarySoft, borderColor: selected.accent },
             pressed && styles.pressed,
           ]}
         >
-          <View style={[styles.habitatIcon, { backgroundColor: "#FFFFFFAA" }]}>
+          <View style={[styles.habitatIcon, { backgroundColor: colors.primarySoft }]}>
             <MaterialIcons name="home" size={28} color={selected.accent} />
           </View>
           <View style={styles.habitatCopy}>
-            <Text style={[styles.habitatEyebrow, { color: selected.accent }]}>LA TANA</Text>
+            <Text style={[styles.habitatEyebrow, { color: colors.primary }]}>LA TANA</Text>
             <Text style={[styles.habitatTitle, { color: colors.foreground }]}>Personalizza la casa</Text>
             <Text style={[styles.habitatText, { color: colors.muted }]}>
               {customization.ownedIds.length} oggetti posseduti · {walletCoins} monete da spendere
@@ -79,14 +86,14 @@ export default function CollectionScreen() {
             return (
               <View
                 key={creature.id}
-                style={[styles.familyCard, { backgroundColor: creature.soft, borderColor: creature.accent }]}
+                style={[styles.familyCard, { backgroundColor: colors.primarySoft, borderColor: creature.accent }]}
               >
                 <View style={styles.familyHeader}>
                   <View>
-                    <Text style={[styles.familyElement, { color: creature.accent }]}>{creature.element}</Text>
+                    <Text style={[styles.familyElement, { color: colors.primary }]}>{creature.element}</Text>
                     <Text style={[styles.familyTitle, { color: colors.foreground }]}>{creature.name}</Text>
                   </View>
-                  <Text style={[styles.familyCurrent, { color: creature.accent }]}>
+                  <Text style={[styles.familyCurrent, { color: colors.primary }]}>
                     Forma {currentIndex + 1}/3
                   </Text>
                 </View>
@@ -107,7 +114,7 @@ export default function CollectionScreen() {
                         >
                           {evolution.name}
                         </Text>
-                        <Text style={[styles.evolutionLevel, { color: unlocked ? creature.accent : colors.muted }]}>
+                        <Text style={[styles.evolutionLevel, { color: unlocked ? colors.primary : colors.muted }]}>
                           {unlocked ? "Sbloccata" : `Lv ${evolution.unlockLevel}`}
                         </Text>
                       </View>
@@ -139,7 +146,7 @@ export default function CollectionScreen() {
                 style={[
                   styles.card,
                   {
-                    backgroundColor: unlocked ? creature.soft : colors.surface,
+                    backgroundColor: unlocked ? colors.primarySoft : colors.surface,
                     borderColor: selected ? creature.accent : colors.border,
                     opacity: unlocked ? 1 : 0.68,
                   },
@@ -155,7 +162,7 @@ export default function CollectionScreen() {
                 </View>
 
                 <Text style={[styles.name, { color: colors.foreground }]}>{currentEvolution.name}</Text>
-                <Text style={[styles.element, { color: creature.accent }]}>
+                <Text style={[styles.element, { color: colors.primary }]}>
                   {creature.element} · {currentEvolution.title}
                 </Text>
                 <Text style={[styles.tagline, { color: colors.muted }]} numberOfLines={3}>
@@ -167,11 +174,11 @@ export default function CollectionScreen() {
                 <Pressable
                   accessibilityRole="button"
                   disabled={!unlocked || selected}
-                  onPress={() => void selectBrushling(creature.id)}
+                  onPress={() => { setSaveError(null); void selectBrushling(creature.id).catch(() => setSaveError("Non riesco a salvare il compagno. La scelta precedente è rimasta attiva.")); }}
                   style={({ pressed }) => [
                     styles.selectButton,
                     {
-                      backgroundColor: selected ? creature.accent : unlocked ? colors.surface : "#E7E9EF",
+                      backgroundColor: selected ? creature.accent : unlocked ? colors.surface : colors.primarySoft,
                       borderColor: selected ? creature.accent : colors.border,
                     },
                     pressed && styles.pressed,
@@ -190,7 +197,7 @@ export default function CollectionScreen() {
           })}
         </View>
 
-        <View style={[styles.tipCard, { backgroundColor: "#F4F6FF", borderColor: "#DCE3FF" }]}>
+        <View style={[styles.tipCard, { backgroundColor: colors.primarySoft, borderColor: "#DCE3FF" }]}>
           <MaterialIcons name="tips-and-updates" size={22} color={colors.primary} />
           <Text style={[styles.tipText, { color: colors.foreground }]}>
             Ogni sessione completa vale 60 XP. Al livello 3 lo starter raggiunge la seconda forma; al livello 6 raggiunge la forma finale.
@@ -283,3 +290,4 @@ const styles = StyleSheet.create({
   },
   tipText: { flex: 1, fontSize: 12, lineHeight: 18, fontWeight: "600" },
 });
+

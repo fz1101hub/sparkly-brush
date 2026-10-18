@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 import type { BrushSession } from "@/lib/brush-types";
 import {
@@ -8,8 +8,8 @@ import {
   longestCompletedDayStreak,
   uniqueCompletedDayKeys,
 } from "@/lib/day-progress";
+import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
-const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
 
 export type ParentRewardRequirement = "completed-sessions" | "perfect-days" | "streak";
 
@@ -32,21 +32,6 @@ export type ParentRewardMetrics = {
   perfectDays: number;
   longestStreakDays: number;
 };
-
-function completed(history: BrushSession[]): BrushSession[] {
-  return history.filter((session) => session.completed);
-}
-
-function perfectDays(history: BrushSession[]): number {
-  const sessions = completed(history);
-  const keys = uniqueCompletedDayKeys(history);
-  return keys.filter((key) => {
-    const daySessions = sessions.filter((session) => localDateKey(session.startedAt) === key);
-    const morning = daySessions.some((session) => isMorning(session.startedAt));
-    const evening = daySessions.some((session) => isEvening(session.startedAt));
-    return morning && evening;
-  }).length;
-}
 
 export function parentRewardProgress(reward: ParentReward, history: BrushSession[]): ParentRewardProgress {
   return parentRewardProgressFromMetrics(reward, {
@@ -73,25 +58,52 @@ export function rewardRequirementLabel(requirement: ParentRewardRequirement, tar
   if (requirement === "perfect-days") return String(target) + " giorni mattina + sera";
   return "Record di serie: " + String(target) + " giorni consecutivi";
 }
+function completed(history: BrushSession[]): BrushSession[] {
+  return history.filter((session) => session.completed);
+}
 
-export async function loadParentRewards(): Promise<ParentReward[]> {
-  try {
-    const raw = await AsyncStorage.getItem(PARENT_REWARDS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ParentReward[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) =>
-      item
-      && typeof item.id === "string"
-      && typeof item.title === "string"
-      && ["completed-sessions", "perfect-days", "streak"].includes(item.requirement)
-      && typeof item.target === "number"
-    );
-  } catch {
-    return [];
+function perfectDays(history: BrushSession[]): number {
+  const sessions = completed(history);
+  const keys = uniqueCompletedDayKeys(history);
+  return keys.filter((key) => {
+    const daySessions = sessions.filter((session) => localDateKey(session.startedAt) === key);
+    const morning = daySessions.some((session) => isMorning(session.startedAt));
+    const evening = daySessions.some((session) => isEvening(session.startedAt));
+    return morning && evening;
+  }).length;
+}
+
+
+function buildProfileStorage(profileId: string) {
+  const AsyncStorage = createProfileStorage(profileId);
+
+  const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
+
+  async function loadParentRewards(): Promise<ParentReward[]> {
+    try {
+      const raw = await AsyncStorage.getItem(PARENT_REWARDS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as ParentReward[];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item) =>
+        item
+        && typeof item.id === "string"
+        && typeof item.title === "string"
+        && ["completed-sessions", "perfect-days", "streak"].includes(item.requirement)
+        && typeof item.target === "number"
+      );
+    } catch {
+      return [];
+    }
   }
+
+  async function saveParentRewards(rewards: ParentReward[]): Promise<void> {
+    await AsyncStorage.setItem(PARENT_REWARDS_KEY, JSON.stringify(rewards));
+  }
+  return { loadParentRewards, saveParentRewards };
 }
 
-export async function saveParentRewards(rewards: ParentReward[]): Promise<void> {
-  await AsyncStorage.setItem(PARENT_REWARDS_KEY, JSON.stringify(rewards));
-}
+export const getParentRewardsStorage = createProfileStore(buildProfileStorage);
+type ProfileStorage = ReturnType<typeof getParentRewardsStorage>;
+export const loadParentRewards: ProfileStorage["loadParentRewards"] = (...args) => getParentRewardsStorage().loadParentRewards(...args);
+export const saveParentRewards: ProfileStorage["saveParentRewards"] = (...args) => getParentRewardsStorage().saveParentRewards(...args);

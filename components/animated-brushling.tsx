@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 
@@ -9,16 +10,19 @@ export function AnimatedBrushling({
   level,
   size = 118,
   active,
+  framed = true,
 }: {
   creature: BrushlingDefinition;
   level: number;
   size?: number;
   active: boolean;
+  framed?: boolean;
 }) {
+  const reducedMotion = useReducedMotion();
   const bounce = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!active) {
+    if (!active || reducedMotion) {
       bounce.stopAnimation();
       bounce.setValue(0);
       return;
@@ -43,7 +47,7 @@ export function AnimatedBrushling({
 
     loop.start();
     return () => loop.stop();
-  }, [active, bounce]);
+  }, [active, bounce, reducedMotion]);
 
   const translateY = bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
   const rotate = bounce.interpolate({ inputRange: [0, 0.5, 1], outputRange: ["-1deg", "1deg", "-1deg"] });
@@ -52,7 +56,7 @@ export function AnimatedBrushling({
   return (
     <View style={[styles.frame, { width: size, height: size + 8 }]}>
       <Animated.View style={{ transform: [{ translateY }, { rotate }, { scale }] }}>
-        <BrushlingAvatar creature={creature} size={size} level={level} />
+        <BrushlingAvatar framed={framed} creature={creature} size={size} level={level} />
       </Animated.View>
     </View>
   );

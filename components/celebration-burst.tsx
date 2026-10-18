@@ -1,24 +1,29 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
 const PARTICLES = Array.from({ length: 16 }, (_, index) => index);
 const COLORS = ["#FFD65A", "#58B9FF", "#7DD790", "#FF8B66", "#B9A8F3"];
 
 export function CelebrationBurst({ active }: { active: boolean }) {
+  const reducedMotion = useReducedMotion();
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!active) {
+    if (!active || reducedMotion) {
       progress.setValue(0);
       return;
     }
     progress.setValue(0);
-    Animated.timing(progress, {
+    const animation = Animated.timing(progress, {
       toValue: 1,
       duration: 1200,
       useNativeDriver: true,
-    }).start();
-  }, [active, progress]);
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [active, progress, reducedMotion]);
 
   const particles = useMemo(() => PARTICLES.map((index) => ({
     index,
@@ -27,7 +32,7 @@ export function CelebrationBurst({ active }: { active: boolean }) {
     color: COLORS[index % COLORS.length],
   })), []);
 
-  if (!active) return null;
+  if (!active || reducedMotion) return null;
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
