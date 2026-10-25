@@ -9,8 +9,12 @@ import {
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { FamilyPicker } from "@/components/family-picker";
 import { ParentGuard } from "@/components/parent-guard";
+import { QuickGuide } from "@/components/quick-guide";
+import { ReminderSettings } from "@/components/reminder-settings";
 import { ScreenContainer } from "@/components/screen-container";
+import { ThemePicker } from "@/components/theme-picker";
 import {
   LIGHT_CARD_FOREGROUND,
   LIGHT_CARD_MUTED,
@@ -104,6 +108,11 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
+        <ThemePicker />
+        <FamilyPicker />
+        <ReminderSettings />
+        <QuickGuide />
 
         <View
           style={[

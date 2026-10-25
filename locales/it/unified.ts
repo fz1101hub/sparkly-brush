@@ -115,4 +115,10 @@ export const itUnified = {
   "reminderSettings.permissionUnknown": "Non riesco a verificare il permesso notifiche del telefono.",
   "reminderSettings.openSettings": "Impostazioni notifiche del telefono",
   "reminderSettings.openSettingsManually": "Apri le impostazioni del telefono e cerca questa app.",
+  "mouthZones.idleTitle": "Quattro zone, la stessa attenzione",
+  "mouthZones.brushFor": "Spazzola per {seconds} secondi",
+  "mouthZones.zoneOf": "Zona {zone} di {total}",
+  "mouthZones.perZone": "{seconds} secondi per zona",
+  "timerRing.remaining": "Tempo rimanente",
+  "timerRing.together": "Due minuti insieme",
 } as const;

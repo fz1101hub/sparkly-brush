@@ -1297,4 +1297,10 @@ export const de = {
   "reminderSettings.permissionUnknown": "Die Mitteilungsberechtigung des Telefons lässt sich nicht prüfen.",
   "reminderSettings.openSettings": "Mitteilungseinstellungen des Telefons",
   "reminderSettings.openSettingsManually": "Öffne die Einstellungen des Telefons und suche diese App.",
+  "mouthZones.idleTitle": "Vier Bereiche, gleich viel Sorgfalt",
+  "mouthZones.brushFor": "{seconds} Sekunden putzen",
+  "mouthZones.zoneOf": "Bereich {zone} von {total}",
+  "mouthZones.perZone": "{seconds} Sekunden pro Bereich",
+  "timerRing.remaining": "Verbleibende Zeit",
+  "timerRing.together": "Zwei Minuten zusammen",
 } as const satisfies TranslationCatalog;

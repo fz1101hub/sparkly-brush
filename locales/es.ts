@@ -1273,4 +1273,10 @@ export const es = {
   "reminderSettings.permissionUnknown": "No se puede comprobar el permiso de notificaciones del teléfono.",
   "reminderSettings.openSettings": "Ajustes de notificaciones del teléfono",
   "reminderSettings.openSettingsManually": "Abre los ajustes del teléfono y busca esta app.",
+  "mouthZones.idleTitle": "Cuatro zonas, la misma atención",
+  "mouthZones.brushFor": "Cepilla durante {seconds} segundos",
+  "mouthZones.zoneOf": "Zona {zone} de {total}",
+  "mouthZones.perZone": "{seconds} segundos por zona",
+  "timerRing.remaining": "Tiempo restante",
+  "timerRing.together": "Dos minutos juntos",
 } as const satisfies TranslationCatalog;
