@@ -25,7 +25,11 @@ vi.mock("react-native", async () => {
       OS: "web",
       select: (styles: { web?: unknown; default?: unknown }) => styles.web ?? styles.default,
     },
-    StyleSheet: { create: (styles: unknown) => styles },
+    StyleSheet: {
+      create: (styles: unknown) => styles,
+      flatten: (style: unknown): unknown =>
+        Array.isArray(style) ? Object.assign({}, ...style.flat(Infinity).filter(Boolean)) : (style ?? {}),
+    },
   };
 });
 vi.mock("react-native-svg", async () => {
@@ -33,6 +37,11 @@ vi.mock("react-native-svg", async () => {
   return {
     default: (props: Record<string, unknown> & { children?: ReactNode }) => ReactModule.createElement("Svg", props, props.children),
     Circle: (props: Record<string, unknown>) => ReactModule.createElement("Circle", props),
+    Defs: (props: Record<string, unknown> & { children?: ReactNode }) => ReactModule.createElement("Defs", props, props.children),
+    LinearGradient: (props: Record<string, unknown> & { children?: ReactNode }) =>
+      ReactModule.createElement("LinearGradient", props, props.children),
+    Stop: (props: Record<string, unknown>) => ReactModule.createElement("Stop", props),
+    Path: (props: Record<string, unknown>) => ReactModule.createElement("Path", props),
   };
 });
 vi.mock("@expo/vector-icons/MaterialIcons", async () => {
@@ -46,6 +55,17 @@ vi.mock("@/components/brushling-avatar", async () => {
   return {
     BrushlingAvatar: (props: Record<string, unknown>) => ReactModule.createElement("BrushlingAvatar", props),
   };
+});
+vi.mock("@/components/reference-artwork", async () => {
+  const ReactModule = await import("react");
+  return {
+    ReferenceArtwork: (props: Record<string, unknown>) => ReactModule.createElement("ReferenceArtwork", props),
+  };
+});
+vi.mock("@/lib/theme-provider", async () => {
+  const { getAppTheme } = await import("@/lib/app-themes");
+  const theme = getAppTheme("adventure");
+  return { useThemeContext: () => ({ theme, colors: theme.colors, colorScheme: theme.scheme, ready: true }) };
 });
 vi.mock("@/hooks/use-colors", () => ({
   useColors: () => ({

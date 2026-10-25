@@ -24,7 +24,13 @@ tags:
 - tapOn:
     id: starter-confirm
 - tapOn:
-    id: tab-device
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
 - scrollUntilVisible:
     element:
       id: device-hardware-test
@@ -52,7 +58,13 @@ tags:
 - stopApp
 - launchApp
 - tapOn:
-    id: tab-device
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
 - scrollUntilVisible:
     element:
       id: device-hardware-test

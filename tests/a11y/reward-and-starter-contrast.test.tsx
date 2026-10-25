@@ -46,7 +46,11 @@ vi.mock("react-native", async () => {
       select: (styles: { web?: unknown; default?: unknown }) =>
         styles.web ?? styles.default,
     },
-    StyleSheet: { create: (styles: unknown) => styles },
+    StyleSheet: {
+      create: (styles: unknown) => styles,
+      flatten: (style: unknown): unknown =>
+        Array.isArray(style) ? Object.assign({}, ...style.flat(Infinity).filter(Boolean)) : (style ?? {}),
+    },
   };
 });
 vi.mock("react-native-svg", async () => {
@@ -143,7 +147,8 @@ function colorFromStyle(
   style: unknown,
   property: "color" | "backgroundColor",
 ): string | undefined {
-  const entries = Array.isArray(style) ? style : [style];
+  // DesignText nests the caller's style inside its own array.
+  const entries = Array.isArray(style) ? style.flat(Infinity) : [style];
   for (const entry of [...entries].reverse()) {
     if (entry && typeof entry === "object" && property in entry) {
       return (entry as Record<string, string>)[property];

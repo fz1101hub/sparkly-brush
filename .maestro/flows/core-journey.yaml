@@ -46,7 +46,13 @@ tags:
 - tapOn:
     id: session-reward-dismiss
 - tapOn:
-    id: tab-history
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-history
+    direction: DOWN
+- tapOn:
+    id: family-nav-history
 - assertVisible:
     id: history-screen
 - scrollUntilVisible:
@@ -56,7 +62,13 @@ tags:
 - assertVisible:
     id: history-session-0
 - tapOn:
-    id: tab-device
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
 - scrollUntilVisible:
     element:
       id: device-backup

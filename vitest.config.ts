@@ -19,6 +19,7 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["tests/**/*.test.{ts,tsx}"],
+          setupFiles: ["./tests/setup/static-assets.ts"],
           exclude: [...configDefaults.exclude, "tests/native-sqlite/**"],
         },
       },

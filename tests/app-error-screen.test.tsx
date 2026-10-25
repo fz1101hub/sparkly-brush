@@ -24,7 +24,11 @@ vi.mock("react-native", async () => {
     Text: host("Text"),
     Pressable: host("Pressable"),
     ScrollView: host("ScrollView"),
-    StyleSheet: { create: (styles: unknown) => styles },
+    StyleSheet: {
+      create: (styles: unknown) => styles,
+      flatten: (style: unknown): unknown =>
+        Array.isArray(style) ? Object.assign({}, ...style.flat(Infinity).filter(Boolean)) : (style ?? {}),
+    },
   };
 });
 

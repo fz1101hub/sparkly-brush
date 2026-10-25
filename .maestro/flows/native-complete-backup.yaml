@@ -25,7 +25,13 @@ tags:
 - tapOn:
     id: starter-confirm
 - tapOn:
-    id: tab-device
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
 - scrollUntilVisible:
     element:
       id: device-backup
@@ -114,7 +120,13 @@ tags:
 - stopApp
 - launchApp
 - tapOn:
-    id: tab-device
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
 - scrollUntilVisible:
     element:
       id: device-backup
@@ -128,7 +140,13 @@ tags:
     text: "125"
 - takeScreenshot: native-full-backup-after-restart
 - tapOn:
-    id: tab-history
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-history
+    direction: DOWN
+- tapOn:
+    id: family-nav-history
 - assertVisible:
     id: history-screen
 - assertVisible:

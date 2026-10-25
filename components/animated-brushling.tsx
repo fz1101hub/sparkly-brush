@@ -10,11 +10,13 @@ export function AnimatedBrushling({
   level,
   size = 118,
   active,
+  framed = true,
 }: {
   creature: BrushlingDefinition;
   level: number;
   size?: number;
   active: boolean;
+  framed?: boolean;
 }) {
   const [bounce] = useState(() => new Animated.Value(0));
   const reducedMotion = useReducedMotion();
@@ -55,7 +57,7 @@ export function AnimatedBrushling({
   return (
     <View style={[styles.frame, { width: size, height: size + 8 }]}>
       <Animated.View style={{ transform: [{ translateY }, { rotate }, { scale }] }}>
-        <BrushlingAvatar creature={creature} size={size} level={level} />
+        <BrushlingAvatar framed={framed} creature={creature} size={size} level={level} />
       </Animated.View>
     </View>
   );
