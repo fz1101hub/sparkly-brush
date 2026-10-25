@@ -110,7 +110,6 @@ export function ApprovedSession() {
       }}
     >
       <Svg
-        accessible={false}
         width={width}
         height={height}
         style={{ position: "absolute" }}
@@ -123,9 +122,7 @@ export function ApprovedSession() {
         </Defs>
         <Rect width={width} height={height} fill="url(#session-sky)" />
       </Svg>
-      <View
-        pointerEvents="none"
-        style={{ position: "absolute", left: 0, top: height * 0.16 }}
+      <View style={{ pointerEvents: "none", position: "absolute", left: 0, top: height * 0.16 }}
       >
         <ReferenceArtwork
           region={decoration}
@@ -135,9 +132,7 @@ export function ApprovedSession() {
           fadeColor={colorAt(0.25)}
         />
       </View>
-      <View
-        pointerEvents="none"
-        style={{
+      <View style={{ pointerEvents: "none",
           position: "absolute",
           right: 0,
           top: height * 0.46,

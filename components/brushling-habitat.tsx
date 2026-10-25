@@ -93,7 +93,7 @@ export function BrushlingHabitat({
             <MaterialIcons name={accessory.icon} size={24} color="#FFFFFF" />
           </View>
         ) : null}
-        <BrushlingAvatar creature={creature} size={152} level={level} />
+        <BrushlingAvatar framed={false} creature={creature} size={152} level={level} />
       </View>
 
       <View style={[styles.ground, { backgroundColor: habitat?.accent ?? creature.accent }]} />

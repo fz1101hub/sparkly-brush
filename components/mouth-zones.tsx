@@ -125,9 +125,7 @@ export function MouthZones({
                 <ReferenceArtwork region={design.mouth} width={stepSize * 0.82} height={stepSize * 0.82} fit="contain" />
               </View>
               {index !== zone ? (
-                <View
-                  pointerEvents="none"
-                  style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#6C9CEF66" }}
+                <View style={{ pointerEvents: "none", position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#6C9CEF66" }}
                 />
               ) : null}
             </View>

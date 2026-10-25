@@ -2,9 +2,15 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
+/** History and toothbrush left the tab bar: they open from the Family tab (PR #10 layout). */
+async function openFromFamily(page: Page, target: "family-nav-history" | "family-nav-device") {
+  await page.getByTestId("tab-family").click();
+  await page.getByTestId(target).click();
+}
+
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const ADDITIONAL_ROUTES = [
-  { name: "collection", path: "/collection", title: "La tua squadra" },
+  { name: "collection", path: "/collection", title: "Il tuo mondo" },
   { name: "explore", path: "/explore", title: "Isola Sorridente" },
   { name: "history", path: "/history", title: "Storico" },
   { name: "missions", path: "/missions", title: "Missioni" },
@@ -127,21 +133,24 @@ test.describe("WCAG automatic audit", () => {
     page,
   }, testInfo) => {
     await completeFirstRun(page);
+    await scan(page, testInfo, "today");
+
+    // The timer and the mouth zones appear on the session screen (PR #10 layout).
+    await page.getByTestId("manual-start-stop").click();
     const timer = page.getByTestId("manual-timer");
     await expect(timer).toHaveAttribute("aria-valuemin", "0");
-    await expect(timer).toHaveAttribute("aria-valuenow", "0");
     await expect(timer).toHaveAttribute("aria-valuemax", "120");
-    await expect(timer).toHaveAttribute(
-      "aria-valuetext",
-      "Timer di spazzolamento: 0:00 di 2:00",
-    );
+    await expect(timer).toHaveAttribute("aria-valuetext", /^Timer di spazzolamento: 0:0\d di 2:00$/);
     const zones = page.getByTestId("mouth-zones-progress");
     await expect(zones).toHaveAttribute("aria-valuemin", "0");
     await expect(zones).toHaveAttribute("aria-valuenow", "0");
     await expect(zones).toHaveAttribute("aria-valuemax", "4");
-    await scan(page, testInfo, "today");
+    await scan(page, testInfo, "session");
+    // Stopped before five seconds: nothing is saved and Today comes back.
+    await page.getByTestId("manual-start-stop").click();
+    await expect(page.getByTestId("today-screen")).toBeVisible();
 
-    await page.getByTestId("tab-device").click();
+    await openFromFamily(page, "family-nav-device");
     await expect(page.getByTestId("device-screen")).toBeVisible();
     await scan(page, testInfo, "device");
 
@@ -154,40 +163,40 @@ test.describe("WCAG automatic audit", () => {
   });
 });
 
-test.describe("WCAG automatic audit in dark mode", () => {
+// The six themes (PR #10) set their own light or dark palette, whatever the system scheme.
+const APP_THEME_IDS = ["adventure", "arcade", "cosmos", "garden", "bubbles", "underwater"] as const;
+
+test.describe("WCAG automatic audit of the six themes", () => {
   test.use({ colorScheme: "dark" });
 
-  test("onboarding e tutte le schermate principali", async ({
-    page,
-  }, testInfo) => {
-    await page.goto("/");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await expect(page.getByTestId("onboarding-overlay")).toBeVisible();
-    await waitForActiveModal(page);
-    await scan(page, testInfo, "dark-onboarding");
+  for (const themeId of APP_THEME_IDS) {
+    test(`Oggi, sessione e schede principali con il tema ${themeId}`, async ({ page }, testInfo) => {
+      await completeFirstRun(page);
+      await page.goto("/settings");
+      await page.getByTestId(`theme-${themeId}`).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", themeId);
+      await scan(page, testInfo, `${themeId}-settings`);
 
-    for (let pageIndex = 0; pageIndex < 4; pageIndex += 1) {
-      await page.getByTestId("onboarding-next").click();
-    }
-    await expect(page.getByTestId("starter-chooser")).toBeVisible();
-    await scan(page, testInfo, "dark-starter");
-    await scanSelectedStarters(page, testInfo, "dark-");
-    await page.getByTestId("starter-bloopi").click();
-    await page.getByTestId("starter-confirm").click();
-    await expect(page.getByTestId("today-screen")).toBeVisible();
-    await scan(page, testInfo, "dark-today");
+      await page.getByTestId("tab-today").click();
+      await expect(page.getByTestId("today-screen")).toBeVisible();
+      await scan(page, testInfo, `${themeId}-today`);
 
-    await page.getByTestId("tab-device").click();
-    await expect(page.getByTestId("device-screen")).toBeVisible();
-    await scan(page, testInfo, "dark-device");
+      await page.getByTestId("manual-start-stop").click();
+      await expect(page.getByTestId("manual-timer")).toBeVisible();
+      await scan(page, testInfo, `${themeId}-session`);
+      await page.getByTestId("manual-start-stop").click();
+      await expect(page.getByTestId("today-screen")).toBeVisible();
 
-    await page.goto("/backup");
-    await expect(page.getByTestId("backup-screen")).toBeVisible();
-    await scan(page, testInfo, "dark-backup");
-    await scanBackupComparison(page, testInfo, "dark-");
-
-    await scanAdditionalRoutes(page, testInfo, "dark-");
-  });
+      for (const tab of ["tab-world", "tab-rewards", "tab-family"] as const) {
+        await page.getByTestId(tab).click();
+        await page.waitForTimeout(300);
+        await scan(page, testInfo, `${themeId}-${tab}`);
+      }
+      await page.getByTestId("family-nav-device").click();
+      await expect(page.getByTestId("device-screen")).toBeVisible();
+      await scan(page, testInfo, `${themeId}-device`);
+    });
+  }
 });
 
 test.describe("WCAG automatic audit of reward states", () => {
@@ -214,7 +223,7 @@ test.describe("WCAG automatic audit in demo mode", () => {
     }, testInfo) => {
       await page.emulateMedia({ colorScheme });
       await completeFirstRun(page);
-      await page.getByTestId("tab-device").click();
+      await openFromFamily(page, "family-nav-device");
       await expect(page.getByTestId("device-screen")).toBeVisible();
       const demoSwitch = page.getByTestId("device-demo-switch");
       await demoSwitch.click();

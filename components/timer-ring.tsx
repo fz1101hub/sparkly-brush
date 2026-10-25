@@ -61,7 +61,7 @@ export function TimerRing({ elapsed, target, active, size = 230 }: TimerRingProp
       aria-valuetext={label}
       style={{ width: size, height: size, justifyContent: "center", alignItems: "center" }}
     >
-      <Svg accessible={false} width={size} height={size} viewBox="0 0 240 240" style={{ position: "absolute" }}>
+      <Svg width={size} height={size} viewBox="0 0 240 240" style={{ position: "absolute" }}>
         <Defs>
           <LinearGradient id="timer-highlight" x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor={d.timer} />

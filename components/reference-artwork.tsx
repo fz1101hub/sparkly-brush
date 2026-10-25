@@ -31,10 +31,7 @@ export function ReferenceArtwork({
   const renderedWidth = sourceWidth * scale;
   const renderedHeight = sourceHeight * scale;
   return (
-    <View
-      pointerEvents="none"
-      accessible={false}
-      style={{ width, height, overflow: "hidden" }}
+    <View accessible={false} style={{ pointerEvents: "none", width, height, overflow: "hidden" }}
     >
       <View
         style={{
@@ -60,7 +57,6 @@ export function ReferenceArtwork({
         />
         {fadeColor ? (
           <Svg
-            accessible={false}
             width={renderedWidth}
             height={renderedHeight}
             style={{ position: "absolute", left: 0, top: 0 }}

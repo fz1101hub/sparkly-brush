@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** History and toothbrush left the tab bar: they open from the Family tab (PR #10 layout). */
+async function openFromFamily(page: Page, target: "family-nav-history" | "family-nav-device") {
+  await page.getByTestId("tab-family").click();
+  await page.getByTestId(target).click();
+}
+
 async function completeFirstRun(page: Page) {
   await page.goto("/");
   await expect(page.getByTestId("onboarding-overlay")).toBeVisible();
@@ -22,16 +28,15 @@ test.describe("percorso funzionale web", () => {
   }) => {
     await completeFirstRun(page);
 
-    const timer = page.getByTestId("manual-timer");
-    await expect(timer).toHaveAttribute("aria-valuemax", "5");
     await page.getByTestId("manual-start-stop").click();
+    await expect(page.getByTestId("manual-timer")).toHaveAttribute("aria-valuemax", "5");
 
     const reward = page.getByTestId("session-reward-modal");
     await expect(reward).toBeVisible({ timeout: 15_000 });
     await expect(reward).toHaveAttribute("role", "dialog");
     await page.getByTestId("session-reward-dismiss").click();
 
-    await page.getByTestId("tab-history").click();
+    await openFromFamily(page, "family-nav-history");
     await expect(page.getByTestId("history-screen")).toBeVisible();
     await expect(page.getByTestId("history-session-0")).toContainText("0:05");
 
@@ -45,7 +50,7 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByTestId("session-reward-modal")).toBeVisible({ timeout: 15_000 });
     await page.getByTestId("session-reward-dismiss").click();
 
-    await page.getByTestId("tab-history").click();
+    await openFromFamily(page, "family-nav-history");
     await expect(page.getByTestId("history-session-0")).toBeVisible();
 
     page.once("dialog", (dialog) => void dialog.dismiss());
@@ -121,7 +126,7 @@ test.describe("percorso funzionale web", () => {
   }) => {
     await completeFirstRun(page);
 
-    await page.getByTestId("tab-device").click();
+    await openFromFamily(page, "family-nav-device");
     await page.getByTestId("device-hardware-test").click();
     await expect(page.getByTestId("hardware-test-screen")).toBeVisible();
     await page.getByTestId("hardware-status-scan-connect-passed").click();
@@ -132,7 +137,7 @@ test.describe("percorso funzionale web", () => {
       page.getByTestId("hardware-status-scan-connect-passed-selected"),
     ).toBeVisible();
 
-    await page.getByTestId("tab-device").click();
+    await openFromFamily(page, "family-nav-device");
     await page.getByTestId("device-backup").click();
     await expect(page.getByTestId("backup-screen")).toBeVisible();
     await expect(page.getByTestId("backup-export")).toBeDisabled();
@@ -176,7 +181,7 @@ test.describe("percorso funzionale web", () => {
       ],
     })}`;
 
-    await page.getByTestId("tab-device").click();
+    await openFromFamily(page, "family-nav-device");
     await page.getByTestId("device-backup").click();
     const olderCode = `BRUSHLINGS-BACKUP-1:${JSON.stringify({
       ...JSON.parse(legacyCode.slice("BRUSHLINGS-BACKUP-1:".length)),
@@ -200,12 +205,12 @@ test.describe("percorso funzionale web", () => {
     await expect(page.getByTestId("backup-confirm-legacy-card")).toBeVisible();
     await page.getByTestId("backup-cancel-legacy").click();
     await expect(page.getByTestId("backup-confirm-legacy-card")).toHaveCount(0);
-    await page.getByTestId("tab-history").click();
+    await openFromFamily(page, "family-nav-history");
     await expect(page.getByTestId("history-session-0")).toContainText("0:05");
     await page.reload();
     await expect(page.getByTestId("history-session-0")).toContainText("0:05");
 
-    await page.getByTestId("tab-device").click();
+    await openFromFamily(page, "family-nav-device");
     await page.getByTestId("device-backup").click();
     await page.getByTestId("backup-import-code").fill(legacyCode);
     await page.getByTestId("backup-inspect-code").click();
@@ -220,7 +225,7 @@ test.describe("percorso funzionale web", () => {
     await page.getByTestId("backup-restore-legacy").click();
     await page.getByTestId("backup-confirm-legacy").click();
     await expect(page.getByTestId("backup-status")).toBeVisible();
-    await page.getByTestId("tab-history").click();
+    await openFromFamily(page, "family-nav-history");
     await expect(page.getByTestId("history-session-0")).toContainText("2:00");
     await page.reload();
     await expect(page.getByTestId("history-session-0")).toContainText("2:00");
@@ -271,7 +276,7 @@ test.describe("percorso funzionale web", () => {
       await expect(
         page.getByText(language.title, { exact: true }).first(),
       ).toBeVisible();
-      await page.getByTestId("tab-device").click();
+      await openFromFamily(page, "family-nav-device");
       await expect(
         page.getByText(language.deviceTitle, { exact: true }).first(),
       ).toBeVisible();

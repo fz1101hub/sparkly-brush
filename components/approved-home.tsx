@@ -110,9 +110,7 @@ export function ApprovedHome() {
             overflow: "hidden",
           }}
         >
-          <View
-            pointerEvents="none"
-            style={{
+          <View style={{ pointerEvents: "none",
               position: "absolute",
               top: 0,
               left: 0,
@@ -121,9 +119,7 @@ export function ApprovedHome() {
               backgroundColor: sky,
             }}
           />
-          <View
-            pointerEvents="none"
-            style={{
+          <View style={{ pointerEvents: "none",
               position: "absolute",
               top: artTop,
               left: 0,
@@ -163,7 +159,6 @@ export function ApprovedHome() {
           </View>
           {!arcade ? (
             <Svg
-              accessible={false}
               width={width}
               height={38}
               style={{ position: "absolute", top: artTop - 1 }}
@@ -179,7 +174,6 @@ export function ApprovedHome() {
           ) : null}
           {!arcade ? (
             <Svg
-              accessible={false}
               width={width}
               height={90}
               style={{ position: "absolute", top: artTop + artHeight - 28 }}
@@ -194,9 +188,7 @@ export function ApprovedHome() {
             </Svg>
           ) : null}
 
-          <View
-            pointerEvents="none"
-            style={{
+          <View style={{ pointerEvents: "none",
               position: "absolute",
               left: 0,
               top: artBottom + (arcade || theme.id === "cosmos" ? 30 : 2),
@@ -211,9 +203,7 @@ export function ApprovedHome() {
               fadeSize={12}
             />
           </View>
-          <View
-            pointerEvents="none"
-            style={{
+          <View style={{ pointerEvents: "none",
               position: "absolute",
               right: 0,
               top: artBottom + 120,
@@ -416,7 +406,6 @@ export function ApprovedHome() {
                 <Text style={{ color: "#D7FB32" }}>{arcadeLast.slice(arcadeSplit + 1)}</Text>
               </Text>
               <Svg
-                accessible={false}
                 width={38}
                 height={32}
                 style={{ position: "absolute", right: 30, bottom: -25 }}
