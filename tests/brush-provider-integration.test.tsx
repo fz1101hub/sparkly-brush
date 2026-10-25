@@ -31,10 +31,17 @@ const mocks = vi.hoisted(() => ({
   loadPendingManual: vi.fn(),
   savePendingManual: vi.fn(),
   clearPendingManual: vi.fn(),
+  saveCheckpoint: vi.fn(),
+  devicesOwnedByOthers: vi.fn(),
+  claimToothbrush: vi.fn(),
+  releaseToothbrush: vi.fn(),
   hapticsEnabled: true,
 }));
 
-vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
+vi.mock("react-native", () => ({
+  Platform: { OS: "web" },
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
+}));
 vi.mock("@/contexts/preferences-context", () => ({
   useOptionalPreferences: () => ({
     preferences: { hapticsEnabled: mocks.hapticsEnabled },
@@ -49,7 +56,7 @@ vi.mock("expo-haptics", () => ({
 vi.mock("@/lib/brush-storage", async () => {
   const { createEmptyLifetimeProgress } =
     await import("@/lib/lifetime-progress");
-  return {
+  const storage = {
     loadHistoryBundle: vi.fn(async () => ({
       recentHistory: [],
       lifetimeProgress: createEmptyLifetimeProgress(),
@@ -69,11 +76,30 @@ vi.mock("@/lib/brush-storage", async () => {
     saveDemoSession: mocks.saveDemo,
     saveSessionWithLifetime: mocks.saveSession,
   };
+  return { ...storage, getBrushStorage: () => storage };
 });
-vi.mock("@/lib/manual-session-storage", () => ({
-  loadPendingManualSession: mocks.loadPendingManual,
-  savePendingManualSession: mocks.savePendingManual,
-  clearPendingManualSession: mocks.clearPendingManual,
+// The journal keeps checkpoints and the session waiting to be saved; the mocks below see only
+// the latter, as the earlier pending-session API did.
+vi.mock("@/lib/manual-session-storage", () => {
+  const journal = {
+    load: async () => {
+      const pending = await mocks.loadPendingManual();
+      return pending
+        ? { version: 1, id: pending.id, startedAt: pending.startedAt, elapsedSeconds: Math.min(5, pending.durationSeconds), demo: pending.source === "demo", pending }
+        : null;
+    },
+    save: async (checkpoint: { pending?: BrushSession }) => {
+      if (checkpoint.pending) await mocks.savePendingManual(checkpoint.pending);
+      else await mocks.saveCheckpoint(checkpoint);
+    },
+    clear: async () => mocks.clearPendingManual(),
+  };
+  return { MANUAL_TARGET_SECONDS: 120, getManualSessionStorage: () => journal };
+});
+vi.mock("@/lib/toothbrush-profile", () => ({
+  devicesOwnedByOthers: mocks.devicesOwnedByOthers,
+  claimToothbrush: mocks.claimToothbrush,
+  releaseToothbrush: mocks.releaseToothbrush,
 }));
 
 import { BrushProvider, useBrush } from "@/contexts/brush-context";
@@ -123,6 +149,10 @@ describe("BrushProvider BLE integration", () => {
     mocks.loadPendingManual.mockReset().mockResolvedValue(null);
     mocks.savePendingManual.mockReset().mockResolvedValue(undefined);
     mocks.clearPendingManual.mockReset().mockResolvedValue(undefined);
+    mocks.saveCheckpoint.mockReset().mockResolvedValue(undefined);
+    mocks.devicesOwnedByOthers.mockReset().mockResolvedValue([]);
+    mocks.claimToothbrush.mockReset().mockResolvedValue(undefined);
+    mocks.releaseToothbrush.mockReset().mockResolvedValue(undefined);
   });
 
   it("rispetta Vibrazione spenta per connessione, timer e completamento su Android", async () => {
@@ -150,7 +180,7 @@ describe("BrushProvider BLE integration", () => {
       await act(async () => {
         await brush!.connect();
       });
-      act(() => brush!.startManual());
+      await act(async () => brush!.startManual());
       clock.mockReturnValue(start + 120_000);
       await act(async () => {
         await brush!.stopManual();
@@ -746,7 +776,7 @@ describe("BrushProvider BLE integration", () => {
       };
     });
 
-    let startManual: () => void = () => undefined;
+    let startManual: () => Promise<void> = async () => undefined;
     let stopManual: () => Promise<void> = async () => undefined;
     function Probe() {
       const value = useBrush();
@@ -764,7 +794,7 @@ describe("BrushProvider BLE integration", () => {
       );
       await Promise.resolve();
     });
-    act(() => startManual());
+    await act(async () => startManual());
     vi.setSystemTime(startedAt + 45_000);
     await act(async () => stopManual());
 
@@ -796,7 +826,7 @@ describe("BrushProvider BLE integration", () => {
         };
       });
 
-    let startManual: () => void = () => undefined;
+    let startManual: () => Promise<void> = async () => undefined;
     let stopManual: () => Promise<void> = async () => undefined;
     let retryManualSession: () => Promise<void> = async () => undefined;
     let pending = false;
@@ -822,7 +852,7 @@ describe("BrushProvider BLE integration", () => {
       );
       await Promise.resolve();
     });
-    act(() => startManual());
+    await act(async () => startManual());
     vi.setSystemTime(startedAt + 45_000);
     await act(async () => stopManual());
 
@@ -902,7 +932,7 @@ describe("BrushProvider BLE integration", () => {
 
     let setDemoMode: (enabled: boolean) => Promise<void> = async () =>
       undefined;
-    let startManual: () => void = () => undefined;
+    let startManual: () => Promise<void> = async () => undefined;
     let retryManualSession: () => Promise<void> = async () => undefined;
     let pending = false;
     let error: string | null = null;
@@ -928,7 +958,7 @@ describe("BrushProvider BLE integration", () => {
       await Promise.resolve();
     });
     await act(async () => setDemoMode(true));
-    act(() => startManual());
+    await act(async () => startManual());
     await act(async () => {
       await vi.advanceTimersByTimeAsync(120_000);
       await Promise.resolve();
@@ -1216,7 +1246,7 @@ describe("BrushProvider BLE integration", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 8, 23, 12).getTime());
     const clientHolder: { current?: FakeClient } = {};
-    let startManual: () => void = () => undefined;
+    let startManual: () => Promise<void> = async () => undefined;
     let stopManual: () => Promise<void> = async () => undefined;
     let manualActive = false;
     function Probe() {
@@ -1252,7 +1282,7 @@ describe("BrushProvider BLE integration", () => {
         mode: "clean",
         intensity: "media",
       });
-    act(() => startManual());
+    await act(async () => startManual());
     vi.setSystemTime(Date.now() + 2_000);
     await act(async () => {
       client.events.onDevice({
@@ -1366,12 +1396,12 @@ describe("abbinamento del manico nel provider", () => {
     await act(async () => {
       await brush().connect();
     });
-    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "paired", deviceId: "brush-a" });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith(expect.objectContaining({ mode: "paired", deviceId: "brush-a" }));
 
     await act(async () => {
       await brush().connect({ replaceHandle: true });
     });
-    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "replace", currentDeviceId: "brush-a" });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith(expect.objectContaining({ mode: "replace", currentDeviceId: "brush-a" }));
 
     act(() => client.events.onDevice({ id: "brush-b", name: "Sonicare4Kids", model: "HX6340", battery: 70 }));
     expect(brush().pairedDevice).toMatchObject({ id: "brush-b", battery: 70 });
@@ -1381,7 +1411,7 @@ describe("abbinamento del manico nel provider", () => {
     await act(async () => {
       await brush().connect();
     });
-    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "paired", deviceId: "brush-b" });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith(expect.objectContaining({ mode: "paired", deviceId: "brush-b" }));
     await act(async () => renderer.unmount());
   });
 
@@ -1393,7 +1423,7 @@ describe("abbinamento del manico nel provider", () => {
     await act(async () => {
       await brush().connect();
     });
-    expect(client.scanAndConnect).toHaveBeenLastCalledWith({ mode: "any" });
+    expect(client.scanAndConnect).toHaveBeenLastCalledWith(expect.objectContaining({ mode: "any" }));
 
     act(() => client.events.onDevice(pairedHandle));
     expect(brush().pairedDevice).toMatchObject({ id: "brush-a" });

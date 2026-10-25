@@ -13,6 +13,7 @@ import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
+import { FamilyProvider, useFamily } from "@/contexts/family-context";
 import { ParentGateProvider } from "@/contexts/parent-gate-context";
 import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
@@ -21,6 +22,8 @@ import { useI18n } from "@/contexts/locale-context";
 import { AppErrorScreen } from "@/components/app-error-screen";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
+import { ProfileNavigation } from "@/components/profile-navigation";
+import { ReminderLifecycle } from "@/components/reminder-lifecycle";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
 
@@ -96,11 +99,12 @@ function ThemedStatusBar() {
   return <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />;
 }
 
-export default function RootLayout() {
-  useEffect(() => {
-    if (Platform.OS !== "web" || typeof document === "undefined") return;
-    document.title = "Sparkly Brush";
-  }, []);
+/**
+ * Everything that belongs to one child (from PR #10). Keyed by the active profile, so a switch
+ * remounts every provider and each one reads only that child's history, creatures and theme.
+ */
+function ProfileLayout() {
+  const { active } = useFamily();
 
   // Ensure minimum padding for top and bottom on mobile before the first native measurement.
   const providerInitialMetrics = useMemo(() => {
@@ -129,6 +133,8 @@ export default function RootLayout() {
                       <Stack.Screen name="(tabs)" />
                     </Stack>
                     <OnboardingOverlay />
+                    <ReminderLifecycle />
+                    <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />
                   </ParentRewardsProvider>
@@ -143,8 +149,21 @@ export default function RootLayout() {
   );
 
   return (
-    <ThemeProvider>
+    <ThemeProvider key={active.id}>
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    document.title = "Sparkly Brush";
+  }, []);
+
+  return (
+    <FamilyProvider>
+      <ProfileLayout />
+    </FamilyProvider>
   );
 }

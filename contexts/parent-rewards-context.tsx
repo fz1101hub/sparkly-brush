@@ -1,17 +1,16 @@
-import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import {
-  loadParentRewards,
   MAX_PARENT_REWARD_TITLE_LENGTH,
   MAX_PARENT_REWARDS,
   parentRewardProgress,
   parentRewardProgressFromMetrics,
-  saveParentRewards,
   type ParentReward,
   type ParentRewardProgress,
   type ParentRewardRequirement,
+  getParentRewardsStorage,
 } from "@/lib/parent-rewards";
 
 type ParentRewardsContextValue = {
@@ -28,12 +27,14 @@ type ParentRewardsContextValue = {
 const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(null);
 
 export function ParentRewardsProvider({ children }: PropsWithChildren) {
+  // Captured at mount: a late write after a child switch must stay in this child's records.
+  const store = useRef(getParentRewardsStorage());
   const { history, lifetimeProgress, demoMode } = useBrush();
   const [definitions, setDefinitions] = useState<ParentReward[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    void loadParentRewards().then(setDefinitions).finally(() => setReady(true));
+    void store.current.loadParentRewards().then(setDefinitions).finally(() => setReady(true));
   }, []);
 
   const rewards = useMemo(
@@ -71,25 +72,25 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
       },
     ];
     setDefinitions(next);
-    await saveParentRewards(next);
+    await store.current.saveParentRewards(next);
   }, [definitions]);
 
   const removeReward = useCallback(async (id: string) => {
     const next = definitions.filter((reward) => reward.id !== id);
     setDefinitions(next);
-    await saveParentRewards(next);
+    await store.current.saveParentRewards(next);
   }, [definitions]);
 
   const markDelivered = useCallback(async (id: string) => {
     if (demoMode) return;
     const next = definitions.map((reward) => reward.id === id ? { ...reward, deliveredAt: Date.now() } : reward);
     setDefinitions(next);
-    await saveParentRewards(next);
+    await store.current.saveParentRewards(next);
   }, [definitions, demoMode]);
 
   const restoreRewards = useCallback(async (restored: ParentReward[]) => {
     setDefinitions(restored);
-    await saveParentRewards(restored);
+    await store.current.saveParentRewards(restored);
   }, []);
 
   const value = useMemo(() => ({ rewards, definitions, nextReward, ready, addReward, removeReward, markDelivered, restoreRewards }), [

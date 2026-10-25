@@ -18,6 +18,7 @@ import { useI18n } from "@/contexts/locale-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
+import { useSessionKeepAwake } from "@/hooks/use-session-keep-awake";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { announce } from "@/lib/announce";
 import { getEvolution, getNextEvolution } from "@/lib/brushlings";
@@ -34,6 +35,12 @@ function ActiveWakeLock({ active }: { active: boolean }) {
 
 function KeepAwake() {
   useKeepAwake();
+  return null;
+}
+
+/** Keeps the screen on only while a session runs: a locked phone would pause the guided timer. */
+function SessionKeepAwake() {
+  useSessionKeepAwake();
   return null;
 }
 
@@ -75,7 +82,18 @@ export default function TodayScreen() {
     startManual,
     stopManual,
     retryManualSession,
+    manualRecoveryReady,
+    manualStartPending,
+    recoveredManualSession,
+    resumeManual,
+    discardManualRecovery,
   } = useBrush();
+  const manualBlocked =
+    liveIsActive(isActive, manualActive)
+    || hasPendingManualSession
+    || isSavingManualSession
+    || manualStartPending
+    || (!manualActive && (!manualRecoveryReady || recoveredManualSession !== null));
 
   const todayHistory = history.filter((session) => sameLocalDay(session.startedAt, today));
   const todaySessions = todayHistory.length;
@@ -393,15 +411,15 @@ export default function TodayScreen() {
                 : "home.timer.startManualLabel",
             )}
             accessibilityState={{
-              disabled: liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession,
-              busy: isSavingManualSession,
+              disabled: manualBlocked,
+              busy: isSavingManualSession || manualStartPending,
             }}
-            onPress={manualActive ? () => runAction(stopManual()) : startManual}
-            disabled={liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession}
+            onPress={() => runAction(manualActive ? stopManual() : startManual())}
+            disabled={manualBlocked}
             style={({ pressed }) => [
               styles.primaryButton,
               manualActive && styles.stopButton,
-              (liveIsActive(isActive, manualActive) || hasPendingManualSession || isSavingManualSession) && styles.disabled,
+              manualBlocked && styles.disabled,
               pressed && styles.pressed,
             ]}
           >
@@ -409,7 +427,9 @@ export default function TodayScreen() {
             <Text style={styles.primaryButtonText}>
               {manualActive
                 ? t("home.timer.stopSession")
-                : isSavingManualSession
+                : manualStartPending
+                  ? t("home.timer.preparing")
+                  : isSavingManualSession
                   ? t("home.timer.saving")
                   : hasPendingManualSession
                     ? t("home.timer.savePrevious")
@@ -419,6 +439,60 @@ export default function TodayScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {isActive ? <SessionKeepAwake /> : null}
+        {recoveredManualSession && !hasPendingManualSession && !manualActive ? (
+          <View testID="manual-recovery" style={[styles.recoveryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text accessibilityRole="header" style={[styles.recoveryTitle, { color: colors.foreground }]}>
+              {t("home.recovery.title")}
+            </Text>
+            <Text style={[styles.recoveryText, { color: colors.muted }]}>
+              {t("home.recovery.body", { seconds: recoveredManualSession.elapsedSeconds })}
+            </Text>
+            {manualSaveError ? (
+              <Text accessibilityRole="alert" style={[styles.recoveryText, { color: colors.error }]}>{manualSaveError}</Text>
+            ) : null}
+            <Pressable
+              testID="manual-resume"
+              accessibilityRole="button"
+              disabled={manualStartPending || liveIsActive(isActive, manualActive)}
+              onPress={() => runAction(resumeManual())}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                (manualStartPending || liveIsActive(isActive, manualActive)) && styles.disabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <MaterialIcons name="play-arrow" size={24} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>{t("home.recovery.resume")}</Text>
+            </Pressable>
+            <Pressable
+              testID="manual-discard"
+              accessibilityRole="button"
+              disabled={manualStartPending}
+              onPress={() => runAction(discardManualRecovery())}
+              style={({ pressed }) => [styles.recoveryLink, pressed && styles.pressed]}
+            >
+              <Text style={[styles.recoveryLinkText, { color: colors.foreground }]}>{t("home.recovery.discard")}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {!manualRecoveryReady && manualSaveError && !hasPendingManualSession ? (
+          <View testID="manual-journal-error" accessibilityRole="alert" style={styles.saveErrorCard}>
+            <MaterialIcons name="error-outline" size={24} color="#B42318" />
+            <View style={styles.saveErrorCopy}>
+              <Text style={styles.saveErrorText}>{manualSaveError}</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => runAction(discardManualRecovery())}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.retryButtonText}>{t("home.recovery.discardUnreadable")}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {hasPendingManualSession ? (
           <View
@@ -679,6 +753,11 @@ const styles = StyleSheet.create({
   saveErrorText: { color: "#7A271A", fontSize: 10, lineHeight: 15, marginTop: 2 },
   retryButton: { minHeight: 44, borderRadius: 13, backgroundColor: "#B42318", paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
   retryButtonText: { color: "#FFFFFF", fontSize: 11, lineHeight: 15, fontWeight: "900" },
+  recoveryCard: { borderWidth: 1.5, borderRadius: 22, padding: 16, gap: 10 },
+  recoveryTitle: { fontSize: 18, lineHeight: 24, fontWeight: "900" },
+  recoveryText: { fontSize: 14, lineHeight: 20 },
+  recoveryLink: { minHeight: 44, alignItems: "center", justifyContent: "center" },
+  recoveryLinkText: { fontSize: 14, lineHeight: 20, fontWeight: "700", textDecorationLine: "underline" },
   pressed: { opacity: 0.86, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.55 },
   statsRow: { flexDirection: "row", gap: 12 },

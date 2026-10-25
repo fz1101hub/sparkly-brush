@@ -77,10 +77,16 @@ export interface BleClientEvents {
  * Which handle a scan may connect to: only the paired one, any Sonicare (first pairing)
  * or a handle different from the paired one (the parent is changing handle).
  */
-export type ScanTarget =
+export type ScanTarget = (
   | { mode: "any" }
   | { mode: "paired"; deviceId: string }
-  | { mode: "replace"; currentDeviceId: string };
+  | { mode: "replace"; currentDeviceId: string }
+) & {
+  /** Handles that belong to a sibling's profile: never connect to them from this profile. */
+  excludedDeviceIds?: readonly string[];
+  /** Records the handle found as this child's before connecting; a rejection aborts the connection. */
+  claim?: (deviceId: string) => Promise<void>;
+};
 
 export type SyncOptions = {
   /**

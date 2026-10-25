@@ -297,7 +297,7 @@ describe("audit: captured HX6340 Kids GATT through NativeSonicareClient and Brus
     const unmount = await mountWithCapturedKidsGatt(device);
     await connect();
 
-    act(() => current().startManual());
+    await act(async () => current().startManual());
     expect(current().manualActive).toBe(true);
 
     await act(async () => {

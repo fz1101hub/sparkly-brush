@@ -36,14 +36,17 @@ vi.mock("@/contexts/brush-context", () => ({
 vi.mock("react-native", () => ({
   AppState: { addEventListener: () => ({ remove: () => undefined }) },
 }));
-vi.mock("@/lib/brushling-storage", () => ({
-  loadBrushlingProfile: mocks.loadProfile,
-  loadCustomizationState: mocks.loadCustomization,
-  saveSelectedBrushling: mocks.saveSelected,
-  saveCustomizationState: vi.fn(),
-  saveStarterSelection: mocks.saveStarter,
-  restoreBrushlingState: vi.fn(),
-}));
+vi.mock("@/lib/brushling-storage", () => {
+  const storage = {
+    loadBrushlingProfile: mocks.loadProfile,
+    loadCustomizationState: mocks.loadCustomization,
+    saveSelectedBrushling: mocks.saveSelected,
+    saveCustomizationState: vi.fn(),
+    saveStarterSelection: mocks.saveStarter,
+    restoreBrushlingState: vi.fn(),
+  };
+  return { ...storage, getBrushlingStorage: () => storage };
+});
 
 import { BrushlingProvider, useBrushling } from "@/contexts/brushling-context";
 

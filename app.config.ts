@@ -93,7 +93,9 @@ const config: ExpoConfig = {
     "expo-asset",
     ["expo-document-picker", { iCloudContainerEnvironment: "Production" }],
     "expo-font",
-    // Local reminders only: no push token or server is ever requested.
+    // Local reminders only: no push token or server is ever requested, so the push
+    // entitlement that expo-notifications adds is removed (this plugin must come first).
+    "./plugins/with-local-notifications-only",
     "expo-notifications",
     "./plugins/with-android-orientation-compat",
     [

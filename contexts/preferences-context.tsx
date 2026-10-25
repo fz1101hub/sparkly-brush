@@ -11,9 +11,8 @@ import {
 
 import {
   DEFAULT_APP_PREFERENCES,
-  loadAppPreferences,
-  saveAppPreferences,
   type AppPreferences,
+  getPreferencesStorage,
 } from "@/lib/preferences";
 
 type PreferencesContextValue = {
@@ -27,6 +26,8 @@ type PreferencesContextValue = {
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
 export function PreferencesProvider({ children }: PropsWithChildren) {
+  // Captured at mount: a late write after a child switch must stay in this child's records.
+  const store = useRef(getPreferencesStorage());
   const [preferences, setPreferences] = useState(DEFAULT_APP_PREFERENCES);
   const [ready, setReady] = useState(false);
   const preferencesRef = useRef(DEFAULT_APP_PREFERENCES);
@@ -35,7 +36,7 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let active = true;
     const startingRevision = mutationRevisionRef.current;
-    void loadAppPreferences()
+    void store.current.loadAppPreferences()
       .then((loaded) => {
         if (!active || mutationRevisionRef.current !== startingRevision) return;
         preferencesRef.current = loaded;
@@ -50,10 +51,20 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   }, []);
 
   const commitPreferences = useCallback(async (next: AppPreferences) => {
-    mutationRevisionRef.current += 1;
+    const revision = ++mutationRevisionRef.current;
+    const previous = preferencesRef.current;
     preferencesRef.current = next;
     setPreferences(next);
-    await saveAppPreferences(next);
+    try {
+      await store.current.saveAppPreferences(next);
+    } catch (error) {
+      // The screen shows what is stored: a failed write goes back unless a later change replaced it.
+      if (mutationRevisionRef.current === revision) {
+        preferencesRef.current = previous;
+        setPreferences(previous);
+      }
+      throw error;
+    }
   }, []);
 
   const setPreference = useCallback(

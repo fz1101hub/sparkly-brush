@@ -101,6 +101,7 @@ function isSonicare(device: Device): boolean {
 
 // The paired handle is matched by identifier only: iOS can advertise it without a name.
 function matchesScanTarget(device: Device, target: ScanTarget): boolean {
+  if (target.excludedDeviceIds?.includes(device.id)) return false;
   if (target.mode === "paired") return device.id === target.deviceId;
   if (!isSonicare(device)) return false;
   return target.mode === "any" || device.id !== target.currentDeviceId;
@@ -285,7 +286,10 @@ export class NativeSonicareClient implements SonicareClient {
           if (!matchesScanTarget(device, scanTarget)) {
             if (isSonicare(device) && !ignored.has(device.id)) {
               ignored.add(device.id);
-              this.events.onLog("warning", messages.ignored);
+              const sibling = scanTarget.excludedDeviceIds?.includes(device.id) === true;
+              if (sibling || messages.ignored) {
+                this.events.onLog("warning", sibling ? "Manico di un altro profilo ignorato" : messages.ignored);
+              }
             }
             return;
           }
@@ -299,6 +303,12 @@ export class NativeSonicareClient implements SonicareClient {
       }));
       this.assertOperation(operationGeneration);
 
+      if (scanTarget.claim) {
+        await guard(scanTarget.claim(found.id).catch(() => {
+          throw new Error("Spazzolino associato a un altro profilo");
+        }));
+        this.assertOperation(operationGeneration);
+      }
       this.events.onStatus("connecting", "Connessione e lettura dei servizi");
       this.events.onLog("success", `Trovato ${found.name ?? found.localName ?? "Sonicare"}`);
 

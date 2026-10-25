@@ -45,13 +45,8 @@ import {
   type CustomizationState,
 } from "@/lib/customization";
 import {
-  loadBrushlingProfile,
-  loadCustomizationState,
-  restoreBrushlingState,
-  saveCustomizationState,
-  saveSelectedBrushling,
-  saveStarterSelection,
   type BrushlingProfile,
+  getBrushlingStorage,
 } from "@/lib/brushling-storage";
 import {
   computeLifetimeBrushlingStats,
@@ -93,6 +88,8 @@ type BrushlingContextValue = {
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
+  // Captured at mount: a late write after a child switch must stay in this child's records.
+  const store = useRef(getBrushlingStorage());
   const { history, lifetimeProgress, progressEvent, historyReady, demoMode } =
     useBrush();
   const [selectedId, setSelectedId] =
@@ -113,7 +110,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const previousDemoModeRef = useRef(demoMode);
 
   useEffect(() => {
-    void Promise.all([loadBrushlingProfile(), loadCustomizationState()])
+    void Promise.all([store.current.loadBrushlingProfile(), store.current.loadCustomizationState()])
       .then(([profile, savedCustomization]) => {
         setSelectedId(profile.selectedId);
         setHasChosenStarter(profile.hasChosenStarter);
@@ -129,7 +126,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     if (!wasDemo || demoMode) return;
 
-    void Promise.all([loadBrushlingProfile(), loadCustomizationState()]).then(
+    void Promise.all([store.current.loadBrushlingProfile(), store.current.loadCustomizationState()]).then(
       ([profile, savedCustomization]) => {
         setSelectedId(profile.selectedId);
         setHasChosenStarter(profile.hasChosenStarter);
@@ -170,7 +167,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     // Reconcile a persisted selection only after the separate history is hydrated.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedId(DEFAULT_BRUSHLING_ID);
-    if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
+    if (!demoMode) void store.current.saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
   }, [demoMode, historyReady, profileReady, restoreInProgress, selectedId, stats.unlockedIds]);
 
   useEffect(() => {
@@ -219,14 +216,14 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     setSelectedId(id);
     setHasChosenStarter(true);
     // The starter is profile data, not history: it is kept even when chosen during the demo.
-    await saveStarterSelection(id);
+    await store.current.saveStarterSelection(id);
     return true;
   }, []);
 
   const selectBrushling = useCallback(async (id: BrushlingId) => {
     if (!stats.unlockedIds.includes(id)) return false;
     setSelectedId(id);
-    if (!demoMode) await saveSelectedBrushling(id);
+    if (!demoMode) await store.current.saveSelectedBrushling(id);
     return true;
   }, [demoMode, stats.unlockedIds]);
 
@@ -238,7 +235,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     const next = equipCustomizationState(purchased, id) ?? purchased;
     setCustomization(next);
-    if (!demoMode) await saveCustomizationState(next);
+    if (!demoMode) await store.current.saveCustomizationState(next);
     return "purchased";
   }, [customization, demoMode, totalEarnedCoins]);
 
@@ -247,7 +244,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     if (!next) return false;
 
     setCustomization(next);
-    if (!demoMode) await saveCustomizationState(next);
+    if (!demoMode) await store.current.saveCustomizationState(next);
     return true;
   }, [customization, demoMode]);
 
@@ -264,14 +261,14 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     setReward(null);
     setDiscovery(null);
     setProgressReward(null);
-    await restoreBrushlingState(profile, restoredCustomization);
+    await store.current.restoreBrushlingState(profile, restoredCustomization);
   }, []);
 
   const settlePurchasesAfterHistoryReset = useCallback(async () => {
     if (demoMode) return;
     const next = settlePurchasesState(customization);
     setCustomization(next);
-    await saveCustomizationState(next);
+    await store.current.saveCustomizationState(next);
   }, [customization, demoMode]);
 
   const dismissReward = useCallback(() => {

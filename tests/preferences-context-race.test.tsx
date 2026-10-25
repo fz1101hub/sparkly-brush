@@ -25,6 +25,7 @@ vi.mock("@/lib/preferences", () => ({
   DEFAULT_APP_PREFERENCES: mocks.defaults,
   loadAppPreferences: mocks.load,
   saveAppPreferences: mocks.save,
+  getPreferencesStorage: () => ({ loadAppPreferences: mocks.load, saveAppPreferences: mocks.save }),
 }));
 
 import {

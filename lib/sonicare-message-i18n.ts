@@ -52,6 +52,8 @@ const EXACT_MESSAGES: Record<string, TranslationKey> = {
   "Scansione BLE avviata: cerco un altro manico": "brush.client.scanStartedReplace",
   "Trovato un altro manico: ignorato finché non cambi manico": "brush.client.otherHandleIgnored",
   "Manico già abbinato ignorato: accendi il nuovo manico": "brush.client.pairedHandleIgnored",
+  "Manico di un altro profilo ignorato": "brush.client.siblingHandleIgnored",
+  "Spazzolino associato a un altro profilo": "device.error.handleOwnedByOtherProfile",
   "Operazione Bluetooth scaduta: riprova": "brush.client.operationTimedOut",
   "Connessione allo spazzolino non riuscita: riprova": "brush.client.connectionFailedRetry",
   "Impossibile avviare la scansione Bluetooth: riprova tra poco": "brush.client.scanStartFailed",
