@@ -93,6 +93,8 @@ const config: ExpoConfig = {
     "expo-asset",
     ["expo-document-picker", { iCloudContainerEnvironment: "Production" }],
     "expo-font",
+    // Local reminders only: no push token or server is ever requested.
+    "expo-notifications",
     "./plugins/with-android-orientation-compat",
     [
       "expo-localization",
