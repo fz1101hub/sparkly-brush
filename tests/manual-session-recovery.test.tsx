@@ -257,7 +257,7 @@ describe("handles that belong to a sibling", () => {
       "device:own-handle": "primary",
     });
 
-    // Changing handle frees the old one, so a sibling can pair it later.
+    // Changing handle keeps the old one with this child: its records are this child's sessions.
     brush.client.scanAndConnect.mockImplementation(async (next?: ScanTarget) => {
       await next?.claim?.("new-handle");
       brush.client.events.onDevice({ id: "new-handle", name: "Sonicare", model: "HX6322" });
@@ -267,6 +267,7 @@ describe("handles that belong to a sibling", () => {
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
     expect(JSON.parse(memory.get(TOOTHBRUSH_OWNERS_KEY)!)).toEqual({
       "device:sibling-handle": "child-b",
+      "device:own-handle": "primary",
       "device:new-handle": "primary",
     });
     await brush.unmount();

@@ -2,6 +2,8 @@
 
 Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs/sviluppo-autonomo-2026-10-13.md); [audit indipendente del 14 ottobre](docs/audit-indipendente-2026-10-14.md) con checklist di pubblicazione). Il ramo attivo è `fix/claude-ultracode-audit`, creato da `main` al commit `a7769e3`; il ramo `ccr-2641c3c7-7vb0o0` lo include (merge di `6b9632c`) e aggiunge la verifica indipendente e le correzioni del 6 ottobre ([dettagli](docs/verifica-correzioni-2026-10-06.md)). Il parental gate resta deliberatamente fuori scope su richiesta del proprietario. Dettagli e limiti della nuova [risposta all'audit Opus](docs/audit-opus-2026-10-01.md).
 
+**25 ottobre 2026**: la PR #10 (temi, profili familiari, promemoria, sessioni recuperabili) è stata unificata su questo ramo Expo 57 con le correzioni di audit, tradotta in cinque lingue; [dettagli e scelte](docs/unificazione-pr10-2026-10-25.md).
+
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
 | 1 | Doppi accrediti fallback BLE | Corretto nel candidato | Coda bounded multi-fallback, correlazione col successore GATT, compensazione contabile e teardown serializzato. |

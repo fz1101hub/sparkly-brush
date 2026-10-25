@@ -50,11 +50,7 @@ import {
   type ManualCheckpoint,
 } from "@/lib/manual-session-storage";
 import { getActiveProfileId } from "@/lib/profile-scope";
-import {
-  claimToothbrush,
-  devicesOwnedByOthers,
-  releaseToothbrush,
-} from "@/lib/toothbrush-profile";
+import { claimToothbrush, devicesOwnedByOthers } from "@/lib/toothbrush-profile";
 
 export type DemoSessionPeriod = "morning" | "evening" | "now";
 
@@ -776,9 +772,6 @@ export function BrushProvider({
     try {
       await disconnect();
       const next = await storage.current.forgetDeviceWithLifetime(deviceId);
-      await releaseToothbrush(deviceId, profileId.current).catch(() => {
-        // The history is already forgotten; a stale owner entry only keeps the handle reserved.
-      });
       if (!deviceRef.current || deviceRef.current.id === deviceId) {
         deviceRef.current = null;
         setDevice(null);
@@ -891,11 +884,7 @@ export function BrushProvider({
       // The client already reports the connection error to the user and log.
       return;
     }
-    const connectedId = deviceRef.current?.id;
-    if (options?.replaceHandle && paired && connectedId && connectedId !== paired.id) {
-      void releaseToothbrush(paired.id, owner).catch(() => undefined);
-    }
-    if (connectedId) await syncLatest();
+    if (deviceRef.current?.id) await syncLatest();
   }, [appendTranslatedLog, demoMode, hapticsEnabled, syncLatest]);
 
   const startManual = useCallback(async () => {

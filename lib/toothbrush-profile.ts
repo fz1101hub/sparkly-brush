@@ -5,7 +5,8 @@ import { PRIMARY_PROFILE_ID } from "@/lib/profile-scope";
 
 /**
  * Which child each handle belongs to (from PR #10). A handle's stored history and sync cursor
- * belong to one child: syncing it into a sibling's profile would mix their rewards.
+ * belong to one child: syncing it into a sibling's profile would mix their rewards. The owner
+ * stays even after "forget" or a change of handle, since the records are still in the handle.
  * Family-wide on purpose, unlike the per-profile "paired handle".
  */
 export const TOOTHBRUSH_OWNERS_KEY = "brushlings.toothbrush-profiles.v1";
@@ -71,18 +72,5 @@ export function claimToothbrush(deviceId: string, profileId: string): Promise<vo
     const stored = await AsyncStorage.getItem(TOOTHBRUSH_OWNERS_KEY);
     const next = { ...(stored ? (JSON.parse(stored) as Record<string, string>) : {}), [ownerKey(deviceId)]: profileId };
     await AsyncStorage.setItem(TOOTHBRUSH_OWNERS_KEY, JSON.stringify(next));
-  });
-}
-
-/** After "forget" or "change handle": the handle can be paired again, also by a sibling. */
-export function releaseToothbrush(deviceId: string, profileId: string): Promise<void> {
-  return serialize(async () => {
-    const stored = await AsyncStorage.getItem(TOOTHBRUSH_OWNERS_KEY);
-    const owners = stored ? (JSON.parse(stored) as Record<string, string>) : {};
-    const key = ownerKey(deviceId);
-    // The implicit legacy ownership disappears with the primary profile's paired-handle record.
-    if (owners[key] !== profileId) return;
-    delete owners[key];
-    await AsyncStorage.setItem(TOOTHBRUSH_OWNERS_KEY, JSON.stringify(owners));
   });
 }

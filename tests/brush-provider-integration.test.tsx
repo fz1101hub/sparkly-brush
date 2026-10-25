@@ -34,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   saveCheckpoint: vi.fn(),
   devicesOwnedByOthers: vi.fn(),
   claimToothbrush: vi.fn(),
-  releaseToothbrush: vi.fn(),
   hapticsEnabled: true,
 }));
 
@@ -99,7 +98,6 @@ vi.mock("@/lib/manual-session-storage", () => {
 vi.mock("@/lib/toothbrush-profile", () => ({
   devicesOwnedByOthers: mocks.devicesOwnedByOthers,
   claimToothbrush: mocks.claimToothbrush,
-  releaseToothbrush: mocks.releaseToothbrush,
 }));
 
 import { BrushProvider, useBrush } from "@/contexts/brush-context";
@@ -152,7 +150,6 @@ describe("BrushProvider BLE integration", () => {
     mocks.saveCheckpoint.mockReset().mockResolvedValue(undefined);
     mocks.devicesOwnedByOthers.mockReset().mockResolvedValue([]);
     mocks.claimToothbrush.mockReset().mockResolvedValue(undefined);
-    mocks.releaseToothbrush.mockReset().mockResolvedValue(undefined);
   });
 
   it("rispetta Vibrazione spenta per connessione, timer e completamento su Android", async () => {
