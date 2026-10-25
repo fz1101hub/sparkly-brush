@@ -180,10 +180,13 @@ test.describe("WCAG automatic audit of the six themes", () => {
       await page.getByTestId("tab-today").click();
       await expect(page.getByTestId("today-screen")).toBeVisible();
       await scan(page, testInfo, `${themeId}-today`);
+      // For scripts/theme-comparison.cjs, next to the approved boards.
+      await page.screenshot({ path: `artifacts/playwright/themes/home-${themeId}.png` });
 
       await page.getByTestId("manual-start-stop").click();
       await expect(page.getByTestId("manual-timer")).toBeVisible();
       await scan(page, testInfo, `${themeId}-session`);
+      await page.screenshot({ path: `artifacts/playwright/themes/session-${themeId}.png` });
       await page.getByTestId("manual-start-stop").click();
       await expect(page.getByTestId("today-screen")).toBeVisible();
 

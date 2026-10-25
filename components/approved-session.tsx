@@ -23,7 +23,7 @@ import { useThemeContext } from "@/lib/theme-provider";
 /** The approved session screen (from PR #10): countdown, mouth zones and the companion. */
 export function ApprovedSession() {
   const { theme } = useThemeContext();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const d = APPROVED_DESIGN[theme.id];
   const { width, height: windowHeight, fontScale } = useWindowDimensions();
   const [height, setHeight] = useState(windowHeight);
@@ -228,8 +228,10 @@ export function ApprovedSession() {
             justifyContent: "center",
           }}
         >
+          {/* The approved buddy has an Italian speech bubble drawn in: other languages get the animated companion. */}
           {selected.id === "bloopi" &&
-          getEvolutionIndex(selected, stats.level) === 0 ? (
+          getEvolutionIndex(selected, stats.level) === 0 &&
+          locale === "it" ? (
             <ReferenceArtwork
               region={d.buddy}
               width={width - 8}

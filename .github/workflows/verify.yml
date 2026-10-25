@@ -70,6 +70,11 @@ jobs:
       - name: Accessibility audit
         run: pnpm test:a11y:web
 
+      # The six themes next to the approved boards, for a person to review (from PR #10).
+      - name: Theme comparison with the approved boards
+        if: always()
+        run: node scripts/theme-comparison.cjs
+
       - name: Web functional journey
         run: pnpm test:e2e:web
 
