@@ -13,6 +13,8 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 
 import {
   DEFAULT_APP_PREFERENCES,
+  FAMILY_SETTINGS_KEY,
+  getPreferencesStorage,
   loadAppPreferences,
   saveAppPreferences,
 } from "@/lib/preferences";
@@ -59,8 +61,34 @@ describe("app preferences locale migration", () => {
       PREFERENCES_KEY,
       JSON.stringify({ ...DEFAULT_APP_PREFERENCES, language: "pt" }),
     );
+    storage.set(FAMILY_SETTINGS_KEY, JSON.stringify({ language: "pt" }));
     await expect(loadAppPreferences()).resolves.toMatchObject({
       language: "system",
+    });
+  });
+
+  it("condivide lingua e blocco genitori tra i profili e tiene il resto per bambino", async () => {
+    const child = getPreferencesStorage("child-a");
+    await saveAppPreferences({ ...DEFAULT_APP_PREFERENCES, language: "fr", parentGateEnabled: true, soundsEnabled: false });
+    await expect(child.loadAppPreferences()).resolves.toMatchObject({
+      language: "fr",
+      parentGateEnabled: true,
+      soundsEnabled: true,
+    });
+
+    await child.saveAppPreferences({ ...(await child.loadAppPreferences()), language: "es", parentGateEnabled: false });
+    await expect(loadAppPreferences()).resolves.toMatchObject({
+      language: "es",
+      parentGateEnabled: false,
+      soundsEnabled: false,
+    });
+  });
+
+  it("per i profili creati prima delle impostazioni di famiglia usa lingua e blocco del primo profilo", async () => {
+    storage.set(PREFERENCES_KEY, JSON.stringify({ ...DEFAULT_APP_PREFERENCES, language: "de", parentGateEnabled: true }));
+    await expect(getPreferencesStorage("child-b").loadAppPreferences()).resolves.toMatchObject({
+      language: "de",
+      parentGateEnabled: true,
     });
   });
 

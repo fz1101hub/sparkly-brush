@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 import type { TranslationKey, TranslationParams } from "@/lib/i18n";
 import type { BrushSession } from "@/lib/brush-types";
@@ -9,8 +9,6 @@ import {
   longestCompletedDayStreak,
   uniqueCompletedDayKeys,
 } from "@/lib/day-progress";
-
-const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
 
 /** Same limit as backups: more rewards would be dropped silently on restore. */
 export const MAX_PARENT_REWARDS = 40;
@@ -123,16 +121,27 @@ export function normalizeParentRewards(value: unknown): ParentReward[] {
   return rewards;
 }
 
-export async function loadParentRewards(): Promise<ParentReward[]> {
-  try {
-    const raw = await AsyncStorage.getItem(PARENT_REWARDS_KEY);
-    if (!raw) return [];
-    return normalizeParentRewards(JSON.parse(raw));
-  } catch {
-    return [];
+function buildProfileStorage(profileId: string) {
+  const AsyncStorage = createProfileStorage(profileId);
+  const PARENT_REWARDS_KEY = "sparkly-brush.parent-rewards.v1";
+
+  async function loadParentRewards(): Promise<ParentReward[]> {
+    try {
+      const raw = await AsyncStorage.getItem(PARENT_REWARDS_KEY);
+      if (!raw) return [];
+      return normalizeParentRewards(JSON.parse(raw));
+    } catch {
+      return [];
+    }
   }
+
+  async function saveParentRewards(rewards: ParentReward[]): Promise<void> {
+    await AsyncStorage.setItem(PARENT_REWARDS_KEY, JSON.stringify(rewards));
+  }
+  return { loadParentRewards, saveParentRewards };
 }
 
-export async function saveParentRewards(rewards: ParentReward[]): Promise<void> {
-  await AsyncStorage.setItem(PARENT_REWARDS_KEY, JSON.stringify(rewards));
-}
+export const getParentRewardsStorage = createProfileStore(buildProfileStorage);
+type ProfileStorage = ReturnType<typeof getParentRewardsStorage>;
+export const loadParentRewards: ProfileStorage["loadParentRewards"] = (...args) => getParentRewardsStorage().loadParentRewards(...args);
+export const saveParentRewards: ProfileStorage["saveParentRewards"] = (...args) => getParentRewardsStorage().saveParentRewards(...args);

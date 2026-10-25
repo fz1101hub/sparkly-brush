@@ -12,9 +12,9 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
     removeItem: vi.fn(async (key: string) => { storage.delete(key); }),
   },
 }));
-vi.mock("@/lib/brushling-storage", () => ({ restoreBrushlingState }));
-vi.mock("@/lib/preferences", () => ({ saveAppPreferences }));
-vi.mock("@/lib/parent-rewards", () => ({ saveParentRewards }));
+vi.mock("@/lib/brushling-storage", () => ({ getBrushlingStorage: () => ({ restoreBrushlingState }) }));
+vi.mock("@/lib/preferences", () => ({ getPreferencesStorage: () => ({ saveAppPreferences }) }));
+vi.mock("@/lib/parent-rewards", () => ({ getParentRewardsStorage: () => ({ saveParentRewards }) }));
 
 import {
   beginApplicationRestore,
