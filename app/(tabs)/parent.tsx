@@ -5,12 +5,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { FamilyNavigation } from "@/components/family-navigation";
 import { DemoModeNotice } from "@/components/demo-mode-notice";
 import { ParentGuard } from "@/components/parent-guard";
 import { ScreenContainer } from "@/components/screen-container";
@@ -681,6 +682,8 @@ export default function ParentDashboardScreen() {
             color={LIGHT_CARD_MUTED}
           />
         </Pressable>
+
+        <FamilyNavigation />
 
         <View
           style={[

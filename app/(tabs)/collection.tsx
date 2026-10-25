@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
@@ -49,8 +50,25 @@ export default function CollectionScreen() {
       >
         <AppHeader
           eyebrow={t("game.collection.eyebrow")}
-          title={t("game.collection.title")}
+          title={t("world.title")}
         />
+
+        <View style={styles.worldLinks}>
+          {([
+            { title: t("world.exploreLink"), route: "/(tabs)/explore", testID: "world-explore" },
+            { title: t("world.missionsLink"), route: "/(tabs)/missions", testID: "world-missions" },
+          ] as const).map((item) => (
+            <Pressable
+              key={item.route}
+              testID={item.testID}
+              accessibilityRole="button"
+              onPress={() => router.push(item.route)}
+              style={({ pressed }) => [styles.worldLink, { backgroundColor: colors.primarySoft }, pressed && styles.pressed]}
+            >
+              <Text style={[styles.worldLinkText, { color: colors.foreground }]}>{item.title}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         <View
           style={[
@@ -399,6 +417,9 @@ export default function CollectionScreen() {
 }
 
 const styles = StyleSheet.create({
+  worldLinks: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  worldLink: { flex: 1, minWidth: 140, minHeight: 54, borderRadius: 20, padding: 14, justifyContent: "center" },
+  worldLinkText: { fontSize: 16, lineHeight: 22, fontWeight: "900", textAlign: "center" },
   content: {
     paddingHorizontal: 20,
     paddingTop: 18,

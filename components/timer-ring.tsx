@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import Svg, { Circle } from "react-native-svg";
 
 import { useI18n } from "@/contexts/locale-context";

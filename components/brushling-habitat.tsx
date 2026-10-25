@@ -1,5 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { readableAccent } from "@/constants/accessibility-colors";

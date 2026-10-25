@@ -1,5 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { useOptionalBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";

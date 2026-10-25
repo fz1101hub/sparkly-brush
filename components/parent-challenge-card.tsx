@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { useI18n } from "@/contexts/locale-context";
 import { createParentChallenge, isParentAnswer } from "@/lib/parent-gate";

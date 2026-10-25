@@ -1,4 +1,5 @@
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 import Svg, { Circle, Ellipse, G, Path } from "react-native-svg";
 
 import { useI18n } from "@/contexts/locale-context";

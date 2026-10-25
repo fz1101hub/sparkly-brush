@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useState } from "react";
-import { Animated, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
 import { useI18n } from "@/contexts/locale-context";
