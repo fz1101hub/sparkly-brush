@@ -93,7 +93,7 @@ export function ApprovedHome() {
           ? "home.timer.savePrevious"
           : "home.startTwoMinutes",
   );
-  const headline = care.brushlingName || themeCopy.homeHeadline;
+  const headline = care.brushlingName ? [care.brushlingName] : themeCopy.homeHeadline;
   const arcadeLast = headline[headline.length - 1] ?? "";
   const arcadeSplit = arcadeLast.lastIndexOf(" ");
   return (

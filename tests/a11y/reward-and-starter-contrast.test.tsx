@@ -97,6 +97,7 @@ vi.mock("@/contexts/audio-feedback-context", () => ({
   useAudioFeedback: () => ({ playSuccess: vi.fn() }),
 }));
 vi.mock("@/contexts/preferences-context", () => ({
+  useOptionalPreferences: () => null,
   usePreferences: () => ({ preferences: { hapticsEnabled: false } }),
 }));
 vi.mock("@/hooks/use-colors", () => ({

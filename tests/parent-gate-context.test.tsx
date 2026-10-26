@@ -11,6 +11,7 @@ import { TestLocaleProvider } from "@/tests/helpers/test-locale-provider";
 const mocks = vi.hoisted(() => ({ parentGateEnabled: false }));
 
 vi.mock("@/contexts/preferences-context", () => ({
+  useOptionalPreferences: () => null,
   usePreferences: () => ({ preferences: { parentGateEnabled: mocks.parentGateEnabled } }),
 }));
 vi.mock("@expo/vector-icons/MaterialIcons", () => ({ default: () => null }));

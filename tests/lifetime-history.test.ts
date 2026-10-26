@@ -772,7 +772,7 @@ describe("lifetime progress", () => {
         title: requirement,
         requirement,
         target: 10,
-        createdAt: now.getTime(),
+        createdAt: 0,
         deliveredAt: null,
       };
       expect(parentRewardProgressFromMetrics(reward, {

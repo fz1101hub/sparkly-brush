@@ -9,8 +9,8 @@ import { brushHeadDueDate, isCalendarDate, normalizeChildCare } from "@/lib/chil
 import { localDateKey } from "@/lib/day-progress";
 
 export function ChildCareSettings() {
-  const { preferences, ready } = usePreferences();
-  return ready ? <CareForm key={JSON.stringify(preferences.care)} /> : null;
+  const { ready } = usePreferences();
+  return ready ? <CareForm /> : null;
 }
 
 function CareForm() {
@@ -20,6 +20,7 @@ function CareForm() {
   const colors = useColors();
   const [draft, setDraft] = useState(() => normalizeChildCare(preferences.care));
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState<"care.failed" | "care.brushHeadInvalid" | null>(null);
   const locked = isActive || !!recoveredManualSession || hasPendingManualSession || saving;
   const due = brushHeadDueDate(draft.brushHeadChangedOn);
@@ -31,8 +32,9 @@ function CareForm() {
       return;
     }
     setSaving(true);
+    setSaved(false);
     setMessage(null);
-    try { await setPreference("care", normalizeChildCare(draft)); }
+    try { await setPreference("care", normalizeChildCare(draft)); setSaved(true); }
     catch { setMessage("care.failed"); }
     finally { setSaving(false); }
   };
@@ -68,6 +70,7 @@ function CareForm() {
       <Pressable accessibilityRole="button" accessibilityState={{ disabled: saving }} testID="care-save" disabled={saving} onPress={() => void save()} style={{ minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: colors.primary }}>
         <Text style={{ color: colors.primaryText, textAlign: "center", fontSize: 16 }}>{t("care.save")}</Text>
       </Pressable>
+      {saved ? <Text accessibilityLiveRegion="polite" style={{ color: colors.foreground }}>{t("care.saved")}</Text> : null}
       {message ? <Text accessibilityRole="alert" style={{ color: colors.error }}>{t(message)}</Text> : null}
     </View>
   );

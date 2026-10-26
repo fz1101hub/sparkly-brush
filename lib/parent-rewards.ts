@@ -57,8 +57,8 @@ export function parentRewardProgress(reward: ParentReward, history: BrushSession
   const eligible = history.filter((session) => session.startedAt >= reward.createdAt);
   return parentRewardProgressFromMetrics(reward, {
     completedSessions: completed(eligible).length,
-    perfectDays: perfectDays(eligible),
-    longestStreakDays: longestCompletedDayStreak(eligible),
+    perfectDays: perfectDays(eligible.filter((session) => session.timeConfidence !== "approximate")),
+    longestStreakDays: longestCompletedDayStreak(eligible.filter((session) => session.timeConfidence !== "approximate")),
   });
 }
 
