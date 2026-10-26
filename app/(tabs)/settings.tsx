@@ -9,6 +9,7 @@ import {
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { ChildCareSettings } from "@/components/child-care-settings";
 import { FamilyPicker } from "@/components/family-picker";
 import { ParentGuard } from "@/components/parent-guard";
 import { QuickGuide } from "@/components/quick-guide";
@@ -112,6 +113,7 @@ export default function SettingsScreen() {
         <ThemePicker />
         <FamilyPicker />
         <ReminderSettings />
+        <ChildCareSettings />
         <QuickGuide />
 
         <View

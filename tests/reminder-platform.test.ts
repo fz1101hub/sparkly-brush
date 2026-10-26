@@ -66,6 +66,7 @@ describe("native notification boundary", () => {
     expect(sdk.cancelScheduledNotificationAsync.mock.calls.flat()).toEqual([
       "brushlings-child-emma-morning",
       "brushlings-child-emma-evening",
+      ...Array.from({ length: 6 }, (_, index) => `brushlings-child-emma-smart-${index}`),
     ]);
   });
   it("uses the quiet channel and disables sound when requested", async () => {

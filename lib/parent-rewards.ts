@@ -54,10 +54,11 @@ function perfectDays(history: BrushSession[]): number {
 }
 
 export function parentRewardProgress(reward: ParentReward, history: BrushSession[]): ParentRewardProgress {
+  const eligible = history.filter((session) => session.startedAt >= reward.createdAt);
   return parentRewardProgressFromMetrics(reward, {
-    completedSessions: completed(history).length,
-    perfectDays: perfectDays(history),
-    longestStreakDays: longestCompletedDayStreak(history),
+    completedSessions: completed(eligible).length,
+    perfectDays: perfectDays(eligible),
+    longestStreakDays: longestCompletedDayStreak(eligible),
   });
 }
 

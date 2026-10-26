@@ -1,6 +1,7 @@
+import { useBrush } from "@/contexts/brush-context";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { AppState, Pressable, Text, View } from "react-native";
 
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -18,15 +19,25 @@ export function ReminderLifecycle() {
   const [error, setError] = useState<unknown>(null);
   const { profiles, switchProfile } = family;
   const activeId = family.active.id;
+  const { realHistory, historyReady } = useBrush();
 
-  // Also after a language change: the scheduled copy is written in the family language.
+  // Session commits and foregrounding refresh the bounded smart schedules for every child.
   useEffect(() => {
-    for (const profile of profiles) {
-      void getReminderService(profile.id)
-        .reconcile(reminderText(t, profile.name), reminderAdapter)
-        .catch(() => {});
-    }
-  }, [locale, profiles, t]);
+    if (!historyReady) return;
+    let mounted = true;
+    const reconcile = () => {
+      for (const profile of profiles) {
+        void getReminderService(profile.id)
+          .reconcile(reminderText(t, profile.name), reminderAdapter)
+          .catch((caught) => { if (mounted) setError(caught); });
+      }
+    };
+    reconcile();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") reconcile();
+    });
+    return () => { mounted = false; subscription.remove(); };
+  }, [historyReady, locale, profiles, realHistory, t]);
 
   useEffect(
     () =>

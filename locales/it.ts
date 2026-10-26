@@ -1,3 +1,4 @@
+import { careCopy } from "@/locales/care";
 import { itCore } from "@/locales/it/core";
 import { itDevice } from "@/locales/it/device";
 import { itFamily } from "@/locales/it/family";
@@ -5,6 +6,7 @@ import { itGame } from "@/locales/it/game";
 import { itUnified } from "@/locales/it/unified";
 
 export const it = {
+  ...careCopy.it,
   ...itCore,
   ...itDevice,
   ...itGame,

@@ -1,3 +1,4 @@
+import { createSessionSummary } from "@/lib/session-summary";
 import { Directory, File, Paths } from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import type { SQLiteDatabase } from "expo-sqlite";
@@ -678,6 +679,21 @@ function buildProfileStorage(profileId: string) {
 
   async function loadHistory(): Promise<BrushSession[]> {
     return (await loadHistoryBundle()).recentHistory;
+  }
+
+  async function summarizeSessions(since: number, until = Date.now()) {
+    if (!Number.isFinite(since) || since < 0 || !Number.isFinite(until) || until < since) {
+      throw new Error("Invalid session interval");
+    }
+    return queueWrite(async () => {
+      const db = await getDatabase();
+      const summary = createSessionSummary();
+      for await (const row of db.getEachAsync<SessionRow>(
+        "SELECT * FROM sessions WHERE started_at >= ? AND started_at <= ? ORDER BY started_at, id",
+        since, until,
+      )) summary.add(rowToSession(row));
+      return summary.result();
+    });
   }
 
   async function saveSessionWithLifetime(session: BrushSession): Promise<HistorySaveResult> {
@@ -1532,7 +1548,7 @@ function buildProfileStorage(profileId: string) {
       return null;
     }
   }
-  return { initializeHistoryStorage, loadHistoryBundle, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, createCompleteBackupDatabase, inspectCompleteBackupDatabase, restoreCompleteBackupDatabase, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
+  return { summarizeSessions, initializeHistoryStorage, loadHistoryBundle, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, createCompleteBackupDatabase, inspectCompleteBackupDatabase, restoreCompleteBackupDatabase, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
 }
 
 export const getBrushStorage = createProfileStore(buildProfileStorage);
@@ -1560,3 +1576,6 @@ export const loadDemoMode: ProfileStorage["loadDemoMode"] = (...args) => getBrus
 export const saveDemoMode: ProfileStorage["saveDemoMode"] = (...args) => getBrushStorage().saveDemoMode(...args);
 export const saveLastDevice: ProfileStorage["saveLastDevice"] = (...args) => getBrushStorage().saveLastDevice(...args);
 export const loadLastDevice: ProfileStorage["loadLastDevice"] = (...args) => getBrushStorage().loadLastDevice(...args);
+
+
+export const summarizeSessions: ProfileStorage["summarizeSessions"] = (...args) => getBrushStorage().summarizeSessions(...args);

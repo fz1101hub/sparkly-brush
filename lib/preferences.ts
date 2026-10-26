@@ -1,4 +1,5 @@
 import { createProfileStorage, createProfileStore, PRIMARY_PROFILE_ID } from "@/lib/profile-scope";
+import { normalizeChildCare, type ChildCareSettings } from "@/lib/child-care";
 
 import {
   isLanguagePreference,
@@ -6,6 +7,7 @@ import {
 } from "@/lib/locale-types";
 
 export type AppPreferences = {
+  care?: ChildCareSettings;
   onboardingCompleted: boolean;
   soundsEnabled: boolean;
   musicEnabled: boolean;
@@ -35,6 +37,7 @@ function familyStorage() {
 
 function normalizePreferences(parsed: Partial<AppPreferences>): AppPreferences {
   return {
+    ...(parsed.care ? { care: normalizeChildCare(parsed.care) } : {}),
     onboardingCompleted: parsed.onboardingCompleted === true,
     soundsEnabled: parsed.soundsEnabled !== false,
     musicEnabled: parsed.musicEnabled === true,

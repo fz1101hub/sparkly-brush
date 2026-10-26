@@ -1,6 +1,8 @@
+import { careCopy } from "@/locales/care";
 import type { TranslationCatalog } from "@/locales/it";
 
 export const fr = {
+  ...careCopy.fr,
   "common.back": "Retour",
   "common.cancel": "Annuler",
   "common.continue": "Continuer",

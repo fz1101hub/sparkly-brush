@@ -1,3 +1,4 @@
+import { normalizeChildCare } from "@/lib/child-care";
 import type { BrushSession } from "@/lib/brush-types";
 import {
   DEFAULT_APP_PREFERENCES,
@@ -114,6 +115,7 @@ function normalizePreferences(value: unknown): AppPreferences {
   if (!value || typeof value !== "object") return DEFAULT_APP_PREFERENCES;
   const raw = value as Partial<AppPreferences>;
   return {
+    ...(raw.care ? { care: normalizeChildCare(raw.care) } : {}),
     onboardingCompleted: raw.onboardingCompleted === true,
     soundsEnabled: raw.soundsEnabled !== false,
     musicEnabled: raw.musicEnabled === true,

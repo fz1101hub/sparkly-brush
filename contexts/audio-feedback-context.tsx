@@ -29,18 +29,18 @@ export function AudioFeedbackProvider({ children }: PropsWithChildren) {
   const musicPlayer = useAudioPlayer(null);
 
   useEffect(() => {
-    if (!ready || !preferences.musicEnabled) {
+    if (!ready || (!preferences.musicEnabled || preferences.care?.calmMode)) {
       musicPlayer.pause();
       return;
     }
     playBackgroundMusic(musicPlayer);
     return () => musicPlayer.pause();
-  }, [musicPlayer, preferences.musicEnabled, ready]);
+  }, [musicPlayer, preferences.musicEnabled, preferences.care?.calmMode, ready]);
 
   const playSuccess = useCallback(() => {
-    if (!preferences.soundsEnabled) return;
+    if (!preferences.soundsEnabled || preferences.care?.calmMode) return;
     playRewardChime(effectPlayer);
-  }, [effectPlayer, preferences.soundsEnabled]);
+  }, [effectPlayer, preferences.soundsEnabled, preferences.care?.calmMode]);
 
   const value = useMemo(() => ({ playSuccess }), [playSuccess]);
   return <AudioFeedbackContext.Provider value={value}>{children}</AudioFeedbackContext.Provider>;

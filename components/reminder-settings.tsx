@@ -144,6 +144,13 @@ export function ReminderSettings() {
           onValueChange={(value) => change("quiet", value)}
         />
       </View>
+      {([["skipCompleted", "care.smartReminders"], ["lastCall", "care.lastCall"]] as const).map(([key, label]) => (
+        <View key={key} style={styles.row}>
+          <Text style={[styles.label, { color: colors.foreground, flex: 1 }]}>{t(label)}</Text>
+          <Switch accessibilityLabel={t(label)} value={settings[key] === true} disabled={!ready || saving || !reminderAdapter.available} onValueChange={(value) => change(key, value)} style={{ minHeight: 48, minWidth: 48 }} />
+        </View>
+      ))}
+      {settings.skipCompleted || settings.lastCall ? <Text style={[styles.copy, { color: colors.muted }]}>{t("care.reminderCoverage")}</Text> : null}
       <Text style={[styles.copy, { color: colors.muted }]}>{t("reminderSettings.note")}</Text>
       <Pressable
         testID="reminders-save"

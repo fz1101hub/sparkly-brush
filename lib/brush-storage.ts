@@ -1,3 +1,4 @@
+import { createSessionSummary } from "@/lib/session-summary";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 import type { BrushSession, StoredDeviceSession, ToothbrushDevice } from "@/lib/brush-types";
@@ -179,6 +180,18 @@ function buildProfileStorage(profileId: string) {
 
   async function loadHistory(): Promise<BrushSession[]> {
     return (await loadHistoryBundle()).recentHistory;
+  }
+
+  async function summarizeSessions(since: number, until = Date.now()) {
+    if (!Number.isFinite(since) || since < 0 || !Number.isFinite(until) || until < since) {
+      throw new Error("Invalid session interval");
+    }
+    const bundle = await loadHistoryBundle();
+    const summary = createSessionSummary();
+    for (const session of bundle.recentHistory) {
+      if (session.startedAt >= since && session.startedAt <= until) summary.add(session);
+    }
+    return summary.result();
   }
 
   async function saveNewSessionUnlocked(
@@ -478,7 +491,7 @@ function buildProfileStorage(profileId: string) {
       return null;
     }
   }
-  return { loadHistoryBundle, initializeHistoryStorage, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
+  return { summarizeSessions, loadHistoryBundle, initializeHistoryStorage, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
 }
 
 export const getBrushStorage = createProfileStore(buildProfileStorage);
@@ -503,3 +516,6 @@ export const loadDemoMode: ProfileStorage["loadDemoMode"] = (...args) => getBrus
 export const saveDemoMode: ProfileStorage["saveDemoMode"] = (...args) => getBrushStorage().saveDemoMode(...args);
 export const saveLastDevice: ProfileStorage["saveLastDevice"] = (...args) => getBrushStorage().saveLastDevice(...args);
 export const loadLastDevice: ProfileStorage["loadLastDevice"] = (...args) => getBrushStorage().loadLastDevice(...args);
+
+
+export const summarizeSessions: ProfileStorage["summarizeSessions"] = (...args) => getBrushStorage().summarizeSessions(...args);

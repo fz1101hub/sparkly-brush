@@ -1,3 +1,5 @@
+import { usePreferences } from "@/contexts/preferences-context";
+import { normalizeChildCare } from "@/lib/child-care";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -28,6 +30,8 @@ import { ThemeScene } from "@/components/theme-scene";
 /** The approved Today screen (from PR #10), with the session cards of this branch. */
 export function ApprovedHome() {
   const { theme } = useThemeContext();
+  const { preferences } = usePreferences();
+  const care = normalizeChildCare(preferences.care);
   const { t } = useI18n();
   const themeCopy = themeText(theme.id, t);
   const d = APPROVED_DESIGN[theme.id];
@@ -89,7 +93,7 @@ export function ApprovedHome() {
           ? "home.timer.savePrevious"
           : "home.startTwoMinutes",
   );
-  const headline = themeCopy.homeHeadline;
+  const headline = care.brushlingName || themeCopy.homeHeadline;
   const arcadeLast = headline[headline.length - 1] ?? "";
   const arcadeSplit = arcadeLast.lastIndexOf(" ");
   return (
