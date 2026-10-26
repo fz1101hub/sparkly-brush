@@ -1,3 +1,5 @@
+import { brushingPhase, normalizeChildCare } from "@/lib/child-care";
+import { parentRecordedSession } from "@/lib/parent-recorded-session";
 import * as Haptics from "expo-haptics";
 import { AppState, Platform } from "react-native";
 import {
@@ -128,6 +130,7 @@ type BrushContextValue = {
   clearDemoData: () => Promise<void>;
   restoreRealHistory: (history: BrushSession[], progress?: LifetimeProgress, restoreId?: string) => Promise<void>;
   reloadRealHistory: () => Promise<void>;
+  recordParentSession: (period: "morning" | "evening") => Promise<void>;
   adoptRestoredHistory: (history: BrushSession[], progress: LifetimeProgress) => void;
   clearAllHistory: () => Promise<void>;
 };
@@ -191,7 +194,11 @@ export function BrushProvider({
   syncDelayMs = 450,
 }: BrushProviderProps) {
   const activeTranslate = useBrushTranslation();
-  const hapticsEnabled = useOptionalPreferences()?.preferences.hapticsEnabled ?? true;
+  const preferenceContext = useOptionalPreferences();
+  const care = normalizeChildCare(preferenceContext?.preferences.care);
+  const hapticsEnabled = (preferenceContext?.preferences.hapticsEnabled ?? true) && !care.calmMode;
+  const configuredTarget = process.env.EXPO_PUBLIC_E2E === "1" ? MANUAL_TARGET_SECONDS : care.targetSeconds;
+  const [manualTarget, setManualTarget] = useState(MANUAL_TARGET_SECONDS);
   const translateRef = useRef(activeTranslate);
   useEffect(() => {
     translateRef.current = activeTranslate;
@@ -355,6 +362,7 @@ export function BrushProvider({
       .then((saved) => {
         if (!active) return;
         checkpoint.current = saved;
+        if (saved) setManualTarget(saved.targetSeconds ?? MANUAL_TARGET_SECONDS);
         if (saved?.pending) {
           setPendingManualSession(saved.pending);
           setManualSaveErrorKey("brush.error.pendingManualSession");
@@ -607,7 +615,8 @@ export function BrushProvider({
             version: 1,
             id: session.id,
             startedAt: session.startedAt,
-            elapsedSeconds: Math.min(MANUAL_TARGET_SECONDS, session.durationSeconds),
+            elapsedSeconds: Math.min(session.targetSeconds, session.durationSeconds),
+            targetSeconds: session.targetSeconds,
             demo: sessionIsDemo,
             pending: session,
           };
@@ -660,17 +669,17 @@ export function BrushProvider({
   useEffect(() => {
     if (!manualActive) return;
     const refreshElapsed = () => {
-      setManualElapsed(Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+      setManualElapsed(Math.min(manualTarget, Math.max(0, Math.floor(
         (Date.now() - manualStartRef.current) / 1_000,
       ))));
     };
     refreshElapsed();
     const timer = setInterval(refreshElapsed, 1_000);
     return () => clearInterval(timer);
-  }, [manualActive]);
+  }, [manualActive, manualTarget]);
 
   useEffect(() => {
-    if (!manualActive || !manualActiveRef.current || manualElapsed < MANUAL_TARGET_SECONDS || manualSavedRef.current) return;
+    if (!manualActive || !manualActiveRef.current || manualElapsed < manualTarget || manualSavedRef.current) return;
     manualSavedRef.current = true;
     manualActiveRef.current = false;
     setManualActive(false);
@@ -680,12 +689,12 @@ export function BrushProvider({
       startedAt: checkpoint.current?.startedAt ?? manualStartRef.current,
       rewardPolicy: "completed-only",
       durationSeconds: manualElapsed,
-      targetSeconds: MANUAL_TARGET_SECONDS,
+      targetSeconds: manualTarget,
       completed: true,
       source: sessionIsDemo ? "demo" : "manual",
     };
     void persistManualSession(session);
-  }, [manualActive, manualElapsed, persistManualSession]);
+  }, [manualActive, manualElapsed, manualTarget, persistManualSession]);
 
   // Checkpoint every second, so a closed or killed app can offer to resume the session.
   useEffect(() => {
@@ -704,7 +713,7 @@ export function BrushProvider({
   const pauseManual = useCallback(async () => {
     const current = checkpoint.current;
     if (!manualActiveRef.current || !current || current.pending) return;
-    const elapsedSeconds = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+    const elapsedSeconds = Math.min(manualTarget, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
     )));
     const saved = { ...current, elapsedSeconds };
@@ -719,7 +728,7 @@ export function BrushProvider({
     } catch {
       setManualSaveErrorKey("brush.error.manualPausedNotSaved");
     }
-  }, [appendTranslatedLog]);
+  }, [appendTranslatedLog, manualTarget]);
 
   // Time spent with the app in the background is not brushing the child can be credited for.
   useEffect(() => {
@@ -910,6 +919,7 @@ export function BrushProvider({
         id: `${demoMode ? "demo-manual" : "manual"}-${startedAt}`,
         startedAt,
         elapsedSeconds: 0,
+        targetSeconds: configuredTarget,
         demo: demoMode,
       };
       // Written before the timer runs: a session that cannot be protected does not start.
@@ -922,6 +932,7 @@ export function BrushProvider({
         appendTranslatedLog("warning", "brush.log.liveSessionInProgress");
         return;
       }
+      setManualTarget(configuredTarget);
       manualStartRef.current = startedAt;
       manualDemoModeRef.current = demoMode;
       manualSavedRef.current = false;
@@ -950,6 +961,7 @@ export function BrushProvider({
     manualRecoveryReady,
     pendingManualSession,
     recoveredManualSession,
+    configuredTarget,
   ]);
 
   const resumeManual = useCallback(async () => {
@@ -966,6 +978,7 @@ export function BrushProvider({
       checkpoint.current = saved;
       if (liveRef.current.isBrushing) return;
       // Only the seconds brushed before the pause count: the time away is not added.
+      setManualTarget(saved.targetSeconds ?? MANUAL_TARGET_SECONDS);
       manualStartRef.current = Date.now() - saved.elapsedSeconds * 1_000;
       manualDemoModeRef.current = saved.demo;
       manualSavedRef.current = false;
@@ -1001,7 +1014,7 @@ export function BrushProvider({
     if (!manualActiveRef.current) return;
     manualActiveRef.current = false;
     setManualActive(false);
-    const duration = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+    const duration = Math.min(manualTarget, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
     )));
     if (duration >= 5 && !manualSavedRef.current) {
@@ -1012,8 +1025,8 @@ export function BrushProvider({
         startedAt: checkpoint.current?.startedAt ?? manualStartRef.current,
         rewardPolicy: "completed-only",
         durationSeconds: duration,
-        targetSeconds: MANUAL_TARGET_SECONDS,
-        completed: duration >= Math.ceil(MANUAL_TARGET_SECONDS * 0.9),
+        targetSeconds: manualTarget,
+        completed: duration >= Math.ceil(manualTarget * 0.9),
         source: sessionIsDemo ? "demo" : "manual",
       };
       await persistManualSession(session);
@@ -1030,7 +1043,7 @@ export function BrushProvider({
         }
       }
     }
-  }, [persistManualSession]);
+  }, [manualTarget, persistManualSession]);
 
   const retryManualSession = useCallback(async () => {
     if (!pendingManualSession) return;
@@ -1154,9 +1167,24 @@ export function BrushProvider({
   }, [appendTranslatedLog, demoMode]);
 
   const isActive = live.isBrushing || manualActive;
+  const recordParentSession = useCallback(async (period: "morning" | "evening") => {
+    if (demoMode || manualActiveRef.current || liveRef.current.isBrushing || pendingManualSession || startingManual.current) {
+      throw new LocalizedError("family.switch.error.sessionActive");
+    }
+    const session = parentRecordedSession(period, care.targetSeconds);
+    const today = new Date(session.startedAt);
+    today.setHours(0, 0, 0, 0);
+    const existing = await storage.current.summarizeSessions(today.getTime());
+    const alreadyCompleted = existing.days.some((day) => period === "morning" ? day.morning : day.evening);
+    if (alreadyCompleted) return;
+    const next = await storage.current.saveSessionWithLifetime(session);
+    setRealHistory(next.recentHistory);
+    setLifetimeProgress(next.lifetimeProgress);
+    if (next.event) setProgressEvent(next.event);
+  }, [care.targetSeconds, demoMode, pendingManualSession]);
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
-  const activeTarget = live.isBrushing ? live.routineSeconds : MANUAL_TARGET_SECONDS;
-  const activeZone = Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30));
+  const activeTarget = live.isBrushing ? live.routineSeconds : manualActive || recoveredManualSession ? manualTarget : configuredTarget;
+  const activeZone = brushingPhase(activeElapsed, activeTarget).zone;
 
   const value = useMemo<BrushContextValue>(
     () => ({
@@ -1204,6 +1232,7 @@ export function BrushProvider({
       clearDemoData,
       restoreRealHistory,
       reloadRealHistory,
+      recordParentSession,
       adoptRestoredHistory,
       clearAllHistory,
     }),
@@ -1242,6 +1271,7 @@ export function BrushProvider({
       realHistory,
       recoveredManualSession,
       reloadRealHistory,
+      recordParentSession,
       adoptRestoredHistory,
       restoreRealHistory,
       resumeManual,

@@ -1,0 +1,48 @@
+name: Proposed functions
+
+on:
+  push:
+    branches: [feature/proposed-functions]
+  pull_request:
+    branches: [ccr-2641c3c7-7vb0o0]
+
+concurrency:
+  group: proposed-functions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - if: always()
+        run: pnpm test
+      - if: always()
+        run: pnpm lint
+      - if: always()
+        run: node --import ./scripts/offline-hooks.mjs tests/offline/care.test.mjs
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Routine browser journeys
+        run: pnpm exec playwright test -c playwright.functional.config.ts e2e/functional/new-routines.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proposed-functions-browser
+          path: artifacts/playwright-functional
+      - if: always()
+        run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-proposed-web

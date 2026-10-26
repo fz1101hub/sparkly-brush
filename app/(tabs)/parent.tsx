@@ -11,6 +11,8 @@ import {
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { ParentRecordedSession } from "@/components/parent-recorded-session";
+import { DentalReport } from "@/components/dental-report";
 import { FamilyNavigation } from "@/components/family-navigation";
 import { DemoModeNotice } from "@/components/demo-mode-notice";
 import { ParentGuard } from "@/components/parent-guard";
@@ -171,6 +173,8 @@ export default function ParentDashboardScreen() {
             {t("family.parent.privacy")}
           </Text>
         </View>
+
+        <Text style={{ color: colors.foreground }}>{t("care.rewardSince")}</Text>
 
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: "#E7F7F1" }]}>
@@ -683,6 +687,8 @@ export default function ParentDashboardScreen() {
           />
         </Pressable>
 
+        <ParentRecordedSession />
+        <DentalReport />
         <FamilyNavigation />
 
         <View

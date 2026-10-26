@@ -1,3 +1,4 @@
+import { useOptionalPreferences } from "@/contexts/preferences-context";
 import { useEffect, useState } from "react";
 import { AccessibilityInfo } from "react-native";
 
@@ -6,6 +7,7 @@ import { AccessibilityInfo } from "react-native";
  * `prefers-reduced-motion` media query, iOS and Android from the accessibility setting.
  */
 export function useReducedMotion(): boolean {
+  const calm = useOptionalPreferences()?.preferences.care?.calmMode === true;
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -22,5 +24,5 @@ export function useReducedMotion(): boolean {
     };
   }, []);
 
-  return reduced;
+  return reduced || calm;
 }

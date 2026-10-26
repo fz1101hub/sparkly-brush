@@ -19,6 +19,8 @@ export type ManualCheckpoint = {
   id: string;
   startedAt: number;
   elapsedSeconds: number;
+  /** Captured at start: a later preference change cannot alter a recovered session. */
+  targetSeconds?: number;
   demo: boolean;
   pending?: BrushSession;
 };
@@ -48,8 +50,10 @@ export function parseManualCheckpoint(raw: string | null): ManualCheckpoint | nu
   } catch {
     throw new LocalizedError("brush.error.manualJournalUnreadable");
   }
+  const target = value?.targetSeconds ?? MANUAL_TARGET_SECONDS;
   if (
-    value?.version !== 1
+    ![60, 90, 120, ...(process.env.EXPO_PUBLIC_E2E === "1" ? [5] : [])].includes(target)
+    || value?.version !== 1
     || typeof value.id !== "string"
     || !value.id
     || value.id.length > 512
@@ -57,7 +61,7 @@ export function parseManualCheckpoint(raw: string | null): ManualCheckpoint | nu
     || value.startedAt <= 0
     || !Number.isInteger(value.elapsedSeconds)
     || value.elapsedSeconds < 0
-    || value.elapsedSeconds > MANUAL_TARGET_SECONDS
+    || value.elapsedSeconds > target
     || typeof value.demo !== "boolean"
   ) {
     throw new LocalizedError("brush.error.manualJournalUnreadable");
@@ -69,9 +73,9 @@ export function parseManualCheckpoint(raw: string | null): ManualCheckpoint | nu
       || value.pending.id !== value.id
       || value.pending.startedAt !== value.startedAt
       || value.pending.durationSeconds !== value.elapsedSeconds
-      || value.pending.targetSeconds !== MANUAL_TARGET_SECONDS
+      || value.pending.targetSeconds !== target
       || value.pending.rewardPolicy !== "completed-only"
-      || value.pending.completed !== value.elapsedSeconds >= Math.ceil(MANUAL_TARGET_SECONDS * 0.9)
+      || value.pending.completed !== value.elapsedSeconds >= Math.ceil(target * 0.9)
       || value.pending.source !== (value.demo ? "demo" : "manual"))
   ) {
     throw new LocalizedError("brush.error.manualJournalUnreadable");
@@ -84,7 +88,8 @@ function checkpointFromPending(session: BrushSession): ManualCheckpoint {
     version: 1,
     id: session.id,
     startedAt: session.startedAt,
-    elapsedSeconds: Math.min(MANUAL_TARGET_SECONDS, session.durationSeconds),
+    elapsedSeconds: Math.min(session.targetSeconds, session.durationSeconds),
+    targetSeconds: session.targetSeconds,
     demo: session.source === "demo",
     pending: session,
   };

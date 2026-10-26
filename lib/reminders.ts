@@ -4,12 +4,16 @@ import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 /** Two daily local notifications per child (from PR #10); nothing leaves the phone. */
 export type ReminderSettings = {
+  skipCompleted?: boolean;
+  lastCall?: boolean;
   enabled: boolean;
   morning: string;
   evening: string;
   quiet: boolean;
 };
 export const DEFAULT_REMINDERS: ReminderSettings = {
+  skipCompleted: false,
+  lastCall: false,
   enabled: false,
   morning: "08:00",
   evening: "20:00",
@@ -19,6 +23,7 @@ export const REMINDERS_KEY = "sparkly-brush.reminders.v1";
 
 /** Notification copy in the family language, prepared by the caller. */
 export type ReminderText = {
+  lastCallBody?: string;
   title: string;
   body: string;
   channel: string;
@@ -30,6 +35,7 @@ export function reminderText(
   name: string,
 ): ReminderText {
   return {
+    lastCallBody: t("care.lastCallBody"),
     title: t("reminders.notification.title", { name }),
     body: t("reminders.notification.body"),
     channel: t("reminders.channel.normal"),
@@ -58,11 +64,15 @@ export function validateReminders(value: ReminderSettings): ReminderSettings {
     typeof value.evening !== "string" ||
     !TIME.test(value.morning) ||
     !TIME.test(value.evening)
+    || (value.skipCompleted !== undefined && typeof value.skipCompleted !== "boolean")
+    || (value.lastCall !== undefined && typeof value.lastCall !== "boolean")
   ) {
     throw new LocalizedError("reminders.error.invalidTime");
   }
   if (value.morning === value.evening) throw new LocalizedError("reminders.error.sameTime");
   return {
+    ...(value.skipCompleted !== undefined ? { skipCompleted: value.skipCompleted } : {}),
+    ...(value.lastCall !== undefined ? { lastCall: value.lastCall } : {}),
     enabled: value.enabled,
     morning: value.morning,
     evening: value.evening,

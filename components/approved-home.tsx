@@ -1,3 +1,5 @@
+import { usePreferences } from "@/contexts/preferences-context";
+import { normalizeChildCare } from "@/lib/child-care";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -28,6 +30,8 @@ import { ThemeScene } from "@/components/theme-scene";
 /** The approved Today screen (from PR #10), with the session cards of this branch. */
 export function ApprovedHome() {
   const { theme } = useThemeContext();
+  const { preferences } = usePreferences();
+  const care = normalizeChildCare(preferences.care);
   const { t } = useI18n();
   const themeCopy = themeText(theme.id, t);
   const d = APPROVED_DESIGN[theme.id];
@@ -39,6 +43,7 @@ export function ApprovedHome() {
     Math.max(680, screenHeight - insets.top - 82),
   );
   const [error, setError] = useState<unknown>(null);
+  const [showCaregiver, setShowCaregiver] = useState(false);
   const [logoWidth, setLogoWidth] = useState(Math.min(width * 0.5, 222));
   const [contentTop, setContentTop] = useState<number | null>(null);
   const brush = useBrush();
@@ -80,7 +85,7 @@ export function ApprovedHome() {
       setError(caught);
     }
   };
-  const stateCopy = t(
+  const stateCopyDefault = t(
     brush.manualStartPending
       ? "home.timer.preparing"
       : brush.isSavingManualSession
@@ -89,7 +94,8 @@ export function ApprovedHome() {
           ? "home.timer.savePrevious"
           : "home.startTwoMinutes",
   );
-  const headline = themeCopy.homeHeadline;
+  const stateCopy = brush.manualStartPending || brush.isSavingManualSession || brush.hasPendingManualSession ? stateCopyDefault : t("care.startTimer", { seconds: care.targetSeconds });
+  const headline = care.brushlingName ? [care.brushlingName] : themeCopy.homeHeadline;
   const arcadeLast = headline[headline.length - 1] ?? "";
   const arcadeSplit = arcadeLast.lastIndexOf(" ");
   return (
@@ -567,6 +573,13 @@ export function ApprovedHome() {
                 </DesignButton>
               </View>
             ) : null}
+            {care.vacationMode ? <Text style={{ color: d.ink, fontSize: 14, textAlign: "center" }}>{t("care.vacationBanner")}</Text> : null}
+            {care.babysitterInstructions ? <View>
+              <Pressable accessibilityRole="button" accessibilityState={{ expanded: showCaregiver }} onPress={() => setShowCaregiver((old) => !old)} style={{ minHeight: 48, justifyContent: "center" }}>
+                <Text style={{ color: d.ink, fontSize: 14, textAlign: "center" }}>{t("care.babysitter")}</Text>
+              </Pressable>
+              {showCaregiver ? <Text style={{ color: d.ink, fontSize: 16, lineHeight: 24 }}>{care.babysitterInstructions}</Text> : null}
+            </View> : null}
             <DesignButton
               testID="manual-start-stop"
               label={t("home.timer.startManualLabel")}

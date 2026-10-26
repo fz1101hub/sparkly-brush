@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 
 import { LocalizedError } from "@/lib/localized-error";
 import { reminderIdentifiers, type ReminderAdapter } from "@/lib/reminders";
+import { planSmartReminders, smartReminderIdentifiers } from "@/lib/reminder-plan";
+import { getBrushStorage } from "@/lib/brush-storage";
 
 const NORMAL_CHANNEL = "brushlings-routine";
 const QUIET_CHANNEL = "brushlings-routine-quiet";
@@ -28,8 +30,9 @@ export const reminderAdapter: ReminderAdapter = {
   permissionGranted: async () => isAllowed(await Notifications.getPermissionsAsync()),
   replace: async (profileId, settings, requestPermission, text) => {
     const identifiers = reminderIdentifiers(profileId);
+    const allIdentifiers = [...identifiers, ...smartReminderIdentifiers(profileId)];
     if (!settings.enabled) {
-      await cancelAll(identifiers);
+      await cancelAll(allIdentifiers);
       return;
     }
     if (Platform.OS === "android") {
@@ -52,10 +55,34 @@ export const reminderAdapter: ReminderAdapter = {
       });
     }
     if (!isAllowed(permission)) {
-      await cancelAll(identifiers);
+      await cancelAll(allIdentifiers);
       throw new LocalizedError("reminders.error.permissionDenied");
     }
-    await cancelAll(identifiers);
+    if (settings.skipCompleted || settings.lastCall) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const summary = await getBrushStorage(profileId).summarizeSessions(today.getTime());
+      const planned = planSmartReminders(profileId, settings, summary.days);
+      await cancelAll(allIdentifiers);
+      for (const reminder of planned) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: reminder.identifier,
+          content: {
+            title: text.title,
+            body: reminder.period === "last-call" ? text.lastCallBody ?? text.body : text.body,
+            sound: settings.quiet ? false : "default",
+            data: { brushlingsProfile: profileId, quiet: settings.quiet },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: reminder.at,
+            channelId: settings.quiet ? QUIET_CHANNEL : NORMAL_CHANNEL,
+          },
+        });
+      }
+      return;
+    }
+    await cancelAll(allIdentifiers);
     for (const [index, time] of [settings.morning, settings.evening].entries()) {
       const [hour, minute] = time.split(":").map(Number);
       await Notifications.scheduleNotificationAsync({

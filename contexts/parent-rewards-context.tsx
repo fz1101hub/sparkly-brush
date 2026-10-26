@@ -1,3 +1,4 @@
+import { getBrushStorage } from "@/lib/brush-storage";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
@@ -29,6 +30,7 @@ const ParentRewardsContext = createContext<ParentRewardsContextValue | null>(nul
 export function ParentRewardsProvider({ children }: PropsWithChildren) {
   // Captured at mount: a late write after a child switch must stay in this child's records.
   const store = useRef(getParentRewardsStorage());
+  const historyStore = useRef(getBrushStorage());
   const { history, lifetimeProgress, demoMode } = useBrush();
   const [definitions, setDefinitions] = useState<ParentReward[]>([]);
   const [ready, setReady] = useState(false);
@@ -37,15 +39,30 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
     void store.current.loadParentRewards().then(setDefinitions).finally(() => setReady(true));
   }, []);
 
+  const [rewardMetrics, setRewardMetrics] = useState<Record<string, { completedSessions: number; perfectDays: number; longestStreakDays: number }>>({});
+
+  useEffect(() => {
+    if (demoMode) return;
+    let cancelled = false;
+    void Promise.all(definitions.map(async (reward) => {
+      const metrics = await historyStore.current.summarizeSessions(reward.createdAt);
+      return [reward.id, metrics] as const;
+    })).then((entries) => {
+      if (!cancelled) setRewardMetrics(Object.fromEntries(entries));
+    }).catch(() => {
+      // Never unlock a prize using stale lifetime totals when the archive cannot be read.
+      if (!cancelled) setRewardMetrics({});
+    });
+    return () => { cancelled = true; };
+  }, [definitions, demoMode, lifetimeProgress]);
+
   const rewards = useMemo(
     () => definitions.map((reward) => demoMode
       ? parentRewardProgress(reward, history)
-      : parentRewardProgressFromMetrics(reward, {
-        completedSessions: lifetimeProgress.completedSessions,
-        perfectDays: lifetimeProgress.perfectDays,
-        longestStreakDays: lifetimeProgress.longestStreakDays,
+      : parentRewardProgressFromMetrics(reward, rewardMetrics[reward.id] ?? {
+        completedSessions: 0, perfectDays: 0, longestStreakDays: 0,
       })),
-    [definitions, demoMode, history, lifetimeProgress],
+    [definitions, demoMode, history, rewardMetrics],
   );
 
   const nextReward = useMemo(
@@ -59,7 +76,7 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
     target: number,
   ) => {
     const cleanTitle = title.trim().slice(0, MAX_PARENT_REWARD_TITLE_LENGTH);
-    if (!cleanTitle || target < 1 || definitions.length >= MAX_PARENT_REWARDS) return;
+    if (!cleanTitle || !Number.isSafeInteger(target) || target < 1 || definitions.length >= MAX_PARENT_REWARDS) return;
     const next: ParentReward[] = [
       ...definitions,
       {
@@ -71,26 +88,26 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
         deliveredAt: null,
       },
     ];
-    setDefinitions(next);
     await store.current.saveParentRewards(next);
+    setDefinitions(next);
   }, [definitions]);
 
   const removeReward = useCallback(async (id: string) => {
     const next = definitions.filter((reward) => reward.id !== id);
-    setDefinitions(next);
     await store.current.saveParentRewards(next);
+    setDefinitions(next);
   }, [definitions]);
 
   const markDelivered = useCallback(async (id: string) => {
     if (demoMode) return;
     const next = definitions.map((reward) => reward.id === id ? { ...reward, deliveredAt: Date.now() } : reward);
-    setDefinitions(next);
     await store.current.saveParentRewards(next);
+    setDefinitions(next);
   }, [definitions, demoMode]);
 
   const restoreRewards = useCallback(async (restored: ParentReward[]) => {
-    setDefinitions(restored);
     await store.current.saveParentRewards(restored);
+    setDefinitions(restored);
   }, []);
 
   const value = useMemo(() => ({ rewards, definitions, nextReward, ready, addReward, removeReward, markDelivered, restoreRewards }), [

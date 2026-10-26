@@ -1,3 +1,5 @@
+import { usePreferences } from "@/contexts/preferences-context";
+import { normalizeChildCare } from "@/lib/child-care";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -23,6 +25,8 @@ import { useThemeContext } from "@/lib/theme-provider";
 /** The approved session screen (from PR #10): countdown, mouth zones and the companion. */
 export function ApprovedSession() {
   const { theme } = useThemeContext();
+  const { preferences } = usePreferences();
+  const care = normalizeChildCare(preferences.care);
   const { locale, t } = useI18n();
   const d = APPROVED_DESIGN[theme.id];
   const { width, height: windowHeight, fontScale } = useWindowDimensions();
@@ -86,7 +90,7 @@ export function ApprovedSession() {
           .padStart(2, "0"),
       )
       .join("");
-  const name = getEvolution(selected, stats.level).name;
+  const name = care.brushlingName || getEvolution(selected, stats.level).name;
   const zoneNames = [
     t("timer.zone.upperRight"),
     t("timer.zone.upperLeft"),
@@ -202,6 +206,9 @@ export function ApprovedSession() {
           </Pressable>
           <View style={{ width: 24 }} />
         </View>
+        {care.brushTogether ? <Text style={{ color: d.ink, fontSize: 16 }}>
+          {t("care.parentTimer", { seconds: Math.max(0, brush.activeTarget - brush.activeElapsed) })}
+        </Text> : null}
         <TimerRing
           elapsed={brush.activeElapsed}
           target={brush.activeTarget}
