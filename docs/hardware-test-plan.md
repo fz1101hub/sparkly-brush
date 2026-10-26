@@ -59,3 +59,17 @@ Per ogni piattaforma conservare il report generato e gli screenshot necessari a 
 ## Esito attuale
 
 La copertura automatica usa un client BLE finto e verifica scansione/connessione simulata, annullamento scan/connect/sync, update batteria, rimozione subscription, reconnect, callback stale anche con errore, sync vincolata al manico originario, backfill contiguo, rollover `uint16`, record mancante, clock relativo, due stop ravvicinati, fallback e aggiornamento provider. Verifica inoltre normalizzazione della checklist, limiti delle note e redazione di UUID/MAC nel report. **La retention reale del HX6322/04 e l’intera matrice fisica restano da misurare sul manico, su iOS e su Android.** Nessun risultato hardware è dichiarato finché la tabella non viene compilata.
+# Nuove verifiche della roadmap del 26 ottobre 2026
+
+Queste prove si aggiungono alla matrice esistente. Sono procedure da eseguire, non esiti già ottenuti.
+
+| Caso | Procedura | Esito atteso |
+|---|---|---|
+| Durata guidata | Nel profilo A impostare 60 s; avviare, mettere in pausa, chiudere e riaprire l'app. Provare anche 90 e 120 s. | Il recupero conserva la durata iniziale; quattro zone proporzionali; completamento e durata archiviati coerenti. Il valore GATT del manico non viene riscritto. |
+| Profilo e backup | Dare un nome al Brushling, impostare modalità tranquilla e istruzioni babysitter; cambiare profilo, esportare e ripristinare il file sul secondo telefono. | Ogni bambino conserva i propri valori; tutte le nuove preferenze sono nel backup; una scrittura fallita non viene presentata come riuscita. |
+| Promemoria intelligente | Attivare le opzioni e completare mattina/sera prima dell'orario programmato. Bloccare il telefono; ripetere dopo riavvio e cambio fuso. | Gli avvisi della routine completata vengono rimossi dopo la sincronizzazione con l'app; il richiamo delle 21 manca dopo la sera completata. Nessuna promessa di rilevare una spazzolata BLE non ancora sincronizzata. |
+| Limite notifiche | Usare otto profili con richiamo delle 21; ispezionare le notifiche pendenti e aprire l'app il giorno dopo. | Al massimo 48 notifiche intelligenti; rinnovo della finestra di due giorni. Le opzioni e questo limite sono spiegati nelle impostazioni. |
+| Sessione senza telefono | Con timer e manico fermi, registrare una mattina realmente fatta; ritentare e riavviare. | Una sola sessione manuale, nessun cursore BLE modificato, progressi persistenti. Non registrare manualmente un record già presente nel manico. |
+| Modalità tranquilla | Attivare la preferenza; avviare il timer e completare una sessione. Provare anche VoiceOver/TalkBack e Riduci movimento di sistema. | Niente musica, chime, haptic o animazioni del compagno; i controlli restano etichettati. |
+| Testina e batteria | Inserire un cambio testina a fine mese e collegare un manico con batteria ≤20%. | Scadenza a tre mesi di calendario senza data impossibile; avviso batteria basato sul valore letto. Nessun consumo motore inventato. |
+| Rapporti | Archivio >120 sessioni, report 30/90 giorni, invio CSV e annullamento del foglio di condivisione. Provare anche backup legacy parziale. | Rapporti da SQLite completo, nessun identificativo BLE; giorni senza righe presenti nel calendario; incompletezza dichiarata. Aprire il CSV sul dispositivo ricevente e controllare accenti e celle. |

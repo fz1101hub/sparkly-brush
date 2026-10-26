@@ -46,7 +46,7 @@ function CareForm() {
       <Text style={{ color: colors.foreground }}>{t("care.duration")}</Text>
       <View accessibilityRole="radiogroup" accessibilityLabel={t("care.duration")} style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {([60, 90, 120] as const).map((seconds) => (
-          <Pressable key={seconds} accessibilityRole="radio" accessibilityState={{ checked: draft.targetSeconds === seconds, disabled: locked }} disabled={locked} onPress={() => setDraft((old) => ({ ...old, targetSeconds: seconds }))} style={{ minHeight: 48, padding: 12, borderWidth: 2, borderColor: draft.targetSeconds === seconds ? colors.primary : colors.border, borderRadius: 12 }}>
+          <Pressable key={seconds} accessibilityRole="radio" aria-checked={draft.targetSeconds === seconds} accessibilityState={{ checked: draft.targetSeconds === seconds, disabled: locked }} disabled={locked} onPress={() => setDraft((old) => ({ ...old, targetSeconds: seconds }))} style={{ minHeight: 48, padding: 12, borderWidth: 2, borderColor: draft.targetSeconds === seconds ? colors.primary : colors.border, borderRadius: 12 }}>
             <Text style={{ color: colors.foreground }}>{t("care.seconds", { seconds })}</Text>
           </Pressable>
         ))}

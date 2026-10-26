@@ -9,6 +9,7 @@ import { records, failWrite } from "./storage.mjs";
 import { planSmartReminders } from "../../lib/reminder-plan.ts";
 import { parentRecordedSession } from "../../lib/parent-recorded-session.ts";
 import { csvCell, dentalReportCsv, monthlyRoutineTrend, reportWindow } from "../../lib/dental-report.ts";
+import { LEARNING_DRAFTS, approvedLearningContent, learningContentApproved } from "../../lib/learning-content.ts";
 
 const session = (id, day, hour, overrides = {}) => ({ id, startedAt: new Date(2026, 9, day, hour).getTime(), durationSeconds: 120, targetSeconds: 120, completed: true, source: "manual", ...overrides });
 
@@ -150,4 +151,16 @@ test("monthly trends keep empty months and use elapsed days for the current mont
   assert.equal(trend[0].rate, 0);
   assert.equal(trend[11].days, 26);
   assert.equal(trend[11].rate, 1 / 26);
+});
+
+test("clinical drafts remain inactive in all five languages", () => {
+  for (const locale of ["it", "en", "de", "fr", "es"]) assert.deepEqual(approvedLearningContent(locale), []);
+  assert.ok(LEARNING_DRAFTS.every((draft) => draft.status === "draft" && draft.review === null));
+  const draft = LEARNING_DRAFTS[0];
+  assert.equal(learningContentApproved({ ...draft, status: "approved" }, "it"), false);
+  const review = { professional: "Test professional", role: "pediatric-dentist", reviewedVersion: draft.version, reviewedAt: 1, approvedLocales: ["it"] };
+  assert.equal(learningContentApproved({ ...draft, status: "approved", review }, "it"), true);
+  assert.equal(learningContentApproved({ ...draft, status: "approved", review }, "en"), false);
+  assert.equal(learningContentApproved({ ...draft, version: draft.version + 1, status: "approved", review }, "it"), false);
+  assert.equal(learningContentApproved({ ...draft, status: "approved", review: { ...review, reviewedAt: Date.now() + 100000 } }, "it"), false);
 });

@@ -42,9 +42,8 @@ test("a parent records one brushing session and exports the full 30-day calendar
   await page.goto("/parent");
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Registra stamattina", exact: true }).click();
-  await expect(page.getByTestId("session-reward-modal")).toBeVisible();
-  await page.getByTestId("session-reward-dismiss").click();
   await expect(page.getByText("Sessione registrata.", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 sessioni complete · durata media 120s", { exact: true })).toBeVisible();
   const downloadEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Esporta CSV", exact: true }).click();
   const download = await downloadEvent;

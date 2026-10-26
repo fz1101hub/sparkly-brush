@@ -67,7 +67,7 @@ export function DentalReport() {
   return <View style={{ gap: 12, padding: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 22 }}>
     <Text accessibilityRole="header" style={{ color: colors.foreground, fontSize: 22, fontWeight: "800" }}>{t("care.reportTitle")}</Text>
     <View accessibilityRole="radiogroup" accessibilityLabel={t("care.reportTitle")} style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-      {([30, 90] as const).map((value) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: days === value }} onPress={() => { setDays(value); setShared(false); }} style={{ minHeight: 48, padding: 12, borderRadius: 12, borderWidth: 2, borderColor: days === value ? colors.primary : colors.border }}>
+      {([30, 90] as const).map((value) => <Pressable key={value} accessibilityRole="radio" aria-checked={days === value} accessibilityState={{ checked: days === value }} onPress={() => { setDays(value); setShared(false); }} style={{ minHeight: 48, padding: 12, borderRadius: 12, borderWidth: 2, borderColor: days === value ? colors.primary : colors.border }}>
         <Text style={{ color: colors.foreground }}>{t("care.reportDays", { days: value })}</Text>
       </Pressable>)}
     </View>
