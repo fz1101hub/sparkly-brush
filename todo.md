@@ -4,6 +4,8 @@ Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs
 
 **25 ottobre 2026**: la PR #10 (temi, profili familiari, promemoria, sessioni recuperabili) è stata unificata su questo ramo Expo 57 con le correzioni di audit, tradotta in cinque lingue; [dettagli e scelte](docs/unificazione-pr10-2026-10-25.md).
 
+**26 ottobre 2026**: [funzioni proposte e non ancora sviluppate](docs/funzioni-proposte-2026-10-26.md), 76 voci con stime, ordine consigliato e domande aperte.
+
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|
 | 1 | Doppi accrediti fallback BLE | Corretto nel candidato | Coda bounded multi-fallback, correlazione col successore GATT, compensazione contabile e teardown serializzato. |
