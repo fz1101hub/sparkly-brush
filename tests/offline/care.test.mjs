@@ -8,6 +8,7 @@ import { getPreferencesStorage } from "../../lib/preferences.ts";
 import { records, failWrite } from "./storage.mjs";
 import { planSmartReminders } from "../../lib/reminder-plan.ts";
 import { parentRecordedSession } from "../../lib/parent-recorded-session.ts";
+import { csvCell, dentalReportCsv, monthlyRoutineTrend, reportWindow } from "../../lib/dental-report.ts";
 
 const session = (id, day, hour, overrides = {}) => ({ id, startedAt: new Date(2026, 9, day, hour).getTime(), durationSeconds: 120, targetSeconds: 120, completed: true, source: "manual", ...overrides });
 
@@ -124,4 +125,29 @@ test("parent records reject future evenings and retain the same identity on retr
   assert.equal(first.source, "manual");
   assert.equal(first.deviceSessionId, undefined);
   assert.equal(first.completed, true);
+});
+
+test("the dental report exports every civil day, including missing routines, without CSV formulas", () => {
+  const summary = createSessionSummary();
+  summary.add(session("a", 26, 8));
+  const now = new Date(2026, 9, 26, 12).getTime();
+  const csv = dentalReportCsv("=HYPERLINK(\"bad\")", summary.result(), { name: "Child", date: "Date", morning: "Morning", evening: "Evening", sessions: "Sessions", yes: "Yes", no: "No", average: "Average", total: "Total" }, reportWindow(now, 30));
+  assert.ok(csv.includes("' =") === false);
+  assert.ok(csv.includes("'=HYPERLINK"));
+  assert.equal(csv.split("\r\n").filter((row) => /^"2026-/.test(row)).length, 30);
+  assert.ok(csv.includes('"2026-10-25","No","No","0"'));
+  assert.ok(csv.includes('"2026-10-26","Yes","No","1"'));
+  assert.equal(csvCell('a,"b"'), '"a,""b"""');
+});
+
+test("monthly trends keep empty months and use elapsed days for the current month", () => {
+  const summary = createSessionSummary();
+  summary.add(session("a", 26, 8));
+  summary.add(session("b", 26, 20));
+  const trend = monthlyRoutineTrend(summary.result(), new Date(2026, 9, 26, 21).getTime());
+  assert.equal(trend.length, 12);
+  assert.equal(trend[0].key, "2025-11");
+  assert.equal(trend[0].rate, 0);
+  assert.equal(trend[11].days, 26);
+  assert.equal(trend[11].rate, 1 / 26);
 });

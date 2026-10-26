@@ -35,5 +35,14 @@ jobs:
         run: pnpm lint
       - if: always()
         run: node --import ./scripts/offline-hooks.mjs tests/offline/care.test.mjs
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Routine browser journeys
+        run: pnpm exec playwright test -c playwright.functional.config.ts e2e/functional/new-routines.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proposed-functions-browser
+          path: artifacts/playwright-functional
       - if: always()
         run: pnpm exec expo export --platform web --output-dir /tmp/sparkly-proposed-web

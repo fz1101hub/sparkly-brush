@@ -692,7 +692,7 @@ function buildProfileStorage(profileId: string) {
         "SELECT * FROM sessions WHERE started_at >= ? AND started_at <= ? ORDER BY started_at, id",
         since, until,
       )) summary.add(rowToSession(row));
-      return summary.result();
+      return { ...summary.result(), historyComplete: await readHistoryComplete(db) };
     });
   }
 

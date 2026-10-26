@@ -191,7 +191,7 @@ function buildProfileStorage(profileId: string) {
     for (const session of bundle.recentHistory) {
       if (session.startedAt >= since && session.startedAt <= until) summary.add(session);
     }
-    return summary.result();
+    return { ...summary.result(), historyComplete: bundle.lifetimeProgress.attemptedSessions <= bundle.recentHistory.length || bundle.recentHistory.some((session) => session.startedAt <= since) };
   }
 
   async function saveNewSessionUnlocked(
