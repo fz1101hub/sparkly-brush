@@ -29,6 +29,7 @@ const ADDITIONAL_ROUTES = [
   { name: "square", path: "/square", title: "Piazza del villaggio" },
   { name: "library", path: "/library", title: "Biblioteca delle storie" },
   { name: "tooth-mouse", path: "/tooth-mouse", title: "Casa del topolino" },
+  { name: "babysitter", path: "/babysitter", title: "Modalità babysitter" },
   { name: "not-found", path: "/collegamento-inesistente", title: "Pagina non trovata" },
 ] as const;
 
@@ -297,6 +298,17 @@ test.describe("WCAG automatic audit of reward states", () => {
       await scan(page, testInfo, `${colorScheme}-reward-flarello`);
     });
   }
+
+  test("evening good-night screen", async ({ page }, testInfo) => {
+    await page.clock.install({ time: new Date(2026, 9, 27, 20, 15) });
+    await completeFirstRun(page);
+    await page.getByTestId("manual-start-stop").click();
+    await page.clock.fastForward(120_000);
+    await expect(page.getByTestId("session-reward-modal")).toBeVisible();
+    await page.getByTestId("session-reward-dismiss").click();
+    await expect(page.getByTestId("goodnight-overlay")).toBeVisible();
+    await scan(page, testInfo, "goodnight");
+  });
 });
 
 test.describe("WCAG automatic audit in demo mode", () => {

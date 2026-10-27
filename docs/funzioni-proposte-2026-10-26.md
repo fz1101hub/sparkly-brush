@@ -54,8 +54,8 @@ Richiesta del 27 ottobre: sviluppare tutte le voci dell'elenco, con riprese auto
 
 | Lotto | Voci | Stato |
 |---|---|---|
-| 1. Promemoria, serie e premi | 59, 60, 62, 16, 17, 49, 57, 66 | ☐ |
-| 2. Dopo la spazzolata e famiglia | 22, 23, 58, 56, 55, 27, 32, 34, 70 | ☐ |
+| 1. Promemoria, serie e premi | 59, 60, 62, 16, 17, 49, 57, 66 | ☑ `82ed4cd` |
+| 2. Dopo la spazzolata e famiglia | 22, 23, 58, 56, 55, 27, 32, 34, 70 | ☑ |
 | 3. Manico e sicurezza | 35 (batteria e testina per data), 36, 37, 50, 65 | ☐ |
 | 4. Motivazione nel tempo | 12, 13, 51, 14, 15, 18, 19, 41 | ☐ |
 | 5. Stampe e rapporti | 20, 67, 29, 30, 31, 33, 63, 64 | ☐ |

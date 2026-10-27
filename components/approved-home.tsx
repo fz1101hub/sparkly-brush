@@ -5,6 +5,7 @@ import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedBrushling } from "@/components/animated-brushling";
+import { HomeExtras } from "@/components/home-extras";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { DemoModeNotice } from "@/components/demo-mode-notice";
 import {
@@ -582,6 +583,7 @@ export function ApprovedHome() {
               {stateCopy}
               {arcade || theme.id === "adventure" ? "  →" : ""}
             </DesignButton>
+            <HomeExtras ink={d.ink} />
             {braces ? (
               <Pressable
                 testID="home-braces"

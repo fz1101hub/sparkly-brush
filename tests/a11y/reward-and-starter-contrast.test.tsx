@@ -121,6 +121,7 @@ vi.mock("@/contexts/brushling-context", async () => {
         reward: mocks.reward,
         discovery: null,
         progressReward: null,
+        stats: { completedSessions: 3, level: 1 },
         chooseStarter: mocks.chooseStarter,
         dismissReward: mocks.dismissReward,
       };

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { DesignText as Text } from "@/components/design-text";
 
+import { AfterBrushTips } from "@/components/after-brush-tips";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { CelebrationBurst } from "@/components/celebration-burst";
 import { useAudioFeedback } from "@/contexts/audio-feedback-context";
@@ -18,7 +19,8 @@ import {
   sessionCelebrationKind,
 } from "@/lib/session-reward-presentation";
 
-export function SessionRewardModal() {
+/** `onClosed`: told when the child closes the reward, e.g. to show the good-night screen. */
+export function SessionRewardModal({ onClosed }: { onClosed?: (completed: boolean) => void } = {}) {
   const colors = useColors();
   const { playSuccess } = useAudioFeedback();
   const { preferences } = usePreferences();
@@ -51,13 +53,18 @@ export function SessionRewardModal() {
   const displayCreature = showSelectedCreature ? selected : hatchedCreature ?? selected;
   const displayLevel = showSelectedCreature ? reward.level : 1;
   const displayEvolution = getEvolution(displayCreature, displayLevel);
+  const close = () => {
+    const completed = reward.completed;
+    dismissReward();
+    onClosed?.(completed);
+  };
 
   return (
     <Modal
       animationType="fade"
       transparent
       visible
-      onRequestClose={dismissReward}
+      onRequestClose={close}
       statusBarTranslucent
     >
       <ScrollView
@@ -283,11 +290,13 @@ export function SessionRewardModal() {
                   : t("sessionReward.interruptedMessage")}
           </Text>
 
+          <AfterBrushTips completed={reward.completed} onDark={celebration} />
+
           <Pressable
             testID="session-reward-dismiss"
             accessibilityRole="button"
             accessibilityLabel={t("sessionReward.dismissLabel")}
-            onPress={dismissReward}
+            onPress={close}
             style={({ pressed }) => [
               styles.button,
               { backgroundColor: celebration ? "#006ABF" : selected.textAccent },

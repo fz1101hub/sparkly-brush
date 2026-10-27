@@ -1,10 +1,12 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { ApprovedHome } from "@/components/approved-home";
 import { ApprovedSession } from "@/components/approved-session";
 import { DesignText as Text } from "@/components/design-text";
+import { GoodnightOverlay } from "@/components/goodnight-overlay";
 import { ScreenContainer } from "@/components/screen-container";
 import { SessionRewardModal } from "@/components/session-reward-modal";
 import { StarterChooser } from "@/components/starter-chooser";
@@ -14,6 +16,7 @@ import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import { useSessionKeepAwake } from "@/hooks/use-session-keep-awake";
 import { APPROVED_DESIGN } from "@/lib/approved-design";
+import { isEvening } from "@/lib/day-progress";
 import { useThemeContext } from "@/lib/theme-provider";
 
 /** Keeps the screen on only while a session runs: a locked phone would pause the guided timer. */
@@ -30,6 +33,12 @@ export default function TodayScreen() {
   const design = APPROVED_DESIGN[theme.id];
   const { status, isActive } = useBrush();
   const { profileReady, hasChosenStarter } = useBrushling();
+  // «Buonanotte di 30 secondi» (voce 22): after closing the reward of an evening brushing.
+  const [goodnight, setGoodnight] = useState(false);
+  const rewardClosed = useCallback((completed: boolean) => {
+    if (completed && isEvening(Date.now())) setGoodnight(true);
+  }, []);
+  const closeGoodnight = useCallback(() => setGoodnight(false), []);
 
   if (!profileReady || !hasChosenStarter) {
     return (
@@ -63,7 +72,8 @@ export default function TodayScreen() {
   return (
     <ScreenContainer style={{ backgroundColor: isActive ? design.sessionBase : design.sky }}>
       {isActive ? <SessionKeepAwake /> : null}
-      <SessionRewardModal />
+      <SessionRewardModal onClosed={rewardClosed} />
+      {goodnight ? <GoodnightOverlay onClose={closeGoodnight} /> : null}
       {isActive ? <ApprovedSession /> : <ApprovedHome />}
     </ScreenContainer>
   );

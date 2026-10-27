@@ -70,6 +70,11 @@ export function useExtras(): ExtrasContextValue {
   return value;
 }
 
+/** The record, or null outside the provider (isolated components and tests). */
+export function useOptionalExtras(): ExtrasContextValue | null {
+  return useContext(ExtrasContext);
+}
+
 /** The name the child gave the creature, or its own name (also outside the provider). */
 export function useCreatureName(id: BrushlingId, fallback: string): string {
   return useContext(ExtrasContext)?.extras.creatureNames[id] ?? fallback;

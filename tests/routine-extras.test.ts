@@ -93,11 +93,22 @@ describe("impostazioni extra del bambino", () => {
         creatureNames: { bloopi: "  Blu <b>!!  ", unknown: "X", spriggo: "" },
       }),
     ).toEqual({
-      version: 1,
+      ...DEFAULT_EXTRAS,
       protectedDays: [{ day: "2026-10-21", reason: "sick" }],
       sessionSeconds: 120,
       creatureNames: { bloopi: "Blu b" },
     });
+    expect(
+      normalizeExtras({
+        ageGroup: "teen",
+        babysitterNote: "x".repeat(900),
+        dentistVisit: { day: "2026-11-15", noticeDays: 5 },
+        extraStepDays: ["2026-10-27", "oggi", "2026-10-27"],
+        brushTogether: "yes",
+      }),
+    ).toMatchObject({ ageGroup: null, dentistVisit: null, extraStepDays: ["2026-10-27"], brushTogether: false });
+    expect(normalizeExtras({ babysitterNote: "x".repeat(900) }).babysitterNote).toHaveLength(400);
+    expect(normalizeExtras({ dentistVisit: { day: "2026-11-15", noticeDays: 3 } }).dentistVisit).toEqual({ day: "2026-11-15", noticeDays: 3 });
     expect(normalizeExtras({ sessionSeconds: 60 }).sessionSeconds).toBe(60);
   });
 

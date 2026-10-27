@@ -5,6 +5,7 @@ import { ChoiceChips } from "@/components/village-ui";
 import { useExtras } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
+import { AGE_GROUPS, type AgeGroup } from "@/lib/dental-care";
 import { SESSION_SECONDS_OPTIONS, type SessionSeconds } from "@/lib/extras";
 
 /** Parent setting (voce 57): a shorter timer for the youngest, growing to the full 2 minutes. */
@@ -26,6 +27,16 @@ export function SessionLengthSettings() {
             value: seconds,
             label: t(seconds === 60 ? "sessionLength.one" : seconds === 90 ? "sessionLength.oneHalf" : "sessionLength.two"),
           }))}
+        />
+      ) : null}
+      <Text style={[styles.title, { color: colors.foreground }]}>{t("age.title")}</Text>
+      {ready ? (
+        <ChoiceChips<AgeGroup | "unset">
+          label={t("age.title")}
+          testIDPrefix="age-group"
+          value={extras.ageGroup ?? "unset"}
+          onChange={(value) => void apply((previous) => ({ ...previous, ageGroup: value === "unset" ? null : value }))}
+          options={AGE_GROUPS.map((group) => ({ value: group, label: t(`age.${group}`) }))}
         />
       ) : null}
     </View>

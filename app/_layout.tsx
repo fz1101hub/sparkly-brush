@@ -1,7 +1,7 @@
 import "@/global.css";
 import { Stack, type ErrorBoundaryProps } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { ActivityIndicator, BackHandler, Platform, StyleSheet, Text, View } from "react-native";
@@ -14,6 +14,7 @@ import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BracesProvider } from "@/contexts/braces-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { ExtrasProvider } from "@/contexts/extras-context";
+import { AppRestartContext } from "@/contexts/app-restart";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { FamilyProvider, useFamily } from "@/contexts/family-context";
 import { ParentGateProvider } from "@/contexts/parent-gate-context";
@@ -170,9 +171,14 @@ export default function RootLayout() {
     document.title = "Sparkly Brush";
   }, []);
 
+  // Deleting all family data restarts every provider from the now empty storage.
+  const [generation, setGeneration] = useState(0);
+  const restart = useCallback(() => setGeneration((value) => value + 1), []);
   return (
-    <FamilyProvider>
-      <ProfileLayout />
-    </FamilyProvider>
+    <AppRestartContext.Provider value={restart}>
+      <FamilyProvider key={generation}>
+        <ProfileLayout />
+      </FamilyProvider>
+    </AppRestartContext.Provider>
   );
 }

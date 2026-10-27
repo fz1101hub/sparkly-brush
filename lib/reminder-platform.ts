@@ -14,3 +14,12 @@ export function subscribeReminderTap(
 ): () => void {
   return () => {};
 }
+
+/** Web has no scheduled notifications: the dentist countdown stays on the Today screen. */
+export async function scheduleDentistReminder(
+  _profileId: string,
+  _at: number | null,
+  _text: { title: string; body: string },
+): Promise<void> {}
+
+export async function cancelAllNotifications(): Promise<void> {}

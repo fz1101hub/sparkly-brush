@@ -12,6 +12,7 @@ import type { BrushSession } from "@/lib/brush-types";
 import { createLifetimeProgress, type LifetimeProgress } from "@/lib/lifetime-progress";
 import { DEFAULT_APP_PREFERENCES } from "@/lib/preferences";
 import { DEFAULT_BRACES } from "@/lib/braces";
+import { DEFAULT_EXTRAS } from "@/lib/extras";
 import { DEFAULT_VILLAGE } from "@/lib/village";
 
 const session: BrushSession = {
@@ -178,10 +179,15 @@ describe("portable Brushlings backup", () => {
 
   it("porta giorni speciali, durata e nomi delle creature", () => {
     const extras = {
-      version: 1 as const,
+      ...DEFAULT_EXTRAS,
       protectedDays: [{ day: "2026-10-26", reason: "offline" as const }],
       sessionSeconds: 90 as const,
       creatureNames: { bloopi: "Blu" },
+      ageGroup: "3to6" as const,
+      babysitterNote: "Peluche blu nel letto",
+      dentistVisit: { day: "2026-11-15", noticeDays: 3 as const },
+      extraStepDays: ["2026-10-27"],
+      brushTogether: true,
     };
     const manifest = createBackupManifest(
       { selectedId: "bloopi", hasChosenStarter: true },

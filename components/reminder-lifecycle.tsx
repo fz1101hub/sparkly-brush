@@ -10,7 +10,9 @@ import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { errorText } from "@/lib/localized-error";
 import { doneTodayFrom } from "@/lib/reminder-plan";
 import { getReminderService, reminderText } from "@/lib/reminders";
-import { reminderAdapter, subscribeReminderTap } from "@/lib/reminder-platform";
+import { reminderAdapter, scheduleDentistReminder, subscribeReminderTap } from "@/lib/reminder-platform";
+import { useExtras } from "@/contexts/extras-context";
+import { dentistReminderAt } from "@/lib/dental-care";
 
 /** Keeps every child's scheduled reminders in step and opens the child a reminder was for. */
 export function ReminderLifecycle() {
@@ -38,6 +40,18 @@ export function ReminderLifecycle() {
         .catch(() => {});
     }
   }, [activeId, locale, profiles, t]);
+
+  // The dentist visit of the active child (voce 32): set in the family area or restored.
+  const visit = useExtras().extras.dentistVisit;
+  const visitDay = visit?.day ?? null;
+  const visitNotice = visit?.noticeDays ?? null;
+  useEffect(() => {
+    const at = visitDay && visitNotice ? dentistReminderAt(visitDay, visitNotice) : null;
+    void scheduleDentistReminder(activeId, at, {
+      title: t("dentist.notification.title", { name: activeName }),
+      body: t("dentist.notification.body", { count: visitNotice ?? 0 }),
+    }).catch(() => {});
+  }, [activeId, activeName, locale, t, visitDay, visitNotice]);
 
   // The active child's reminders skip what is already brushed today (voce 59).
   useEffect(() => {

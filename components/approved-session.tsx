@@ -6,6 +6,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
+import { SessionExtras } from "@/components/session-extras";
 import { DesignButton } from "@/components/design-controls";
 import { DesignText as Text } from "@/components/design-text";
 import { MouthZones } from "@/components/mouth-zones";
@@ -221,6 +222,7 @@ export function ApprovedSession() {
             size={mouthSize}
             showSteps={showSteps}
           />
+          <SessionExtras ink={d.ink} />
         </View>
         <View style={{ flex: 1, minHeight: 4 }} />
         <View
