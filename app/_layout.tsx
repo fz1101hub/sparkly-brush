@@ -11,6 +11,7 @@ import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-c
 import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
+import { BracesProvider } from "@/contexts/braces-context";
 import { BrushProvider } from "@/contexts/brush-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { FamilyProvider, useFamily } from "@/contexts/family-context";
@@ -19,6 +20,7 @@ import { ParentRewardsProvider } from "@/contexts/parent-rewards-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import { AppLocaleProvider } from "@/contexts/app-locale-provider";
 import { useI18n } from "@/contexts/locale-context";
+import { VillageProvider } from "@/contexts/village-context";
 import { AppErrorScreen } from "@/components/app-error-screen";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
@@ -129,6 +131,8 @@ function ProfileLayout() {
               <AudioFeedbackProvider>
                 <BrushlingProvider>
                   <ParentRewardsProvider>
+                    <BracesProvider>
+                    <VillageProvider>
                     <Stack screenOptions={{ headerShown: false }}>
                       <Stack.Screen name="(tabs)" />
                     </Stack>
@@ -137,6 +141,8 @@ function ProfileLayout() {
                     <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />
+                    </VillageProvider>
+                    </BracesProvider>
                   </ParentRewardsProvider>
                 </BrushlingProvider>
               </AudioFeedbackProvider>

@@ -15,6 +15,7 @@ import {
 import { DesignText as Text } from "@/components/design-text";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useBrush } from "@/contexts/brush-context";
+import { useCreatureBraces } from "@/contexts/braces-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -43,8 +44,10 @@ export function ApprovedHome() {
   const [contentTop, setContentTop] = useState<number | null>(null);
   const brush = useBrush();
   const { selected, stats, walletCoins, missionCenter } = useBrushling();
+  const braces = useCreatureBraces();
+  // The approved pose is a fixed picture: with braces on, the creature that can wear them is shown.
   const useApprovedPose =
-    selected.id === "bloopi" && getEvolutionIndex(selected, stats.level) === 0;
+    !braces && selected.id === "bloopi" && getEvolutionIndex(selected, stats.level) === 0;
   const arcade = theme.id === "arcade";
   const longText = fontScale > 1.3;
   const pageHeight = Math.max(height, longText ? 1060 : 680);

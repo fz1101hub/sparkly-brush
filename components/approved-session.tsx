@@ -12,6 +12,7 @@ import { MouthZones } from "@/components/mouth-zones";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
+import { useCreatureBraces } from "@/contexts/braces-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -37,6 +38,7 @@ export function ApprovedSession() {
   const family = useFamily();
   const brush = useBrush();
   const { selected, stats } = useBrushling();
+  const braces = useCreatureBraces();
   const router = useRouter();
   const showSteps = theme.id === "adventure" || theme.id === "arcade";
   const timerSize = Math.min(width * 0.72, height * 0.29);
@@ -229,7 +231,8 @@ export function ApprovedSession() {
           }}
         >
           {/* The approved buddy has an Italian speech bubble drawn in: other languages get the animated companion. */}
-          {selected.id === "bloopi" &&
+          {!braces &&
+          selected.id === "bloopi" &&
           getEvolutionIndex(selected, stats.level) === 0 &&
           locale === "it" ? (
             <ReferenceArtwork

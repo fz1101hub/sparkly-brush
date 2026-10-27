@@ -1,8 +1,10 @@
 import { StyleSheet, View } from "react-native";
 
+import { BracesOverlay } from "@/components/braces-overlay";
 import { DesignText as Text } from "@/components/design-text";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useI18n } from "@/contexts/locale-context";
+import type { BracesSettings } from "@/lib/braces";
 import {
   getEvolution,
   getEvolutionIndex,
@@ -28,6 +30,7 @@ export function BrushlingAvatar({
   stageIndex,
   framed = true,
   showLevelBadge = true,
+  braces = null,
 }: {
   creature: BrushlingDefinition;
   size?: number;
@@ -35,6 +38,8 @@ export function BrushlingAvatar({
   stageIndex?: number;
   framed?: boolean;
   showLevelBadge?: boolean;
+  /** The child's braces, drawn on their own creature only. */
+  braces?: Pick<BracesSettings, "type" | "elasticColor"> | null;
 }) {
   const { t } = useI18n();
   const stage = Math.min(
@@ -48,7 +53,10 @@ export function BrushlingAvatar({
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={t("avatar.label", { name: evolution.name, element: creature.element, stage: stage + 1 })}
+      accessibilityLabel={
+        t("avatar.label", { name: evolution.name, element: creature.element, stage: stage + 1 })
+        + (braces ? t("braces.avatarSuffix") : "")
+      }
       style={[
         styles.shell,
         {
@@ -67,6 +75,7 @@ export function BrushlingAvatar({
         height={size}
         fit="contain"
       />
+      {braces ? <BracesOverlay cell={index} size={size} braces={braces} /> : null}
       {framed && showLevelBadge ? (
         <View style={[styles.levelBadge, { backgroundColor: creature.textAccent }]}>
           <Text style={styles.levelText}>{t("avatar.levelBadge", { level })}</Text>

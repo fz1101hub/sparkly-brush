@@ -1297,4 +1297,5 @@ export const es = {
   "session.brushWith": "Cepilla con {name}",
   "session.largeTextHint": "Cuatro zonas de treinta segundos, con tu compañero.",
   "session.end": "Terminar",
+  "braces.avatarSuffix": ", con aparato dental",
 } as const satisfies TranslationCatalog;

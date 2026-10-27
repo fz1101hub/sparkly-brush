@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { useCreatureBraces } from "@/contexts/braces-context";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 
@@ -20,6 +21,8 @@ export function AnimatedBrushling({
 }) {
   const [bounce] = useState(() => new Animated.Value(0));
   const reducedMotion = useReducedMotion();
+  // The animated creature is always the child's own: it wears their braces.
+  const braces = useCreatureBraces();
 
   useEffect(() => {
     // The bounce is a decorative loop: keep the creature still when motion is reduced.
@@ -57,7 +60,7 @@ export function AnimatedBrushling({
   return (
     <View style={[styles.frame, { width: size, height: size + 8 }]}>
       <Animated.View style={{ transform: [{ translateY }, { rotate }, { scale }] }}>
-        <BrushlingAvatar framed={framed} creature={creature} size={size} level={level} />
+        <BrushlingAvatar framed={framed} creature={creature} size={size} level={level} braces={braces} />
       </Animated.View>
     </View>
   );

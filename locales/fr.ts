@@ -1306,4 +1306,5 @@ export const fr = {
   "session.brushWith": "Brosse avec {name}",
   "session.largeTextHint": "Quatre zones de trente secondes, avec ton compagnon.",
   "session.end": "Terminer",
+  "braces.avatarSuffix": ", avec un appareil dentaire",
 } as const satisfies TranslationCatalog;

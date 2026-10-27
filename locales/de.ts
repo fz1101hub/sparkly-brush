@@ -1321,4 +1321,5 @@ export const de = {
   "session.brushWith": "Putze mit {name}",
   "session.largeTextHint": "Vier Bereiche zu je dreißig Sekunden, mit deinem Begleiter.",
   "session.end": "Beenden",
+  "braces.avatarSuffix": ", mit Zahnspange",
 } as const satisfies TranslationCatalog;

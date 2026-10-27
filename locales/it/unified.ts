@@ -139,4 +139,5 @@ export const itUnified = {
   "session.brushWith": "Spazzola con {name}",
   "session.largeTextHint": "Quattro zone da trenta secondi, con il tuo compagno.",
   "session.end": "Termina",
+  "braces.avatarSuffix": ", con l’apparecchio",
 } as const;

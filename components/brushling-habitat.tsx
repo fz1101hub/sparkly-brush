@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { DesignText as Text } from "@/components/design-text";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { useCreatureBraces } from "@/contexts/braces-context";
 import { readableAccent } from "@/constants/accessibility-colors";
 import { useI18n } from "@/contexts/locale-context";
 import type { BrushlingDefinition } from "@/lib/brushlings";
@@ -30,6 +31,7 @@ export function BrushlingHabitat({
   const localizedHabitat = habitat
     ? localizeCustomizationItem(habitat, t)
     : null;
+  const braces = useCreatureBraces();
   const accent = readableAccent(habitat?.accent ?? creature.accent);
 
   return (
@@ -93,7 +95,7 @@ export function BrushlingHabitat({
             <MaterialIcons name={accessory.icon} size={24} color="#FFFFFF" />
           </View>
         ) : null}
-        <BrushlingAvatar framed={false} creature={creature} size={152} level={level} />
+        <BrushlingAvatar framed={false} creature={creature} size={152} level={level} braces={braces} />
       </View>
 
       <View style={[styles.ground, { backgroundColor: habitat?.accent ?? creature.accent }]} />

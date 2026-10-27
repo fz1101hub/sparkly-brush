@@ -1287,4 +1287,5 @@ export const en = {
   "session.brushWith": "Brush with {name}",
   "session.largeTextHint": "Four areas of thirty seconds, with your companion.",
   "session.end": "Finish",
+  "braces.avatarSuffix": ", wearing braces",
 } as const satisfies TranslationCatalog;
