@@ -31,6 +31,25 @@ function Row({ testID, label, hint, value, disabled, onChange }: {
   );
 }
 
+/** Modes for each child (lotto 7): calm, pre-reader, legible font, high contrast. */
+export function InclusionSettings() {
+  const colors = useColors();
+  const { t } = useI18n();
+  const { extras, apply, ready } = useExtras();
+  if (!ready) return null;
+  const set = (key: "calmMode" | "preReader" | "legibleFont" | "highContrast") => (value: boolean) =>
+    void apply((previous) => ({ ...previous, [key]: value }));
+  return (
+    <View testID="inclusion-settings" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text accessibilityRole="header" style={[styles.title, { color: colors.foreground }]}>{t("inclusion.title")}</Text>
+      <Row testID="inclusion-calm" label={t("inclusion.calm")} hint={t("inclusion.calmHint")} value={extras.calmMode} onChange={set("calmMode")} />
+      <Row testID="inclusion-preReader" label={t("inclusion.preReader")} hint={t("inclusion.preReaderHint")} value={extras.preReader} onChange={set("preReader")} />
+      <Row testID="inclusion-legible" label={t("inclusion.legible")} hint={t("inclusion.legibleHint")} value={extras.legibleFont} onChange={set("legibleFont")} />
+      <Row testID="inclusion-contrast" label={t("inclusion.contrast")} hint={t("inclusion.contrastHint")} value={extras.highContrast} onChange={set("highContrast")} />
+    </View>
+  );
+}
+
 /** The company during the session (voci 7, 8 e 9), chosen by the parent. */
 export function CompanionSettings() {
   const colors = useColors();

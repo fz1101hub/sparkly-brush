@@ -39,7 +39,10 @@ export function AudioFeedbackProvider({ children }: PropsWithChildren) {
   const effectPlayer = useAudioPlayer(null);
   const musicPlayer = useAudioPlayer(null);
   const { isActive } = useBrush();
-  const songChosen = useOptionalExtras()?.extras.sessionSong === true;
+  const extras = useOptionalExtras()?.extras;
+  // Calm mode (voce 39): no sudden sounds, no music.
+  const calm = extras?.calmMode === true;
+  const songChosen = extras?.sessionSong === true && !calm;
   const { theme } = useThemeContext();
   const songPlaying = isActive && songChosen;
 
@@ -50,18 +53,18 @@ export function AudioFeedbackProvider({ children }: PropsWithChildren) {
       playSessionSong(musicPlayer, theme.id);
       return () => musicPlayer.pause();
     }
-    if (!ready || !preferences.musicEnabled) {
+    if (!ready || !preferences.musicEnabled || calm) {
       musicPlayer.pause();
       return;
     }
     playBackgroundMusic(musicPlayer);
     return () => musicPlayer.pause();
-  }, [musicPlayer, preferences.musicEnabled, ready, songPlaying, theme.id]);
+  }, [calm, musicPlayer, preferences.musicEnabled, ready, songPlaying, theme.id]);
 
   const playSuccess = useCallback(() => {
-    if (!preferences.soundsEnabled) return;
+    if (!preferences.soundsEnabled || calm) return;
     playRewardChime(effectPlayer);
-  }, [effectPlayer, preferences.soundsEnabled]);
+  }, [calm, effectPlayer, preferences.soundsEnabled]);
 
   const value = useMemo(() => ({ playSuccess }), [playSuccess]);
   return <AudioFeedbackContext.Provider value={value}>{children}</AudioFeedbackContext.Provider>;

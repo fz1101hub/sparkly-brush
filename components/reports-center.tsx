@@ -12,7 +12,7 @@ import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { useMinuteClock } from "@/hooks/use-minute-clock";
-import type { BrushlingId } from "@/lib/brushlings";
+import { CREATURE_EMOJI } from "@/lib/avatar";
 import { localDateKey } from "@/lib/day-progress";
 import { showMessage } from "@/lib/dialogs";
 import { canSharePostcard, sharePostcard } from "@/lib/postcard-capture";
@@ -34,13 +34,6 @@ import {
 } from "@/lib/reports";
 import { inWeek, weekStart } from "@/lib/weekly";
 
-export const CREATURE_EMOJI: Record<BrushlingId, string> = {
-  bloopi: "💧",
-  spriggo: "🌱",
-  flarello: "🔥",
-  voltuff: "⚡",
-  moonbit: "🌙",
-};
 
 function Card({ testID, title, children }: { testID: string; title: string; children: React.ReactNode }) {
   const colors = useColors();

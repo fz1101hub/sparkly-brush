@@ -9,6 +9,8 @@ import { EPISODES, nextEpisode } from "@/lib/learning/serial-story";
 import { stainsLeft, storyPartCue, voiceCue, ZONES } from "@/lib/session-companions";
 import { speak } from "@/lib/speech";
 
+const ZONE_KEYS = ["timer.zone.upperRight", "timer.zone.upperLeft", "timer.zone.lowerLeft", "timer.zone.lowerRight"] as const;
+
 /**
  * Company during the two minutes (lotto 6): the creature's voice with the child's name (voce 8)
  * or, when chosen, a part of the serial story at each zone (voce 7), and the stains in the mouth.
@@ -51,6 +53,12 @@ export function SessionNarrator() {
     if (voice) {
       const cue = voiceCue(before, elapsed, target);
       if (cue) speak(t(cue, { name: creatureName, seconds: Math.round(target / ZONES) }), locale);
+      return;
+    }
+    if (extras?.preReader) {
+      // Pre-readers (voce 40) hear the zone to brush, since they cannot read it.
+      const zone = storyPartCue(before, elapsed, target);
+      if (zone !== null) speak(t("home.timer.activeZonePrompt", { zone: t(ZONE_KEYS[zone]) }), locale);
     }
   }, [brush.activeElapsed, brush.activeTarget, brush.isActive, creatureName, extras, locale, story, t, voice]);
 

@@ -8,6 +8,7 @@ import { DEFAULT_THEME_ID, getAppTheme, type AppTheme, type AppThemeId, type App
 import { translateDynamic } from "@/lib/i18n";
 import { getDeviceLocale } from "@/lib/locale";
 import { getThemeStorage } from "@/lib/theme-storage";
+import { highContrastColors } from "@/lib/contrast";
 
 type ThemeContextValue = {
   theme: AppTheme;
@@ -103,6 +104,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       </View>
     </ThemeContext.Provider>
   );
+}
+
+/** The same theme with high-contrast colours (voce 74), for everything rendered inside. */
+export function ThemeOverride({ highContrast, children }: { highContrast: boolean; children: React.ReactNode }) {
+  const context = useThemeContext();
+  const value = useMemo(
+    () => (highContrast ? { ...context, colors: highContrastColors(context.colors, context.colorScheme) } : context),
+    [context, highContrast],
+  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useThemeContext(): ThemeContextValue {

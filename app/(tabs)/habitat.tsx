@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { DesignText as Text } from "@/components/design-text";
 import { CreatureNameEditor } from "@/components/creature-name-editor";
 import { CreatureRhythm } from "@/components/creature-rhythm";
+import { ChildAvatarEditor } from "@/components/child-avatar";
+import { CREATURE_EMOJI } from "@/lib/avatar";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingHabitat } from "@/components/brushling-habitat";
@@ -197,6 +199,7 @@ export default function HabitatScreen() {
         </View>
         {hasChosenStarter ? <CreatureNameEditor id={selectedCreature.id} originalName={evolution.name} /> : null}
         {hasChosenStarter ? <CreatureRhythm /> : null}
+        {hasChosenStarter ? <ChildAvatarEditor creatureEmoji={CREATURE_EMOJI[selectedCreature.id]} /> : null}
         {message ? (
           <View
             style={[

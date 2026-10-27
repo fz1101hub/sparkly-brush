@@ -15,10 +15,12 @@ import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
 import { useCreatureBraces, useNewSmile } from "@/contexts/braces-context";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useOptionalExtras } from "@/contexts/extras-context";
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
 import { announce } from "@/lib/announce";
 import { APPROVED_DESIGN, type ArtworkRegion } from "@/lib/approved-design";
+import { CREATURE_EMOJI } from "@/lib/avatar";
 import { getEvolution, getEvolutionIndex } from "@/lib/brushlings";
 import { useThemeContext } from "@/lib/theme-provider";
 
@@ -39,6 +41,8 @@ export function ApprovedSession() {
   const family = useFamily();
   const brush = useBrush();
   const { selected, stats } = useBrushling();
+  // For children who can't read yet (voce 40): a picture in place of the title.
+  const preReader = useOptionalExtras()?.extras.preReader === true;
   const braces = useCreatureBraces();
   const newSmile = useNewSmile();
   const router = useRouter();
@@ -201,7 +205,7 @@ export function ApprovedSession() {
                 textAlign: "center",
               }}
             >
-              {t("session.brushWith", { name })}
+              {preReader ? `🪥 ${CREATURE_EMOJI[selected.id]}` : t("session.brushWith", { name })}
             </Text>
           </Pressable>
           <View style={{ width: 24 }} />

@@ -27,6 +27,7 @@ import { AppErrorScreen } from "@/components/app-error-screen";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { ProfileNavigation } from "@/components/profile-navigation";
+import { AccessibilityModes } from "@/components/accessibility-modes";
 import { MotivationTracker } from "@/components/motivation-tracker";
 import { SessionNarrator } from "@/components/session-companion";
 import { ReminderLifecycle } from "@/components/reminder-lifecycle";
@@ -132,6 +133,7 @@ function ProfileLayout() {
           <ParentGateProvider>
           <DataRecoveryGate>
             <ExtrasProvider>
+            <AccessibilityModes>
             <BrushProvider>
               <AudioFeedbackProvider>
                 <BrushlingProvider>
@@ -154,6 +156,7 @@ function ProfileLayout() {
                 </BrushlingProvider>
               </AudioFeedbackProvider>
             </BrushProvider>
+            </AccessibilityModes>
             </ExtrasProvider>
           </DataRecoveryGate>
           </ParentGateProvider>

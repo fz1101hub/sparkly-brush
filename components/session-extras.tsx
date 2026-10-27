@@ -8,6 +8,8 @@ import type { TranslationKey } from "@/lib/i18n";
 import { surfaceAt, type Surface } from "@/lib/session-tips";
 
 const SURFACES: readonly Surface[] = ["outer", "inner", "chewing"];
+/** For children who can't read yet (voce 40): pictures instead of words. */
+const SURFACE_ICONS: Record<Surface, string> = { outer: "😁", inner: "👅", chewing: "🦷" };
 
 function clock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
@@ -40,12 +42,14 @@ export function SessionExtras({ ink }: { ink: string }) {
           const active = surface === current;
           return (
             <View key={surface} style={[styles.chip, { borderColor: ink, backgroundColor: active ? ink : "transparent" }]}>
-              <Text style={[styles.chipText, { color: active ? "#FFFFFF" : ink }]}>{t(`surface.${surface}` as TranslationKey)}</Text>
+              <Text style={[styles.chipText, { color: active ? "#FFFFFF" : ink }]}>
+                {extras.preReader ? SURFACE_ICONS[surface] : t(`surface.${surface}` as TranslationKey)}
+              </Text>
             </View>
           );
         })}
       </View>
-      <Pressable
+      {extras.preReader ? null : <Pressable
         testID="brush-together"
         accessibilityRole="switch"
         accessibilityState={{ checked: extras.brushTogether }}
@@ -59,7 +63,7 @@ export function SessionExtras({ ink }: { ink: string }) {
             ? t("together.parent", { time: clock(brush.activeTarget - brush.activeElapsed) })
             : t("together.toggle")}
         </Text>
-      </Pressable>
+      </Pressable>}
     </View>
   );
 }

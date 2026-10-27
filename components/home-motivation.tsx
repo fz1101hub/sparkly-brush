@@ -12,7 +12,7 @@ import { seasonAt, seasonEnd } from "@/lib/seasons";
 import { speak } from "@/lib/speech";
 import { inWeek, isSummaryTime, weekStart } from "@/lib/weekly";
 import { onHoliday } from "@/lib/bedtime";
-import { localDateKey } from "@/lib/day-progress";
+import { isEvening, localDateKey } from "@/lib/day-progress";
 
 /**
  * Under the start button on Today: the discovery of the day during the guided first week
@@ -54,6 +54,11 @@ export function HomeMotivation({ ink }: { ink: string }) {
           <Text style={[styles.text, { color: ink, fontWeight: "800" }]}>{discoveryText}</Text>
         </Pressable>
       ) : null}
+      {extras.calmMode ? (
+        <Text testID="calm-schedule" accessibilityLabel={`${t("schedule.title")}: ${t(isEvening(now) ? "schedule.evening" : "schedule.morning")}`} style={[styles.schedule, { color: ink }]}>
+          {isEvening(now) ? "🌙 → 🪥 → 💦 → 😴" : "🪥 → 💦 → 🥣"}
+        </Text>
+      ) : null}
       {onHoliday(extras.vacationUntil, localDateKey(today)) ? (
         <Text testID="home-holiday" style={[styles.text, { color: ink, fontWeight: "800" }]}>🧳 {t("holiday.home")}</Text>
       ) : null}
@@ -85,4 +90,5 @@ const styles = StyleSheet.create({
   row: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: 8 },
   text: { fontFamily: "BrushlingsBody", fontSize: 14, lineHeight: 20, flexShrink: 1, textAlign: "center" },
   emoji: { fontSize: 18, lineHeight: 22 },
+  schedule: { fontSize: 26, lineHeight: 34, textAlign: "center" },
 });

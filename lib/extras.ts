@@ -1,5 +1,6 @@
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import { EMPTY_AWARDS, normalizeAwards, type AlbumAwards } from "@/lib/album";
+import { DEFAULT_AVATAR, normalizeAvatar, type Avatar } from "@/lib/avatar";
 import { BEDTIME_ITEMS, type BedtimeDone, type BedtimeItem } from "@/lib/bedtime";
 import { EPISODES } from "@/lib/learning/serial-story";
 import { AGE_GROUPS, DENTIST_NOTICE_DAYS, type AgeGroup, type DentistNoticeDays } from "@/lib/dental-care";
@@ -79,6 +80,12 @@ export type Extras = {
   bedtimeDone: BedtimeDone | null;
   /** Holiday mode until this day included (voce 25). */
   vacationUntil: string | null;
+  /** Inclusion (lotto 7): calm mode, pre-reader mode, legible font, high contrast, the child's avatar. */
+  calmMode: boolean;
+  preReader: boolean;
+  legibleFont: boolean;
+  highContrast: boolean;
+  avatar: Avatar;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -110,6 +117,11 @@ export const DEFAULT_EXTRAS: Extras = {
   bedtimeItems: [],
   bedtimeDone: null,
   vacationUntil: null,
+  calmMode: false,
+  preReader: false,
+  legibleFont: false,
+  highContrast: false,
+  avatar: DEFAULT_AVATAR,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -202,6 +214,11 @@ export function normalizeExtras(raw: unknown): Extras {
         ? { day: value.bedtimeDone.day, items: [...new Set(value.bedtimeDone.items.filter((item): item is BedtimeItem => BEDTIME_ITEMS.includes(item)))] }
         : null,
     vacationUntil: typeof value.vacationUntil === "string" && DAY_KEY.test(value.vacationUntil) ? value.vacationUntil : null,
+    calmMode: value.calmMode === true,
+    preReader: value.preReader === true,
+    legibleFont: value.legibleFont === true,
+    highContrast: value.highContrast === true,
+    avatar: normalizeAvatar(value.avatar),
   };
 }
 
