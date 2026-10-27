@@ -5,6 +5,14 @@ import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 /** The guided timer target; the E2E build shortens it so browser tests finish quickly. */
 export const MANUAL_TARGET_SECONDS = process.env.EXPO_PUBLIC_E2E === "1" ? 5 : 120;
 
+/** Lengths the parent can choose (voce 57), plus the short E2E one. */
+const TARGETS = new Set([5, 60, 90, 120]);
+
+/** The target of a new session: the parent's choice, except in the E2E build. */
+export function manualTargetFor(chosenSeconds: number): number {
+  return process.env.EXPO_PUBLIC_E2E === "1" ? MANUAL_TARGET_SECONDS : chosenSeconds;
+}
+
 /**
  * One record per profile for the guided timer (from PR #10): written when a session starts and
  * every second while it runs, so an app that is closed or killed can offer to resume it; once the
@@ -20,8 +28,14 @@ export type ManualCheckpoint = {
   startedAt: number;
   elapsedSeconds: number;
   demo: boolean;
+  /** The session's own target; absent in checkpoints written before 27 October 2026 (120 s). */
+  targetSeconds?: number;
   pending?: BrushSession;
 };
+
+export function checkpointTarget(checkpoint: Pick<ManualCheckpoint, "targetSeconds">): number {
+  return checkpoint.targetSeconds ?? MANUAL_TARGET_SECONDS;
+}
 
 function isPendingManualSession(value: unknown): value is BrushSession {
   if (!value || typeof value !== "object") return false;
@@ -57,7 +71,8 @@ export function parseManualCheckpoint(raw: string | null): ManualCheckpoint | nu
     || value.startedAt <= 0
     || !Number.isInteger(value.elapsedSeconds)
     || value.elapsedSeconds < 0
-    || value.elapsedSeconds > MANUAL_TARGET_SECONDS
+    || (value.targetSeconds !== undefined && !TARGETS.has(value.targetSeconds))
+    || value.elapsedSeconds > checkpointTarget(value)
     || typeof value.demo !== "boolean"
   ) {
     throw new LocalizedError("brush.error.manualJournalUnreadable");
@@ -69,9 +84,9 @@ export function parseManualCheckpoint(raw: string | null): ManualCheckpoint | nu
       || value.pending.id !== value.id
       || value.pending.startedAt !== value.startedAt
       || value.pending.durationSeconds !== value.elapsedSeconds
-      || value.pending.targetSeconds !== MANUAL_TARGET_SECONDS
+      || value.pending.targetSeconds !== checkpointTarget(value)
       || value.pending.rewardPolicy !== "completed-only"
-      || value.pending.completed !== value.elapsedSeconds >= Math.ceil(MANUAL_TARGET_SECONDS * 0.9)
+      || value.pending.completed !== value.elapsedSeconds >= Math.ceil(checkpointTarget(value) * 0.9)
       || value.pending.source !== (value.demo ? "demo" : "manual"))
   ) {
     throw new LocalizedError("brush.error.manualJournalUnreadable");
@@ -84,8 +99,9 @@ function checkpointFromPending(session: BrushSession): ManualCheckpoint {
     version: 1,
     id: session.id,
     startedAt: session.startedAt,
-    elapsedSeconds: Math.min(MANUAL_TARGET_SECONDS, session.durationSeconds),
+    elapsedSeconds: Math.min(session.targetSeconds, session.durationSeconds),
     demo: session.source === "demo",
+    targetSeconds: session.targetSeconds,
     pending: session,
   };
 }

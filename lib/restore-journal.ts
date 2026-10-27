@@ -2,6 +2,7 @@ import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 import type { AppThemeId } from "@/lib/app-themes";
 import { getBracesStorage, normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { getExtrasStorage, normalizeExtras, type Extras } from "@/lib/extras";
 import { getReminderService, type ReminderSettings } from "@/lib/reminders";
 import { getThemeStorage } from "@/lib/theme-storage";
 import {
@@ -24,10 +25,11 @@ export type RestoreSnapshot = {
   braces: BracesSettings;
   themeId: AppThemeId;
   reminders: ReminderSettings;
+  extras: Extras;
 };
 
 /** Journals written before 27 October 2026 have no village, braces, theme or reminders. */
-type AddedFields = "village" | "braces" | "themeId" | "reminders";
+type AddedFields = "village" | "braces" | "themeId" | "reminders" | "extras";
 type StoredSnapshot = Omit<RestoreSnapshot, AddedFields> & Partial<Pick<RestoreSnapshot, AddedFields>>;
 
 type ApplicationRestoreJournal = {
@@ -46,6 +48,7 @@ function buildProfileStorage(profileId: string) {
   const bracesStorage = getBracesStorage(profileId);
   const themeStorage = getThemeStorage(profileId);
   const reminderService = getReminderService(profileId);
+  const extrasStorage = getExtrasStorage(profileId);
   const APPLICATION_RESTORE_JOURNAL_KEY = "sparkly-brush.application-restore.v1";
 
   async function applySnapshot(snapshot: StoredSnapshot): Promise<void> {
@@ -57,6 +60,7 @@ function buildProfileStorage(profileId: string) {
     if (snapshot.themeId) await themeStorage.saveThemeId(snapshot.themeId);
     // Stored only: the reminder lifecycle schedules them again when the app starts.
     if (snapshot.reminders) await reminderService.restoreSettings(snapshot.reminders);
+    if (snapshot.extras) await extrasStorage.save(normalizeExtras(snapshot.extras));
   }
 
   async function beginApplicationRestore(

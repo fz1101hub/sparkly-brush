@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { useBrush } from "@/contexts/brush-context";
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { errorText } from "@/lib/localized-error";
+import { doneTodayFrom } from "@/lib/reminder-plan";
 import { getReminderService, reminderText } from "@/lib/reminders";
 import { reminderAdapter, subscribeReminderTap } from "@/lib/reminder-platform";
 
@@ -18,15 +21,30 @@ export function ReminderLifecycle() {
   const [error, setError] = useState<unknown>(null);
   const { profiles, switchProfile } = family;
   const activeId = family.active.id;
+  const activeName = family.active.name;
+  const { history, demoMode } = useBrush();
+  // Real sessions only: a demo session must not silence tonight's reminder.
+  const today = useCurrentDayTimestamp();
+  const done = doneTodayFrom(demoMode ? [] : history, today);
+  const doneMorning = done.morning;
+  const doneEvening = done.evening;
 
   // Also after a language change: the scheduled copy is written in the family language.
   useEffect(() => {
     for (const profile of profiles) {
+      if (profile.id === activeId) continue;
       void getReminderService(profile.id)
         .reconcile(reminderText(t, profile.name), reminderAdapter)
         .catch(() => {});
     }
-  }, [locale, profiles, t]);
+  }, [activeId, locale, profiles, t]);
+
+  // The active child's reminders skip what is already brushed today (voce 59).
+  useEffect(() => {
+    void getReminderService(activeId)
+      .reconcile(reminderText(t, activeName), reminderAdapter, false, { morning: doneMorning, evening: doneEvening })
+      .catch(() => {});
+  }, [activeId, activeName, doneEvening, doneMorning, locale, t]);
 
   useEffect(
     () =>

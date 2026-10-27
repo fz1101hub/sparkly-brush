@@ -3,6 +3,7 @@ import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 import type { TranslationKey, TranslationParams } from "@/lib/i18n";
 import type { BrushSession } from "@/lib/brush-types";
 import {
+  dayDifference,
   isEvening,
   isMorning,
   localDateKey,
@@ -23,7 +24,16 @@ export type ParentReward = {
   target: number;
   createdAt: number;
   deliveredAt: number | null;
+  /**
+   * The child's totals when the reward was created (voce 49): only brushing done afterwards
+   * counts. Rewards created before 27 October 2026 have none and count everything, as before.
+   */
+  baseline?: RewardBaseline;
+  /** When the goal was first reached: it stays reached even if a streak breaks later. */
+  reachedAt?: number | null;
 };
+
+export type RewardBaseline = { completedSessions: number; perfectDays: number; dayKey: string };
 
 export type ParentRewardProgress = ParentReward & {
   progress: number;
@@ -34,6 +44,9 @@ export type ParentRewardMetrics = {
   completedSessions: number;
   perfectDays: number;
   longestStreakDays: number;
+  /** The streak still running and its last day, for streak rewards with a baseline. */
+  currentStreakDays?: number;
+  lastCompletedDateKey?: string | null;
 };
 
 type Translate = (key: TranslationKey, params?: TranslationParams) => string;
@@ -54,22 +67,38 @@ function perfectDays(history: BrushSession[]): number {
 }
 
 export function parentRewardProgress(reward: ParentReward, history: BrushSession[]): ParentRewardProgress {
-  return parentRewardProgressFromMetrics(reward, {
-    completedSessions: completed(history).length,
-    perfectDays: perfectDays(history),
-    longestStreakDays: longestCompletedDayStreak(history),
-  });
+  const counted = reward.baseline ? history.filter((session) => session.startedAt >= reward.createdAt) : history;
+  return parentRewardProgressFromMetrics(
+    { ...reward, baseline: undefined },
+    {
+      completedSessions: completed(counted).length,
+      perfectDays: perfectDays(counted),
+      longestStreakDays: longestCompletedDayStreak(counted),
+    },
+  );
+}
+
+/** Progress made since the reward was created. */
+function progressSinceBaseline(reward: ParentReward, baseline: RewardBaseline, metrics: ParentRewardMetrics): number {
+  if (reward.requirement === "completed-sessions") return Math.max(0, metrics.completedSessions - baseline.completedSessions);
+  if (reward.requirement === "perfect-days") return Math.max(0, metrics.perfectDays - baseline.perfectDays);
+  if (!metrics.currentStreakDays || !metrics.lastCompletedDateKey) return 0;
+  const daysSinceCreation = dayDifference(baseline.dayKey, metrics.lastCompletedDateKey) + 1;
+  return Math.max(0, Math.min(metrics.currentStreakDays, daysSinceCreation));
 }
 
 export function parentRewardProgressFromMetrics(
   reward: ParentReward,
   metrics: ParentRewardMetrics,
 ): ParentRewardProgress {
-  const progress = reward.requirement === "completed-sessions"
-    ? metrics.completedSessions
-    : reward.requirement === "perfect-days"
-      ? metrics.perfectDays
-      : metrics.longestStreakDays;
+  if (reward.reachedAt) return { ...reward, progress: reward.target, unlocked: true };
+  const progress = reward.baseline
+    ? progressSinceBaseline(reward, reward.baseline, metrics)
+    : reward.requirement === "completed-sessions"
+      ? metrics.completedSessions
+      : reward.requirement === "perfect-days"
+        ? metrics.perfectDays
+        : metrics.longestStreakDays;
   return { ...reward, progress: Math.min(progress, reward.target), unlocked: progress >= reward.target };
 }
 
@@ -92,6 +121,16 @@ export function rewardRequirementLabel(
 const REQUIREMENTS = new Set<ParentRewardRequirement>(["completed-sessions", "perfect-days", "streak"]);
 
 /** Accepts only well-formed rewards and clips them to the limits the UI and backups enforce. */
+function normalizeBaseline(value: unknown): RewardBaseline | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Partial<RewardBaseline>;
+  const count = (item: unknown) => typeof item === "number" && Number.isInteger(item) && item >= 0;
+  if (!count(raw.completedSessions) || !count(raw.perfectDays) || typeof raw.dayKey !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw.dayKey)) {
+    return undefined;
+  }
+  return { completedSessions: raw.completedSessions!, perfectDays: raw.perfectDays!, dayKey: raw.dayKey };
+}
+
 export function normalizeParentRewards(value: unknown): ParentReward[] {
   if (!Array.isArray(value)) return [];
   const rewards: ParentReward[] = [];
@@ -115,6 +154,8 @@ export function normalizeParentRewards(value: unknown): ParentReward[] {
       target: Math.floor(raw.target),
       createdAt: typeof raw.createdAt === "number" && Number.isFinite(raw.createdAt) ? raw.createdAt : 0,
       deliveredAt: typeof raw.deliveredAt === "number" && Number.isFinite(raw.deliveredAt) ? raw.deliveredAt : null,
+      ...(normalizeBaseline(raw.baseline) ? { baseline: normalizeBaseline(raw.baseline) } : {}),
+      ...(typeof raw.reachedAt === "number" && Number.isFinite(raw.reachedAt) ? { reachedAt: raw.reachedAt } : {}),
     });
     if (rewards.length === MAX_PARENT_REWARDS) break;
   }

@@ -39,7 +39,7 @@ describe("local routine reminders", () => {
       replace: vi.fn(async () => {}),
     };
     await getReminderService("child-a").save(enabled, TEXT, adapter);
-    expect(adapter.replace).toHaveBeenCalledWith("child-a", enabled, true, TEXT);
+    expect(adapter.replace).toHaveBeenCalledWith("child-a", { ...enabled, lastCall: false, lastCallTime: "21:00" }, true, TEXT, expect.any(Array));
     expect(await getReminderService("child-b").load()).toEqual(
       DEFAULT_REMINDERS,
     );
@@ -61,7 +61,7 @@ describe("local routine reminders", () => {
     expect(await getReminderService("primary").load()).toEqual(
       DEFAULT_REMINDERS,
     );
-    expect(replace).toHaveBeenLastCalledWith("primary", DEFAULT_REMINDERS, false, TEXT);
+    expect(replace).toHaveBeenLastCalledWith("primary", DEFAULT_REMINDERS, false, TEXT, []);
   });
   it("rolls the OS schedule back when storing the new configuration fails", async () => {
     const replace = vi.fn(async () => {});
@@ -74,7 +74,7 @@ describe("local routine reminders", () => {
         replace,
       }),
     ).rejects.toThrow(/Storage full/);
-    expect(replace).toHaveBeenLastCalledWith("child-a", DEFAULT_REMINDERS, false, TEXT);
+    expect(replace).toHaveBeenLastCalledWith("child-a", DEFAULT_REMINDERS, false, TEXT, []);
     expect(await getReminderService("child-a").load()).toEqual(
       DEFAULT_REMINDERS,
     );
@@ -82,7 +82,7 @@ describe("local routine reminders", () => {
   it("reconciles existing schedules without requesting permission at startup", async () => {
     const adapter = { available: true, replace: vi.fn(async () => {}) };
     await getReminderService("primary").reconcile(TEXT, adapter);
-    expect(adapter.replace).toHaveBeenCalledWith("primary", DEFAULT_REMINDERS, false, TEXT);
+    expect(adapter.replace).toHaveBeenCalledWith("primary", DEFAULT_REMINDERS, false, TEXT, []);
   });
   it("restores a backup's settings, tells the open screen and then schedules with permission", async () => {
     const service = getReminderService("child-a");
@@ -94,12 +94,12 @@ describe("local routine reminders", () => {
     await service.restoreSettings(DEFAULT_REMINDERS);
 
     expect(seen).toHaveBeenCalledTimes(1);
-    expect(seen).toHaveBeenCalledWith(restored);
+    expect(seen).toHaveBeenCalledWith({ ...restored, lastCall: false, lastCallTime: "21:00" });
     await expect(service.restoreSettings({ ...restored, morning: "99:00" })).rejects.toThrow();
     await service.restoreSettings(restored);
     const adapter = { available: true, replace: vi.fn(async () => {}) };
     await service.reconcile(TEXT, adapter, true);
-    expect(adapter.replace).toHaveBeenCalledWith("child-a", restored, true, TEXT);
+    expect(adapter.replace).toHaveBeenCalledWith("child-a", { ...restored, lastCall: false, lastCallTime: "21:00" }, true, TEXT, expect.any(Array));
   });
   it("does not claim browser background notifications are available", async () => {
     await expect(

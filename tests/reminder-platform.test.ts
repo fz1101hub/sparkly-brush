@@ -5,6 +5,7 @@ const sdk = vi.hoisted(() => ({
   setNotificationChannelAsync: vi.fn(async () => {}),
   cancelScheduledNotificationAsync: vi.fn(async () => {}),
   scheduleNotificationAsync: vi.fn(async () => "scheduled"),
+  getAllScheduledNotificationsAsync: vi.fn(async () => [] as { identifier: string }[]),
   setNotificationHandler: vi.fn(),
   addNotificationResponseReceivedListener: vi.fn(
     (_listener: (value: unknown) => void) => ({ remove: vi.fn() }),
@@ -16,7 +17,7 @@ vi.mock("expo-notifications", () => ({
   ...sdk,
   AndroidImportance: { DEFAULT: 3, LOW: 2 },
   IosAuthorizationStatus: { PROVISIONAL: 3 },
-  SchedulableTriggerInputTypes: { DAILY: "daily" },
+  SchedulableTriggerInputTypes: { DAILY: "daily", DATE: "date" },
 }));
 vi.mock("react-native", () => ({ Platform: { OS: "android" } }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
@@ -27,7 +28,10 @@ import {
   subscribeReminderTap,
 } from "@/lib/reminder-platform.native";
 import { translateDynamic } from "@/lib/i18n";
-import { DEFAULT_REMINDERS, reminderText } from "@/lib/reminders";
+import { DEFAULT_REMINDERS, reminderPlan, reminderText, type ReminderSettings } from "@/lib/reminders";
+
+const NOW = new Date(2026, 9, 27, 6).getTime();
+const planFor = (profile: string, settings: ReminderSettings) => reminderPlan(profile, settings, NOW);
 
 const TEXT = reminderText((key, params) => translateDynamic("it", key, params), "Emma");
 
@@ -40,21 +44,20 @@ beforeEach(() => {
   sdk.requestPermissionsAsync.mockResolvedValue({ granted: true });
 });
 describe("native notification boundary", () => {
-  it("schedules two recurring local-time notifications for this child only", async () => {
-    await reminderAdapter.replace("child-emma", {
-        ...DEFAULT_REMINDERS,
-        enabled: true,
-        morning: "07:45",
-        evening: "19:30",
-      }, true, TEXT);
-    expect(sdk.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+  it("schedules dated notifications for the next days, for this child only", async () => {
+    const settings = { ...DEFAULT_REMINDERS, enabled: true, morning: "07:45", evening: "19:30" };
+    sdk.getAllScheduledNotificationsAsync.mockResolvedValueOnce([
+      { identifier: "brushlings-child-emma-morning-2026-10-26" },
+      { identifier: "brushlings-child-luca-morning-2026-10-27" },
+    ]);
+    await reminderAdapter.replace("child-emma", settings, true, TEXT, planFor("child-emma", settings));
+    expect(sdk.scheduleNotificationAsync).toHaveBeenCalledTimes(12);
     expect(sdk.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        identifier: "brushlings-child-emma-morning",
+        identifier: "brushlings-child-emma-morning-2026-10-27",
         trigger: {
-          type: "daily",
-          hour: 7,
-          minute: 45,
+          type: "date",
+          date: new Date(2026, 9, 27, 7, 45),
           channelId: "brushlings-routine",
         },
         content: expect.objectContaining({
@@ -63,13 +66,29 @@ describe("native notification boundary", () => {
         }),
       }),
     );
-    expect(sdk.cancelScheduledNotificationAsync.mock.calls.flat()).toEqual([
-      "brushlings-child-emma-morning",
+    // The daily reminders of earlier versions and this child's old plan go; the sibling's stay.
+    expect(sdk.cancelScheduledNotificationAsync.mock.calls.flat().sort()).toEqual([
       "brushlings-child-emma-evening",
+      "brushlings-child-emma-morning",
+      "brushlings-child-emma-morning-2026-10-26",
     ]);
   });
+  it("skips today's brushing already done and adds the gentle last call", async () => {
+    const settings = { ...DEFAULT_REMINDERS, enabled: true, lastCall: true, lastCallTime: "21:00" };
+    const plan = reminderPlan("primary", settings, NOW, { morning: true, evening: false });
+    await reminderAdapter.replace("primary", settings, true, TEXT, plan);
+    const ids = (sdk.scheduleNotificationAsync.mock.calls as unknown as [{ identifier: string }][]).map(([request]) => request.identifier);
+    expect(ids).not.toContain("brushlings-primary-morning-2026-10-27");
+    expect(ids).toContain("brushlings-primary-evening-2026-10-27");
+    expect(sdk.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identifier: "brushlings-primary-lastCall-2026-10-27",
+        content: expect.objectContaining({ body: TEXT.lastCallBody }),
+      }),
+    );
+  });
   it("uses the quiet channel and disables sound when requested", async () => {
-    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true, quiet: true }, true, TEXT);
+    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true, quiet: true }, true, TEXT, planFor("primary", { ...DEFAULT_REMINDERS, enabled: true, quiet: true }));
     expect(sdk.setNotificationChannelAsync).toHaveBeenCalledWith(
       "brushlings-routine-quiet",
       expect.objectContaining({ sound: null, enableVibrate: false }),
@@ -84,7 +103,7 @@ describe("native notification boundary", () => {
     );
   });
   it("does not ask for permission when turning reminders off", async () => {
-    await reminderAdapter.replace("primary", DEFAULT_REMINDERS, true, TEXT);
+    await reminderAdapter.replace("primary", DEFAULT_REMINDERS, true, TEXT, []);
     expect(sdk.requestPermissionsAsync).not.toHaveBeenCalled();
     expect(sdk.getPermissionsAsync).not.toHaveBeenCalled();
     expect(sdk.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -95,7 +114,7 @@ describe("native notification boundary", () => {
       canAskAgain: false,
     });
     await expect(
-      reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT),
+      reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT, planFor("primary", { ...DEFAULT_REMINDERS, enabled: true })),
     ).rejects.toMatchObject({ key: "reminders.error.permissionDenied" });
     expect(sdk.requestPermissionsAsync).not.toHaveBeenCalled();
     expect(sdk.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -105,14 +124,14 @@ describe("native notification boundary", () => {
       granted: false,
       canAskAgain: true,
     });
-    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT);
+    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT, planFor("primary", { ...DEFAULT_REMINDERS, enabled: true }));
     expect(sdk.requestPermissionsAsync).toHaveBeenCalledOnce();
     sdk.getPermissionsAsync.mockResolvedValueOnce({
       granted: false,
       canAskAgain: true,
     });
     await expect(
-      reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, false, TEXT),
+      reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, false, TEXT, planFor("primary", { ...DEFAULT_REMINDERS, enabled: true })),
     ).rejects.toThrow();
     expect(sdk.requestPermissionsAsync).toHaveBeenCalledOnce();
   });
@@ -122,7 +141,7 @@ describe("native notification boundary", () => {
       canAskAgain: true,
       ios: { status: 3 },
     });
-    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT);
+    await reminderAdapter.replace("primary", { ...DEFAULT_REMINDERS, enabled: true }, true, TEXT, planFor("primary", { ...DEFAULT_REMINDERS, enabled: true }));
     expect(sdk.requestPermissionsAsync).not.toHaveBeenCalled();
     expect(await reminderAdapter.permissionGranted!()).toBe(true);
     sdk.getPermissionsAsync.mockResolvedValueOnce({

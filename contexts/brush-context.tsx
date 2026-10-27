@@ -25,6 +25,7 @@ import {
   type ToothbrushDevice,
 } from "@/lib/brush-types";
 import { getBrushStorage } from "@/lib/brush-storage";
+import { useSessionSeconds } from "@/contexts/extras-context";
 import { useOptionalFamily } from "@/contexts/family-context-value";
 import { useI18n } from "@/contexts/locale-context";
 import { useOptionalPreferences } from "@/contexts/preferences-context";
@@ -47,6 +48,8 @@ import { LocalizedError } from "@/lib/localized-error";
 import {
   getManualSessionStorage,
   MANUAL_TARGET_SECONDS,
+  checkpointTarget,
+  manualTargetFor,
   type ManualCheckpoint,
 } from "@/lib/manual-session-storage";
 import { getActiveProfileId } from "@/lib/profile-scope";
@@ -240,6 +243,10 @@ export function BrushProvider({
   const liveSessionPeakRef = useRef<BrushLiveData | null>(null);
   const lifetimeProgressRef = useRef<LifetimeProgress>(createEmptyLifetimeProgress());
   const manualStartRef = useRef<number>(0);
+  // Target of the running guided session, fixed when it starts: the parent's choice (voce 57).
+  const chosenSessionSeconds = useSessionSeconds();
+  const manualTargetRef = useRef<number>(MANUAL_TARGET_SECONDS);
+  const [manualTarget, setManualTarget] = useState(MANUAL_TARGET_SECONDS);
   const manualActiveRef = useRef(false);
   const manualDemoModeRef = useRef(false);
   const manualSavedRef = useRef(false);
@@ -607,8 +614,9 @@ export function BrushProvider({
             version: 1,
             id: session.id,
             startedAt: session.startedAt,
-            elapsedSeconds: Math.min(MANUAL_TARGET_SECONDS, session.durationSeconds),
+            elapsedSeconds: Math.min(session.targetSeconds, session.durationSeconds),
             demo: sessionIsDemo,
+            targetSeconds: session.targetSeconds,
             pending: session,
           };
           checkpoint.current = pending;
@@ -660,7 +668,7 @@ export function BrushProvider({
   useEffect(() => {
     if (!manualActive) return;
     const refreshElapsed = () => {
-      setManualElapsed(Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+      setManualElapsed(Math.min(manualTargetRef.current, Math.max(0, Math.floor(
         (Date.now() - manualStartRef.current) / 1_000,
       ))));
     };
@@ -670,7 +678,7 @@ export function BrushProvider({
   }, [manualActive]);
 
   useEffect(() => {
-    if (!manualActive || !manualActiveRef.current || manualElapsed < MANUAL_TARGET_SECONDS || manualSavedRef.current) return;
+    if (!manualActive || !manualActiveRef.current || manualElapsed < manualTargetRef.current || manualSavedRef.current) return;
     manualSavedRef.current = true;
     manualActiveRef.current = false;
     setManualActive(false);
@@ -680,7 +688,7 @@ export function BrushProvider({
       startedAt: checkpoint.current?.startedAt ?? manualStartRef.current,
       rewardPolicy: "completed-only",
       durationSeconds: manualElapsed,
-      targetSeconds: MANUAL_TARGET_SECONDS,
+      targetSeconds: manualTargetRef.current,
       completed: true,
       source: sessionIsDemo ? "demo" : "manual",
     };
@@ -704,7 +712,7 @@ export function BrushProvider({
   const pauseManual = useCallback(async () => {
     const current = checkpoint.current;
     if (!manualActiveRef.current || !current || current.pending) return;
-    const elapsedSeconds = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+    const elapsedSeconds = Math.min(manualTargetRef.current, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
     )));
     const saved = { ...current, elapsedSeconds };
@@ -905,12 +913,14 @@ export function BrushProvider({
     setManualStartPending(true);
     try {
       const startedAt = Date.now();
+      const target = manualTargetFor(chosenSessionSeconds);
       const saved: ManualCheckpoint = {
         version: 1,
         id: `${demoMode ? "demo-manual" : "manual"}-${startedAt}`,
         startedAt,
         elapsedSeconds: 0,
         demo: demoMode,
+        targetSeconds: target,
       };
       // Written before the timer runs: a session that cannot be protected does not start.
       await journal.current.save(saved);
@@ -923,6 +933,8 @@ export function BrushProvider({
         return;
       }
       manualStartRef.current = startedAt;
+      manualTargetRef.current = target;
+      setManualTarget(target);
       manualDemoModeRef.current = demoMode;
       manualSavedRef.current = false;
       manualActiveRef.current = true;
@@ -944,6 +956,7 @@ export function BrushProvider({
     }
   }, [
     appendTranslatedLog,
+    chosenSessionSeconds,
     demoMode,
     hapticsEnabled,
     isSavingManualSession,
@@ -967,6 +980,8 @@ export function BrushProvider({
       if (liveRef.current.isBrushing) return;
       // Only the seconds brushed before the pause count: the time away is not added.
       manualStartRef.current = Date.now() - saved.elapsedSeconds * 1_000;
+      manualTargetRef.current = checkpointTarget(saved);
+      setManualTarget(checkpointTarget(saved));
       manualDemoModeRef.current = saved.demo;
       manualSavedRef.current = false;
       manualActiveRef.current = true;
@@ -1001,7 +1016,7 @@ export function BrushProvider({
     if (!manualActiveRef.current) return;
     manualActiveRef.current = false;
     setManualActive(false);
-    const duration = Math.min(MANUAL_TARGET_SECONDS, Math.max(0, Math.floor(
+    const duration = Math.min(manualTargetRef.current, Math.max(0, Math.floor(
       (Date.now() - manualStartRef.current) / 1_000,
     )));
     if (duration >= 5 && !manualSavedRef.current) {
@@ -1012,8 +1027,8 @@ export function BrushProvider({
         startedAt: checkpoint.current?.startedAt ?? manualStartRef.current,
         rewardPolicy: "completed-only",
         durationSeconds: duration,
-        targetSeconds: MANUAL_TARGET_SECONDS,
-        completed: duration >= Math.ceil(MANUAL_TARGET_SECONDS * 0.9),
+        targetSeconds: manualTargetRef.current,
+        completed: duration >= Math.ceil(manualTargetRef.current * 0.9),
         source: sessionIsDemo ? "demo" : "manual",
       };
       await persistManualSession(session);
@@ -1155,8 +1170,11 @@ export function BrushProvider({
 
   const isActive = live.isBrushing || manualActive;
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
-  const activeTarget = live.isBrushing ? live.routineSeconds : MANUAL_TARGET_SECONDS;
-  const activeZone = Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30));
+  const activeTarget = live.isBrushing ? live.routineSeconds : manualTarget;
+  // Four zones: 30 seconds each on the handle; a quarter of the parent's choice on the timer.
+  const activeZone = live.isBrushing
+    ? Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30))
+    : Math.min(3, Math.floor(Math.min(activeElapsed, activeTarget - 1) / (activeTarget / 4)));
 
   const value = useMemo<BrushContextValue>(
     () => ({

@@ -19,6 +19,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
     },
   },
 }));
+vi.mock("@/hooks/use-current-day", () => ({ useCurrentDayTimestamp: () => Date.now() }));
 vi.mock("@/contexts/brush-context", async () => {
   const { createEmptyLifetimeProgress } = await import("@/lib/lifetime-progress");
   const lifetimeProgress = createEmptyLifetimeProgress();

@@ -1,4 +1,5 @@
-import { localDateKey } from "@/lib/day-progress";
+import type { BrushSession } from "@/lib/brush-types";
+import { isEvening, isMorning, localDateKey, sameLocalDay } from "@/lib/day-progress";
 
 /**
  * The reminders of the next days as single dated notifications instead of a daily repetition,
@@ -21,6 +22,15 @@ export type PlanSettings = {
 
 /** Which of today's routine brushings are already done. */
 export type DoneToday = { morning: boolean; evening: boolean };
+
+/** Today's completed brushings in the morning and evening windows of the daily missions. */
+export function doneTodayFrom(history: readonly BrushSession[], now: number): DoneToday {
+  const today = history.filter((session) => session.completed && sameLocalDay(session.startedAt, now));
+  return {
+    morning: today.some((session) => isMorning(session.startedAt)),
+    evening: today.some((session) => isEvening(session.startedAt)),
+  };
+}
 
 export function reminderIdPrefix(profileId: string): string {
   return `brushlings-${profileId}-`;

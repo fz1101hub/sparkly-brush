@@ -13,6 +13,8 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useExtras } from "@/contexts/extras-context";
+import { useSmileStreak } from "@/hooks/use-smile-streak";
 import { useI18n } from "@/contexts/locale-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
@@ -38,6 +40,8 @@ export default function CollectionScreen() {
     customization,
     selectBrushling,
   } = useBrushling();
+  const { extras } = useExtras();
+  const smileStreak = useSmileStreak();
   const selectedCreature = localizeBrushling(selected, t);
   const starters = BRUSHLINGS.filter((creature) =>
     STARTER_IDS.includes(creature.id),
@@ -107,12 +111,21 @@ export default function CollectionScreen() {
               size={22}
               color="#E76A2C"
             />
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              {formatNumber(stats.currentStreakDays)}
+            <Text testID="smile-streak" style={[styles.summaryValue, { color: colors.foreground }]}>
+              {formatNumber(smileStreak.days)}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              {t("game.collection.currentStreak")}
+              {t("smileStreak.label")}
             </Text>
+            {smileStreak.bonusDaysLeft > 0 ? (
+              <Text testID="smile-streak-bonus" style={[styles.summaryLabel, { color: colors.muted }]}>
+                {t("smileStreak.bonus", { count: smileStreak.bonusDaysLeft })}
+              </Text>
+            ) : smileStreak.jokerUsedThisWeek ? (
+              <Text testID="smile-streak-joker" style={[styles.summaryLabel, { color: colors.muted }]}>
+                {t("smileStreak.jokerUsed")}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -327,7 +340,7 @@ export default function CollectionScreen() {
                     },
                   ]}
                 >
-                  {currentEvolution.name}
+                  {extras.creatureNames[creature.id] ?? currentEvolution.name}
                 </Text>
                 <Text
                   style={[

@@ -113,3 +113,27 @@ describe("impostazioni extra del bambino", () => {
     expect((await getExtrasStorage("child-b").load()).sessionSeconds).toBe(60);
   });
 });
+
+describe("consigli della sessione", async () => {
+  const { surfaceAt, extraStepOf, EXTRA_STEPS, didYouKnow } = await import("@/lib/session-tips");
+
+  it("divide ogni zona in esterno, interno e superficie che mastica", () => {
+    expect([0, 9, 10, 19, 20, 29, 30].map((seconds) => surfaceAt(seconds, 120))).toEqual([
+      "outer", "outer", "inner", "inner", "chewing", "chewing", "outer",
+    ]);
+    expect(surfaceAt(14, 60)).toBe("chewing");
+  });
+
+  it("propone un passo extra al giorno, uguale per tutta la giornata", () => {
+    const morning = new Date(2026, 9, 27, 7).getTime();
+    const evening = new Date(2026, 9, 27, 21).getTime();
+    expect(extraStepOf(morning)).toBe(extraStepOf(evening));
+    const week = new Set(Array.from({ length: EXTRA_STEPS.length }, (_, day) => extraStepOf(new Date(2026, 9, 27 + day, 9).getTime())));
+    expect(week.size).toBe(EXTRA_STEPS.length);
+  });
+
+  it("dopo ogni sessione una curiosità diversa", () => {
+    expect(didYouKnow(1, "it")).not.toBe(didYouKnow(2, "it"));
+    expect(didYouKnow(3, "de").length).toBeGreaterThan(10);
+  });
+});

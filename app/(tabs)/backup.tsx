@@ -13,6 +13,7 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useBraces } from "@/contexts/braces-context";
+import { useExtras } from "@/contexts/extras-context";
 import { useFamily } from "@/contexts/family-context";
 import { useVillage } from "@/contexts/village-context";
 import { useBack } from "@/hooks/use-back";
@@ -124,6 +125,7 @@ export default function BackupScreen() {
   const { state: village, ready: villageReady, restoreVillage } = useVillage();
   const { settings: braces, ready: bracesReady, restoreBraces } = useBraces();
   const { theme, setTheme } = useThemeContext();
+  const { extras, ready: extrasReady, restoreExtras } = useExtras();
   const themeId = theme.id;
   const { active: activeProfile } = useFamily();
   const reminderService = useRef(getReminderService(activeProfile.id));
@@ -139,7 +141,7 @@ export default function BackupScreen() {
   const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
   const backupReady =
     historyReady && profileReady && preferencesReady && rewardsReady && villageReady && bracesReady
-    && reminders !== null && !restoreInProgress;
+    && extrasReady && reminders !== null && !restoreInProgress;
   const nativeBackupAvailable = Platform.OS !== "web";
 
   useEffect(() => {
@@ -175,11 +177,12 @@ export default function BackupScreen() {
       customization,
       lifetimeProgress,
       manifestCreatedAt,
-      { preferences, parentRewards, village, braces, themeId, reminders: reminders ?? DEFAULT_REMINDERS },
+      { preferences, parentRewards, village, braces, themeId, reminders: reminders ?? DEFAULT_REMINDERS, extras },
     ),
     [
       braces,
       customization,
+      extras,
       hasChosenStarter,
       lifetimeProgress,
       manifestCreatedAt,
@@ -282,6 +285,7 @@ export default function BackupScreen() {
       braces,
       themeId,
       reminders: reminders ?? DEFAULT_REMINDERS,
+      extras,
     };
     const next: RestoreSnapshot = {
       profile: preview.profile,
@@ -293,6 +297,7 @@ export default function BackupScreen() {
       braces,
       themeId,
       reminders: reminders ?? DEFAULT_REMINDERS,
+      extras,
     };
     setBusy(true);
     setError(null);
@@ -310,6 +315,7 @@ export default function BackupScreen() {
             await restoreBraces(next.braces);
             await reminderService.current.restoreSettings(next.reminders);
             await setTheme(next.themeId);
+            await restoreExtras(next.extras);
             await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
             databaseCommitted = true;
             await completeApplicationRestore(restoreId);
@@ -323,6 +329,7 @@ export default function BackupScreen() {
                 restoreBraces(previous.braces),
                 reminderService.current.restoreSettings(previous.reminders),
                 setTheme(previous.themeId),
+                restoreExtras(previous.extras),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);
@@ -357,6 +364,7 @@ export default function BackupScreen() {
       braces,
       themeId,
       reminders: reminders ?? DEFAULT_REMINDERS,
+      extras,
     };
     const next: RestoreSnapshot = {
       profile: selectedPreview.manifest.profile,
@@ -368,6 +376,7 @@ export default function BackupScreen() {
       braces: selectedPreview.manifest.braces ?? braces,
       themeId: selectedPreview.manifest.themeId ?? themeId,
       reminders: selectedPreview.manifest.reminders ?? reminders ?? DEFAULT_REMINDERS,
+      extras: selectedPreview.manifest.extras ?? extras,
     };
     setBusy(true);
     setError(null);
@@ -385,6 +394,7 @@ export default function BackupScreen() {
             await restoreBraces(next.braces);
             await reminderService.current.restoreSettings(next.reminders);
             await setTheme(next.themeId);
+            await restoreExtras(next.extras);
             const restored = await restoreCompleteBackup(selectedPreview, restoreId);
             databaseCommitted = true;
             adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
@@ -400,6 +410,7 @@ export default function BackupScreen() {
                 restoreBraces(previous.braces),
                 reminderService.current.restoreSettings(previous.reminders),
                 setTheme(previous.themeId),
+                restoreExtras(previous.extras),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);

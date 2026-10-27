@@ -8,6 +8,7 @@ const saveVillage = vi.hoisted(() => vi.fn(async () => undefined));
 const saveBraces = vi.hoisted(() => vi.fn(async () => undefined));
 const saveThemeId = vi.hoisted(() => vi.fn(async () => undefined));
 const restoreSettings = vi.hoisted(() => vi.fn(async () => undefined));
+const saveExtras = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: {
@@ -25,12 +26,17 @@ vi.mock("@/lib/village", async (importOriginal) => ({
 }));
 vi.mock("@/lib/theme-storage", () => ({ getThemeStorage: () => ({ saveThemeId }) }));
 vi.mock("@/lib/reminders", () => ({ getReminderService: () => ({ restoreSettings }) }));
+vi.mock("@/lib/extras", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/extras")>()),
+  getExtrasStorage: () => ({ save: saveExtras }),
+}));
 vi.mock("@/lib/braces", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/braces")>()),
   getBracesStorage: () => ({ save: saveBraces }),
 }));
 
 import { DEFAULT_BRACES } from "@/lib/braces";
+import { DEFAULT_EXTRAS } from "@/lib/extras";
 import { DEFAULT_VILLAGE } from "@/lib/village";
 import {
   beginApplicationRestore,
@@ -60,6 +66,7 @@ const previous: RestoreSnapshot = {
   braces: DEFAULT_BRACES,
   themeId: "adventure",
   reminders: { enabled: false, morning: "08:00", evening: "20:00", quiet: false },
+  extras: DEFAULT_EXTRAS,
 };
 
 const next: RestoreSnapshot = {
@@ -70,6 +77,7 @@ const next: RestoreSnapshot = {
   braces: { ...DEFAULT_BRACES, enabled: true, type: "aligners", careDays: ["2026-10-26"] },
   themeId: "cosmos",
   reminders: { enabled: true, morning: "07:30", evening: "19:45", quiet: true },
+  extras: { ...DEFAULT_EXTRAS, sessionSeconds: 60, creatureNames: { bloopi: "Blu" } },
 };
 
 describe("application restore journal", () => {
@@ -82,6 +90,7 @@ describe("application restore journal", () => {
     saveBraces.mockClear();
     saveThemeId.mockClear();
     restoreSettings.mockClear();
+    saveExtras.mockClear();
   });
 
   it("ripristina lo snapshot precedente se SQLite non ha committato", async () => {
@@ -107,11 +116,12 @@ describe("application restore journal", () => {
     expect(saveBraces).toHaveBeenCalledWith(next.braces);
     expect(saveThemeId).toHaveBeenCalledWith("cosmos");
     expect(restoreSettings).toHaveBeenCalledWith(next.reminders);
+    expect(saveExtras).toHaveBeenCalledWith(next.extras);
     expect(storage.size).toBe(0);
   });
 
   it("un journal scritto prima del 27 ottobre lascia villaggio, apparecchio, tema e promemoria come sono", async () => {
-    const { village: _village, braces: _braces, themeId: _theme, reminders: _reminders, ...older } = previous;
+    const { village: _village, braces: _braces, themeId: _theme, reminders: _reminders, extras: _extras, ...older } = previous;
     const id = await beginApplicationRestore(older as RestoreSnapshot, older as RestoreSnapshot);
     await recoverApplicationRestore(id);
 
@@ -120,6 +130,7 @@ describe("application restore journal", () => {
     expect(saveBraces).not.toHaveBeenCalled();
     expect(saveThemeId).not.toHaveBeenCalled();
     expect(restoreSettings).not.toHaveBeenCalled();
+    expect(saveExtras).not.toHaveBeenCalled();
     expect(storage.size).toBe(0);
   });
 });

@@ -14,6 +14,7 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useCreatureName } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import {
@@ -55,6 +56,7 @@ export default function ExploreScreen() {
   );
   const nextZone = getNextAdventureZone(stats.completedSessions);
   const evolution = getEvolution(selectedCreature, stats.level);
+  const creatureName = useCreatureName(selectedCreature.id, evolution.name);
 
   return (
     <ScreenContainer>
@@ -78,7 +80,7 @@ export default function ExploreScreen() {
             </Text>
             <Text style={[styles.heroTitle, { color: LIGHT_CARD_FOREGROUND }]}>
               {hasChosenStarter
-                ? t("game.explore.exploresWithYou", { name: evolution.name })
+                ? t("game.explore.exploresWithYou", { name: creatureName })
                 : t("game.explore.chooseCompanionFirst")}
             </Text>
             <Text style={[styles.heroText, { color: LIGHT_CARD_MUTED }]}>

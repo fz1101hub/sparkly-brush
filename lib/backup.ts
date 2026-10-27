@@ -4,7 +4,11 @@ import {
   type AppPreferences,
 } from "@/lib/preferences";
 import { isLanguagePreference } from "@/lib/locale-types";
-import { MAX_PARENT_REWARDS, type ParentReward } from "@/lib/parent-rewards";
+import {
+  MAX_PARENT_REWARDS,
+  normalizeParentRewards as normalizeStoredParentRewards,
+  type ParentReward,
+} from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
   createLifetimeProgress,
@@ -13,6 +17,7 @@ import {
 } from "@/lib/lifetime-progress";
 import { isAppThemeId, type AppThemeId } from "@/lib/app-themes";
 import { normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { normalizeExtras, type Extras } from "@/lib/extras";
 import { validateReminders, type ReminderSettings } from "@/lib/reminders";
 import { normalizeVillage, type VillageState } from "@/lib/village";
 import {
@@ -65,6 +70,8 @@ export type BrushlingsBackupManifest = {
   /** The child's theme and reminder times; older files leave the current ones as they are. */
   themeId?: AppThemeId;
   reminders?: ReminderSettings;
+  /** Streak days, session length and creature names (voci 16, 57, 62, 66). */
+  extras?: Extras;
 };
 
 function normalizeOwnedIds(value: unknown): CustomizationItemId[] {
@@ -136,9 +143,10 @@ function normalizePreferences(value: unknown): AppPreferences {
   };
 }
 
+/** Strict on the fields every backup has; baselines and reached dates are validated as stored. */
 function normalizeParentRewards(value: unknown): ParentReward[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is ParentReward => {
+  return normalizeStoredParentRewards(value.filter((item): item is ParentReward => {
     if (!item || typeof item !== "object") return false;
     const raw = item as Partial<ParentReward>;
     return typeof raw.id === "string"
@@ -148,7 +156,7 @@ function normalizeParentRewards(value: unknown): ParentReward[] {
       && raw.target >= 1
       && typeof raw.createdAt === "number"
       && (raw.deliveredAt === null || typeof raw.deliveredAt === "number");
-  }).slice(0, MAX_PARENT_REWARDS);
+  }).slice(0, MAX_PARENT_REWARDS));
 }
 
 export function createBackup(
@@ -193,6 +201,7 @@ export function createBackupManifest(
     braces?: BracesSettings;
     themeId?: AppThemeId;
     reminders?: ReminderSettings;
+    extras?: Extras;
   },
 ): BrushlingsBackupManifest {
   return {
@@ -210,6 +219,7 @@ export function createBackupManifest(
     ...(extras?.braces ? { braces: extras.braces } : {}),
     ...(extras?.themeId ? { themeId: extras.themeId } : {}),
     ...(extras?.reminders ? { reminders: extras.reminders } : {}),
+    ...(extras?.extras ? { extras: extras.extras } : {}),
   };
 }
 
@@ -273,6 +283,7 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
     ...(raw.braces !== undefined ? { braces: normalizeBraces(raw.braces) } : {}),
     ...(isAppThemeId(raw.themeId) ? { themeId: raw.themeId } : {}),
     ...(reminders ? { reminders } : {}),
+    ...(raw.extras !== undefined ? { extras: normalizeExtras(raw.extras) } : {}),
   };
 }
 

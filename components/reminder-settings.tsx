@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { AppState, Linking, Pressable, StyleSheet, Switch, TextInput, View } from "react-native";
 
 import { DesignText as Text } from "@/components/design-text";
+import { useBrush } from "@/contexts/brush-context";
 import { useFamily } from "@/contexts/family-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 import type { TranslationKey } from "@/lib/i18n";
 import { errorText } from "@/lib/localized-error";
 import { reminderAdapter } from "@/lib/reminder-platform";
+import { doneTodayFrom } from "@/lib/reminder-plan";
 import {
   DEFAULT_REMINDERS,
   getReminderService,
@@ -19,6 +21,7 @@ import {
 export function ReminderSettings() {
   const colors = useColors();
   const { active } = useFamily();
+  const { history, demoMode } = useBrush();
   const { t } = useI18n();
   const service = useRef(getReminderService(active.id));
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_REMINDERS });
@@ -87,7 +90,12 @@ export function ReminderSettings() {
     setNotice(null);
     setSaved(false);
     try {
-      const value = await service.current.save(settings, reminderText(t, active.name), reminderAdapter);
+      const value = await service.current.save(
+        settings,
+        reminderText(t, active.name),
+        reminderAdapter,
+        doneTodayFrom(demoMode ? [] : history, Date.now()),
+      );
       setSettings(value);
       setSaved(true);
     } catch (caught) {
@@ -152,6 +160,35 @@ export function ReminderSettings() {
           onValueChange={(value) => change("quiet", value)}
         />
       </View>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: colors.foreground, flex: 1 }]}>{t("reminderSettings.lastCall")}</Text>
+        <Switch
+          testID="reminders-last-call"
+          style={{ minHeight: 44, minWidth: 48 }}
+          accessibilityLabel={t("reminderSettings.lastCall")}
+          value={settings.lastCall === true}
+          disabled={!ready || saving || !reminderAdapter.available}
+          onValueChange={(value) => change("lastCall", value)}
+        />
+      </View>
+      {settings.lastCall ? (
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: colors.foreground, flex: 1 }]}>{t("reminderSettings.lastCallTime")}</Text>
+          <TextInput
+            testID="reminders-last-call-time"
+            accessibilityLabel={t("reminderSettings.lastCallTime")}
+            placeholder="21:00"
+            placeholderTextColor={colors.muted}
+            value={settings.lastCallTime ?? "21:00"}
+            onChangeText={(value) => change("lastCallTime", value)}
+            editable={ready && !saving}
+            maxLength={5}
+            keyboardType="numbers-and-punctuation"
+            style={inputStyle}
+          />
+        </View>
+      ) : null}
+      <Text style={[styles.copy, { color: colors.muted }]}>{t("reminderSettings.lastCallNote")}</Text>
       <Text style={[styles.copy, { color: colors.muted }]}>{t("reminderSettings.note")}</Text>
       <Pressable
         testID="reminders-save"

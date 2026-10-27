@@ -2,6 +2,9 @@ import { createContext, type PropsWithChildren, useCallback, useContext, useEffe
 
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
+import { localDateKey } from "@/lib/day-progress";
+import { computeLifetimeBrushlingStats } from "@/lib/lifetime-progress";
 import {
   MAX_PARENT_REWARD_TITLE_LENGTH,
   MAX_PARENT_REWARDS,
@@ -30,6 +33,7 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
   // Captured at mount: a late write after a child switch must stay in this child's records.
   const store = useRef(getParentRewardsStorage());
   const { history, lifetimeProgress, demoMode } = useBrush();
+  const today = useCurrentDayTimestamp();
   const [definitions, setDefinitions] = useState<ParentReward[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -44,9 +48,20 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
         completedSessions: lifetimeProgress.completedSessions,
         perfectDays: lifetimeProgress.perfectDays,
         longestStreakDays: lifetimeProgress.longestStreakDays,
+        currentStreakDays: computeLifetimeBrushlingStats(lifetimeProgress, today).currentStreakDays,
+        lastCompletedDateKey: lifetimeProgress.lastCompletedDateKey,
       })),
-    [definitions, demoMode, history, lifetimeProgress],
+    [definitions, demoMode, history, lifetimeProgress, today],
   );
+
+  // A goal reached stays reached (a streak may break before the parent hands the reward over).
+  useEffect(() => {
+    if (demoMode || !ready) return;
+    const reached = new Set(rewards.filter((reward) => reward.unlocked && reward.baseline && !reward.reachedAt).map((reward) => reward.id));
+    if (!reached.size) return;
+    const next = definitions.map((reward) => (reached.has(reward.id) ? { ...reward, reachedAt: Date.now() } : reward));
+    void store.current.saveParentRewards(next).then(() => setDefinitions(next)).catch(() => undefined);
+  }, [definitions, demoMode, ready, rewards]);
 
   const nextReward = useMemo(
     () => rewards.find((reward) => !reward.deliveredAt) ?? null,
@@ -69,11 +84,16 @@ export function ParentRewardsProvider({ children }: PropsWithChildren) {
         target,
         createdAt: Date.now(),
         deliveredAt: null,
+        baseline: {
+          completedSessions: lifetimeProgress.completedSessions,
+          perfectDays: lifetimeProgress.perfectDays,
+          dayKey: localDateKey(Date.now()),
+        },
       },
     ];
     setDefinitions(next);
     await store.current.saveParentRewards(next);
-  }, [definitions]);
+  }, [definitions, lifetimeProgress]);
 
   const removeReward = useCallback(async (id: string) => {
     const next = definitions.filter((reward) => reward.id !== id);

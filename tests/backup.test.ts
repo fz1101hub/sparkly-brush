@@ -167,13 +167,30 @@ describe("portable Brushlings backup", () => {
     );
     const restored = parseBackupManifest(JSON.stringify(manifest));
     expect(restored.themeId).toBe("underwater");
-    expect(restored.reminders).toEqual(reminders);
+    expect(restored.reminders).toEqual({ ...reminders, lastCall: false, lastCallTime: "21:00" });
 
     const tampered = parseBackupManifest(
       JSON.stringify({ ...manifest, themeId: "neon", reminders: { ...reminders, morning: "25:99" } }),
     );
     expect(tampered.themeId).toBeUndefined();
     expect(tampered.reminders).toBeUndefined();
+  });
+
+  it("porta giorni speciali, durata e nomi delle creature", () => {
+    const extras = {
+      version: 1 as const,
+      protectedDays: [{ day: "2026-10-26", reason: "offline" as const }],
+      sessionSeconds: 90 as const,
+      creatureNames: { bloopi: "Blu" },
+    };
+    const manifest = createBackupManifest(
+      { selectedId: "bloopi", hasChosenStarter: true },
+      DEFAULT_CUSTOMIZATION_STATE,
+      createLifetimeProgress([session]),
+      123456,
+      { extras },
+    );
+    expect(parseBackupManifest(JSON.stringify(manifest)).extras).toEqual(extras);
   });
 
   it("un file scritto prima del villaggio non porta villaggio né apparecchio", () => {
@@ -183,7 +200,7 @@ describe("portable Brushlings backup", () => {
       createLifetimeProgress([session]),
       123456,
     );
-    expect(JSON.stringify(manifest)).not.toMatch(/village|braces|themeId|reminders/);
+    expect(JSON.stringify(manifest)).not.toMatch(/village|braces|themeId|reminders|extras/);
 
     const restored = parseBackupManifest(JSON.stringify(manifest));
     expect(restored.village).toBeUndefined();

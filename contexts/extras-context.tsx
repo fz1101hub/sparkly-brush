@@ -75,6 +75,11 @@ export function useCreatureName(id: BrushlingId, fallback: string): string {
   return useContext(ExtrasContext)?.extras.creatureNames[id] ?? fallback;
 }
 
+/** The custom name only, or undefined (also outside the provider). */
+export function useOptionalCreatureName(id: BrushlingId): string | undefined {
+  return useContext(ExtrasContext)?.extras.creatureNames[id];
+}
+
 /** Seconds of a timer session chosen by the parent (120 outside the provider). */
 export function useSessionSeconds(): number {
   return useContext(ExtrasContext)?.extras.sessionSeconds ?? DEFAULT_EXTRAS.sessionSeconds;

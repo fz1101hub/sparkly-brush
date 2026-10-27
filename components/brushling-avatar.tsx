@@ -5,6 +5,7 @@ import { NewSmileOverlay } from "@/components/new-smile-overlay";
 import { DesignText as Text } from "@/components/design-text";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useI18n } from "@/contexts/locale-context";
+import { useOptionalCreatureName } from "@/contexts/extras-context";
 import type { BracesSettings } from "@/lib/braces";
 import {
   getEvolution,
@@ -51,6 +52,7 @@ export function BrushlingAvatar({
     Math.max(0, stageIndex ?? getEvolutionIndex(creature, level)),
   );
   const evolution = creature.evolutions[stage] ?? getEvolution(creature, level);
+  const customName = useOptionalCreatureName(creature.id);
   const cells = CELLS[creature.id];
   const index = cells[Math.min(stage, cells.length - 1)] ?? cells[0];
   return (
@@ -58,7 +60,7 @@ export function BrushlingAvatar({
       accessible
       accessibilityRole="image"
       accessibilityLabel={
-        t("avatar.label", { name: evolution.name, element: creature.element, stage: stage + 1 })
+        t("avatar.label", { name: customName ?? evolution.name, element: creature.element, stage: stage + 1 })
         + (braces ? t("braces.avatarSuffix") : "")
         + (newSmile && !braces ? t("braces.newSmileSuffix") : "")
       }

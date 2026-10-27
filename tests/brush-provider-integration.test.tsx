@@ -93,7 +93,12 @@ vi.mock("@/lib/manual-session-storage", () => {
     },
     clear: async () => mocks.clearPendingManual(),
   };
-  return { MANUAL_TARGET_SECONDS: 120, getManualSessionStorage: () => journal };
+  return {
+    MANUAL_TARGET_SECONDS: 120,
+    manualTargetFor: (chosen: number) => chosen,
+    checkpointTarget: (checkpoint: { targetSeconds?: number }) => checkpoint.targetSeconds ?? 120,
+    getManualSessionStorage: () => journal,
+  };
 });
 vi.mock("@/lib/toothbrush-profile", () => ({
   devicesOwnedByOthers: mocks.devicesOwnedByOthers,

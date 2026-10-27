@@ -2,6 +2,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { DesignText as Text } from "@/components/design-text";
+import { CreatureNameEditor } from "@/components/creature-name-editor";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingHabitat } from "@/components/brushling-habitat";
@@ -13,6 +14,7 @@ import {
   readableAccent,
 } from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useCreatureName } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useBack } from "@/hooks/use-back";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -65,10 +67,12 @@ export default function HabitatScreen() {
     walletCoins,
     buyCustomization,
     equipCustomization,
+    hasChosenStarter,
   } = useBrushling();
   const [message, setMessage] = useState<string | null>(null);
   const selectedCreature = localizeBrushling(selected, t);
   const evolution = getEvolution(selectedCreature, stats.level);
+  const creatureName = useCreatureName(selectedCreature.id, evolution.name);
   const groups = useMemo(
     () =>
       (["habitat", "accessory", "decor"] as const).map((category) => ({
@@ -182,14 +186,15 @@ export default function HabitatScreen() {
             color={readableAccent(selectedCreature.accent)}
           />
           <View style={styles.infoCopy}>
-            <Text style={[styles.infoTitle, { color: LIGHT_CARD_FOREGROUND }]}>
-              {evolution.name}
+            <Text testID="habitat-creature-name" style={[styles.infoTitle, { color: LIGHT_CARD_FOREGROUND }]}>
+              {creatureName}
             </Text>
             <Text style={[styles.infoText, { color: LIGHT_CARD_MUTED }]}>
               {t("game.habitat.customizeSpace")}
             </Text>
           </View>
         </View>
+        {hasChosenStarter ? <CreatureNameEditor id={selectedCreature.id} originalName={evolution.name} /> : null}
         {message ? (
           <View
             style={[

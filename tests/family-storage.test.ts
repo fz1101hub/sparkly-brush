@@ -203,6 +203,24 @@ describe("durable manual checkpoint", () => {
     ]);
     expect(await store.load()).toBeNull();
   });
+  it("accepts a shorter session chosen by the parent and checks it against its own target", () => {
+    const short = { ...session("short"), startedAt: 1, durationSeconds: 60, targetSeconds: 60 };
+    expect(
+      parseManualCheckpoint(JSON.stringify({ version: 1, id: "short", startedAt: 1, elapsedSeconds: 60, demo: false, targetSeconds: 60, pending: short })),
+    ).toMatchObject({ targetSeconds: 60, pending: { completed: true } });
+    expect(() =>
+      parseManualCheckpoint(JSON.stringify({ version: 1, id: "x", startedAt: 1, elapsedSeconds: 61, demo: false, targetSeconds: 60 })),
+    ).toThrow();
+    expect(() =>
+      parseManualCheckpoint(JSON.stringify({ version: 1, id: "x", startedAt: 1, elapsedSeconds: 10, demo: false, targetSeconds: 45 })),
+    ).toThrow();
+    expect(() =>
+      parseManualCheckpoint(
+        JSON.stringify({ version: 1, id: "short", startedAt: 1, elapsedSeconds: 60, demo: false, targetSeconds: 60, pending: { ...short, targetSeconds: 120 } }),
+      ),
+    ).toThrow();
+  });
+
   it("rejects malformed elapsed time and an inconsistent pending reward", () => {
     expect(() =>
       parseManualCheckpoint(

@@ -13,6 +13,7 @@ import { FamilyPicker } from "@/components/family-picker";
 import { ParentGuard } from "@/components/parent-guard";
 import { QuickGuide } from "@/components/quick-guide";
 import { ReminderSettings } from "@/components/reminder-settings";
+import { SessionLengthSettings } from "@/components/session-length-settings";
 import { ScreenContainer } from "@/components/screen-container";
 import { ThemePicker } from "@/components/theme-picker";
 import { VillageSettings } from "@/components/village-settings";
@@ -113,6 +114,7 @@ export default function SettingsScreen() {
         <ThemePicker />
         <FamilyPicker />
         <ReminderSettings />
+        <SessionLengthSettings />
         <VillageSettings />
         <QuickGuide />
 

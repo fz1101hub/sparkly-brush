@@ -253,7 +253,14 @@ describe("native storage on real SQLite", () => {
     expect(preview!.manifest.village).toEqual(village);
     expect(preview!.manifest.braces).toEqual(braces);
     expect(preview!.manifest.themeId).toBe("garden");
-    expect(preview!.manifest.reminders).toEqual({ enabled: true, morning: "07:10", evening: "19:50", quiet: true });
+    expect(preview!.manifest.reminders).toEqual({
+      enabled: true,
+      morning: "07:10",
+      evening: "19:50",
+      quiet: true,
+      lastCall: false,
+      lastCallTime: "21:00",
+    });
     target.completeBackup.discardCompleteBackupPreview(preview!);
   });
 

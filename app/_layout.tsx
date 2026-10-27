@@ -13,6 +13,7 @@ import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 import { AudioFeedbackProvider } from "@/contexts/audio-feedback-context";
 import { BracesProvider } from "@/contexts/braces-context";
 import { BrushProvider } from "@/contexts/brush-context";
+import { ExtrasProvider } from "@/contexts/extras-context";
 import { BrushlingProvider } from "@/contexts/brushling-context";
 import { FamilyProvider, useFamily } from "@/contexts/family-context";
 import { ParentGateProvider } from "@/contexts/parent-gate-context";
@@ -127,6 +128,7 @@ function ProfileLayout() {
         <AppLocaleProvider>
           <ParentGateProvider>
           <DataRecoveryGate>
+            <ExtrasProvider>
             <BrushProvider>
               <AudioFeedbackProvider>
                 <BrushlingProvider>
@@ -147,6 +149,7 @@ function ProfileLayout() {
                 </BrushlingProvider>
               </AudioFeedbackProvider>
             </BrushProvider>
+            </ExtrasProvider>
           </DataRecoveryGate>
           </ParentGateProvider>
         </AppLocaleProvider>

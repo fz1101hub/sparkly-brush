@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 import { LocalizedError } from "@/lib/localized-error";
+import { reminderIdPrefix } from "@/lib/reminder-plan";
 import { reminderIdentifiers, type ReminderAdapter } from "@/lib/reminders";
 
 const NORMAL_CHANNEL = "brushlings-routine";
@@ -20,16 +21,26 @@ const isAllowed = (permission: Notifications.NotificationPermissionsStatus) =>
   permission.granted
   || permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
 
-const cancelAll = (identifiers: readonly string[]) =>
-  Promise.all(identifiers.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+/**
+ * This child's reminders: the daily ones of earlier versions and the dated ones planned since
+ * 27 October 2026 (voce 59), all named after the profile.
+ */
+async function cancelAll(profileId: string): Promise<void> {
+  const prefix = reminderIdPrefix(profileId);
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  const ids = new Set([
+    ...reminderIdentifiers(profileId),
+    ...scheduled.map((item) => item.identifier).filter((id) => id.startsWith(prefix)),
+  ]);
+  await Promise.all([...ids].map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+}
 
 export const reminderAdapter: ReminderAdapter = {
   available: true,
   permissionGranted: async () => isAllowed(await Notifications.getPermissionsAsync()),
-  replace: async (profileId, settings, requestPermission, text) => {
-    const identifiers = reminderIdentifiers(profileId);
+  replace: async (profileId, settings, requestPermission, text, plan) => {
     if (!settings.enabled) {
-      await cancelAll(identifiers);
+      await cancelAll(profileId);
       return;
     }
     if (Platform.OS === "android") {
@@ -52,24 +63,22 @@ export const reminderAdapter: ReminderAdapter = {
       });
     }
     if (!isAllowed(permission)) {
-      await cancelAll(identifiers);
+      await cancelAll(profileId);
       throw new LocalizedError("reminders.error.permissionDenied");
     }
-    await cancelAll(identifiers);
-    for (const [index, time] of [settings.morning, settings.evening].entries()) {
-      const [hour, minute] = time.split(":").map(Number);
+    await cancelAll(profileId);
+    for (const reminder of plan) {
       await Notifications.scheduleNotificationAsync({
-        identifier: identifiers[index],
+        identifier: reminder.id,
         content: {
           title: text.title,
-          body: text.body,
+          body: reminder.slot === "lastCall" ? text.lastCallBody : text.body,
           sound: settings.quiet ? false : "default",
           data: { brushlingsProfile: profileId, quiet: settings.quiet },
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour,
-          minute,
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: new Date(reminder.at),
           channelId: settings.quiet ? QUIET_CHANNEL : NORMAL_CHANNEL,
         },
       });
