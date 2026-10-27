@@ -1504,4 +1504,12 @@ export const fr = {
   "toothNames.sixYear": "Une molaire de 6 ans ! Elle pousse vers 6 ans derrière la dernière dent de lait, sans qu’aucune ne tombe. C’est une dent définitive : brosse-la bien, tout au fond.",
   "toothMap.sixYear": "molaire de 6 ans",
   "toothMap.fdi": "numéro FDI {number}",
+  "braces.newSmileSuffix": ", avec un tout nouveau sourire",
+  "braces.newSmileTitle": "Un tout nouveau sourire !",
+  "braces.newSmileText": "Pendant deux semaines, ta créature brille avec ton nouveau sourire.",
+  "braces.missions.title": "Missions de l’appareil",
+  "braces.missions.today": "Soin de l’appareil aujourd’hui",
+  "braces.missions.week": "Une semaine d’appareil propre",
+  "braces.missions.note": "Tu les réussis avec le soin de l’appareil, après le brossage. Elles ne donnent pas de pièces : le prix, c’est un sourire propre.",
+  "braces.missions.open": "Aller au soin de l’appareil",
 } as const satisfies TranslationCatalog;

@@ -1519,4 +1519,12 @@ export const de = {
   "toothNames.sixYear": "Ein Sechsjahrmolar! Er kommt mit etwa 6 Jahren hinter dem letzten Milchzahn durch, ohne dass einer ausfällt. Er ist ein bleibender Zahn: Putz ihn gut, ganz hinten.",
   "toothMap.sixYear": "Sechsjahrmolar",
   "toothMap.fdi": "FDI-Nummer {number}",
+  "braces.newSmileSuffix": ", mit neuem Lächeln",
+  "braces.newSmileTitle": "Ein neues Lächeln!",
+  "braces.newSmileText": "Zwei Wochen lang funkelt dein Wesen mit deinem neuen Lächeln um die Wette.",
+  "braces.missions.title": "Zahnspangen-Missionen",
+  "braces.missions.today": "Zahnspangenpflege heute",
+  "braces.missions.week": "Eine Woche saubere Zahnspange",
+  "braces.missions.note": "Du schaffst sie mit der Zahnspangenpflege nach dem Zähneputzen. Sie bringen keine Münzen: Der Preis ist ein sauberes Lächeln.",
+  "braces.missions.open": "Zur Zahnspangenpflege",
 } as const satisfies TranslationCatalog;

@@ -105,6 +105,19 @@ test.describe("villaggio dei Brushling", () => {
     await expect(page.getByTestId("braces-streak")).toContainText("1 giorno");
     await page.goto("/");
     await expect(page.getByTestId("creature-braces").first()).toBeAttached();
+
+    await page.goto("/missions");
+    await expect(page.getByTestId("braces-missions")).toBeVisible();
+    await expect(page.getByTestId("braces-mission-today")).toContainText("Completata");
+    await expect(page.getByTestId("braces-mission-week")).toContainText("1/7");
+
+    page.once("dialog", (dialog) => void dialog.accept());
+    await page.goto("/braces");
+    await page.getByTestId("braces-remove").click();
+    await expect(page.getByTestId("braces-new-smile")).toBeVisible();
+    await expect(page.getByTestId("creature-new-smile").first()).toBeAttached();
+    await page.goto("/missions");
+    await expect(page.getByTestId("braces-missions")).toHaveCount(0);
   });
 
   test("un vecchio codice di backup lascia apparecchio e carte come sono", async ({ page }) => {

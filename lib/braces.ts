@@ -135,6 +135,16 @@ export function careStreak(careDays: readonly string[], now: number): number {
 /** «Settimana con l'apparecchio pulito»: seven days in a row. */
 export const CLEAN_WEEK_DAYS = 7;
 
+/** After the braces come off the creature shows off its new smile for two weeks. */
+export const NEW_SMILE_DAYS = 14;
+
+/** Counted in local days, from the day the braces came off (day 0) to day 13. */
+export function showsNewSmile(settings: Pick<BracesSettings, "enabled" | "removedAt">, now: number): boolean {
+  if (settings.enabled || settings.removedAt === null) return false;
+  const days = dayDifference(localDateKey(settings.removedAt), localDateKey(now));
+  return days >= 0 && days < NEW_SMILE_DAYS;
+}
+
 export function hadCleanWeek(careDays: readonly string[]): boolean {
   const sorted = [...careDays].sort();
   let run = 0;

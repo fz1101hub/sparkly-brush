@@ -1485,4 +1485,12 @@ export const en = {
   "toothNames.sixYear": "A six-year molar! It comes through at around 6 years, behind the last baby tooth, without one falling out. It is an adult tooth: brush it well, right at the back.",
   "toothMap.sixYear": "six-year molar",
   "toothMap.fdi": "FDI number {number}",
+  "braces.newSmileSuffix": ", with a brand-new smile",
+  "braces.newSmileTitle": "A brand-new smile!",
+  "braces.newSmileText": "For two weeks your creature sparkles along with your new smile.",
+  "braces.missions.title": "Braces missions",
+  "braces.missions.today": "Today’s braces care",
+  "braces.missions.week": "A week of clean braces",
+  "braces.missions.note": "You complete them with the braces care routine, after brushing. They give no coins: the prize is a clean smile.",
+  "braces.missions.open": "Go to braces care",
 } as const satisfies TranslationCatalog;

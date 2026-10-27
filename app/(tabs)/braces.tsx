@@ -97,6 +97,15 @@ export default function BracesScreen() {
               {t("braces.removedOn", { date: formatDate(new Date(settings.removedAt), { day: "numeric", month: "long", year: "numeric" }) })}
             </Text>
           ) : null}
+          {braces.newSmile ? (
+            <View style={styles.hero}>
+              <AnimatedBrushling creature={selected} level={stats.level} size={150} framed={false} active={false} />
+              <Text testID="braces-new-smile" accessibilityRole="header" style={[villageStyles.title, { color: colors.foreground }]}>
+                {t("braces.newSmileTitle")}
+              </Text>
+              <Text style={[villageStyles.body, { color: colors.foreground, textAlign: "center" }]}>{t("braces.newSmileText")}</Text>
+            </View>
+          ) : null}
           <Text style={[villageStyles.body, { color: colors.foreground }]}>{t("braces.intro")}</Text>
           <VillageButton
             testID="braces-enable"

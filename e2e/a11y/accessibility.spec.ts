@@ -210,6 +210,15 @@ test.describe("WCAG automatic audit", () => {
     await page.getByTestId("braces-start-care").click();
     await expect(page.getByTestId("braces-step-timer")).toBeVisible();
     await scan(page, testInfo, "braces-care");
+    await page.goto("/missions");
+    await expect(page.getByTestId("braces-missions")).toBeVisible();
+    await scan(page, testInfo, "braces-missions");
+    page.once("dialog", (dialog) => void dialog.accept());
+    await page.goto("/braces");
+    await page.getByTestId("braces-remove").click();
+    await expect(page.getByTestId("braces-new-smile")).toBeVisible();
+    await page.screenshot({ path: "artifacts/playwright/braces-new-smile.png" });
+    await scan(page, testInfo, "braces-new-smile");
   });
 });
 

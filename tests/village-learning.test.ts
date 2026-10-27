@@ -18,6 +18,7 @@ import {
   getBracesStorage,
   hadCleanWeek,
   normalizeBraces,
+  showsNewSmile,
   withCareDay,
 } from "@/lib/braces";
 import type { BrushSession } from "@/lib/brush-types";
@@ -298,6 +299,16 @@ describe("modalità apparecchio", () => {
     const week = [1, 2, 3, 4, 5, 6, 7].map((date) => localDateKey(new Date(2026, 9, date, 20).getTime()));
     expect(hadCleanWeek(week)).toBe(true);
     expect(hadCleanWeek(week.filter((_, index) => index !== 3))).toBe(false);
+  });
+
+  it("dopo aver tolto l'apparecchio la creatura brilla per due settimane", () => {
+    const removedAt = new Date(2026, 9, 27, 18).getTime();
+    const off = { enabled: false, removedAt };
+    expect(showsNewSmile(off, new Date(2026, 9, 27, 9).getTime())).toBe(true);
+    expect(showsNewSmile(off, new Date(2026, 10, 9, 21).getTime())).toBe(true);
+    expect(showsNewSmile(off, new Date(2026, 10, 10, 8).getTime())).toBe(false);
+    expect(showsNewSmile({ enabled: true, removedAt }, removedAt)).toBe(false);
+    expect(showsNewSmile({ enabled: false, removedAt: null }, removedAt)).toBe(false);
   });
 
   it("salva l'apparecchio solo nel profilo del bambino", async () => {

@@ -16,6 +16,7 @@ import {
   getBracesStorage,
   hadCleanWeek,
   normalizeBraces,
+  showsNewSmile,
   withCareDay,
   type BracesSettings,
 } from "@/lib/braces";
@@ -29,6 +30,8 @@ type BracesContextValue = {
   streak: number;
   doneToday: boolean;
   cleanWeek: boolean;
+  /** The two weeks after the braces came off: the creature sparkles. */
+  newSmile: boolean;
   update: (change: Partial<BracesSettings>) => Promise<void>;
   recordCare: () => Promise<void>;
   /** The day the braces come off: the creature takes them off too, and the app celebrates. */
@@ -97,6 +100,7 @@ export function BracesProvider({ children }: PropsWithChildren) {
       streak: careStreak(settings.careDays, today),
       doneToday: settings.careDays.includes(localDateKey(today)),
       cleanWeek: hadCleanWeek(settings.careDays),
+      newSmile: showsNewSmile(settings, today),
       update,
       recordCare,
       markRemoved,
@@ -119,4 +123,9 @@ export function useCreatureBraces(): Pick<BracesSettings, "type" | "elasticColor
   const value = useContext(BracesContext);
   if (!value?.active) return null;
   return { type: value.settings.type, elasticColor: value.settings.elasticColor };
+}
+
+/** True in the two weeks after the braces came off (false outside the provider). */
+export function useNewSmile(): boolean {
+  return useContext(BracesContext)?.newSmile ?? false;
 }

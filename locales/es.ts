@@ -1495,4 +1495,12 @@ export const es = {
   "toothNames.sixYear": "¡Una muela de los 6 años! Sale hacia los 6 años detrás del último diente de leche, sin que se caiga ninguno. Es un diente definitivo: cepíllalo bien, hasta el fondo.",
   "toothMap.sixYear": "muela de los 6 años",
   "toothMap.fdi": "número FDI {number}",
+  "braces.newSmileSuffix": ", con una sonrisa nueva",
+  "braces.newSmileTitle": "¡Una sonrisa nueva!",
+  "braces.newSmileText": "Durante dos semanas, tu criatura brilla junto a tu sonrisa nueva.",
+  "braces.missions.title": "Misiones del aparato",
+  "braces.missions.today": "Cuidado del aparato de hoy",
+  "braces.missions.week": "Una semana con el aparato limpio",
+  "braces.missions.note": "Se completan con el cuidado del aparato, después del cepillado. No dan monedas: el premio es una sonrisa limpia.",
+  "braces.missions.open": "Ir al cuidado del aparato",
 } as const satisfies TranslationCatalog;

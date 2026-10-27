@@ -337,4 +337,12 @@ export const itUnified = {
   "toothNames.sixYear": "Dente dei 6 anni! Spunta verso i 6 anni dietro l’ultimo dente da latte, senza che ne cada uno. È un dente definitivo: spazzolalo bene, fino in fondo.",
   "toothMap.sixYear": "dente dei 6 anni",
   "toothMap.fdi": "numero FDI {number}",
+  "braces.newSmileSuffix": ", con il sorriso nuovo",
+  "braces.newSmileTitle": "Sorriso nuovo!",
+  "braces.newSmileText": "Per due settimane la tua creatura brilla insieme al tuo sorriso nuovo.",
+  "braces.missions.title": "Missioni dell’apparecchio",
+  "braces.missions.today": "Cura dell’apparecchio di oggi",
+  "braces.missions.week": "Settimana con l’apparecchio pulito",
+  "braces.missions.note": "Si completano con la cura dell’apparecchio, dopo lo spazzolino. Non danno monete: il premio è un sorriso pulito.",
+  "braces.missions.open": "Vai alla cura dell’apparecchio",
 } as const;
