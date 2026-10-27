@@ -19,6 +19,11 @@ const ADDITIONAL_ROUTES = [
   { name: "parent", path: "/parent", title: "Area genitori" },
   { name: "settings", path: "/settings", title: "Impostazioni" },
   { name: "hardware-test", path: "/hardware-test", title: "Collaudo hardware" },
+  { name: "quiz", path: "/quiz", title: "Quiz del sorriso" },
+  { name: "tooth-names", path: "/tooth-names", title: "Nomi dei denti" },
+  { name: "museum", path: "/museum", title: "Museo del sorriso" },
+  { name: "dentist-visit", path: "/dentist-visit", title: "Prepara la visita dal dentista" },
+  { name: "braces", path: "/braces", title: "Modalità apparecchio" },
   { name: "not-found", path: "/collegamento-inesistente", title: "Pagina non trovata" },
 ] as const;
 
@@ -160,6 +165,33 @@ test.describe("WCAG automatic audit", () => {
     await scanBackupComparison(page, testInfo, "");
 
     await scanAdditionalRoutes(page, testInfo, "");
+  });
+
+  test("village activities in play", async ({ page }, testInfo) => {
+    await completeFirstRun(page);
+    await page.goto("/settings");
+    await page.getByTestId("village-energy-limit").click();
+
+    await page.goto("/quiz");
+    await page.getByTestId("quiz-start").click();
+    await page.getByTestId("quiz-answer-1").click();
+    await expect(page.getByTestId("quiz-feedback")).toBeVisible();
+    await scan(page, testInfo, "quiz-feedback");
+
+    await page.goto("/tooth-names");
+    await page.getByTestId("tooth-upper-left-2").click();
+    await expect(page.getByTestId("tooth-name-local")).toBeVisible();
+    await scan(page, testInfo, "tooth-names-explore");
+    await page.getByTestId("tooth-mode-memory").click();
+    await page.getByTestId("tooth-memory-start").click();
+    await page.getByTestId("memory-card-0").click();
+    await scan(page, testInfo, "tooth-names-memory");
+
+    await page.goto("/braces");
+    await page.getByTestId("braces-enable").click();
+    await page.getByTestId("braces-start-care").click();
+    await expect(page.getByTestId("braces-step-timer")).toBeVisible();
+    await scan(page, testInfo, "braces-care");
   });
 });
 

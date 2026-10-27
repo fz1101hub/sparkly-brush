@@ -36,6 +36,18 @@ Le stime sono indicative e vanno riviste quando una voce diventa specifica.
 | 4 | Apparecchio sulla creatura | Attacchi e filo o mascherina trasparente sul Brushling, con elastici colorati scelti dal bambino; la creatura dice «anche io ho l'apparecchio». | M | 🎨 Dopo l'unificazione le creature sono illustrazioni approvate, non più disegni vettoriali: servono livelli calibrati su ogni illustrazione o varianti disegnate. |
 | 5 | Villaggio del Brushling | Evoluzione della scheda Mondo: scuola (quiz e nomi dei denti), studio della dentista (consigli e visita simulata per togliere la paura), laboratorio delle bolle (collezionabili come materiali), orto dei cibi sani, biblioteca delle storie, casa del topolino, museo delle carte, piazza (boss ed eventi), mercato (negozio della tana). Energia guadagnata spazzolando (per esempio 2 attività per sessione, 4 al giorno); la sera il villaggio dorme. | L | 🎨 Da decidere se si disegna una volta sola o per ognuno dei sei temi. Si costruisce in tre fasi (vedi «Ordine consigliato»). |
 
+### Stato al 27 ottobre: prima versione realizzata
+
+Le voci 1–5 sono state sviluppate in una prima versione (commit `f90543c`, `468cb62`, `9f7a5cf` e successivi). I testi educativi sono raccolti in [contenuti-da-validare-2026-10-27.md](contenuti-da-validare-2026-10-27.md) e **vanno rivisti da un dentista pediatrico e da madrelingua prima della pubblicazione**.
+
+| # | Fatto | Ancora da fare |
+|---:|---|---|
+| 1 | 30 domande in 6 categorie e 5 lingue, ognuna con fonte e curiosità; vero/falso e scelta multipla; giri da 3 domande; livello 4–6 e 7–9 anni; nessuna penalità; una carta per ogni domanda indovinata la prima volta; lettura ad alta voce. | Risposte con immagini, «metti in ordine nel tempo», «di chi è questo dente?». Il quiz non dà monete: solo carte, quindi non serve un tetto giornaliero. |
+| 2 | Mappa della bocca da latte (20) e permanente (32) vista di fronte; nome nella lingua dell'app e nella lingua da imparare; pronuncia con la voce del telefono; «Trova il dente» (5 denti) e Memory tra lingue (4 coppie). | «Ascolta e ripeti», numerazione FDI per il genitore, primi molari permanenti segnalati. |
+| 3 | Fisso, mobile, allineatori ed espansore scelti dal genitore (dietro il blocco genitori, se attivo); routine dopo lo spazzolino con timer da 30 a 120 secondi; consigli per tipo; ore delle mascherine inserite dal genitore; serie di giorni e traguardo «settimana con l'apparecchio pulito»; festa il giorno in cui si toglie. | Evoluzione speciale della creatura quando si toglie; collegamento con le missioni. |
+| 4 | Attacchi, filo ed elastici del colore scelto dal bambino, filo dell'apparecchio mobile o mascherina trasparente, calibrati sulla bocca di ognuna delle 11 illustrazioni; la creatura dice «anche io ho l'apparecchio». | L'espansore non si vede (sta sul palato). |
+| 5 | Fase 1 nella scheda Mondo: scuola (quiz e nomi dei denti), studio della dottoressa Dentina (visita guidata in 6 passi e modalità apparecchio), museo delle carte, mercato (porta alla tana). Energia: 2 per sessione completata, massimo 4 al giorno; quiz e giochi costano 1, il resto è gratuito; il genitore può togliere il limite. | Laboratorio delle bolle, orto, biblioteca, casa del topolino, piazza; «la sera il villaggio dorme»; disegno del villaggio (oggi è un elenco di edifici, non una mappa illustrata). |
+
 ## Durante i due minuti
 
 | # | Funzione | Descrizione | Impegno | Note |
