@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SessionCompanion } from "@/components/session-companion";
+import { SessionMirror } from "@/components/session-mirror";
 import { useBrush } from "@/contexts/brush-context";
 import { useExtras } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -19,7 +20,7 @@ function clock(seconds: number): string {
 /**
  * Under the mouth zones while brushing: the surface of the zone to brush now (voce 55: outside,
  * inside, on top, a third of the zone each) and «Spazziamo insieme» (voce 27), the grown-up's
- * own countdown next to the child's.
+ * own countdown next to the child's, and the mirror (voce 76) when the parent turned it on.
  */
 export function SessionExtras({ ink }: { ink: string }) {
   const { t } = useI18n();
@@ -64,6 +65,7 @@ export function SessionExtras({ ink }: { ink: string }) {
             : t("together.toggle")}
         </Text>
       </Pressable>}
+      {extras.mirror ? <SessionMirror ink={ink} /> : null}
     </View>
   );
 }

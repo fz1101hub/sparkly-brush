@@ -25,6 +25,8 @@ export interface ToothbrushDevice {
   model: string;
   firmware?: string;
   battery?: number;
+  /** Motor run time in seconds (characteristic 4040, voce 35); experimental, read at connect. */
+  motorRuntimeSeconds?: number;
 }
 
 export interface BrushLiveData {
@@ -34,6 +36,8 @@ export interface BrushLiveData {
   routineSeconds: number;
   mode: "clean" | "unknown";
   intensity: "bassa" | "media" | "alta" | "sconosciuta";
+  /** The quarter of the routine reported by the handle's quad pacer (40a0, voce 10), 0–3. */
+  quadrant?: number | null;
 }
 
 export interface BrushSession {

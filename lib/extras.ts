@@ -1,11 +1,13 @@
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import { EMPTY_AWARDS, normalizeAwards, type AlbumAwards } from "@/lib/album";
 import { DEFAULT_AVATAR, normalizeAvatar, type Avatar } from "@/lib/avatar";
+import { ZONE_COUNT, type ZoneSeconds } from "@/lib/handle-zones";
 import { BEDTIME_ITEMS, type BedtimeDone, type BedtimeItem } from "@/lib/bedtime";
 import { EPISODES } from "@/lib/learning/serial-story";
 import { AGE_GROUPS, DENTIST_NOTICE_DAYS, type AgeGroup, type DentistNoticeDays } from "@/lib/dental-care";
 import { GOAL_IDS, GOAL_TARGETS, type GoalId, type GoalProposal, type GoalTarget } from "@/lib/milestones";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
+import { normalizeVoiceMessage, type VoiceMessage } from "@/lib/voice-message";
 import { cleanClinic, EMPTY_CLINIC, normalizeMonthStats, type ClinicHeader, type DentalRecord, type DentalRecordKind, type MonthStat } from "@/lib/reports";
 
 export type { DentalRecordKind } from "@/lib/reports";
@@ -86,6 +88,14 @@ export type Extras = {
   legibleFont: boolean;
   highContrast: boolean;
   avatar: Avatar;
+  /** Experimental handle features (lotto 11): zones from the handle, connect on opening. */
+  handleZones: boolean;
+  autoConnect: boolean;
+  /** Seconds per zone of the last handle session with zone data (voce 11). */
+  zoneSeconds: ZoneSeconds | null;
+  /** Microphone and camera (lotto 10): the parent's voice message and the mirror while brushing. */
+  voiceMessage: VoiceMessage | null;
+  mirror: boolean;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -122,6 +132,11 @@ export const DEFAULT_EXTRAS: Extras = {
   legibleFont: false,
   highContrast: false,
   avatar: DEFAULT_AVATAR,
+  handleZones: false,
+  autoConnect: false,
+  zoneSeconds: null,
+  voiceMessage: null,
+  mirror: false,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -219,6 +234,16 @@ export function normalizeExtras(raw: unknown): Extras {
     legibleFont: value.legibleFont === true,
     highContrast: value.highContrast === true,
     avatar: normalizeAvatar(value.avatar),
+    handleZones: value.handleZones === true,
+    autoConnect: value.autoConnect === true,
+    zoneSeconds:
+      value.zoneSeconds && typeof value.zoneSeconds.day === "string" && DAY_KEY.test(value.zoneSeconds.day)
+      && Array.isArray(value.zoneSeconds.seconds) && value.zoneSeconds.seconds.length === ZONE_COUNT
+      && value.zoneSeconds.seconds.every((seconds) => Number.isFinite(seconds) && seconds >= 0 && seconds <= 3_600)
+        ? { day: value.zoneSeconds.day, seconds: [...value.zoneSeconds.seconds] }
+        : null,
+    voiceMessage: normalizeVoiceMessage(value.voiceMessage),
+    mirror: value.mirror === true,
   };
 }
 

@@ -178,6 +178,8 @@ test.describe("villaggio dei Brushling", () => {
   });
 
   test("orto, casa del topolino, piazza e laboratorio", async ({ page }) => {
+    // Five screens and a brushing in one journey: about 30 s on the development server.
+    test.setTimeout(60_000);
     await completeFirstRun(page);
     await keepVillageAwake(page);
     await page.getByTestId("village-energy-limit").click();

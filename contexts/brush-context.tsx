@@ -257,7 +257,9 @@ export function BrushProvider({
   // Target of the running guided session, fixed when it starts: the parent's choice (voce 57).
   const chosenSessionSeconds = useSessionSeconds();
   // Holiday mode (voce 25): the handle left at home is not connected, so its data stays out.
-  const holidayUntil = useOptionalExtras()?.extras.vacationUntil ?? null;
+  const extrasRecord = useOptionalExtras();
+  const holidayUntil = extrasRecord?.extras.vacationUntil ?? null;
+  const handleZones = extrasRecord?.extras.handleZones === true;
   const holidayRef = useRef(holidayUntil);
   useEffect(() => {
     holidayRef.current = holidayUntil;
@@ -1247,9 +1249,10 @@ export function BrushProvider({
   const isActive = live.isBrushing || manualActive;
   const activeElapsed = live.isBrushing ? live.elapsedSeconds : manualElapsed;
   const activeTarget = live.isBrushing ? live.routineSeconds : manualTarget;
-  // Four zones: 30 seconds each on the handle; a quarter of the parent's choice on the timer.
+  // Four zones: 30 seconds each on the handle (or, experimental, the handle's own quad pacer,
+  // voce 10); a quarter of the parent's choice on the timer.
   const activeZone = live.isBrushing
-    ? Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30))
+    ? (handleZones && typeof live.quadrant === "number" ? live.quadrant : Math.min(3, Math.floor(Math.min(activeElapsed, 119) / 30)))
     : Math.min(3, Math.floor(Math.min(activeElapsed, activeTarget - 1) / (activeTarget / 4)));
 
   const value = useMemo<BrushContextValue>(

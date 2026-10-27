@@ -5,6 +5,7 @@ import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { HandleCareCard, HandleTransferCard, HolidayHandleCard, SiblingHandleCard } from "@/components/handle-care";
+import { ExperimentalHandleCard } from "@/components/handle-experiments";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -358,6 +359,7 @@ export default function DeviceScreen() {
 
             <HandleCareCard />
             {!demoMode ? <HandleTransferCard /> : null}
+            {!demoMode ? <ExperimentalHandleCard /> : null}
 
             <Pressable
               testID="device-forget-reset"

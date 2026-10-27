@@ -30,6 +30,7 @@ import { ProfileNavigation } from "@/components/profile-navigation";
 import { AccessibilityModes } from "@/components/accessibility-modes";
 import { AutoBackupRunner } from "@/components/auto-backup-runner";
 import { WidgetSync } from "@/components/widget-sync";
+import { AutoConnect, ZoneTracker } from "@/components/handle-experiments";
 import { MotivationTracker } from "@/components/motivation-tracker";
 import { SessionNarrator } from "@/components/session-companion";
 import { ReminderLifecycle } from "@/components/reminder-lifecycle";
@@ -151,6 +152,8 @@ function ProfileLayout() {
                     <SessionNarrator />
                     <AutoBackupRunner />
                     <WidgetSync />
+                    <ZoneTracker />
+                    <AutoConnect />
                     <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />

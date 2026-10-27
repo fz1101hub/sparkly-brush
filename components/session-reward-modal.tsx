@@ -7,6 +7,7 @@ import { DesignText as Text } from "@/components/design-text";
 import { AfterBrushTips } from "@/components/after-brush-tips";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { CelebrationBurst } from "@/components/celebration-burst";
+import { VoiceMessageReward } from "@/components/voice-message-reward";
 import { useAudioFeedback } from "@/contexts/audio-feedback-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -290,6 +291,7 @@ export function SessionRewardModal({ onClosed }: { onClosed?: (completed: boolea
                   : t("sessionReward.interruptedMessage")}
           </Text>
 
+          {reward.completed ? <VoiceMessageReward onDark={celebration} /> : null}
           <AfterBrushTips completed={reward.completed} onDark={celebration} />
 
           <Pressable

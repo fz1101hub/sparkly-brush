@@ -64,6 +64,9 @@ const config: ExpoConfig = {
       "android.permission.READ_EXTERNAL_STORAGE",
       "android.permission.WRITE_EXTERNAL_STORAGE",
       "android.permission.SYSTEM_ALERT_WINDOW",
+      // androidx.work (used by the home-screen widget for its headless task) declares it for
+      // foreground workers; the widget's worker never asks to run in the foreground.
+      "android.permission.FOREGROUND_SERVICE",
     ],
     intentFilters: [
       {
@@ -146,11 +149,25 @@ const config: ExpoConfig = {
     "expo-sqlite",
     "expo-status-bar",
     [
+      // The microphone only for the parent's voice message (voce 61), asked when recording.
+      // English fallback; `locales` provides the translated InfoPlist.strings.
       "expo-audio",
       {
-        microphonePermission: false,
-        recordAudioAndroid: false,
+        microphonePermission: "Sparkly Brush uses the microphone only when you record a message for your child.",
+        recordAudioAndroid: true,
+        enableBackgroundRecording: false,
         enableBackgroundPlayback: false,
+      },
+    ],
+    [
+      // The front camera only as a mirror while brushing (voce 76): no photos, no video, no
+      // barcode scanner. The same microphone text as expo-audio, so neither plugin removes it.
+      "expo-camera",
+      {
+        cameraPermission: "Sparkly Brush uses the front camera only as a mirror while brushing: it takes no photos and records nothing.",
+        microphonePermission: "Sparkly Brush uses the microphone only when you record a message for your child.",
+        recordAudioAndroid: false,
+        barcodeScannerEnabled: false,
       },
     ],
     [

@@ -12,7 +12,8 @@ Limiti degli store: titolo App Store 30 caratteri, sottotitolo 30; titolo Play 3
 - Notifiche: solo locali (promemoria, visita dal dentista, riepilogo settimanale); nessun token push.
 - Backup: file creati solo quando il genitore lo chiede o, se lo attiva, ogni settimana nei documenti dell’app e in una cartella che sceglie; escono dal telefono solo tramite il foglio di condivisione o la cartella scelta.
 - Face ID / impronta: solo per aprire l’area genitori; l’app riceve solo «riuscito» o «non riuscito».
-- Nessun microfono, nessuna fotocamera nella versione attuale.
+- Microfono: solo quando il genitore registra il messaggio vocale per il bambino (al massimo 20 secondi); l’audio resta negli extra di quel bambino sul telefono e nei backup che il genitore fa.
+- Fotocamera: solo lo «Specchio» durante la spazzolata, se il genitore lo attiva; mostra l’immagine e basta, non scatta foto, non registra e non salva nulla.
 
 ## Italiano
 
@@ -83,6 +84,7 @@ Limiti degli store: titolo App Store 30 caratteri, sottotitolo 30; titolo Play 3
 3. **Bluetooth.** Serve solo per collegarsi allo spazzolino Philips Sonicare for Kids e leggere le sessioni che il manico registra. Non viene usato per conoscere la posizione.
 4. **Notifiche.** Sono solo locali: promemoria, visita dal dentista e riepilogo settimanale, programmati sul telefono. Non usiamo notifiche push.
 5. **Backup e condivisioni.** I file di backup, i rapporti, i PDF e la cartolina escono dal telefono solo se il genitore li condivide (foglio di condivisione) o se attiva il backup automatico in una cartella che sceglie. Chi li riceve li tratta secondo le proprie regole.
-6. **Face ID e impronta.** Servono solo ad aprire l’area genitori; l’app riceve dal sistema solo l’esito della verifica, mai i dati biometrici.
-7. **Bambini.** L’app è pensata per bambini con un adulto: le aree con impostazioni, backup e rapporti possono essere protette con il blocco genitori.
-8. **Contatti.** [indirizzo e-mail del titolare].
+6. **Microfono e fotocamera.** Il microfono si usa solo quando il genitore registra un messaggio vocale per il bambino: la registrazione resta sul telefono (e nei backup che il genitore crea) e si può cancellare in qualsiasi momento. La fotocamera frontale si usa solo come specchio durante la spazzolata, se il genitore lo attiva: l’immagine non viene scattata, registrata né salvata. Entrambi i permessi vengono chiesti solo al primo uso.
+7. **Face ID e impronta.** Servono solo ad aprire l’area genitori; l’app riceve dal sistema solo l’esito della verifica, mai i dati biometrici.
+8. **Bambini.** L’app è pensata per bambini con un adulto: le aree con impostazioni, backup e rapporti possono essere protette con il blocco genitori.
+9. **Contatti.** [indirizzo e-mail del titolare].

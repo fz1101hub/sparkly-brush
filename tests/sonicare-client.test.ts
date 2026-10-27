@@ -243,6 +243,20 @@ describe("NativeSonicareClient", () => {
     expect(last).toMatchObject({ model: "HX6340", firmware: "1.2.3", battery: 42 });
   });
 
+  it("legge in via sperimentale il tempo motore e il quadrante del manico (lotto 11)", async () => {
+    const manager = new FakeManager();
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    const device = manager.devices[0];
+    // The default fake answers a single byte: too short for the 32-bit motor time, so it is unknown.
+    expect(deviceUpdates.at(-1)?.motorRuntimeSeconds).toBeUndefined();
+    device.monitors.get(SONICARE.characteristics.quadPacer)?.(null, { value: b64([2]) });
+    expect(vi.mocked(events.onLiveData).mock.calls.at(-1)?.[0]).toMatchObject({ quadrant: 2 });
+    device.monitors.get(SONICARE.characteristics.quadPacer)?.(null, { value: b64([9]) });
+    expect(vi.mocked(events.onLiveData).mock.calls.at(-1)?.[0]).toMatchObject({ quadrant: null });
+  });
+
   it("rimuove tutti i monitor al disconnect e ignora callback della connessione precedente", async () => {
     const manager = new FakeManager();
     const { events, deviceUpdates } = createEvents();
@@ -252,7 +266,7 @@ describe("NativeSonicareClient", () => {
 
     const first = manager.devices[0];
     const staleBatteryCallback = first.monitors.get(SONICARE.characteristics.batteryLevel)!;
-    expect(first.monitorSubscriptions).toHaveLength(5);
+    expect(first.monitorSubscriptions).toHaveLength(6);
     await client.disconnect();
     expect(first.monitorSubscriptions.every((item) => item.remove.mock.calls.length === 1)).toBe(true);
     expect(first.disconnectSubscription.remove).toHaveBeenCalledTimes(1);
@@ -286,7 +300,7 @@ describe("NativeSonicareClient", () => {
 
     await expect(client.scanAndConnect()).resolves.toBeUndefined();
     expect(manager.devices).toHaveLength(2);
-    expect(manager.devices[1].monitorSubscriptions).toHaveLength(5);
+    expect(manager.devices[1].monitorSubscriptions).toHaveLength(6);
     client.destroy();
   });
 

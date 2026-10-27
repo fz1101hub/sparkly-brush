@@ -58,6 +58,9 @@ Da eseguire con lo stesso report, una riga per piattaforma. Le funzioni marcate 
 | Widget Android | — | Da eseguire | Il widget mostra serie e prossima spazzolata; un tocco avvia il timer |
 | Scorciatoia «Inizia a lavarti i denti» | Da eseguire (Siri «Apri URL») | Da eseguire | `sparklybrush://start` apre Oggi con il timer avviato |
 | Backup di famiglia | Da eseguire | Da eseguire | Il file di famiglia ripristina tutti i bambini su un telefono nuovo |
+| Messaggio vocale del genitore | Da eseguire | Da eseguire | Il microfono viene chiesto solo premendo «Registra un messaggio»; dopo 20 secondi la registrazione si ferma da sola; a fine spazzolata completa il bambino lo ascolta e il genitore vede «l’ha ascoltato» |
+| Specchio con la fotocamera frontale | Da eseguire | Da eseguire | La fotocamera viene chiesta solo toccando «Specchio» durante la sessione; l’immagine è speculare; a fine sessione la fotocamera si spegne (spia di sistema spenta) |
+| Fratelli insieme | Da eseguire | Da eseguire | Da Famiglia → «Fratelli insieme» un solo timer salva la spazzolata nel profilo di ogni bambino scelto |
 
 ## Procedura dettagliata
 

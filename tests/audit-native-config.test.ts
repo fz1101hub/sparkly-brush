@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import config from "../app.config";
@@ -24,6 +26,10 @@ describe("native permission configuration", () => {
     expect(pluginOptions("react-native-ble-plx")).toMatchObject({
       neverForLocation: true,
     });
+  });
+
+  it("blocks the foreground-service permission that WorkManager brings with the widget", () => {
+    expect(config.android?.blockedPermissions).toContain("android.permission.FOREGROUND_SERVICE");
   });
 
   it("describes the Bluetooth permission once, through the BLE plugin, with the English fallback", () => {
@@ -66,11 +72,28 @@ describe("native permission configuration", () => {
     expect(names).not.toContain("expo-image");
   });
 
-  it("does not enable Expo audio background playback", () => {
+  it("does not enable Expo audio in the background and explains the microphone with the English fallback", () => {
     expect(pluginOptions("expo-audio")).toMatchObject({
       enableBackgroundPlayback: false,
-      microphonePermission: false,
-      recordAudioAndroid: false,
+      enableBackgroundRecording: false,
+      microphonePermission: nativeEnglish.ios.NSMicrophoneUsageDescription,
+      recordAudioAndroid: true,
     });
+  });
+
+  it("uses the camera only as a mirror: no barcode scanner, no microphone of its own", () => {
+    const camera = pluginOptions("expo-camera");
+    expect(camera).toMatchObject({
+      cameraPermission: nativeEnglish.ios.NSCameraUsageDescription,
+      recordAudioAndroid: false,
+      barcodeScannerEnabled: false,
+    });
+    // Both plugins write NSMicrophoneUsageDescription: the same text, so the order does not matter.
+    expect(camera.microphonePermission).toBe(pluginOptions("expo-audio").microphonePermission);
+    for (const locale of ["it", "en", "de", "fr", "es", "pt", "nl", "pl"]) {
+      const strings = JSON.parse(readFileSync(`locales/native/${locale}.json`, "utf8")) as { ios: Record<string, string> };
+      expect(strings.ios.NSMicrophoneUsageDescription, locale).toBeTruthy();
+      expect(strings.ios.NSCameraUsageDescription, locale).toBeTruthy();
+    }
   });
 });

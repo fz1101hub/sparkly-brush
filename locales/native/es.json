@@ -2,7 +2,9 @@
   "ios": {
     "CFBundleDisplayName": "Sparkly Brush",
     "NSBluetoothAlwaysUsageDescription": "Sparkly Brush usa Bluetooth para conectarse a tu Philips Sonicare for Kids y registrar tus sesiones de cepillado.",
-    "NSFaceIDUsageDescription": "Sparkly Brush usa Face ID solo para abrir el área de padres."
+    "NSFaceIDUsageDescription": "Sparkly Brush usa Face ID solo para abrir el área de padres.",
+    "NSMicrophoneUsageDescription": "Sparkly Brush usa el micrófono solo cuando grabas un mensaje para tu hijo o hija.",
+    "NSCameraUsageDescription": "Sparkly Brush usa la cámara frontal solo como espejo durante el cepillado: no hace fotos ni graba nada."
   },
   "android": {
     "app_name": "Sparkly Brush",

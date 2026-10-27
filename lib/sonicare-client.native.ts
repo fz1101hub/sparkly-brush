@@ -23,6 +23,7 @@ import {
   uint32LE,
 } from "@/lib/sonicare-codec";
 import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
+import { quadrantFromByte } from "@/lib/handle-zones";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
 // The Kids handle can advertise only every 10–30 seconds; fourteen seconds
@@ -325,7 +326,7 @@ export class NativeSonicareClient implements SonicareClient {
       this.assertOperation(operationGeneration);
       this.events.onLog("info", `${services.length} servizi GATT rilevati`);
 
-      const [model, firmware, battery, handleState, elapsed, target, intensity] =
+      const [model, firmware, battery, handleState, elapsed, target, intensity, motorRuntime] =
         await guard(Promise.all([
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.modelNumber),
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.firmwareRevision),
@@ -334,6 +335,7 @@ export class NativeSonicareClient implements SonicareClient {
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.brushingTime),
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.routineLength),
           this.readByte(SONICARE.services.routine, SONICARE.characteristics.intensity),
+          this.readUint32(SONICARE.services.primary, SONICARE.characteristics.motorRuntime),
         ]));
       this.assertOperation(operationGeneration);
 
@@ -352,6 +354,7 @@ export class NativeSonicareClient implements SonicareClient {
         model: model || "Sonicare4Kids",
         firmware: firmware || undefined,
         battery: battery ?? undefined,
+        motorRuntimeSeconds: motorRuntime ?? undefined,
       };
       this.events.onDevice({ ...this.deviceInfo });
       this.events.onLiveData({ ...this.live });
@@ -423,6 +426,16 @@ export class NativeSonicareClient implements SonicareClient {
           this.live = { ...this.live, routineSeconds };
           this.events.onLiveData({ ...this.live });
         }
+      },
+    );
+
+    // Experimental (voce 10): the handle's own zone; the app uses it only if the parent turns it on.
+    this.monitor(
+      SONICARE.services.routine,
+      SONICARE.characteristics.quadPacer,
+      (bytes) => {
+        this.live = { ...this.live, quadrant: quadrantFromByte(bytes[0]) };
+        this.events.onLiveData({ ...this.live });
       },
     );
 
@@ -550,6 +563,12 @@ export class NativeSonicareClient implements SonicareClient {
   private async readByte(service: string, characteristic: string): Promise<number | null> {
     const value = await this.readCharacteristic(service, characteristic);
     return bytesFromBase64(value?.value)[0] ?? null;
+  }
+
+  private async readUint32(service: string, characteristic: string): Promise<number | null> {
+    const value = await this.readCharacteristic(service, characteristic);
+    const bytes = bytesFromBase64(value?.value);
+    return bytes.length >= 4 ? uint32LE(bytes) : null;
   }
 
   private async readUint16(service: string, characteristic: string): Promise<number | null> {

@@ -42,6 +42,7 @@ export default function TabLayout() {
       <Tabs.Screen name="album" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="dental-booklet" options={{ href: null }} />
+      <Tabs.Screen name="siblings" options={{ href: null }} />
     </Tabs>
   );
 }

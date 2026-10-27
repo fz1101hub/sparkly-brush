@@ -11,6 +11,7 @@ import { discoveryOfDay } from "@/lib/milestones";
 import { seasonAt, seasonEnd } from "@/lib/seasons";
 import { speak } from "@/lib/speech";
 import { inWeek, isSummaryTime, weekStart } from "@/lib/weekly";
+import { forgottenZone } from "@/lib/handle-zones";
 import { onHoliday } from "@/lib/bedtime";
 import { isEvening, localDateKey } from "@/lib/day-progress";
 
@@ -27,6 +28,9 @@ export function HomeMotivation({ ink }: { ink: string }) {
   const today = useCurrentDayTimestamp();
   const now = useMinuteClock();
   if (!ready) return null;
+  // The zone that got less time yesterday (voce 11, experimental): only the day after.
+  const yesterday = localDateKey(new Date(new Date(today).getFullYear(), new Date(today).getMonth(), new Date(today).getDate() - 1, 12).getTime());
+  const forgotten = extras.handleZones && extras.zoneSeconds?.day === yesterday ? forgottenZone(extras.zoneSeconds.seconds) : null;
   const summary = isSummaryTime(now) && !demoMode
     ? history.filter((session) => session.completed && inWeek(session, weekStart(now))).length
     : null;
@@ -59,6 +63,9 @@ export function HomeMotivation({ ink }: { ink: string }) {
           {isEvening(now) ? "🌙 → 🪥 → 💦 → 😴" : "🪥 → 💦 → 🥣"}
         </Text>
       ) : null}
+      {forgotten !== null ? (
+        <Text testID="home-forgotten-zone" style={[styles.text, { color: ink }]}>🦷 {t("zones.forgotten", { zone: t(ZONE_KEYS[forgotten]) })}</Text>
+      ) : null}
       {onHoliday(extras.vacationUntil, localDateKey(today)) ? (
         <Text testID="home-holiday" style={[styles.text, { color: ink, fontWeight: "800" }]}>🧳 {t("holiday.home")}</Text>
       ) : null}
@@ -85,6 +92,8 @@ export function HomeMotivation({ ink }: { ink: string }) {
     </>
   );
 }
+
+const ZONE_KEYS = ["timer.zone.upperRight", "timer.zone.upperLeft", "timer.zone.lowerLeft", "timer.zone.lowerRight"] as const;
 
 const styles = StyleSheet.create({
   row: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: 8 },

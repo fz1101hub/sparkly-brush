@@ -93,6 +93,9 @@ vi.mock("@/components/celebration-burst", async () => {
       ReactModule.createElement("CelebrationBurst", props),
   };
 });
+vi.mock("@/components/voice-message-reward", () => ({
+  VoiceMessageReward: () => null,
+}));
 vi.mock("@/contexts/audio-feedback-context", () => ({
   useAudioFeedback: () => ({ playSuccess: vi.fn() }),
 }));
