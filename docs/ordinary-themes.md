@@ -4,7 +4,7 @@ Sei temi liberi: Avventura (iniziale), Arcade, Cosmo, Giardino, Bolle e Sottomar
 
 ## Uso
 
-Dalla Home si tocca la barra del livello («Scegli il tema»), oppure Famiglia → Profili e temi. La scelta vale per il bambino attivo e si applica dopo il salvataggio; se fallisce, il tema precedente resta attivo con un messaggio. La chiave locale è `brushlings.appearance.v1`, separata da progressi e preferenze di gioco e non inclusa nei backup; dati mancanti o non validi tornano ad Avventura. Ogni tema ha il proprio aspetto chiaro o scuro e non segue quello del sistema.
+Dalla Home si tocca la barra del livello («Scegli il tema»), oppure Famiglia → Profili e temi. La scelta vale per il bambino attivo e si applica dopo il salvataggio; se fallisce, il tema precedente resta attivo con un messaggio. La chiave locale è `brushlings.appearance.v1`, separata da progressi e preferenze di gioco e inclusa nel backup su file dal 27 ottobre 2026 (i file precedenti lasciano il tema com’è); dati mancanti o non validi tornano ad Avventura. Ogni tema ha il proprio aspetto chiaro o scuro e non segue quello del sistema.
 
 ## Interfaccia
 

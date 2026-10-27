@@ -3,7 +3,7 @@ import { DEFAULT_THEME_ID, isAppThemeId, type AppThemeId } from "@/lib/app-theme
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 
-// Appearance is device-local and independent of game state and backups.
+// Appearance is per child and independent of game state; the complete backup file carries it.
 export const THEME_STORAGE_KEY = "brushlings.appearance.v1";
 function buildProfileStorage(profileId: string) {
   const AsyncStorage = createProfileStorage(profileId);

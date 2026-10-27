@@ -1501,4 +1501,8 @@ export const de = {
   "backup.summaryBraces": "Zahnspange",
   "backup.bracesNone": "Keine",
   "backup.compareKept": "Bleibt so",
+  "backup.summaryTheme": "Thema",
+  "backup.summaryReminders": "Erinnerungen",
+  "backup.remindersOff": "Aus",
+  "backup.remindersAt": "{morning} und {evening}",
 } as const satisfies TranslationCatalog;

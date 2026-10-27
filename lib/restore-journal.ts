@@ -1,6 +1,9 @@
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
+import type { AppThemeId } from "@/lib/app-themes";
 import { getBracesStorage, normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { getReminderService, type ReminderSettings } from "@/lib/reminders";
+import { getThemeStorage } from "@/lib/theme-storage";
 import {
   getBrushlingStorage,
   type BrushlingProfile,
@@ -19,10 +22,13 @@ export type RestoreSnapshot = {
   parentRewards: ParentReward[];
   village: VillageState;
   braces: BracesSettings;
+  themeId: AppThemeId;
+  reminders: ReminderSettings;
 };
 
-/** Journals written before the village existed (27 October 2026) have no village or braces. */
-type StoredSnapshot = Omit<RestoreSnapshot, "village" | "braces"> & Partial<Pick<RestoreSnapshot, "village" | "braces">>;
+/** Journals written before 27 October 2026 have no village, braces, theme or reminders. */
+type AddedFields = "village" | "braces" | "themeId" | "reminders";
+type StoredSnapshot = Omit<RestoreSnapshot, AddedFields> & Partial<Pick<RestoreSnapshot, AddedFields>>;
 
 type ApplicationRestoreJournal = {
   version: 1;
@@ -38,6 +44,8 @@ function buildProfileStorage(profileId: string) {
   const { saveAppPreferences } = getPreferencesStorage(profileId);
   const villageStorage = getVillageStorage(profileId);
   const bracesStorage = getBracesStorage(profileId);
+  const themeStorage = getThemeStorage(profileId);
+  const reminderService = getReminderService(profileId);
   const APPLICATION_RESTORE_JOURNAL_KEY = "sparkly-brush.application-restore.v1";
 
   async function applySnapshot(snapshot: StoredSnapshot): Promise<void> {
@@ -46,6 +54,9 @@ function buildProfileStorage(profileId: string) {
     await saveParentRewards(snapshot.parentRewards);
     if (snapshot.village) await villageStorage.save(normalizeVillage(snapshot.village));
     if (snapshot.braces) await bracesStorage.save(normalizeBraces(snapshot.braces));
+    if (snapshot.themeId) await themeStorage.saveThemeId(snapshot.themeId);
+    // Stored only: the reminder lifecycle schedules them again when the app starts.
+    if (snapshot.reminders) await reminderService.restoreSettings(snapshot.reminders);
   }
 
   async function beginApplicationRestore(

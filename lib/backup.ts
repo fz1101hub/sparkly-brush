@@ -11,7 +11,9 @@ import {
   normalizeLifetimeProgress,
   type LifetimeProgress,
 } from "@/lib/lifetime-progress";
+import { isAppThemeId, type AppThemeId } from "@/lib/app-themes";
 import { normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { validateReminders, type ReminderSettings } from "@/lib/reminders";
 import { normalizeVillage, type VillageState } from "@/lib/village";
 import {
   DEFAULT_CUSTOMIZATION_STATE,
@@ -60,6 +62,9 @@ export type BrushlingsBackupManifest = {
    */
   village?: VillageState;
   braces?: BracesSettings;
+  /** The child's theme and reminder times; older files leave the current ones as they are. */
+  themeId?: AppThemeId;
+  reminders?: ReminderSettings;
 };
 
 function normalizeOwnedIds(value: unknown): CustomizationItemId[] {
@@ -186,6 +191,8 @@ export function createBackupManifest(
     parentRewards?: ParentReward[];
     village?: VillageState;
     braces?: BracesSettings;
+    themeId?: AppThemeId;
+    reminders?: ReminderSettings;
   },
 ): BrushlingsBackupManifest {
   return {
@@ -201,7 +208,19 @@ export function createBackupManifest(
     lifetimeProgress,
     ...(extras?.village ? { village: extras.village } : {}),
     ...(extras?.braces ? { braces: extras.braces } : {}),
+    ...(extras?.themeId ? { themeId: extras.themeId } : {}),
+    ...(extras?.reminders ? { reminders: extras.reminders } : {}),
   };
+}
+
+/** Invalid reminder times in a file are dropped: the phone keeps its own. */
+function readReminders(value: unknown): ReminderSettings | undefined {
+  if (value === undefined) return undefined;
+  try {
+    return validateReminders(value as ReminderSettings);
+  } catch {
+    return undefined;
+  }
 }
 
 export function parseBackupManifest(json: string): BrushlingsBackupManifest {
@@ -226,6 +245,7 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
   const ownedIds = normalizeOwnedIds(rawCustomization?.ownedIds);
   const lifetimeProgress = normalizeLifetimeProgress(raw.lifetimeProgress);
   if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
+  const reminders = readReminders(raw.reminders);
 
   return {
     format: "brushlings-backup",
@@ -251,6 +271,8 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
     lifetimeProgress,
     ...(raw.village !== undefined ? { village: normalizeVillage(raw.village) } : {}),
     ...(raw.braces !== undefined ? { braces: normalizeBraces(raw.braces) } : {}),
+    ...(isAppThemeId(raw.themeId) ? { themeId: raw.themeId } : {}),
+    ...(reminders ? { reminders } : {}),
   };
 }
 

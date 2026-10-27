@@ -1,8 +1,10 @@
+import type { AppThemeId } from "@/lib/app-themes";
 import type { PortableBrushlingProfile } from "@/lib/backup";
 import type { BracesSettings, BracesType } from "@/lib/braces";
 import type { CustomizationState } from "@/lib/customization";
 import type { LifetimeProgress } from "@/lib/lifetime-progress";
 import type { ParentReward } from "@/lib/parent-rewards";
+import type { ReminderSettings } from "@/lib/reminders";
 import type { VillageState } from "@/lib/village";
 
 type BackupSnapshot = {
@@ -16,6 +18,8 @@ type BackupSnapshot = {
   /** Absent in text codes and in files written before the village existed. */
   village?: Pick<VillageState, "cards">;
   braces?: Pick<BracesSettings, "enabled" | "type">;
+  themeId?: AppThemeId;
+  reminders?: Pick<ReminderSettings, "enabled" | "morning" | "evening">;
 };
 
 type Summary = {
@@ -28,6 +32,9 @@ type Summary = {
   museumCards: number | null;
   /** The braces worn, "none", or null when the backup has no braces mode (the current one stays). */
   braces: BracesType | "none" | null;
+  /** null when the backup has no theme or reminders: the current ones stay. */
+  themeId: AppThemeId | null;
+  reminders: Pick<ReminderSettings, "enabled" | "morning" | "evening"> | null;
 };
 
 export type BackupComparison = {
@@ -48,6 +55,10 @@ function summarize(snapshot: BackupSnapshot): Summary {
     familyRewards: snapshot.parentRewards.length,
     museumCards: snapshot.village ? snapshot.village.cards.length : null,
     braces: snapshot.braces ? (snapshot.braces.enabled ? snapshot.braces.type : "none") : null,
+    themeId: snapshot.themeId ?? null,
+    reminders: snapshot.reminders
+      ? { enabled: snapshot.reminders.enabled, morning: snapshot.reminders.morning, evening: snapshot.reminders.evening }
+      : null,
   };
 }
 

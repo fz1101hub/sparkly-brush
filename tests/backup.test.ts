@@ -156,6 +156,26 @@ describe("portable Brushlings backup", () => {
     expect(restored.braces).toEqual(braces);
   });
 
+  it("porta tema e promemoria e scarta orari non validi", () => {
+    const reminders = { enabled: true, morning: "07:15", evening: "19:30", quiet: true };
+    const manifest = createBackupManifest(
+      { selectedId: "bloopi", hasChosenStarter: true },
+      DEFAULT_CUSTOMIZATION_STATE,
+      createLifetimeProgress([session]),
+      123456,
+      { themeId: "underwater", reminders },
+    );
+    const restored = parseBackupManifest(JSON.stringify(manifest));
+    expect(restored.themeId).toBe("underwater");
+    expect(restored.reminders).toEqual(reminders);
+
+    const tampered = parseBackupManifest(
+      JSON.stringify({ ...manifest, themeId: "neon", reminders: { ...reminders, morning: "25:99" } }),
+    );
+    expect(tampered.themeId).toBeUndefined();
+    expect(tampered.reminders).toBeUndefined();
+  });
+
   it("un file scritto prima del villaggio non porta villaggio né apparecchio", () => {
     const manifest = createBackupManifest(
       { selectedId: "bloopi", hasChosenStarter: true },
@@ -163,7 +183,7 @@ describe("portable Brushlings backup", () => {
       createLifetimeProgress([session]),
       123456,
     );
-    expect(JSON.stringify(manifest)).not.toMatch(/village|braces/);
+    expect(JSON.stringify(manifest)).not.toMatch(/village|braces|themeId|reminders/);
 
     const restored = parseBackupManifest(JSON.stringify(manifest));
     expect(restored.village).toBeUndefined();

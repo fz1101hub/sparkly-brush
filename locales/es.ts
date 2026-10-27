@@ -1477,4 +1477,8 @@ export const es = {
   "backup.summaryBraces": "Aparato dental",
   "backup.bracesNone": "Ninguno",
   "backup.compareKept": "Sin cambios",
+  "backup.summaryTheme": "Tema",
+  "backup.summaryReminders": "Recordatorios",
+  "backup.remindersOff": "Desactivados",
+  "backup.remindersAt": "{morning} y {evening}",
 } as const satisfies TranslationCatalog;

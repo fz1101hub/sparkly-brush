@@ -13,6 +13,7 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { useBraces } from "@/contexts/braces-context";
+import { useFamily } from "@/contexts/family-context";
 import { useVillage } from "@/contexts/village-context";
 import { useBack } from "@/hooks/use-back";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -22,7 +23,16 @@ import {
   type TranslationKey,
   type TranslationParams,
 } from "@/lib/i18n";
+import { themeText } from "@/lib/app-themes";
 import type { BracesType } from "@/lib/braces";
+import { reminderAdapter } from "@/lib/reminder-platform";
+import {
+  DEFAULT_REMINDERS,
+  getReminderService,
+  reminderText,
+  type ReminderSettings,
+} from "@/lib/reminders";
+import { useThemeContext } from "@/lib/theme-provider";
 import { DEFAULT_LOCALE } from "@/lib/locale-types";
 import {
   backupFingerprint,
@@ -113,6 +123,11 @@ export default function BackupScreen() {
   const { definitions: parentRewards, ready: rewardsReady, restoreRewards } = useParentRewards();
   const { state: village, ready: villageReady, restoreVillage } = useVillage();
   const { settings: braces, ready: bracesReady, restoreBraces } = useBraces();
+  const { theme, setTheme } = useThemeContext();
+  const themeId = theme.id;
+  const { active: activeProfile } = useFamily();
+  const reminderService = useRef(getReminderService(activeProfile.id));
+  const [reminders, setReminders] = useState<ReminderSettings | null>(null);
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
   const [filePreview, setFilePreview] = useState<CompleteBackupPreview | null>(null);
@@ -123,12 +138,32 @@ export default function BackupScreen() {
   const [manifestCreatedAt] = useState(Date.now);
   const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
   const backupReady =
-    historyReady && profileReady && preferencesReady && rewardsReady && villageReady && bracesReady && !restoreInProgress;
+    historyReady && profileReady && preferencesReady && rewardsReady && villageReady && bracesReady
+    && reminders !== null && !restoreInProgress;
   const nativeBackupAvailable = Platform.OS !== "web";
 
   useEffect(() => {
     filePreviewRef.current = filePreview;
   }, [filePreview]);
+
+  // Unreadable reminder settings are not worth blocking a backup: the defaults stand in.
+  useEffect(() => {
+    let mounted = true;
+    const service = reminderService.current;
+    void service
+      .load()
+      .catch(() => ({ ...DEFAULT_REMINDERS }))
+      .then((loaded) => {
+        if (mounted) setReminders(loaded);
+      });
+    const unsubscribe = service.subscribe((restored) => {
+      if (mounted) setReminders(restored);
+    });
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => () => {
     if (filePreviewRef.current) discardCompleteBackupPreview(filePreviewRef.current);
@@ -140,9 +175,21 @@ export default function BackupScreen() {
       customization,
       lifetimeProgress,
       manifestCreatedAt,
-      { preferences, parentRewards, village, braces },
+      { preferences, parentRewards, village, braces, themeId, reminders: reminders ?? DEFAULT_REMINDERS },
     ),
-    [braces, customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId, village],
+    [
+      braces,
+      customization,
+      hasChosenStarter,
+      lifetimeProgress,
+      manifestCreatedAt,
+      parentRewards,
+      preferences,
+      reminders,
+      selectedId,
+      themeId,
+      village,
+    ],
   );
   const fileComparison = filePreview
     ? compareBackupContents(
@@ -215,6 +262,14 @@ export default function BackupScreen() {
     }
   };
 
+  // After a restore on a new phone this may ask for the notification permission; if it is refused,
+  // the reminder settings show it, and the restore itself has already succeeded.
+  const rescheduleReminders = () => {
+    void reminderService.current
+      .reconcile(reminderText(t, activeProfile.name), reminderAdapter, true)
+      .catch(() => {});
+  };
+
   const restoreLegacy = async () => {
     if (!preview || pendingRestore !== "legacy" || demoMode || !backupReady || busy) return;
     setPendingRestore(null);
@@ -225,15 +280,19 @@ export default function BackupScreen() {
       parentRewards,
       village,
       braces,
+      themeId,
+      reminders: reminders ?? DEFAULT_REMINDERS,
     };
     const next: RestoreSnapshot = {
       profile: preview.profile,
       customization: preview.customization,
       preferences: preview.preferences,
       parentRewards: preview.parentRewards,
-      // Text codes predate the village and braces mode: the child's current ones stay.
+      // Text codes predate village, braces, themes and reminders: the child's current ones stay.
       village,
       braces,
+      themeId,
+      reminders: reminders ?? DEFAULT_REMINDERS,
     };
     setBusy(true);
     setError(null);
@@ -249,6 +308,8 @@ export default function BackupScreen() {
             await restoreRewards(next.parentRewards);
             await restoreVillage(next.village);
             await restoreBraces(next.braces);
+            await reminderService.current.restoreSettings(next.reminders);
+            await setTheme(next.themeId);
             await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
             databaseCommitted = true;
             await completeApplicationRestore(restoreId);
@@ -260,6 +321,8 @@ export default function BackupScreen() {
                 restoreRewards(previous.parentRewards),
                 restoreVillage(previous.village),
                 restoreBraces(previous.braces),
+                reminderService.current.restoreSettings(previous.reminders),
+                setTheme(previous.themeId),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);
@@ -292,15 +355,19 @@ export default function BackupScreen() {
       parentRewards,
       village,
       braces,
+      themeId,
+      reminders: reminders ?? DEFAULT_REMINDERS,
     };
     const next: RestoreSnapshot = {
       profile: selectedPreview.manifest.profile,
       customization: selectedPreview.manifest.customization,
       preferences: selectedPreview.manifest.preferences,
       parentRewards: selectedPreview.manifest.parentRewards,
-      // Files written before the village existed leave the current village and braces as they are.
+      // Files written before 27 October 2026 leave these as they are.
       village: selectedPreview.manifest.village ?? village,
       braces: selectedPreview.manifest.braces ?? braces,
+      themeId: selectedPreview.manifest.themeId ?? themeId,
+      reminders: selectedPreview.manifest.reminders ?? reminders ?? DEFAULT_REMINDERS,
     };
     setBusy(true);
     setError(null);
@@ -316,10 +383,13 @@ export default function BackupScreen() {
             await restoreRewards(next.parentRewards);
             await restoreVillage(next.village);
             await restoreBraces(next.braces);
+            await reminderService.current.restoreSettings(next.reminders);
+            await setTheme(next.themeId);
             const restored = await restoreCompleteBackup(selectedPreview, restoreId);
             databaseCommitted = true;
             adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
             await completeApplicationRestore(restoreId);
+            rescheduleReminders();
           } catch (caught) {
             if (!databaseCommitted) {
               const rollback = await Promise.allSettled([
@@ -328,6 +398,8 @@ export default function BackupScreen() {
                 restoreRewards(previous.parentRewards),
                 restoreVillage(previous.village),
                 restoreBraces(previous.braces),
+                reminderService.current.restoreSettings(previous.reminders),
+                setTheme(previous.themeId),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);
@@ -483,6 +555,13 @@ export default function BackupScreen() {
               icon="sentiment-satisfied-alt"
               label={t("backup.summaryBraces")}
               value={bracesLabel(braces.enabled ? braces.type : "none", t)}
+              keepCase
+            />
+            <Summary icon="palette" label={t("backup.summaryTheme")} value={themeText(themeId, t).name} keepCase />
+            <Summary
+              icon="alarm"
+              label={t("backup.summaryReminders")}
+              value={remindersLabel(reminders, t)}
               keepCase
             />
           </View>
@@ -800,6 +879,16 @@ function BackupComparisonCard({
         current={bracesLabel(comparison.current.braces ?? "none", t)}
         incoming={comparison.incoming.braces === null ? t("backup.compareKept") : bracesLabel(comparison.incoming.braces, t)}
       />
+      <ComparisonRow
+        label={t("backup.summaryTheme")}
+        current={comparison.current.themeId ? themeText(comparison.current.themeId, t).name : t("backup.compareKept")}
+        incoming={comparison.incoming.themeId ? themeText(comparison.incoming.themeId, t).name : t("backup.compareKept")}
+      />
+      <ComparisonRow
+        label={t("backup.summaryReminders")}
+        current={remindersLabel(comparison.current.reminders, t)}
+        incoming={comparison.incoming.reminders ? remindersLabel(comparison.incoming.reminders, t) : t("backup.compareKept")}
+      />
       <Text style={styles.comparisonNote}>
         {comparison.historyComplete
           ? t("backup.compareCompleteRows", { count: formatNumber(comparison.incomingRows) })
@@ -826,6 +915,13 @@ function bracesLabel(value: BracesType | "none", t: (key: TranslationKey) => str
   if (value === "none") return t("backup.bracesNone");
   const label = t(BRACES_LABELS[value]);
   return label.charAt(0).toLocaleUpperCase() + label.slice(1);
+}
+
+function remindersLabel(
+  value: Pick<ReminderSettings, "enabled" | "morning" | "evening"> | null,
+  t: (key: TranslationKey, params?: TranslationParams) => string,
+): string {
+  return value?.enabled ? t("backup.remindersAt", { morning: value.morning, evening: value.evening }) : t("backup.remindersOff");
 }
 
 function ComparisonRow({

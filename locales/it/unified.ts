@@ -319,4 +319,8 @@ export const itUnified = {
   "backup.summaryBraces": "Apparecchio",
   "backup.bracesNone": "Nessuno",
   "backup.compareKept": "Resta com’è",
+  "backup.summaryTheme": "Tema",
+  "backup.summaryReminders": "Promemoria",
+  "backup.remindersOff": "Spenti",
+  "backup.remindersAt": "{morning} e {evening}",
 } as const;

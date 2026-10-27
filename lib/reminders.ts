@@ -93,12 +93,30 @@ export const getReminderService = createProfileStore((profileId: string) => {
     queue = next.catch(() => {});
     return next;
   };
+  const listeners = new Set<(settings: ReminderSettings) => void>();
   return {
     load,
-    /** Re-schedules what is saved, e.g. after a reinstall or a language change. */
-    reconcile: (text: ReminderText, adapter: ReminderAdapter) =>
+    /** Told when a backup restore replaces the settings, so an open settings screen reloads. */
+    subscribe: (listener: (settings: ReminderSettings) => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    /**
+     * Re-schedules what is saved, e.g. after a reinstall, a language change or a restore (which
+     * may ask for the notification permission on a new phone).
+     */
+    reconcile: (text: ReminderText, adapter: ReminderAdapter, requestPermission = false) =>
       serialize(async () => {
-        if (adapter.available) await adapter.replace(profileId, await load(), false, text);
+        if (adapter.available) await adapter.replace(profileId, await load(), requestPermission, text);
+      }),
+    /** Stores a backup's settings without scheduling: `reconcile` schedules them afterwards. */
+    restoreSettings: (settings: ReminderSettings) =>
+      serialize(async () => {
+        const next = validateReminders(settings);
+        await storage.setItem(REMINDERS_KEY, JSON.stringify(next));
+        listeners.forEach((listener) => listener(next));
       }),
     save: (settings: ReminderSettings, text: ReminderText, adapter: ReminderAdapter) =>
       serialize(async () => {

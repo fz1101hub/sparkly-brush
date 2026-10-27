@@ -1467,4 +1467,8 @@ export const en = {
   "backup.summaryBraces": "Braces",
   "backup.bracesNone": "None",
   "backup.compareKept": "Stays as is",
+  "backup.summaryTheme": "Theme",
+  "backup.summaryReminders": "Reminders",
+  "backup.remindersOff": "Off",
+  "backup.remindersAt": "{morning} and {evening}",
 } as const satisfies TranslationCatalog;

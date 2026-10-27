@@ -84,6 +84,23 @@ describe("local routine reminders", () => {
     await getReminderService("primary").reconcile(TEXT, adapter);
     expect(adapter.replace).toHaveBeenCalledWith("primary", DEFAULT_REMINDERS, false, TEXT);
   });
+  it("restores a backup's settings, tells the open screen and then schedules with permission", async () => {
+    const service = getReminderService("child-a");
+    const seen = vi.fn();
+    const stop = service.subscribe(seen);
+    const restored = { enabled: true, morning: "07:15", evening: "19:30", quiet: false };
+    await service.restoreSettings(restored);
+    stop();
+    await service.restoreSettings(DEFAULT_REMINDERS);
+
+    expect(seen).toHaveBeenCalledTimes(1);
+    expect(seen).toHaveBeenCalledWith(restored);
+    await expect(service.restoreSettings({ ...restored, morning: "99:00" })).rejects.toThrow();
+    await service.restoreSettings(restored);
+    const adapter = { available: true, replace: vi.fn(async () => {}) };
+    await service.reconcile(TEXT, adapter, true);
+    expect(adapter.replace).toHaveBeenCalledWith("child-a", restored, true, TEXT);
+  });
   it("does not claim browser background notifications are available", async () => {
     await expect(
       getReminderService("primary").save(enabled, TEXT, {

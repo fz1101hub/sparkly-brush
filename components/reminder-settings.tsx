@@ -40,8 +40,16 @@ export function ReminderSettings() {
       .catch(() => {
         if (mounted) setNotice("reminderSettings.loadFailed");
       });
+    const unsubscribe = service.current.subscribe((restored) => {
+      if (!mounted) return;
+      setSettings(restored);
+      setSaved(false);
+      setError(null);
+      setReady(true);
+    });
     return () => {
       mounted = false;
+      unsubscribe();
     };
   }, []);
 

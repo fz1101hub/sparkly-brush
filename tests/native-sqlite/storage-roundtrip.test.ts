@@ -232,7 +232,7 @@ describe("native storage on real SQLite", () => {
     expect(paths.listApp().filter((file) => file.includes("sparkly-import-"))).toEqual([]);
   });
 
-  it("(c'') the file carries the child's village and braces mode", async () => {
+  it("(c'') the file carries the child's village, braces mode, theme and reminders", async () => {
     const app = await loadStorage();
     const seeded = await seedHistory(app);
     const village = { ...DEFAULT_VILLAGE, cards: ["body-enamel", "world-tooth-fairy"], visits: 2, learningLanguage: "fr" as const };
@@ -241,6 +241,8 @@ describe("native storage on real SQLite", () => {
       createBackupManifest({ selectedId: "bloopi", hasChosenStarter: true }, CUSTOMIZATION, seeded.lifetimeProgress, Date.now(), {
         village,
         braces,
+        themeId: "garden",
+        reminders: { enabled: true, morning: "07:10", evening: "19:50", quiet: true },
       }),
     );
 
@@ -250,6 +252,8 @@ describe("native storage on real SQLite", () => {
     const preview = await target.completeBackup.pickAndInspectCompleteBackup();
     expect(preview!.manifest.village).toEqual(village);
     expect(preview!.manifest.braces).toEqual(braces);
+    expect(preview!.manifest.themeId).toBe("garden");
+    expect(preview!.manifest.reminders).toEqual({ enabled: true, morning: "07:10", evening: "19:50", quiet: true });
     target.completeBackup.discardCompleteBackupPreview(preview!);
   });
 
