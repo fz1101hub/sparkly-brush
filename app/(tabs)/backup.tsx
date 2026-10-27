@@ -4,6 +4,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "re
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { FamilyBackupCard } from "@/components/family-backup-card";
 import { ParentGuard } from "@/components/parent-guard";
 import { ScreenContainer } from "@/components/screen-container";
 import { GOLD_BUTTON_BACKGROUND } from "@/constants/accessibility-colors";
@@ -833,6 +834,7 @@ export default function BackupScreen() {
             {t("backup.privacy")}
           </Text>
         </View>
+        <FamilyBackupCard />
       </ScrollView>
       </ParentGuard>
     </ScreenContainer>

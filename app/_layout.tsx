@@ -28,6 +28,7 @@ import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { ProfileNavigation } from "@/components/profile-navigation";
 import { AccessibilityModes } from "@/components/accessibility-modes";
+import { AutoBackupRunner } from "@/components/auto-backup-runner";
 import { MotivationTracker } from "@/components/motivation-tracker";
 import { SessionNarrator } from "@/components/session-companion";
 import { ReminderLifecycle } from "@/components/reminder-lifecycle";
@@ -147,6 +148,7 @@ function ProfileLayout() {
                     <ReminderLifecycle />
                     <MotivationTracker />
                     <SessionNarrator />
+                    <AutoBackupRunner />
                     <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />

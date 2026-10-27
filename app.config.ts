@@ -42,6 +42,9 @@ const config: ExpoConfig = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       CFBundleAllowMixedLocalizations: true,
+      // The automatic family backups (voce 44) are in the app's documents: visible in Files.
+      UIFileSharingEnabled: true,
+      LSSupportsOpeningDocumentsInPlace: true,
       // NSBluetoothAlwaysUsageDescription comes from the react-native-ble-plx plugin below and
       // is localized through `locales` (InfoPlist.strings) in the five supported languages.
     },
