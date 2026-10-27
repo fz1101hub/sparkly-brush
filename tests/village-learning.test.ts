@@ -38,16 +38,26 @@ import {
   typesIn,
 } from "@/lib/learning/tooth-names";
 import { SUPPORTED_LOCALES } from "@/lib/locale-types";
+import { FOODS, gardenRound } from "@/lib/learning/garden";
+import { STORIES } from "@/lib/learning/stories";
 import {
+  BOSS_HP,
+  bossHits,
   DAILY_ENERGY_MAX,
   DEFAULT_VILLAGE,
   earnedEnergy,
   energyStatus,
   getVillageStorage,
+  isVillageAsleep,
   normalizeVillage,
   spendEnergy,
+  weekKey,
   withCard,
+  withLostTooth,
+  withoutLostTooth,
 } from "@/lib/village";
+import { currentEvent, nextEvent } from "@/lib/village-events";
+import { BUBBLE_RECIPES, canBrew, missingMaterials } from "@/lib/village-lab";
 
 beforeEach(() => data.clear());
 
@@ -315,5 +325,91 @@ describe("modalità apparecchio", () => {
     await getBracesStorage("child-b").save({ ...DEFAULT_BRACES, enabled: true, type: "aligners" });
     expect((await getBracesStorage("primary").load()).enabled).toBe(false);
     expect((await getBracesStorage("child-b").load())).toMatchObject({ enabled: true, type: "aligners" });
+  });
+});
+
+describe("villaggio: sera, piazza, topolino, orto, laboratorio e biblioteca", () => {
+  it("la sera dorme e chiude i giochi, se il genitore non lo spegne", () => {
+    const at = (hour: number, minute = 0) => new Date(2026, 9, 27, hour, minute).getTime();
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(20, 29))).toBe(false);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(20, 30))).toBe(true);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(6, 29))).toBe(true);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(6, 30))).toBe(false);
+    expect(isVillageAsleep({ ...DEFAULT_VILLAGE, bedtime: "19:30" }, at(19, 45))).toBe(true);
+    expect(isVillageAsleep({ ...DEFAULT_VILLAGE, nightRest: false }, at(23))).toBe(false);
+    const free = { ...DEFAULT_VILLAGE, energyLimit: false };
+    expect(spendEnergy(free, [], at(21))).toBeNull();
+    expect(spendEnergy({ ...free, nightRest: false }, [], at(21))).not.toBeNull();
+  });
+
+  it("il mostro della placca conta le sessioni complete da lunedì a domenica", () => {
+    const wednesday = new Date(2026, 9, 28, 12).getTime();
+    expect(weekKey(wednesday)).toBe("2026-10-26");
+    expect(weekKey(new Date(2026, 10, 1, 21).getTime())).toBe("2026-10-26");
+    expect(weekKey(new Date(2026, 10, 2, 7).getTime())).toBe("2026-11-02");
+    const history = [
+      session(new Date(2026, 9, 25, 20).getTime()),
+      session(new Date(2026, 9, 26, 8).getTime()),
+      session(new Date(2026, 9, 27, 20).getTime()),
+      session(new Date(2026, 9, 27, 8).getTime(), false),
+    ];
+    expect(bossHits(history, wednesday)).toBe(2);
+    expect(BOSS_HP).toBe(10);
+  });
+
+  it("il topolino segna ogni dente da latte una volta sola e scarta dati non validi", () => {
+    const now = new Date(2026, 9, 27, 18).getTime();
+    const once = withLostTooth(withLostTooth(DEFAULT_VILLAGE, "lower-left-0", now), "lower-left-0", now);
+    expect(once.lostTeeth).toEqual([{ id: "lower-left-0", day: "2026-10-27" }]);
+    expect(withoutLostTooth(once, "lower-left-0").lostTeeth).toEqual([]);
+    expect(
+      normalizeVillage({ lostTeeth: [{ id: "upper-right-7", day: "2026-10-27" }, { id: "upper-right-1", day: "ieri" }, { id: "upper-right-1", day: "2026-10-01" }] })
+        .lostTeeth,
+    ).toEqual([{ id: "upper-right-1", day: "2026-10-01" }]);
+  });
+
+  it("i nuovi dati del villaggio si normalizzano (e quindi passano dal backup)", () => {
+    expect(normalizeVillage({})).toMatchObject({ nightRest: true, bedtime: "20:30", gardenBest: 0, bubbles: [], bossWeeks: [], storiesRead: [] });
+    expect(
+      normalizeVillage({ nightRest: false, bedtime: "23:00", gardenBest: 99, bubbles: ["rainbow", "nope"], bossWeeks: ["2026-10-26", "x"], storiesRead: ["water", "x"] }),
+    ).toMatchObject({ nightRest: false, bedtime: "20:30", gardenBest: 6, bubbles: ["rainbow"], bossWeeks: ["2026-10-26"], storiesRead: ["water"] });
+  });
+
+  it("l'orto mescola sei cibi, metà amici dei denti, con nomi in tutte le lingue", () => {
+    const round = gardenRound(seeded(3));
+    expect(round).toHaveLength(6);
+    expect(round.filter((food) => food.group === "friend")).toHaveLength(3);
+    for (const food of FOODS) {
+      for (const locale of SUPPORTED_LOCALES) expect(food.name[locale].length, `${food.id}/${locale}`).toBeGreaterThan(1);
+    }
+  });
+
+  it("il laboratorio usa i tesori trovati senza consumarli", () => {
+    const none = { "bubble-pearl": 0, "fresh-leaf": 0, "spark-crystal": 0, "moon-shard": 0, "smile-star": 0 };
+    const rainbow = BUBBLE_RECIPES.find((recipe) => recipe.id === "rainbow")!;
+    expect(canBrew(rainbow, none)).toBe(false);
+    expect(missingMaterials(rainbow, { ...none, "bubble-pearl": 1 })).toEqual({ "smile-star": 1 });
+    expect(canBrew(rainbow, { ...none, "bubble-pearl": 1, "smile-star": 3 })).toBe(true);
+    for (const recipe of BUBBLE_RECIPES) {
+      for (const locale of SUPPORTED_LOCALES) expect(recipe.name[locale].length).toBeGreaterThan(3);
+    }
+  });
+
+  it("la piazza conosce le feste e la prossima in arrivo", () => {
+    expect(currentEvent(new Date(2026, 9, 31, 10).getTime())?.id).toBe("halloween");
+    expect(currentEvent(new Date(2026, 9, 27, 10).getTime())).toBeNull();
+    const next = nextEvent(new Date(2026, 9, 27, 10).getTime());
+    expect(next.event.id).toBe("halloween");
+    expect(next.starts.getDate()).toBe(31);
+    expect(nextEvent(new Date(2026, 11, 28).getTime()).event.id).toBe("oralHealthDay");
+  });
+
+  it("le storie hanno quattro pagine in ogni lingua", () => {
+    for (const story of STORIES) {
+      for (const locale of SUPPORTED_LOCALES) {
+        expect(story.text[locale].pages, `${story.id}/${locale}`).toHaveLength(4);
+        expect(story.text[locale].title.length).toBeGreaterThan(3);
+      }
+    }
   });
 });

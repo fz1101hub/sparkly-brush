@@ -9,6 +9,7 @@ import { useI18n } from "@/contexts/locale-context";
 import { useVillage } from "@/contexts/village-context";
 import { useBack } from "@/hooks/use-back";
 import { useColors } from "@/hooks/use-colors";
+import { WAKE_TIME } from "@/lib/village";
 
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
@@ -144,10 +145,12 @@ export function ChoiceChips<T extends string | number>({
 export function EnergyPill() {
   const colors = useColors();
   const { t } = useI18n();
-  const { energy } = useVillage();
-  const text = energy.limited
-    ? t("village.energy.count", { available: energy.available, max: energy.max })
-    : t("village.energy.unlimited");
+  const { energy, asleep } = useVillage();
+  const text = asleep
+    ? t("village.asleep.short", { time: WAKE_TIME })
+    : energy.limited
+      ? t("village.energy.count", { available: energy.available, max: energy.max })
+      : t("village.energy.unlimited");
   return (
     <View
       testID="village-energy"
@@ -155,20 +158,30 @@ export function EnergyPill() {
       accessibilityLabel={text}
       style={[styles.energy, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}
     >
-      <MaterialIcons accessible={false} name="bolt" size={22} color={colors.foreground} />
+      <MaterialIcons accessible={false} name={asleep ? "bedtime" : "bolt"} size={22} color={colors.foreground} />
       <Text style={[styles.energyText, { color: colors.foreground }]}>{text}</Text>
     </View>
   );
 }
 
-/** Shown when today's energy is used up: brushing is the only way to get more. */
+/**
+ * Shown when a game cannot start: today's energy is used up (brushing is the only way to get
+ * more), or it is the evening and the village sleeps.
+ */
 export function NoEnergyNotice() {
   const colors = useColors();
   const { t } = useI18n();
+  const { asleep } = useVillage();
   return (
-    <View testID="village-no-energy" accessibilityRole="alert" style={[styles.notice, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+    <View
+      testID={asleep ? "village-asleep" : "village-no-energy"}
+      accessibilityRole="alert"
+      style={[styles.notice, { borderColor: colors.border, backgroundColor: colors.surface }]}
+    >
       <MaterialIcons accessible={false} name="bedtime" size={24} color={colors.foreground} />
-      <Text style={[styles.noticeText, { color: colors.foreground }]}>{t("village.energy.empty")}</Text>
+      <Text style={[styles.noticeText, { color: colors.foreground }]}>
+        {asleep ? t("village.asleep.text", { time: WAKE_TIME }) : t("village.energy.empty")}
+      </Text>
     </View>
   );
 }

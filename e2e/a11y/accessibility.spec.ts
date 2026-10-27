@@ -24,6 +24,11 @@ const ADDITIONAL_ROUTES = [
   { name: "museum", path: "/museum", title: "Museo del sorriso" },
   { name: "dentist-visit", path: "/dentist-visit", title: "Prepara la visita dal dentista" },
   { name: "braces", path: "/braces", title: "Modalità apparecchio" },
+  { name: "garden", path: "/garden", title: "Orto dei cibi" },
+  { name: "bubble-lab", path: "/bubble-lab", title: "Laboratorio delle bolle" },
+  { name: "square", path: "/square", title: "Piazza del villaggio" },
+  { name: "library", path: "/library", title: "Biblioteca delle storie" },
+  { name: "tooth-mouse", path: "/tooth-mouse", title: "Casa del topolino" },
   { name: "not-found", path: "/collegamento-inesistente", title: "Pagina non trovata" },
 ] as const;
 
@@ -171,6 +176,7 @@ test.describe("WCAG automatic audit", () => {
     await completeFirstRun(page);
     await page.goto("/settings");
     await page.getByTestId("village-energy-limit").click();
+    await page.getByTestId("village-night").click();
 
     await page.goto("/quiz");
     await page.getByTestId("quiz-start").click();
@@ -219,6 +225,21 @@ test.describe("WCAG automatic audit", () => {
     await expect(page.getByTestId("braces-new-smile")).toBeVisible();
     await page.screenshot({ path: "artifacts/playwright/braces-new-smile.png" });
     await scan(page, testInfo, "braces-new-smile");
+
+    await page.goto("/garden");
+    await page.getByTestId("garden-start").click();
+    await page.getByTestId("garden-sometimes").click();
+    await expect(page.getByTestId("garden-feedback")).toBeVisible();
+    await scan(page, testInfo, "garden-feedback");
+    await page.goto("/tooth-mouse");
+    await page.getByTestId("tooth-upper-right-0").click();
+    await page.getByTestId("mouse-record").click();
+    await expect(page.getByTestId("mouse-thanks")).toBeVisible();
+    await scan(page, testInfo, "tooth-mouse-recorded");
+    await page.goto("/library");
+    await page.getByTestId("library-open-plaque").click();
+    await expect(page.getByTestId("library-page")).toBeVisible();
+    await scan(page, testInfo, "library-story");
   });
 });
 

@@ -11,6 +11,7 @@ import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import type { TranslationKey } from "@/lib/i18n";
 import { QUIZ_QUESTIONS } from "@/lib/learning/quiz-content";
+import { WAKE_TIME } from "@/lib/village";
 
 type Building = {
   id: string;
@@ -28,7 +29,7 @@ export function VillageSection() {
   const colors = useColors();
   const router = useRouter();
   const { t } = useI18n();
-  const { state } = useVillage();
+  const { state, asleep } = useVillage();
   const braces = useBraces();
   const cards = QUIZ_QUESTIONS.filter((question) => state.cards.includes(question.id)).length;
   const buildings: Building[] = [
@@ -53,6 +54,41 @@ export function VillageSection() {
       ],
     },
     {
+      id: "garden",
+      icon: "local-florist",
+      title: "village.garden.title",
+      text: t("village.garden.text"),
+      actions: [{ label: t("village.garden.open"), route: "/(tabs)/garden", testID: "village-garden" }],
+    },
+    {
+      id: "lab",
+      icon: "science",
+      title: "village.lab.title",
+      text: t("village.lab.text", { count: state.bubbles.length }),
+      actions: [{ label: t("village.lab.open"), route: "/(tabs)/bubble-lab", testID: "village-lab" }],
+    },
+    {
+      id: "square",
+      icon: "fort",
+      title: "village.square.title",
+      text: t("village.square.text"),
+      actions: [{ label: t("village.square.open"), route: "/(tabs)/square", testID: "village-square" }],
+    },
+    {
+      id: "library",
+      icon: "local-library",
+      title: "village.library.title",
+      text: t("village.library.text"),
+      actions: [{ label: t("village.library.open"), route: "/(tabs)/library", testID: "village-library" }],
+    },
+    {
+      id: "mouse",
+      icon: "cottage",
+      title: "village.mouse.title",
+      text: t("village.mouse.text", { count: state.lostTeeth.length }),
+      actions: [{ label: t("village.mouse.open"), route: "/(tabs)/tooth-mouse", testID: "village-mouse" }],
+    },
+    {
       id: "museum",
       icon: "museum",
       title: "village.museum.title",
@@ -72,6 +108,12 @@ export function VillageSection() {
       <Text accessibilityRole="header" style={[styles.heading, { color: colors.foreground }]}>{t("village.title")}</Text>
       <Text style={[villageStyles.small, { color: colors.muted }]}>{t("village.intro")}</Text>
       <EnergyPill />
+      {asleep ? (
+        <View testID="village-sleeping" style={[styles.night, { backgroundColor: colors.primarySoft, borderColor: colors.border }]}>
+          <MaterialIcons accessible={false} name="nights-stay" size={24} color={colors.foreground} />
+          <Text style={[villageStyles.small, styles.copy, { color: colors.foreground }]}>{t("village.asleep.banner", { time: WAKE_TIME })}</Text>
+        </View>
+      ) : null}
       {buildings.map((building) => (
         <VillageCard key={building.id}>
           <View style={villageStyles.row}>
@@ -102,4 +144,5 @@ const styles = StyleSheet.create({
   icon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   copy: { flex: 1, minWidth: 160 },
   action: { flexGrow: 1, flexBasis: 140 },
+  night: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 18, padding: 12 },
 });

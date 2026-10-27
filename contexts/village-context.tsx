@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 
+import { AppState } from "react-native";
+
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
@@ -18,6 +20,7 @@ import {
   DEFAULT_VILLAGE,
   energyStatus,
   getVillageStorage,
+  isVillageAsleep,
   normalizeVillage,
   spendEnergy as spendEnergyState,
   withCard,
@@ -35,6 +38,10 @@ type VillageContextValue = {
   spendEnergy: () => Promise<boolean>;
   collectCard: (id: string) => Promise<void>;
   update: (change: Partial<VillageState>) => Promise<void>;
+  /** A change computed from the latest saved state (lost teeth, bubbles, trophies…). */
+  apply: (change: (previous: VillageState) => VillageState) => Promise<void>;
+  /** Evening rest: between bedtime and the morning the games that cost energy are closed. */
+  asleep: boolean;
   /** Replaces the whole village with a backup's (restore and its rollback). */
   restoreVillage: (state: VillageState) => Promise<void>;
 };
@@ -53,6 +60,20 @@ export function VillageProvider({ children }: PropsWithChildren) {
   const current = useRef<VillageState>(DEFAULT_VILLAGE);
   const historyRef = useRef(history);
   const writes = useRef<Promise<unknown>>(Promise.resolve());
+  // Minute clock for the evening rest (the day timestamp alone does not see bedtime come).
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timer = setInterval(tick, 60_000);
+    const subscription = AppState.addEventListener("change", (appState) => {
+      if (appState === "active") tick();
+    });
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     historyRef.current = history;
@@ -107,6 +128,10 @@ export function VillageProvider({ children }: PropsWithChildren) {
     (change: Partial<VillageState>) => commit((previous) => ({ next: { ...previous, ...change }, result: undefined })),
     [commit],
   );
+  const apply = useCallback(
+    (change: (previous: VillageState) => VillageState) => commit((previous) => ({ next: change(previous), result: undefined })),
+    [commit],
+  );
   const restoreVillage = useCallback(
     (restored: VillageState) => commit(() => ({ next: { ...restored }, result: undefined })),
     [commit],
@@ -122,9 +147,11 @@ export function VillageProvider({ children }: PropsWithChildren) {
       spendEnergy,
       collectCard,
       update,
+      apply,
+      asleep: isVillageAsleep(state, now),
       restoreVillage,
     }),
-    [collectCard, history, locale, ready, restoreVillage, spendEnergy, state, today, update],
+    [apply, collectCard, history, locale, now, ready, restoreVillage, spendEnergy, state, today, update],
   );
 
   return <VillageContext.Provider value={value}>{children}</VillageContext.Provider>;

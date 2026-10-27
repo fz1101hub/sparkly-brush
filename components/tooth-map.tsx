@@ -32,7 +32,8 @@ const SIZE: Record<ToothType, number> = {
   wisdom: 0.088,
 };
 
-export type ToothMark = "selected" | "correct" | "wrong";
+/** "lost": a baby tooth that fell out (the mouse's house), drawn as a dashed gap. */
+export type ToothMark = "selected" | "correct" | "wrong" | "lost";
 
 /**
  * The mouth seen from the front, as when looking at a friend: the child's right side is on the
@@ -98,6 +99,7 @@ export function ToothMap({
           }),
           star ? t("toothMap.sixYear") : null,
           showFdi ? t("toothMap.fdi", { number: fdi }) : null,
+          mark === "lost" ? t("toothMap.lost") : null,
         ]
           .filter(Boolean)
           .join(", ");
@@ -119,9 +121,27 @@ export function ToothMap({
               height: size,
               borderRadius: size * 0.38,
               backgroundColor:
-                mark === "correct" ? "#7BD88F" : mark === "wrong" ? "#FF9B9B" : colored ? TOOTH_COLORS[tooth.type] : "#FFFFFF",
+                mark === "correct"
+                  ? "#7BD88F"
+                  : mark === "wrong"
+                    ? "#FF9B9B"
+                    : mark === "lost"
+                      ? GUM
+                      : colored
+                        ? TOOTH_COLORS[tooth.type]
+                        : "#FFFFFF",
               borderWidth: mark ? 3 : 1.5,
-              borderColor: mark === "selected" ? "#1D4ED8" : mark === "wrong" ? "#B42318" : mark === "correct" ? "#17633F" : OUTLINE,
+              borderStyle: mark === "lost" ? "dashed" : "solid",
+              borderColor:
+                mark === "selected"
+                  ? "#1D4ED8"
+                  : mark === "wrong"
+                    ? "#B42318"
+                    : mark === "correct"
+                      ? "#17633F"
+                      : mark === "lost"
+                        ? "#6B7280"
+                        : OUTLINE,
               alignItems: "center",
               justifyContent: "center",
             }}

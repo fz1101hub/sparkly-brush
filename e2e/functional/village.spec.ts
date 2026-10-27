@@ -12,6 +12,14 @@ async function completeFirstRun(page: Page) {
   await expect(page.getByTestId("today-screen")).toBeVisible();
 }
 
+/** The village sleeps in the evening by default: daytime tests switch the rest off. */
+async function keepVillageAwake(page: Page) {
+  await page.goto("/settings");
+  const night = page.getByTestId("village-night");
+  await expect(night).toBeVisible();
+  await night.click();
+}
+
 /** Answers the question on screen, whatever its kind: the first answer, or the items in a row. */
 async function answerQuestion(page: Page) {
   const firstItem = page.getByTestId("quiz-item-0");
@@ -37,6 +45,7 @@ test.describe("villaggio dei Brushling", () => {
 
   test("l'energia arriva solo spazzolando e un giro di quiz la consuma", async ({ page }) => {
     await completeFirstRun(page);
+    await keepVillageAwake(page);
 
     await page.goto("/quiz");
     await expect(page.getByTestId("village-energy")).toContainText("0 su 4");
@@ -148,5 +157,57 @@ test.describe("villaggio dei Brushling", () => {
 
     await page.goto("/braces");
     await expect(page.getByTestId("braces-start-care")).toBeVisible();
+  });
+
+  test("la sera il villaggio dorme: i giochi chiudono, la biblioteca resta aperta", async ({ page }) => {
+    await page.clock.setFixedTime(new Date(2026, 9, 27, 22, 0));
+    await completeFirstRun(page);
+    await page.goto("/settings");
+    await page.getByTestId("village-energy-limit").click();
+    await page.goto("/collection");
+    await expect(page.getByTestId("village-sleeping")).toBeVisible();
+    await page.goto("/quiz");
+    await page.getByTestId("quiz-start").click();
+    await expect(page.getByTestId("village-asleep")).toBeVisible();
+
+    await page.goto("/library");
+    await page.getByTestId("library-open-water").click();
+    for (let next = 0; next < 3; next += 1) await page.getByTestId("library-next").click();
+    await page.getByTestId("library-end").click();
+    await expect(page.getByText("Già letta")).toBeVisible();
+  });
+
+  test("orto, casa del topolino, piazza e laboratorio", async ({ page }) => {
+    await completeFirstRun(page);
+    await keepVillageAwake(page);
+    await page.getByTestId("village-energy-limit").click();
+
+    await page.goto("/garden");
+    await page.getByTestId("garden-start").click();
+    for (let food = 0; food < 6; food += 1) {
+      await page.getByTestId("garden-friend").click();
+      await expect(page.getByTestId("garden-feedback")).toBeVisible();
+      await page.getByTestId("garden-next").click();
+    }
+    await expect(page.getByTestId("garden-result")).toContainText("su 6");
+
+    await page.goto("/tooth-mouse");
+    await page.getByTestId("tooth-lower-left-0").click();
+    await page.getByTestId("mouse-record").click();
+    await expect(page.getByTestId("mouse-thanks")).toBeVisible();
+    await expect(page.getByTestId("mouse-count")).toHaveText("1 dente caduto");
+    await page.reload();
+    await page.getByTestId("tooth-lower-left-0").click();
+    await expect(page.getByTestId("mouse-lost-on")).toBeVisible();
+    await page.getByTestId("mouse-undo").click();
+    await expect(page.getByTestId("mouse-count")).toHaveText("0 denti caduti");
+
+    await brushOnce(page);
+    await page.goto("/square");
+    await expect(page.getByTestId("square-boss-status")).toContainText("Ancora 9 colpi");
+
+    await page.goto("/bubble-lab");
+    await expect(page.getByTestId("lab-count")).toContainText("0 su 5");
+    await expect(page.getByTestId("lab-brew-smile")).toBeDisabled();
   });
 });
