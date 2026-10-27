@@ -47,9 +47,12 @@ async function scan(page: Page, testInfo: TestInfo, name: string) {
     body: JSON.stringify(results, null, 2),
     contentType: "application/json",
   });
+  // The nodes are in the message too: the CI artifacts are not always at hand.
   const violations = results.violations.map(
     (violation) =>
-      `${violation.id}: ${violation.description} (${violation.nodes.length})`,
+      `${violation.id}: ${violation.description} (${violation.nodes.length}) → ${violation.nodes
+        .map((node) => `${node.target.join(" ")} ${node.html.slice(0, 160)}`)
+        .join(" | ")}`,
   );
   expect.soft(violations, `Violazioni axe in ${name}`).toEqual([]);
 }
