@@ -234,6 +234,8 @@ test.describe("percorso funzionale web", () => {
   test("cambia lingua immediatamente e conserva la scelta dopo reload", async ({
     page,
   }) => {
+    // Five languages, each through Settings and the handle screen: longer than the default.
+    test.setTimeout(90_000);
     await completeFirstRun(page);
     await page.goto("/settings");
 

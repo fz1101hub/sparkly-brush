@@ -59,9 +59,9 @@ describe("app preferences locale migration", () => {
 
     storage.set(
       PREFERENCES_KEY,
-      JSON.stringify({ ...DEFAULT_APP_PREFERENCES, language: "pt" }),
+      JSON.stringify({ ...DEFAULT_APP_PREFERENCES, language: "ja" }),
     );
-    storage.set(FAMILY_SETTINGS_KEY, JSON.stringify({ language: "pt" }));
+    storage.set(FAMILY_SETTINGS_KEY, JSON.stringify({ language: "ja" }));
     await expect(loadAppPreferences()).resolves.toMatchObject({
       language: "system",
     });

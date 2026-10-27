@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/learning/shuffle";
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /**
  * «Orto dei cibi»: sort foods into «amici dei denti» and «ogni tanto». The two groups follow the
@@ -13,7 +13,7 @@ export type Food = {
   id: string;
   group: FoodGroup;
   picture: string;
-  name: Record<SupportedLocale, string>;
+  name: Record<ContentLocale, string>;
 };
 
 export const FOODS: readonly Food[] = [

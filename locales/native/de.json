@@ -5,6 +5,8 @@
     "NSFaceIDUsageDescription": "Sparkly Brush verwendet Face ID nur, um den Elternbereich zu öffnen."
   },
   "android": {
-    "app_name": "Sparkly Brush"
+    "app_name": "Sparkly Brush",
+    "shortcut_brush_short": "Zähneputzen",
+    "shortcut_brush_long": "Mit dem Zähneputzen beginnen"
   }
 }

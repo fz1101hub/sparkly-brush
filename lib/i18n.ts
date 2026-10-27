@@ -2,6 +2,9 @@ import { de } from "@/locales/de";
 import { en } from "@/locales/en";
 import { es } from "@/locales/es";
 import { fr } from "@/locales/fr";
+import { nl } from "@/locales/nl";
+import { pl } from "@/locales/pl";
+import { pt } from "@/locales/pt";
 import { it, type TranslationCatalog, type TranslationKey } from "@/locales/it";
 import { LOCALE_TAGS, type SupportedLocale } from "@/lib/locale-types";
 
@@ -34,17 +37,25 @@ const TRANSLATIONS: Record<SupportedLocale, TranslationCatalog> = {
   de,
   fr,
   es,
+  pt,
+  nl,
+  pl,
 };
 
 /**
- * CLDR cardinal category for the integers the app counts. Every supported language has only
- * "one" and "other" here; French uses "one" for 0 and 1. Values may arrive already formatted
- * ("1.234", "1 234"), so only their digits are read.
+ * CLDR cardinal category for the integers the app counts. Most languages have only "one" and
+ * "other"; French uses "one" for 0 and 1; Polish (voce 71) has "one", "few" (2–4, 22–24…, not
+ * 12–14) and "many". Values may arrive already formatted ("1.234", "1 234"): only digits are read.
  */
-export function pluralCategory(locale: SupportedLocale, value: string | number): "one" | "other" {
+export function pluralCategory(locale: SupportedLocale, value: string | number): "one" | "few" | "many" | "other" {
   const count = typeof value === "number" ? Math.abs(value) : Number(String(value).replace(/\D/g, ""));
-  if (!Number.isFinite(count) || String(value).replace(/\D/g, "") === "") return "other";
+  if (!Number.isFinite(count) || String(value).replace(/\D/g, "") === "") return locale === "pl" ? "many" : "other";
   if (locale === "fr") return count < 2 ? "one" : "other";
+  if (locale === "pl") {
+    if (count === 1) return "one";
+    const lastTwo = count % 100;
+    return count % 10 >= 2 && count % 10 <= 4 && (lastTwo < 12 || lastTwo > 14) ? "few" : "many";
+  }
   return count === 1 ? "one" : "other";
 }
 
@@ -55,12 +66,17 @@ function renderTranslation(
 ): string {
   const template = TRANSLATIONS[locale][key] ?? it[key] ?? key;
   return template.replace(
-    /\{([a-zA-Z0-9_]+)(?:\|([^|{}]*)\|([^|{}]*))?\}/g,
-    (match, name: string, one: string | undefined, other: string | undefined) => {
+    /\{([a-zA-Z0-9_]+)((?:\|[^|{}]*){2,3})?\}/g,
+    (match, name: string, forms: string | undefined) => {
       const value = params[name];
       if (value === undefined) return match;
-      if (one === undefined || other === undefined) return String(value);
-      return pluralCategory(locale, value) === "one" ? one : other;
+      if (forms === undefined) return String(value);
+      // `{n|one|other}`, or for Polish `{n|one|few|many}`.
+      const [one, second, third] = forms.slice(1).split("|");
+      const category = pluralCategory(locale, value);
+      if (category === "one") return one;
+      if (third === undefined) return second;
+      return category === "few" ? second : third;
     },
   );
 }

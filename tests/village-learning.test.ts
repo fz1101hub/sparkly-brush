@@ -37,7 +37,7 @@ import {
   teethFor,
   typesIn,
 } from "@/lib/learning/tooth-names";
-import { SUPPORTED_LOCALES } from "@/lib/locale-types";
+import { CONTENT_LOCALES as SUPPORTED_LOCALES } from "@/lib/locale-types";
 import { FOODS, gardenRound } from "@/lib/learning/garden";
 import { STORIES } from "@/lib/learning/stories";
 import {

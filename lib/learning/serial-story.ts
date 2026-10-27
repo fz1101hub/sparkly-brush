@@ -1,13 +1,13 @@
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /**
  * «Storie a puntate» (voce 7): one episode per brushing, in four parts, one for each zone of the
  * mouth, read with the phone's voice and ending with a small suspense. A season has 14 episodes;
  * an episode is marked heard only when the session is completed, so a missed one comes back.
  */
-export type Episode = Record<SupportedLocale, { title: string; parts: readonly [string, string, string, string] }>;
+export type Episode = Record<ContentLocale, { title: string; parts: readonly [string, string, string, string] }>;
 
-export const SEASON_TITLE: Record<SupportedLocale, string> = {
+export const SEASON_TITLE: Record<ContentLocale, string> = {
   it: "La mappa del Sorriso d’Oro",
   en: "The map of the Golden Smile",
   de: "Die Karte des Goldenen Lächelns",

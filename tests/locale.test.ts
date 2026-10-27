@@ -50,7 +50,7 @@ describe("locale resolution", () => {
   );
 
   it("rifiuta preferenze sconosciute", () => {
-    expect(isLanguagePreference("pt")).toBe(false);
+    expect(isLanguagePreference("ja")).toBe(false);
     expect(isLanguagePreference(42)).toBe(false);
   });
 });

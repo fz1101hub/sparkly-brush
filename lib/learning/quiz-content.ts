@@ -1,4 +1,4 @@
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /**
  * «Quiz del sorriso»: 39 questions in five languages (choice, true/false, «di chi è questo
@@ -24,7 +24,7 @@ export type QuizQuestion =
       /** Optional pictures for the answers (emoji, same order as the answers). */
       pictures?: readonly [string, string, string];
       source: string;
-      text: Record<SupportedLocale, ChoiceText>;
+      text: Record<ContentLocale, ChoiceText>;
     }
   | {
       id: string;
@@ -33,7 +33,7 @@ export type QuizQuestion =
       kind: "truefalse";
       answer: boolean;
       source: string;
-      text: Record<SupportedLocale, TrueFalseText>;
+      text: Record<ContentLocale, TrueFalseText>;
     }
   | {
       id: string;
@@ -41,7 +41,7 @@ export type QuizQuestion =
       level: 1 | 2;
       kind: "order";
       source: string;
-      text: Record<SupportedLocale, OrderText>;
+      text: Record<ContentLocale, OrderText>;
     };
 
 export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [

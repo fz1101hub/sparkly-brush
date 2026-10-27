@@ -89,6 +89,9 @@ const config: ExpoConfig = {
     de: "./locales/native/de.json",
     fr: "./locales/native/fr.json",
     es: "./locales/native/es.json",
+    pt: "./locales/native/pt.json",
+    nl: "./locales/native/nl.json",
+    pl: "./locales/native/pl.json",
   },
   plugins: [
     // The generated /_sitemap route must not ship: unknown links land on +not-found instead.
@@ -101,12 +104,34 @@ const config: ExpoConfig = {
     "./plugins/with-local-notifications-only",
     "expo-notifications",
     "./plugins/with-android-orientation-compat",
+    // Long-press shortcut «Start brushing» (voce 43), opening sparklybrush://start.
+    "./plugins/with-android-shortcuts",
+    [
+      // Home-screen widget with the streak and the next brushing (voce 42), Android only.
+      "react-native-android-widget",
+      {
+        widgets: [
+          {
+            name: "Streak",
+            label: "Sparkly Brush",
+            description: "Smile streak and next brushing",
+            minWidth: "180dp",
+            minHeight: "110dp",
+            targetCellWidth: 3,
+            targetCellHeight: 2,
+            resizeMode: "horizontal|vertical",
+            widgetCategory: "home_screen",
+            updatePeriodMillis: 1800000,
+          },
+        ],
+      },
+    ],
     [
       "expo-localization",
       {
         supportedLocales: {
-          ios: ["it", "en", "de", "fr", "es"],
-          android: ["it", "en", "de", "fr", "es"],
+          ios: ["it", "en", "de", "fr", "es", "pt", "nl", "pl"],
+          android: ["it", "en", "de", "fr", "es", "pt", "nl", "pl"],
         },
       },
     ],

@@ -1,0 +1,36 @@
+appId: com.app.sparklybrush
+name: Collegamento inesistente
+tags:
+  - android
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: onboarding-overlay
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- assertVisible:
+    id: starter-chooser
+- tapOn:
+    id: starter-bloopi
+- scrollUntilVisible:
+    element:
+      id: starter-confirm
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: starter-confirm
+- assertVisible:
+    id: today-screen
+- openLink: sparklybrush://collegamento-inesistente
+- assertVisible:
+    id: not-found-screen
+- openLink: sparklybrush://start
+- assertVisible:
+    id: session-stains

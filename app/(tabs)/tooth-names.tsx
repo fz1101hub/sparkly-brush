@@ -29,7 +29,7 @@ import {
   type Tooth,
   type ToothType,
 } from "@/lib/learning/tooth-names";
-import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/locale-types";
+import { contentLocale, CONTENT_LOCALES, type ContentLocale } from "@/lib/locale-types";
 import { speak } from "@/lib/speech";
 
 type Mode = "explore" | "repeat" | "find" | "memory";
@@ -48,7 +48,9 @@ const LANGUAGE_NAME_KEYS = {
 /** The names of the teeth in the app language and in a second one (Scuola del sorriso). */
 export default function ToothNamesScreen() {
   const colors = useColors();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const learning = village.learningLanguage;
   const dentition = village.state.dentition;
@@ -132,7 +134,7 @@ export default function ToothNamesScreen() {
     flipBack.current = setTimeout(() => setMemory((current) => (current ? { ...current, open: [] } : current)), 1_000);
   };
 
-  const languageOptions = SUPPORTED_LOCALES.filter((option) => option !== locale).map((option) => ({
+  const languageOptions = CONTENT_LOCALES.filter((option) => option !== locale).map((option) => ({
     value: option,
     label: t(LANGUAGE_NAME_KEYS[option]),
   }));
@@ -142,7 +144,7 @@ export default function ToothNamesScreen() {
       <EnergyPill />
       <VillageCard>
         <Text style={[villageStyles.small, { color: colors.muted }]}>{t("toothNames.learningLabel")}</Text>
-        <ChoiceChips<SupportedLocale>
+        <ChoiceChips<ContentLocale>
           label={t("toothNames.learningLabel")}
           testIDPrefix="tooth-language"
           value={learning}

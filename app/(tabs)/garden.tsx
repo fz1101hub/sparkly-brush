@@ -11,6 +11,7 @@ import {
   villageStyles,
 } from "@/components/village-ui";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import { gardenRound, type Food, type FoodGroup } from "@/lib/learning/garden";
@@ -20,7 +21,9 @@ type Game = { foods: Food[]; index: number; score: number; answer: FoodGroup | n
 /** «Orto dei cibi»: put each food in the right basket. One round costs one energy. */
 export default function GardenScreen() {
   const colors = useColors();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const [game, setGame] = useState<Game | null>(null);
   const [blocked, setBlocked] = useState(false);

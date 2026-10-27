@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { AnimatedBrushling } from "@/components/animated-brushling";
 import { SessionExtras } from "@/components/session-extras";
@@ -13,6 +13,7 @@ import { MouthZones } from "@/components/mouth-zones";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { TimerRing } from "@/components/timer-ring";
 import { useBrush } from "@/contexts/brush-context";
+import { useContentWidth } from "@/hooks/use-content-width";
 import { useCreatureBraces, useNewSmile } from "@/contexts/braces-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useOptionalExtras } from "@/contexts/extras-context";
@@ -29,7 +30,7 @@ export function ApprovedSession() {
   const { theme } = useThemeContext();
   const { locale, t } = useI18n();
   const d = APPROVED_DESIGN[theme.id];
-  const { width, height: windowHeight, fontScale } = useWindowDimensions();
+  const { width, height: windowHeight, fontScale } = useContentWidth();
   const [height, setHeight] = useState(windowHeight);
   const insets = useSafeAreaInsets();
   const footerPadding = Math.max(16, insets.bottom + 8);

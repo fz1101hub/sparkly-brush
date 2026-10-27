@@ -1,5 +1,5 @@
 import type { CollectibleItemId } from "@/lib/game-inventory";
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /**
  * «Laboratorio delle bolle»: the collectibles found by brushing are the materials. Owning enough
@@ -11,7 +11,7 @@ export type BubbleRecipe = {
   picture: string;
   color: string;
   needs: Partial<Record<CollectibleItemId, number>>;
-  name: Record<SupportedLocale, string>;
+  name: Record<ContentLocale, string>;
 };
 
 export const BUBBLE_RECIPES: readonly BubbleRecipe[] = [

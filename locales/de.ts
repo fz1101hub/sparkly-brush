@@ -2060,4 +2060,13 @@ export const de = {
   "familyBackup.autoLast": "Letztes automatisches Backup: {date}",
   "familyBackup.folder": "Auch in einen Ordner kopieren (z. B. Google Drive)",
   "familyBackup.folderChosen": "Ordner gewählt: ändern",
+  "language.pt": "Português",
+  "language.nl": "Nederlands",
+  "language.pl": "Polski",
+  "language.contentNote": "In dieser Sprache sind Quiz, Geschichten und Zahnnamen noch auf Englisch.",
+  "widget.streak": "{count|Tag in Folge|Tage in Folge}",
+  "widget.allDone": "Heute morgens und abends: geschafft!",
+  "widget.nextMorning": "Als Nächstes: Putzen am Morgen",
+  "widget.nextEvening": "Als Nächstes: Putzen am Abend",
+  "widget.tap": "Tippen zum Starten",
 } as const satisfies TranslationCatalog;

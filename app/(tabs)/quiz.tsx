@@ -14,6 +14,7 @@ import {
   villageStyles,
 } from "@/components/village-ui";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import type { TranslationKey } from "@/lib/i18n";
@@ -39,7 +40,9 @@ type Answer = { correct: boolean; chosen: string[]; newCard: boolean };
 export default function QuizScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const [round, setRound] = useState<Round | null>(null);
   const [index, setIndex] = useState(0);

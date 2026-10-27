@@ -2045,4 +2045,13 @@ export const fr = {
   "familyBackup.autoLast": "Dernière sauvegarde automatique : {date}",
   "familyBackup.folder": "Copier aussi dans un dossier (ex. Google Drive)",
   "familyBackup.folderChosen": "Dossier choisi : changer",
+  "language.pt": "Português",
+  "language.nl": "Nederlands",
+  "language.pl": "Polski",
+  "language.contentNote": "Dans cette langue, les quiz, histoires et noms des dents sont encore en anglais.",
+  "widget.streak": "{count|jour d’affilée|jours d’affilée}",
+  "widget.allDone": "Matin et soir aujourd’hui : fait !",
+  "widget.nextMorning": "Prochain : brossage du matin",
+  "widget.nextEvening": "Prochain : brossage du soir",
+  "widget.tap": "Touchez pour commencer",
 } as const satisfies TranslationCatalog;

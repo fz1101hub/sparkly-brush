@@ -1,6 +1,9 @@
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import { useContentWidth } from "@/hooks/use-content-width";
 
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import {
   TOOTH_NAMES,
   fdiNumber,
@@ -59,8 +62,10 @@ export function ToothMap({
   /** A star on the first adult molars, the new teeth to protect. */
   starSixYear?: boolean;
 }) {
-  const { t, locale } = useI18n();
-  const { width: screen } = useWindowDimensions();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
+  const { width: screen } = useContentWidth();
   const width = Math.min(screen - 48, 360);
   const height = width * 0.92;
   const teeth = teethFor(dentition);

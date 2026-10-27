@@ -4,6 +4,7 @@ import { DesignText as Text } from "@/components/design-text";
 import { ToothMap, type ToothMark } from "@/components/tooth-map";
 import { VillageButton, VillageCard, VillageScreen, villageStyles } from "@/components/village-ui";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import { parseLocalDateKey } from "@/lib/day-progress";
@@ -18,7 +19,9 @@ const BABY_TEETH = teethFor("primary");
 
 export default function ToothMouseScreen() {
   const colors = useColors();
-  const { t, locale, formatDate } = useI18n();
+  const { t, locale: appLocale, formatDate } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const [selected, setSelected] = useState<Tooth | null>(null);
   const [thanked, setThanked] = useState(false);

@@ -4,10 +4,13 @@ import { de } from "@/locales/de";
 import { en } from "@/locales/en";
 import { es } from "@/locales/es";
 import { fr } from "@/locales/fr";
+import { nl } from "@/locales/nl";
+import { pl } from "@/locales/pl";
+import { pt } from "@/locales/pt";
 import { it as itCatalog } from "@/locales/it";
 import { translateDynamic } from "@/lib/i18n";
 
-const catalogs = { it: itCatalog, en, de, fr, es } as const;
+const catalogs = { it: itCatalog, en, de, fr, es, pt, nl, pl } as const;
 const EVOLUTION_TITLE_KEYS = Object.keys(itCatalog).filter((key) =>
   /^game\.brushling\..+\.evolution\.\d+\.title$/.test(key),
 ) as (keyof typeof itCatalog)[];
@@ -34,12 +37,12 @@ describe("translation catalogs", () => {
   );
 
   it.each(Object.entries(catalogs))(
-    "%s usa blocchi plurali ben formati, con due forme non vuote",
-    (_locale, catalog) => {
+    "%s usa blocchi plurali ben formati, con due forme non vuote (tre in polacco)",
+    (locale, catalog) => {
       const malformed = Object.entries(catalog).filter(([, value]) =>
         [...value.matchAll(/\{[a-zA-Z0-9_]+\|([^{}]*)\}/g)].some((match) => {
           const forms = match[1].split("|");
-          return forms.length !== 2 || forms.some((form) => form.trim().length === 0);
+          return forms.length !== (locale === "pl" ? 3 : 2) || forms.some((form) => form.trim().length === 0);
         }));
       expect(malformed).toEqual([]);
     },

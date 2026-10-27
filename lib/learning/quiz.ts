@@ -1,6 +1,6 @@
 import { QUIZ_QUESTIONS, type QuizQuestion } from "@/lib/learning/quiz-content";
 import { shuffle } from "@/lib/learning/shuffle";
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 export const QUIZ_ROUND_SIZE = 3;
 
@@ -31,7 +31,7 @@ export function pickQuizRound(
 
 export function quizOptions(
   question: QuizQuestion,
-  locale: SupportedLocale,
+  locale: ContentLocale,
   labels: { true: string; false: string },
   random: () => number = Math.random,
 ): QuizOption[] {

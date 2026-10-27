@@ -2026,4 +2026,13 @@ export const en = {
   "familyBackup.autoLast": "Last automatic backup: {date}",
   "familyBackup.folder": "Also copy to a folder (e.g. Google Drive)",
   "familyBackup.folderChosen": "Folder chosen: change",
+  "language.pt": "Português",
+  "language.nl": "Nederlands",
+  "language.pl": "Polski",
+  "language.contentNote": "In this language, quizzes, stories and tooth names are still in English.",
+  "widget.streak": "{count|day in a row|days in a row}",
+  "widget.allDone": "Morning and evening today: done!",
+  "widget.nextMorning": "Next: morning brushing",
+  "widget.nextEvening": "Next: evening brushing",
+  "widget.tap": "Tap to start",
 } as const satisfies TranslationCatalog;

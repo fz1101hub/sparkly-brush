@@ -1,0 +1,71 @@
+appId: com.app.sparklybrush
+name: Blocco genitori e PIN
+tags:
+  - android
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: onboarding-overlay
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- assertVisible:
+    id: starter-chooser
+- tapOn:
+    id: starter-bloopi
+- scrollUntilVisible:
+    element:
+      id: starter-confirm
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: starter-confirm
+- assertVisible:
+    id: today-screen
+- tapOn:
+    id: tab-family
+- tapOn:
+    id: family-nav-settings
+- scrollUntilVisible:
+    element:
+      id: parent-pin-input
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: parent-pin-input
+- inputText: "2468"
+- tapOn:
+    id: parent-pin-repeat
+- inputText: "2468"
+- tapOn:
+    id: parent-pin-save
+- assertVisible:
+    id: parent-pin-message
+- stopApp
+- launchApp
+- tapOn:
+    id: tab-family
+- tapOn:
+    id: family-nav-settings
+- assertVisible:
+    id: parent-gate-card
+- tapOn:
+    id: parent-gate-input
+- inputText: "1111"
+- tapOn:
+    id: parent-gate-confirm
+- assertVisible:
+    id: parent-gate-wrong
+- tapOn:
+    id: parent-gate-input
+- inputText: "2468"
+- tapOn:
+    id: parent-gate-confirm
+- assertVisible:
+    id: parent-lock-settings

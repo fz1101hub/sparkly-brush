@@ -878,4 +878,13 @@ export const itUnified = {
   "familyBackup.autoLast": "Ultimo backup automatico: {date}",
   "familyBackup.folder": "Copia anche in una cartella (es. Google Drive)",
   "familyBackup.folderChosen": "Cartella scelta: cambia",
+  "language.pt": "Português",
+  "language.nl": "Nederlands",
+  "language.pl": "Polski",
+  "language.contentNote": "In questa lingua quiz, storie e nomi dei denti sono ancora in inglese.",
+  "widget.streak": "{count|giorno di fila|giorni di fila}",
+  "widget.allDone": "Oggi mattina e sera: fatto!",
+  "widget.nextMorning": "Prossima: spazzolata del mattino",
+  "widget.nextEvening": "Prossima: spazzolata della sera",
+  "widget.tap": "Tocca per iniziare",
 } as const;

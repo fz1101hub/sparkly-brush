@@ -1,6 +1,6 @@
 import { localDateKey } from "@/lib/day-progress";
 import { QUIZ_QUESTIONS } from "@/lib/learning/quiz-content";
-import type { SupportedLocale } from "@/lib/locale-types";
+import { contentLocale, type SupportedLocale } from "@/lib/locale-types";
 
 /**
  * Small helpers around a session (lotto 2): the surface to brush inside each zone (voce 55), the
@@ -33,5 +33,5 @@ export function extraStepOf(now: number): ExtraStep {
 /** A different quiz fact after each session, in the app language. */
 export function didYouKnow(sessionNumber: number, locale: SupportedLocale): string {
   const question = QUIZ_QUESTIONS[Math.abs(Math.floor(sessionNumber)) % QUIZ_QUESTIONS.length];
-  return question.text[locale].fact;
+  return question.text[contentLocale(locale)].fact;
 }

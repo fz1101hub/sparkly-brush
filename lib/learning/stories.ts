@@ -1,5 +1,5 @@
 import type { BrushlingId } from "@/lib/brushlings";
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /**
  * «Biblioteca delle storie»: short stories of the Brushlings, four pages each, read aloud with
@@ -9,7 +9,7 @@ import type { SupportedLocale } from "@/lib/locale-types";
 export type Story = {
   id: string;
   hero: BrushlingId;
-  text: Record<SupportedLocale, { title: string; pages: readonly [string, string, string, string] }>;
+  text: Record<ContentLocale, { title: string; pages: readonly [string, string, string, string] }>;
 };
 
 export const STORIES: readonly Story[] = [

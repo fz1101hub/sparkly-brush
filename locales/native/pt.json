@@ -1,0 +1,12 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Sparkly Brush",
+    "NSBluetoothAlwaysUsageDescription": "O Sparkly Brush usa o Bluetooth para se conectar à sua Philips Sonicare for Kids e registrar a escovação.",
+    "NSFaceIDUsageDescription": "O Sparkly Brush usa o Face ID apenas para abrir a área dos pais."
+  },
+  "android": {
+    "app_name": "Sparkly Brush",
+    "shortcut_brush_short": "Escovar",
+    "shortcut_brush_long": "Começar a escovar os dentes"
+  }
+}

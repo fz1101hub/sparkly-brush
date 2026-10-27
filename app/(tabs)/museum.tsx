@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { DesignText as Text } from "@/components/design-text";
 import { VillageCard, VillageScreen, villageStyles } from "@/components/village-ui";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import type { TranslationKey } from "@/lib/i18n";
@@ -22,7 +23,9 @@ const CATEGORIES: readonly { id: QuizCategory; title: TranslationKey; icon: Comp
 /** «Museo del sorriso»: the cards won in the quiz, each with its fact. */
 export default function MuseumScreen() {
   const colors = useColors();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const { state } = useVillage();
   const collected = new Set(state.cards);
   const total = QUIZ_QUESTIONS.length;

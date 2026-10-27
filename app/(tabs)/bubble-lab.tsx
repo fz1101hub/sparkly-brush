@@ -13,6 +13,7 @@ import {
 } from "@/components/village-ui";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import { COLLECTIBLE_ITEM_TEXT_KEYS, type CollectibleItemId } from "@/lib/game-inventory";
@@ -24,7 +25,9 @@ import { BUBBLE_RECIPES, canBrew, missingMaterials } from "@/lib/village-lab";
  */
 export default function BubbleLabScreen() {
   const colors = useColors();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const { inventory } = useBrushling();
   const [blocked, setBlocked] = useState(false);

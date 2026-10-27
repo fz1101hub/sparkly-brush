@@ -30,7 +30,7 @@ import { usePreferences } from "@/contexts/preferences-context";
 import { useBack } from "@/hooks/use-back";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
-import type { LanguagePreference } from "@/lib/locale-types";
+import { isContentLocale, type LanguagePreference } from "@/lib/locale-types";
 
 const LANGUAGE_OPTIONS = [
   { value: "system", labelKey: "language.system" },
@@ -39,6 +39,9 @@ const LANGUAGE_OPTIONS = [
   { value: "de", labelKey: "language.de" },
   { value: "fr", labelKey: "language.fr" },
   { value: "es", labelKey: "language.es" },
+  { value: "pt", labelKey: "language.pt" },
+  { value: "nl", labelKey: "language.nl" },
+  { value: "pl", labelKey: "language.pl" },
 ] as const satisfies readonly {
   value: LanguagePreference;
   labelKey:
@@ -47,14 +50,17 @@ const LANGUAGE_OPTIONS = [
     | "language.en"
     | "language.de"
     | "language.fr"
-    | "language.es";
+    | "language.es"
+    | "language.pt"
+    | "language.nl"
+    | "language.pl";
 }[];
 
 export default function SettingsScreen() {
   const colors = useColors();
   const goBack = useBack();
   const { preferences, setPreference } = usePreferences();
-  const { languagePreference, setLanguagePreference, t } = useI18n();
+  const { languagePreference, setLanguagePreference, t, locale } = useI18n();
   const runAction = useAsyncAction();
 
   const rows = [
@@ -200,6 +206,11 @@ export default function SettingsScreen() {
               );
             })}
           </View>
+          {!isContentLocale(locale) ? (
+            <Text testID="language-content-note" style={[styles.languageDescription, { color: colors.muted }]}>
+              {t("language.contentNote")}
+            </Text>
+          ) : null}
         </View>
 
         <View

@@ -7,6 +7,7 @@ import { useBrushling } from "@/contexts/brushling-context";
 import { useI18n } from "@/contexts/locale-context";
 import { EPISODES, nextEpisode } from "@/lib/learning/serial-story";
 import { stainsLeft, storyPartCue, voiceCue, ZONES } from "@/lib/session-companions";
+import { contentLocale } from "@/lib/locale-types";
 import { speak } from "@/lib/speech";
 
 const ZONE_KEYS = ["timer.zone.upperRight", "timer.zone.upperLeft", "timer.zone.lowerLeft", "timer.zone.lowerRight"] as const;
@@ -45,8 +46,9 @@ export function SessionNarrator() {
       const part = storyPartCue(before, elapsed, target);
       if (part !== null) {
         if (part === 0 || episode.current === null) episode.current = nextEpisode(extras.serialHeard);
-        const text = EPISODES[episode.current][locale];
-        speak(part === 0 ? `${text.title}. ${text.parts[0]}` : text.parts[part], locale);
+        const content = contentLocale(locale);
+        const text = EPISODES[episode.current][content];
+        speak(part === 0 ? `${text.title}. ${text.parts[0]}` : text.parts[part], content);
       }
       return;
     }

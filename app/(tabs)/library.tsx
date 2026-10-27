@@ -5,6 +5,7 @@ import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { DesignText as Text } from "@/components/design-text";
 import { VillageButton, VillageCard, VillageScreen, villageStyles } from "@/components/village-ui";
 import { useI18n } from "@/contexts/locale-context";
+import { contentLocale } from "@/lib/locale-types";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import { BRUSHLINGS } from "@/lib/brushlings";
@@ -15,7 +16,9 @@ import { speak, stopSpeaking } from "@/lib/speech";
 /** «Biblioteca delle storie»: short stories read aloud; free, also at bedtime. */
 export default function LibraryScreen() {
   const colors = useColors();
-  const { t, locale } = useI18n();
+  const { t, locale: appLocale } = useI18n();
+  // Educational content in the languages it exists in (voce 71: newer UI languages read English).
+  const locale = contentLocale(appLocale);
   const village = useVillage();
   const [story, setStory] = useState<Story | null>(null);
   const [page, setPage] = useState(0);

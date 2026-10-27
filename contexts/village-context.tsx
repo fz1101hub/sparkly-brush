@@ -15,7 +15,7 @@ import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { defaultLearningLanguage } from "@/lib/learning/tooth-names";
-import type { SupportedLocale } from "@/lib/locale-types";
+import { contentLocale, type ContentLocale } from "@/lib/locale-types";
 import {
   DEFAULT_VILLAGE,
   energyStatus,
@@ -33,7 +33,7 @@ type VillageContextValue = {
   state: VillageState;
   energy: EnergyStatus;
   /** The language the tooth-name games teach: the child's choice, or one different from the app's. */
-  learningLanguage: SupportedLocale;
+  learningLanguage: ContentLocale;
   /** Pays one activity; false when today's energy is used up. */
   spendEnergy: () => Promise<boolean>;
   collectCard: (id: string) => Promise<void>;
@@ -143,7 +143,7 @@ export function VillageProvider({ children }: PropsWithChildren) {
       state,
       energy: energyStatus(state, history, today),
       learningLanguage:
-        state.learningLanguage && state.learningLanguage !== locale ? state.learningLanguage : defaultLearningLanguage(locale),
+        state.learningLanguage && state.learningLanguage !== contentLocale(locale) ? state.learningLanguage : defaultLearningLanguage(contentLocale(locale)),
       spendEnergy,
       collectCard,
       update,

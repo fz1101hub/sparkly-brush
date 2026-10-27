@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedBrushling } from "@/components/animated-brushling";
@@ -16,6 +16,7 @@ import {
 import { DesignText as Text } from "@/components/design-text";
 import { ReferenceArtwork } from "@/components/reference-artwork";
 import { useBrush } from "@/contexts/brush-context";
+import { useContentWidth } from "@/hooks/use-content-width";
 import { useCreatureBraces, useNewSmile } from "@/contexts/braces-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useFamily } from "@/contexts/family-context";
@@ -35,7 +36,7 @@ export function ApprovedHome() {
   const d = APPROVED_DESIGN[theme.id];
   const router = useRouter();
   const family = useFamily();
-  const { width, height: screenHeight, fontScale } = useWindowDimensions();
+  const { width, height: screenHeight, fontScale } = useContentWidth();
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(
     Math.max(680, screenHeight - insets.top - 82),

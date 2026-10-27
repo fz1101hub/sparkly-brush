@@ -3,7 +3,7 @@ import { localDateKey, sameLocalDay } from "@/lib/day-progress";
 import type { QuizLevel } from "@/lib/learning/quiz";
 import { STORIES } from "@/lib/learning/stories";
 import type { Dentition } from "@/lib/learning/tooth-names";
-import { isSupportedLocale, type SupportedLocale } from "@/lib/locale-types";
+import { isContentLocale, type ContentLocale } from "@/lib/locale-types";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 import { BUBBLE_RECIPES } from "@/lib/village-lab";
 
@@ -38,7 +38,7 @@ export type VillageState = {
   cards: string[];
   quizLevel: QuizLevel;
   /** null: the default, a language different from the app's. */
-  learningLanguage: SupportedLocale | null;
+  learningLanguage: ContentLocale | null;
   dentition: Dentition;
   /** Best score of «Trova il dente» (out of 5). */
   bestFind: number;
@@ -111,7 +111,7 @@ export function normalizeVillage(raw: unknown): VillageState {
       ? [...new Set(value.cards.filter((id): id is string => typeof id === "string" && id.length <= 80))].slice(0, MAX_CARDS)
       : [],
     quizLevel: value.quizLevel === 2 ? 2 : 1,
-    learningLanguage: isSupportedLocale(value.learningLanguage) ? value.learningLanguage : null,
+    learningLanguage: isContentLocale(value.learningLanguage) ? value.learningLanguage : null,
     dentition: value.dentition === "permanent" ? "permanent" : "primary",
     bestFind: count(value.bestFind, 5),
     memoryWins: count(value.memoryWins, 100_000),

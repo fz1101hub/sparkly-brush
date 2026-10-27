@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/learning/shuffle";
-import type { SupportedLocale } from "@/lib/locale-types";
+import type { ContentLocale } from "@/lib/locale-types";
 
 /** The six kinds of teeth the games name. Baby teeth have no premolars and no wisdom teeth. */
 export type ToothType = "centralIncisor" | "lateralIncisor" | "canine" | "premolar" | "molar" | "wisdom";
@@ -11,7 +11,7 @@ export type Dentition = "primary" | "permanent";
  * The words children and parents use; the dentist's term where it differs is in the content
  * review document. To be checked by a native speaker of each language.
  */
-export const TOOTH_NAMES: Record<SupportedLocale, Record<ToothType, string>> = {
+export const TOOTH_NAMES: Record<ContentLocale, Record<ToothType, string>> = {
   it: { centralIncisor: "incisivo centrale", lateralIncisor: "incisivo laterale", canine: "canino", premolar: "premolare", molar: "molare", wisdom: "dente del giudizio" },
   en: { centralIncisor: "central incisor", lateralIncisor: "lateral incisor", canine: "canine", premolar: "premolar", molar: "molar", wisdom: "wisdom tooth" },
   de: { centralIncisor: "mittlerer Schneidezahn", lateralIncisor: "seitlicher Schneidezahn", canine: "Eckzahn", premolar: "kleiner Backenzahn", molar: "großer Backenzahn", wisdom: "Weisheitszahn" },
@@ -20,7 +20,7 @@ export const TOOTH_NAMES: Record<SupportedLocale, Record<ToothType, string>> = {
 };
 
 /** Voice used to pronounce the names, when the phone has it installed. */
-export const SPEECH_LANGUAGE: Record<SupportedLocale, string> = {
+export const SPEECH_LANGUAGE: Record<ContentLocale, string> = {
   it: "it-IT",
   en: "en-GB",
   de: "de-DE",
@@ -97,12 +97,12 @@ export function findToothRound(dentition: Dentition, random: () => number = Math
   return round;
 }
 
-export type MemoryCard = { id: string; type: ToothType; locale: SupportedLocale; label: string };
+export type MemoryCard = { id: string; type: ToothType; locale: ContentLocale; label: string };
 
 /** «Memory delle lingue»: each kind appears once in each of the two languages. */
 export function memoryDeck(
-  locale: SupportedLocale,
-  learning: SupportedLocale,
+  locale: ContentLocale,
+  learning: ContentLocale,
   random: () => number = Math.random,
   pairs = 4,
 ): MemoryCard[] {
@@ -117,6 +117,6 @@ export function memoryDeck(
 }
 
 /** A language different from the app's: English, or Italian for an English-speaking family. */
-export function defaultLearningLanguage(locale: SupportedLocale): SupportedLocale {
+export function defaultLearningLanguage(locale: ContentLocale): ContentLocale {
   return locale === "en" ? "it" : "en";
 }
