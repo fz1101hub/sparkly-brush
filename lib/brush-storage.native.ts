@@ -29,6 +29,7 @@ import {
   createEmptyLifetimeProgress,
   createLifetimeProgress,
   deviceKey,
+  adoptDeviceCursor,
   forgetDeviceSessionState,
   markPendingDeviceFallback,
   matchesPendingDeviceFallback,
@@ -36,6 +37,7 @@ import {
   pendingDeviceFallbacks,
   replacePendingDeviceFallbackProgress,
   shouldReplayStoredHistory,
+  type DeviceSessionCursor,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -902,6 +904,16 @@ function buildProfileStorage(profileId: string) {
     }));
   }
 
+  async function adoptDeviceCursorWithLifetime(deviceId: string, cursor: DeviceSessionCursor): Promise<HistoryBundle> {
+    return runHistoryOperation(() => queueWrite(async () => {
+      const db = await getDatabase();
+      await db.withExclusiveTransactionAsync(async (txn) => {
+        await writeProgress(txn, adoptDeviceCursor(await readProgress(txn), deviceId, cursor));
+      });
+      return loadBundleFromDatabase(db);
+    }));
+  }
+
   async function replaceHistoryWithLifetime(
     history: BrushSession[],
     lifetimeProgress?: LifetimeProgress,
@@ -1532,7 +1544,7 @@ function buildProfileStorage(profileId: string) {
       return null;
     }
   }
-  return { initializeHistoryStorage, loadHistoryBundle, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, createCompleteBackupDatabase, inspectCompleteBackupDatabase, restoreCompleteBackupDatabase, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
+  return { initializeHistoryStorage, loadHistoryBundle, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, adoptDeviceCursorWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, createCompleteBackupDatabase, inspectCompleteBackupDatabase, restoreCompleteBackupDatabase, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
 }
 
 export const getBrushStorage = createProfileStore(buildProfileStorage);

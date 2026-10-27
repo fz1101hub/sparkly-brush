@@ -53,7 +53,7 @@ import {
   type ManualCheckpoint,
 } from "@/lib/manual-session-storage";
 import { getActiveProfileId } from "@/lib/profile-scope";
-import { claimToothbrush, devicesOwnedByOthers } from "@/lib/toothbrush-profile";
+import { claimToothbrush, devicesOwnedByOthers, ownerOfToothbrush, transferToothbrush } from "@/lib/toothbrush-profile";
 
 export type DemoSessionPeriod = "morning" | "evening" | "now";
 
@@ -116,6 +116,14 @@ type BrushContextValue = {
   connect: (options?: ConnectOptions) => Promise<void>;
   disconnect: () => Promise<void>;
   forgetToothbrush: () => Promise<void>;
+  /**
+   * Gives the handle to another child (voce 50): this child's sessions are imported first, then
+   * the sync position moves with the handle so the new owner only gets brushing from now on.
+   */
+  transferToothbrushTo: (profileId: string) => Promise<void>;
+  /** A sibling's handle seen during the last scan (voce 37), to offer switching profile. */
+  siblingHandle: { deviceId: string; ownerProfileId: string } | null;
+  dismissSiblingHandle: () => void;
   syncLatest: () => Promise<void>;
   resyncSkippingGap: () => Promise<void>;
   startManual: () => Promise<void>;
@@ -224,6 +232,7 @@ export function BrushProvider({
     useState<TranslationKey | null>(null);
   const [isSavingManualSession, setIsSavingManualSession] = useState(false);
   const [isForgettingToothbrush, setIsForgettingToothbrush] = useState(false);
+  const [siblingHandle, setSiblingHandle] = useState<{ deviceId: string; ownerProfileId: string } | null>(null);
   const [manualRecoveryReady, setManualRecoveryReady] = useState(false);
   const [manualStartPending, setManualStartPending] = useState(false);
   const [recoveredManualSession, setRecoveredManualSession] = useState<ManualCheckpoint | null>(null);
@@ -805,20 +814,20 @@ export function BrushProvider({
     }
   }, [appendLog, appendTranslatedLog, disconnect, t]);
 
-  const runSync = useCallback(async (options?: SyncOptions) => {
+  const runSync = useCallback(async (options?: SyncOptions): Promise<boolean> => {
     if (forgettingToothbrushRef.current) {
       appendTranslatedLog("warning", "brush.log.waitForForget");
-      return;
+      return false;
     }
     if (demoMode) {
       appendTranslatedLog("warning", "brush.log.syncDisabledInDemo");
-      return;
+      return false;
     }
     try {
       const deviceId = deviceRef.current?.id;
       if (!deviceId) {
         appendTranslatedLog("warning", "brush.error.connectFirst");
-        return;
+        return false;
       }
       setStatusDetail(null);
       const cursor =
@@ -841,18 +850,65 @@ export function BrushProvider({
       } else {
         appendTranslatedLog("warning", "brush.log.noNewSessions");
       }
+      return true;
     } catch (error) {
       const detail = error instanceof Error ? error.message : "";
       if (isKnownSonicareMessage(detail)) {
         appendLog("error", detail);
         setStatusDetail(detail);
       } else appendTranslatedLog("error", "brush.error.syncFailed");
+      return false;
     }
   }, [appendLog, appendTranslatedLog, demoMode, persistDeviceSessions]);
 
-  const syncLatest = useCallback(() => runSync(), [runSync]);
+  const syncLatest = useCallback(async () => {
+    await runSync();
+  }, [runSync]);
   /** Audit B4: resumes from the records the handle still keeps when the gap is unrecoverable. */
-  const resyncSkippingGap = useCallback(() => runSync({ allowGap: true }), [runSync]);
+  const resyncSkippingGap = useCallback(async () => {
+    await runSync({ allowGap: true });
+  }, [runSync]);
+
+  const transferToothbrushTo = useCallback(async (targetProfileId: string) => {
+    if (forgettingToothbrushRef.current) {
+      throw new Error(t("brush.error.forgettingInProgress"));
+    }
+    const deviceId = deviceRef.current?.id ?? pairedDeviceRef.current?.id;
+    if (!deviceId) throw new LocalizedError("device.transfer.error.noHandle");
+    if (targetProfileId === profileId.current) throw new LocalizedError("device.transfer.error.sameChild");
+    // What the handle still holds for this child is imported before it changes hands.
+    if (deviceRef.current?.id === deviceId && !(await runSync())) {
+      throw new LocalizedError("device.transfer.error.syncFirst");
+    }
+    forgettingToothbrushRef.current = true;
+    setIsForgettingToothbrush(true);
+    try {
+      await disconnect();
+      const cursor = lifetimeProgressRef.current.deviceCursors[deviceKey(deviceId)];
+      if (cursor) await getBrushStorage(targetProfileId).adoptDeviceCursorWithLifetime(deviceId, cursor);
+      await transferToothbrush(deviceId, targetProfileId);
+      if (pairedDeviceRef.current?.id === deviceId) {
+        await storage.current.saveLastDevice(null);
+        pairedDeviceRef.current = null;
+        setPairedDevice(null);
+      }
+      if (!deviceRef.current || deviceRef.current.id === deviceId) {
+        deviceRef.current = null;
+        setDevice(null);
+        liveRef.current = { ...DEFAULT_LIVE_DATA };
+        setLive({ ...DEFAULT_LIVE_DATA });
+      }
+      appendTranslatedLog("success", "brush.log.handleTransferred");
+    } catch (error) {
+      appendTranslatedLog("error", errorKey(error, "device.transfer.error.failed"));
+      throw error;
+    } finally {
+      forgettingToothbrushRef.current = false;
+      setIsForgettingToothbrush(false);
+    }
+  }, [appendTranslatedLog, disconnect, runSync, t]);
+
+  const dismissSiblingHandle = useCallback(() => setSiblingHandle(null), []);
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     if (forgettingToothbrushRef.current) {
@@ -883,8 +939,16 @@ export function BrushProvider({
       : paired
         ? { mode: "paired", deviceId: paired.id }
         : { mode: "any" };
+    setSiblingHandle(null);
+    const onSibling = (deviceId: string) => {
+      void ownerOfToothbrush(deviceId).then((ownerProfileId) => {
+        if (ownerProfileId && ownerProfileId !== owner && profileId.current === owner) {
+          setSiblingHandle({ deviceId, ownerProfileId });
+        }
+      }, () => undefined);
+    };
     const target: ScanTarget = excludedDeviceIds.length
-      ? { ...base, excludedDeviceIds, claim: (deviceId) => claimToothbrush(deviceId, owner) }
+      ? { ...base, excludedDeviceIds, onSibling, claim: (deviceId) => claimToothbrush(deviceId, owner) }
       : { ...base, claim: (deviceId) => claimToothbrush(deviceId, owner) };
     try {
       await client.scanAndConnect(target);
@@ -1208,6 +1272,9 @@ export function BrushProvider({
       connect,
       disconnect,
       forgetToothbrush,
+      transferToothbrushTo,
+      siblingHandle,
+      dismissSiblingHandle,
       syncLatest,
       resyncSkippingGap,
       startManual,
@@ -1240,6 +1307,9 @@ export function BrushProvider({
       disconnect,
       discardManualRecovery,
       forgetToothbrush,
+      transferToothbrushTo,
+      siblingHandle,
+      dismissSiblingHandle,
       history,
       historyReady,
       isSavingManualSession,

@@ -74,3 +74,19 @@ export function claimToothbrush(deviceId: string, profileId: string): Promise<vo
     await AsyncStorage.setItem(TOOTHBRUSH_OWNERS_KEY, JSON.stringify(next));
   });
 }
+
+/** The child a handle belongs to, if any (voce 37: a sibling's handle found during a scan). */
+export function ownerOfToothbrush(deviceId: string): Promise<string | null> {
+  return serialize(async () => (await readOwners())[ownerKey(deviceId)] ?? null);
+}
+
+/**
+ * Gives the handle to another child (voce 50), for example when it passes to a younger sibling.
+ * Only the parent area calls it, after the previous owner's sessions have been imported.
+ */
+export function transferToothbrush(deviceId: string, profileId: string): Promise<void> {
+  return serialize(async () => {
+    const owners = await readOwners();
+    await AsyncStorage.setItem(TOOTHBRUSH_OWNERS_KEY, JSON.stringify({ ...owners, [ownerKey(deviceId)]: profileId }));
+  });
+}

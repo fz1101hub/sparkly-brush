@@ -86,6 +86,8 @@ export type ScanTarget = (
   excludedDeviceIds?: readonly string[];
   /** Records the handle found as this child's before connecting; a rejection aborts the connection. */
   claim?: (deviceId: string) => Promise<void>;
+  /** Told once per scan about each sibling's handle nearby, to offer switching profile. */
+  onSibling?: (deviceId: string) => void;
 };
 
 export type SyncOptions = {

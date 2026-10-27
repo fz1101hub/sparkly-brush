@@ -1,7 +1,8 @@
 {
   "ios": {
     "CFBundleDisplayName": "Sparkly Brush",
-    "NSBluetoothAlwaysUsageDescription": "Sparkly Brush verwendet Bluetooth, um sich mit deiner Philips Sonicare for Kids zu verbinden und Putzsitzungen aufzuzeichnen."
+    "NSBluetoothAlwaysUsageDescription": "Sparkly Brush verwendet Bluetooth, um sich mit deiner Philips Sonicare for Kids zu verbinden und Putzsitzungen aufzuzeichnen.",
+    "NSFaceIDUsageDescription": "Sparkly Brush verwendet Face ID nur, um den Elternbereich zu öffnen."
   },
   "android": {
     "app_name": "Sparkly Brush"

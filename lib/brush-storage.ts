@@ -12,12 +12,14 @@ import {
   createEmptyLifetimeProgress,
   createLifetimeProgress,
   deviceKey,
+  adoptDeviceCursor,
   forgetDeviceSessionState,
   markPendingDeviceFallback,
   matchesPendingDeviceFallback,
   normalizeLifetimeProgress,
   pendingDeviceFallbacks,
   replacePendingDeviceFallbackProgress,
+  type DeviceSessionCursor,
   type LifetimeProgress,
   type LifetimeProgressEvent,
 } from "@/lib/lifetime-progress";
@@ -391,6 +393,16 @@ function buildProfileStorage(profileId: string) {
     }));
   }
 
+  async function adoptDeviceCursorWithLifetime(deviceId: string, cursor: DeviceSessionCursor): Promise<HistoryBundle> {
+    return runHistoryOperation(() => queueHistoryWrite(async () => {
+      const bundle = await loadProgressStateUnlocked();
+      return persistProgressState({
+        recentHistory: bundle.recentHistory,
+        lifetimeProgress: adoptDeviceCursor(bundle.lifetimeProgress, deviceId, cursor),
+      });
+    }));
+  }
+
   async function replaceHistoryWithLifetime(
     history: BrushSession[],
     lifetimeProgress?: LifetimeProgress,
@@ -478,7 +490,7 @@ function buildProfileStorage(profileId: string) {
       return null;
     }
   }
-  return { loadHistoryBundle, initializeHistoryStorage, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
+  return { loadHistoryBundle, initializeHistoryStorage, loadHistory, saveSessionWithLifetime, saveDeviceFallbackWithLifetime, saveDeviceSessionWithLifetime, saveDeviceSessionsWithLifetime, saveSession, forgetDeviceWithLifetime, adoptDeviceCursorWithLifetime, replaceHistoryWithLifetime, replaceHistory, clearHistory, loadDemoHistory, saveDemoSession, replaceDemoHistory, clearDemoHistory, loadDemoMode, saveDemoMode, saveLastDevice, loadLastDevice };
 }
 
 export const getBrushStorage = createProfileStore(buildProfileStorage);

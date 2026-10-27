@@ -290,6 +290,7 @@ export class NativeSonicareClient implements SonicareClient {
               if (sibling || messages.ignored) {
                 this.events.onLog("warning", sibling ? "Manico di un altro profilo ignorato" : messages.ignored);
               }
+              if (sibling) scanTarget.onSibling?.(device.id);
             }
             return;
           }

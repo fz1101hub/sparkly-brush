@@ -37,6 +37,8 @@ export type Extras = {
   extraStepDays: string[];
   /** «Spazzoliamo insieme» (voce 27): the parent's timer next to the child's. */
   brushTogether: boolean;
+  /** Day the brush head was last replaced (voce 35); null until the parent records it. */
+  headChangedOn: string | null;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -49,6 +51,7 @@ export const DEFAULT_EXTRAS: Extras = {
   dentistVisit: null,
   extraStepDays: [],
   brushTogether: false,
+  headChangedOn: null,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -97,6 +100,7 @@ export function normalizeExtras(raw: unknown): Extras {
       ? [...new Set(value.extraStepDays.filter((day): day is string => typeof day === "string" && DAY_KEY.test(day)))].sort().slice(-60)
       : [],
     brushTogether: value.brushTogether === true,
+    headChangedOn: typeof value.headChangedOn === "string" && DAY_KEY.test(value.headChangedOn) ? value.headChangedOn : null,
   };
 }
 

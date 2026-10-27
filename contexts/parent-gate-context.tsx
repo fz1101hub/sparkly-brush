@@ -3,6 +3,7 @@ import {
   type PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import { ParentChallengeCard } from "@/components/parent-challenge-card";
 import { useI18n } from "@/contexts/locale-context";
 import { usePreferences } from "@/contexts/preferences-context";
 import { PARENT_GATE_UNLOCK_MS } from "@/lib/parent-gate";
+import { DEFAULT_PARENT_LOCK, loadParentLock, saveParentLock, type ParentLock } from "@/lib/parent-lock";
 
 type ParentGateContextValue = {
   /** Whether the family turned the gate on in Settings. */
@@ -23,6 +25,9 @@ type ParentGateContextValue = {
   requireParent: (action: () => void) => void;
   /** Records a challenge solved inline (by a guarded screen). */
   unlock: () => void;
+  /** The parents' PIN and biometrics (voce 65); null while it is read at start. */
+  lock: ParentLock | null;
+  saveLock: (lock: ParentLock) => Promise<void>;
 };
 
 const ParentGateContext = createContext<ParentGateContextValue | null>(null);
@@ -33,6 +38,22 @@ export function ParentGateProvider({ children }: PropsWithChildren) {
   const enabled = preferences.parentGateEnabled;
   const unlockedUntilRef = useRef(0);
   const [pending, setPending] = useState<(() => void) | null>(null);
+  const [lock, setLock] = useState<ParentLock | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void loadParentLock().then((loaded) => {
+      if (active) setLock(loaded);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const saveLock = useCallback(async (next: ParentLock) => {
+    await saveParentLock(next);
+    setLock(await loadParentLock());
+  }, []);
 
   const isUnlocked = useCallback(() => Date.now() < unlockedUntilRef.current, []);
   const unlock = useCallback(() => {
@@ -50,8 +71,8 @@ export function ParentGateProvider({ children }: PropsWithChildren) {
   );
 
   const value = useMemo<ParentGateContextValue>(
-    () => ({ enabled, isUnlocked, requireParent, unlock }),
-    [enabled, isUnlocked, requireParent, unlock],
+    () => ({ enabled, isUnlocked, requireParent, unlock, lock, saveLock }),
+    [enabled, isUnlocked, requireParent, unlock, lock, saveLock],
   );
 
   return (
@@ -67,6 +88,7 @@ export function ParentGateProvider({ children }: PropsWithChildren) {
             style={styles.backdrop}
           >
             <ParentChallengeCard
+              lock={lock}
               onCancel={() => setPending(null)}
               onSolved={() => {
                 unlock();
@@ -87,6 +109,8 @@ const FALLBACK: ParentGateContextValue = {
   isUnlocked: () => true,
   requireParent: (action) => action(),
   unlock: () => undefined,
+  lock: DEFAULT_PARENT_LOCK,
+  saveLock: async () => undefined,
 };
 
 /** Screens rendered without the provider (isolated tests) behave as if the gate were off. */

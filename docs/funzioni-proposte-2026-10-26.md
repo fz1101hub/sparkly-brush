@@ -56,7 +56,7 @@ Richiesta del 27 ottobre: sviluppare tutte le voci dell'elenco, con riprese auto
 |---|---|---|
 | 1. Promemoria, serie e premi | 59, 60, 62, 16, 17, 49, 57, 66 | ☑ `82ed4cd` |
 | 2. Dopo la spazzolata e famiglia | 22, 23, 58, 56, 55, 27, 32, 34, 70 | ☑ |
-| 3. Manico e sicurezza | 35 (batteria e testina per data), 36, 37, 50, 65 | ☐ |
+| 3. Manico e sicurezza | 35 (batteria e testina per data), 36, 37, 50, 65 | ☑ Schermata Manico: batteria sotto il 20%, testina ogni 90 giorni dal cambio segnato dal genitore, intensità consigliata per età (da far validare), manico di un fratello riconosciuto con «Passa al suo profilo» (su conferma, non da solo: cambiare bambino senza toccare nulla confonderebbe chi sta usando l'app), passaggio del manico dietro il blocco genitori con il contatore che segue il manico. PIN di 4–6 cifre (solo l'hash, solo su questo telefono, non nel backup) con impronta o Face ID (`expo-local-authentication`; non accetta il codice del telefono, che i bambini spesso conoscono); PIN dimenticato: moltiplicazione più difficile. |
 | 4. Motivazione nel tempo | 12, 13, 51, 14, 15, 18, 19, 41 | ☐ |
 | 5. Stampe e rapporti | 20, 67, 29, 30, 31, 33, 63, 64 | ☐ |
 | 6. Rito della giornata e sessione | 6, 7, 8, 9, 21, 28, 25 | ☐ |

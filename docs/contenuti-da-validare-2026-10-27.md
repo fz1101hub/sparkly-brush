@@ -533,3 +533,97 @@ Il bambino mette ogni cibo in uno dei due cesti. Dopo ogni risposta compare la s
 - ☐ Orto e laboratorio costano 1 energia; «ascolta e ripeti», biblioteca, piazza e casa del topolino sono gratuiti.
 - ☐ Il mostro della placca ha 10 punti: una spazzolata completa toglie un punto, da lunedì a domenica.
 - ☐ Le missioni dell’apparecchio e il laboratorio non danno né consumano monete o tesori.
+
+## 9. Testi aggiunti sviluppando l’elenco delle idee (dal 27 ottobre)
+
+Consigli di salute mostrati dopo la spazzolata, nella guida per la babysitter e nella schermata del manico.
+Le curiosità «Lo sapevi?» dopo ogni sessione sono quelle del quiz (sezione 1), una diversa a ogni spazzolata.
+
+### Quantità di dentifricio per età
+
+Mostrata dopo la spazzolata e nella guida per la babysitter, secondo l’età scelta dal genitore (sotto i 3 anni, 3–6, dai 7).
+
+- ☐ `dental.dose.rice`: una striscia piccola come un chicco di riso
+- ☐ `dental.dose.pea`: una quantità grande come un pisello
+- ☐ `dental.dose.unknown`: un chicco di riso sotto i 3 anni, un pisello dai 3 anni
+
+### Dopo la spazzolata
+
+- ☐ `afterBrush.title`: Dopo la spazzolata
+- ☐ `afterBrush.spit`: Sputa il dentifricio, ma non sciacquare con l’acqua: il fluoro resta sui denti più a lungo.
+- ☐ `afterBrush.dose`: Quanto dentifricio: {dose}.
+
+### Passo extra a sorpresa (uno al giorno)
+
+- ☐ `extraStep.step.tongue`: Spazzola piano anche la lingua.
+- ☐ `extraStep.step.backTeeth`: Arriva bene ai denti in fondo, anche dietro.
+- ☐ `extraStep.step.gumLine`: Spazzola con delicatezza dove il dente incontra la gengiva.
+- ☐ `extraStep.step.innerFront`: Non dimenticare il retro dei denti davanti.
+- ☐ `extraStep.step.slowCircles`: Fai piccoli cerchi lenti, senza premere forte.
+- ☐ `extraStep.step.spit`: Alla fine sputa e non sciacquare.
+
+### Superfici durante la sessione
+
+Ogni zona della bocca è divisa in tre parti uguali: fuori, dentro, sopra (la superficie che mastica).
+
+- ☐ `surface.outer`: Fuori
+- ☐ `surface.inner`: Dentro
+- ☐ `surface.chewing`: Sopra
+- ☐ `surface.now`: Ora: {surface}
+
+### Buonanotte della creatura
+
+- ☐ `goodnight.line1`: Denti puliti, sogni d’oro. Domattina ci rivediamo!
+- ☐ `goodnight.line2`: Ora niente più cibo: solo un po’ d’acqua e poi a nanna.
+- ☐ `goodnight.line3`: Mentre dormi, i tuoi denti puliti riposano tranquilli.
+- ☐ `goodnight.line4`: Che bella giornata! Chiudi gli occhi e sogna il villaggio.
+
+### Guida per la babysitter
+
+- ☐ `babysitter.step.open`: Apri l’app su Oggi: {name} sceglie la sua creatura e preme il pulsante grande per iniziare.
+- ☐ `babysitter.step.timer`: Il timer dura {minutes} minuti e guida le quattro zone della bocca: basta seguirlo.
+- ☐ `babysitter.step.paste`: Dentifricio: {dose}.
+- ☐ `babysitter.step.spit`: Alla fine si sputa il dentifricio senza sciacquare con l’acqua.
+- ☐ `babysitter.step.braces`: Ha l’apparecchio: dopo lo spazzolino segui la cura nello studio della dottoressa Dentina, nella scheda Mondo.
+- ☐ `babysitter.step.after`: Dopo lo spazzolino solo acqua, poi a nanna. Se l’app propone la buonanotte, lasciala finire.
+
+### Visita dal dentista
+
+Promemoria il giorno scelto (1, 3 o 7 giorni prima) alle 18:00 e conto alla rovescia sulla Home nelle due settimane prima.
+
+- ☐ `dentist.title`: Prossima visita dal dentista
+- ☐ `dentist.text`: Scrivi la data della visita: sul telefono arriva un promemoria qualche giorno prima e in Oggi compare il conto alla rovescia.
+- ☐ `dentist.dateLabel`: Data della visita (anno-mese-giorno, per esempio 2026-11-15)
+- ☐ `dentist.noticeLabel`: Promemoria
+- ☐ `dentist.noticeDays`: {count} {count|giorno|giorni} prima
+- ☐ `dentist.save`: Salva la visita
+- ☐ `dentist.clear`: Togli la visita
+- ☐ `dentist.invalid`: Scrivi una data di oggi o futura, per esempio 2026-11-15.
+- ☐ `dentist.saved`: Visita salvata
+- ☐ `dentist.homeCard`: Visita dal dentista tra {count} {count|giorno|giorni}
+- ☐ `dentist.homeToday`: Oggi visita dal dentista!
+- ☐ `dentist.prepare`: Prepariamoci
+- ☐ `dentist.notification.title`: Visita dal dentista per {name}
+- ☐ `dentist.notification.body`: Tra {count} {count|giorno|giorni}: preparate insieme la visita nello studio della dottoressa Dentina.
+
+### Cura del manico: testina e batteria
+
+La testina va cambiata ogni 3 mesi (90 giorni dal cambio segnato dal genitore); l’avviso compare 14 giorni prima. Batteria: avviso sotto il 20%.
+
+- ☐ `device.head.unknown`: Quando hai cambiato la testina? Philips consiglia di cambiarla ogni 3 mesi.
+- ☐ `device.head.overdue`: È ora di cambiare la testina: sono passati 3 mesi.
+- ☐ `device.head.soon`: Testina da cambiare tra {count} {count|giorno|giorni}.
+- ☐ `device.head.next`: Testina cambiata il {date}: la prossima tra {count} {count|giorno|giorni}.
+- ☐ `device.head.confirmTitle`: Testina nuova?
+- ☐ `device.head.confirmMessage`: Segno oggi come giorno del cambio: ti ricorderò il prossimo tra 3 mesi.
+- ☐ `device.head.changedToday`: Testina cambiata oggi
+- ☐ `device.head.hint`: Per il genitore: segna il cambio della testina.
+
+### Intensità consigliata per età
+
+Regola usata: sotto i 7 anni intensità bassa, dai 7 anni alta. Da confermare con il dentista e con le istruzioni del Sonicare for Kids.
+
+- ☐ `device.intensityTip.unknownAge`: Scegli l’età del bambino nelle impostazioni per un consiglio sull’intensità.
+- ☐ `device.intensityTip.low`: Intensità consigliata per la sua età: bassa, più delicata.
+- ☐ `device.intensityTip.high`: Intensità consigliata per la sua età: alta.
+- ☐ `device.intensityTip.mismatch`: Il manico ora usa un’altra intensità.

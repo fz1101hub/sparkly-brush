@@ -11,7 +11,7 @@ import { useBack } from "@/hooks/use-back";
  * opened through a deep link. A solved challenge keeps every parent area open for a while.
  */
 export function ParentGuard({ children }: { children: ReactNode }) {
-  const { enabled, isUnlocked, unlock } = useParentGate();
+  const { enabled, isUnlocked, unlock, lock } = useParentGate();
   const { t } = useI18n();
   const goBack = useBack();
   const [solved, setSolved] = useState(false);
@@ -20,6 +20,7 @@ export function ParentGuard({ children }: { children: ReactNode }) {
   return (
     <View testID="parent-guard" style={styles.container}>
       <ParentChallengeCard
+        lock={lock}
         cancelLabel={t("parentGate.back")}
         onCancel={goBack}
         onSolved={() => {

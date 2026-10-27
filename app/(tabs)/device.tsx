@@ -4,6 +4,7 @@ import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from "react-
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { HandleCareCard, HandleTransferCard, SiblingHandleCard } from "@/components/handle-care";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -240,6 +241,8 @@ export default function DeviceScreen() {
               </View>
             ) : null}
 
+            <SiblingHandleCard />
+
             <View style={styles.actions}>
               <Pressable
                 testID="device-connect-disconnect"
@@ -351,6 +354,9 @@ export default function DeviceScreen() {
                 value={device?.firmware ?? t("device.firmwareToRead")}
               />
             </View>
+
+            <HandleCareCard />
+            {!demoMode ? <HandleTransferCard /> : null}
 
             <Pressable
               testID="device-forget-reset"

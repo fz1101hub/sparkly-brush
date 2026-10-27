@@ -110,4 +110,29 @@ describe("profili famiglia su SQLite reale", () => {
     expect(restored.recentHistory.map((session) => session.id)).toEqual(["sara-1"]);
     expect((await primary.loadHistoryBundle()).recentHistory.map((session) => session.id)).toEqual(["parent-copy"]);
   });
+
+  it("un manico passato a un altro bambino gli porta solo le spazzolate fatte da quel momento (voce 50)", async () => {
+    const app = await loadStorage();
+    const primary = app.storage.getBrushStorage("primary");
+    const child = app.storage.getBrushStorage("child-luca");
+    await primary.initializeHistoryStorage();
+    await child.initializeHistoryStorage();
+    const handle = "AA:BB:CC:00:00:50";
+
+    await primary.saveDeviceSessionsWithLifetime(handle, [record(41, morning), record(42, morning + 12 * 3_600_000)]);
+    const cursor = (await primary.loadHistoryBundle()).lifetimeProgress.deviceCursors[deviceKey(handle)];
+    expect(cursor.lastSessionId).toBe(42);
+
+    await child.adoptDeviceCursorWithLifetime(handle, cursor);
+    const next = await simulateRestart();
+    const luca = next.storage.getBrushStorage("child-luca");
+    const imported = await luca.saveDeviceSessionsWithLifetime(handle, [
+      record(41, morning),
+      record(42, morning + 12 * 3_600_000),
+      record(43, morning + 24 * 3_600_000),
+    ]);
+    expect(imported.importedCount).toBe(1);
+    expect((await luca.loadHistoryBundle()).lifetimeProgress.completedSessions).toBe(1);
+    expect((await next.storage.getBrushStorage("primary").loadHistoryBundle()).lifetimeProgress.completedSessions).toBe(2);
+  });
 });

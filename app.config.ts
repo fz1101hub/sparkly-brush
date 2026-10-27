@@ -107,6 +107,13 @@ const config: ExpoConfig = {
         },
       },
     ],
+    [
+      "expo-local-authentication",
+      {
+        // English fallback; `locales` provides the translated InfoPlist.strings.
+        faceIDPermission: "Sparkly Brush uses Face ID only to open the parents’ area.",
+      },
+    ],
     "expo-sharing",
     "expo-sqlite",
     "expo-status-bar",

@@ -597,6 +597,28 @@ export function clearPendingDeviceFallback(
 }
 
 /**
+ * Hands a toothbrush's sync position to the child it is given to (voce 50): their first sync
+ * continues after the last session the previous owner imported, so only brushing done from the
+ * transfer on is theirs. A newer position already held by this child is kept.
+ */
+export function adoptDeviceCursor(
+  progress: LifetimeProgress,
+  deviceId: string,
+  cursor: DeviceSessionCursor,
+): LifetimeProgress {
+  const next = cloneProgress(progress);
+  const key = deviceKey(deviceId);
+  const current = next.deviceCursors[key];
+  if (current && current.updatedAt >= cursor.updatedAt) return next;
+  next.deviceCursors[key] = {
+    ...cursor,
+    previousEpochRecentSessionIds: [...cursor.previousEpochRecentSessionIds],
+    recentIdentities: [...cursor.recentIdentities],
+  };
+  return next;
+}
+
+/**
  * Starts a fresh device-local identity generation after the physical handle has
  * been factory-reset. Lifetime accounting and every stored session stay intact.
  */

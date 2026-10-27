@@ -36,3 +36,30 @@ export function daysToVisit(visitDay: string, now: number): number | null {
   );
   return difference >= 0 ? difference : null;
 }
+
+/** Philips advises a new brush head every three months (voce 35). */
+export const HEAD_LIFETIME_DAYS = 90;
+/** From this many days before the change the handle screen starts to remind it. */
+export const HEAD_NOTICE_DAYS = 14;
+/** Below this charge the handle screen asks to recharge it. */
+export const LOW_BATTERY_PERCENT = 20;
+
+/** Days left before the brush head should be replaced: negative once it is overdue. */
+export function headDaysLeft(changedOn: string, now: number): number {
+  const [year, month, day] = changedOn.split("-").map(Number);
+  const today = new Date(now);
+  const elapsed = Math.round(
+    (Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) - Date.UTC(year, month - 1, day)) / 86_400_000,
+  );
+  return HEAD_LIFETIME_DAYS - elapsed;
+}
+
+/**
+ * Power setting suggested for the child's age (voce 36), for dentist review: the Sonicare for Kids
+ * starts on the gentler setting for the youngest and moves to the stronger one from about 7.
+ */
+export function recommendedIntensity(age: AgeGroup | null): "low" | "high" | null {
+  if (age === "under3" || age === "3to6") return "low";
+  if (age === "over6") return "high";
+  return null;
+}
