@@ -64,6 +64,7 @@ export default function CollectionScreen() {
           {([
             { title: t("world.exploreLink"), route: "/(tabs)/explore", testID: "world-explore" },
             { title: t("world.missionsLink"), route: "/(tabs)/missions", testID: "world-missions" },
+            { title: t("album.link"), route: "/(tabs)/album", testID: "world-album" },
           ] as const).map((item) => (
             <Pressable
               key={item.route}

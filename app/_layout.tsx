@@ -27,6 +27,7 @@ import { AppErrorScreen } from "@/components/app-error-screen";
 import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { ProfileNavigation } from "@/components/profile-navigation";
+import { MotivationTracker } from "@/components/motivation-tracker";
 import { ReminderLifecycle } from "@/components/reminder-lifecycle";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
@@ -141,6 +142,7 @@ function ProfileLayout() {
                     </Stack>
                     <OnboardingOverlay />
                     <ReminderLifecycle />
+                    <MotivationTracker />
                     <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />

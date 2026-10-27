@@ -2,6 +2,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { HomeMotivation } from "@/components/home-motivation";
 import { useExtras } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
@@ -46,6 +47,7 @@ export function HomeExtras({ ink }: { ink: string }) {
           </Text>
         </Pressable>
       ) : null}
+      <HomeMotivation ink={ink} />
     </View>
   );
 }

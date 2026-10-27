@@ -1,5 +1,7 @@
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
+import { EMPTY_AWARDS, normalizeAwards, type AlbumAwards } from "@/lib/album";
 import { AGE_GROUPS, DENTIST_NOTICE_DAYS, type AgeGroup, type DentistNoticeDays } from "@/lib/dental-care";
+import { GOAL_IDS, GOAL_TARGETS, type GoalId, type GoalProposal, type GoalTarget } from "@/lib/milestones";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
 /**
@@ -39,6 +41,18 @@ export type Extras = {
   brushTogether: boolean;
   /** Day the brush head was last replaced (voce 35); null until the parent records it. */
   headChangedOn: string | null;
+  /** Sunday and seasonal stickers of the album (voci 14 e 15). */
+  album: AlbumAwards;
+  /** Mondays of the weeks whose challenge was won (voce 51) and whose family boss was beaten (voce 13). */
+  challengeWins: string[];
+  bossWins: string[];
+  /** "YYYY-MM" of the perfect months (voce 12). */
+  perfectMonths: string[];
+  /** First day of the guided first week (voce 18); skipped for children who already brushed. */
+  discoveryStart: string | null;
+  discoverySkipped: boolean;
+  /** The goal the child proposed, waiting for the parent (voce 19). */
+  goalProposal: GoalProposal | null;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -52,6 +66,13 @@ export const DEFAULT_EXTRAS: Extras = {
   extraStepDays: [],
   brushTogether: false,
   headChangedOn: null,
+  album: EMPTY_AWARDS,
+  challengeWins: [],
+  bossWins: [],
+  perfectMonths: [],
+  discoveryStart: null,
+  discoverySkipped: false,
+  goalProposal: null,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -62,6 +83,10 @@ export function cleanCreatureName(value: string): string {
     .trim()
     .slice(0, MAX_NAME_LENGTH);
 }
+
+const dayKeys = (list: unknown): string[] => Array.isArray(list)
+  ? [...new Set(list.filter((day): day is string => typeof day === "string" && DAY_KEY.test(day)))].sort().slice(-104)
+  : [];
 
 export function normalizeExtras(raw: unknown): Extras {
   const value = (raw && typeof raw === "object" ? raw : {}) as Partial<Extras>;
@@ -101,6 +126,21 @@ export function normalizeExtras(raw: unknown): Extras {
       : [],
     brushTogether: value.brushTogether === true,
     headChangedOn: typeof value.headChangedOn === "string" && DAY_KEY.test(value.headChangedOn) ? value.headChangedOn : null,
+    album: normalizeAwards(value.album),
+    challengeWins: dayKeys(value.challengeWins),
+    bossWins: dayKeys(value.bossWins),
+    perfectMonths: Array.isArray(value.perfectMonths)
+      ? [...new Set(value.perfectMonths.filter((month): month is string => typeof month === "string" && /^\d{4}-\d{2}$/.test(month)))].sort().slice(-120)
+      : [],
+    discoveryStart: typeof value.discoveryStart === "string" && DAY_KEY.test(value.discoveryStart) ? value.discoveryStart : null,
+    discoverySkipped: value.discoverySkipped === true,
+    goalProposal:
+      value.goalProposal
+      && GOAL_IDS.includes(value.goalProposal.goal as GoalId)
+      && GOAL_TARGETS.includes(value.goalProposal.target as GoalTarget)
+      && typeof value.goalProposal.proposedAt === "number"
+        ? { goal: value.goalProposal.goal, target: value.goalProposal.target, proposedAt: value.goalProposal.proposedAt }
+        : null,
   };
 }
 

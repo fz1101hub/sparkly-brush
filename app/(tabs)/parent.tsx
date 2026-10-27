@@ -12,6 +12,7 @@ import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { FamilyNavigation } from "@/components/family-navigation";
+import { GoalApproval } from "@/components/goal-approval";
 import { StreakDays } from "@/components/streak-days";
 import { ParentCareSettings } from "@/components/parent-care-settings";
 import { DemoModeNotice } from "@/components/demo-mode-notice";
@@ -684,6 +685,8 @@ export default function ParentDashboardScreen() {
             color={LIGHT_CARD_MUTED}
           />
         </Pressable>
+
+        <GoalApproval />
 
         <StreakDays />
 
