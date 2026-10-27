@@ -1,7 +1,8 @@
 # Contenuti da validare — funzioni richieste (27 ottobre 2026)
 
 Questo documento raccoglie **tutti i testi educativi** introdotti con le quattro funzioni richieste
-(Quiz del sorriso, nomi dei denti in altre lingue, modalità apparecchio, attività del villaggio)
+(Quiz del sorriso, nomi dei denti in altre lingue, modalità apparecchio, attività del villaggio) e con il loro
+completamento del 27 ottobre (nuovi tipi di domanda, «ascolta e ripeti», orto, storie, piazza, casa del topolino)
 perché siano rivisti **prima della pubblicazione**:
 
 - da un **dentista pediatrico** o un ortodontista per i contenuti di salute (quiz, consigli per l’apparecchio, visita);
@@ -15,7 +16,7 @@ Legenda della revisione: ☐ da rivedere · ☑ approvato · ✎ da correggere (
 
 ## 1. Quiz del sorriso
 
-30 domande in 6 categorie. Livello 1 = bambini di 4–6 anni, livello 2 = 7–9 anni.
+39 domande in 6 categorie. Livello 1 = bambini di 4–6 anni, livello 2 = 7–9 anni.
 Nei dati la risposta corretta delle domande a scelta è sempre la prima; l’app le mescola. Testo in italiano;
 le versioni nelle altre lingue sono nello stesso file, accanto a ogni domanda.
 
@@ -59,6 +60,13 @@ le versioni nelle altre lingue sono nello stesso file, accanto a ogni domanda.
 - Curiosità mostrata dopo la risposta: Vero! Sono i «molari dei sei anni»: arrivano in fondo alla bocca e vanno spazzolati bene, perché sono difficili da raggiungere.
 - Fonte: Eruzione dei primi molari permanenti verso i 6 anni, distalmente ai secondi molari decidui.
 
+**☐ `order-growing-up`** — livello 1
+
+- Domanda: Metti in ordine, dal primo all’ultimo: che cosa succede ai denti crescendo?
+- Ordine giusto: 1. Spunta il primo dente da latte → 2. Cade il primo dente da latte → 3. Spunta un dente del giudizio
+- Curiosità mostrata dopo la risposta: Il primo dente spunta verso i 6 mesi, il primo cade verso i 6 anni e i denti del giudizio arrivano da grandi, a volte mai.
+- Fonte: Cronologia dell’eruzione: primo dente deciduo verso i 6 mesi, prima permuta verso i 6 anni, terzi molari tra 17 e 25 anni.
+
 ### Igiene
 
 **☐ `hygiene-twice`** — livello 1
@@ -100,13 +108,20 @@ le versioni nelle altre lingue sono nello stesso file, accanto a ogni domanda.
 - Curiosità mostrata dopo la risposta: Tra un dente e l’altro, dove le setole fanno fatica a entrare. Ai più piccoli lo passa un adulto.
 - Fonte: Igiene interprossimale: filo interdentale tra i denti, con aiuto dell’adulto per i bambini.
 
+**☐ `order-evening`** — livello 1
+
+- Domanda: Metti in ordine: che cosa fai la sera?
+- Ordine giusto: 1. Mangio la cena → 2. Mi lavo i denti → 3. Vado a dormire
+- Curiosità mostrata dopo la risposta: Prima la cena, poi lo spazzolino e poi a nanna: dopo aver lavato i denti, solo un po’ d’acqua.
+- Fonte: Igiene orale pediatrica: spazzolare prima di dormire e poi bere solo acqua.
+
 ### Cibo
 
 **☐ `food-cheese`** — livello 1
 
 - Domanda: Quale spuntino è più amico dei denti?
-- Risposta corretta: **Un pezzetto di formaggio**
-- Risposte sbagliate: Le caramelle · Una bibita gassata
+- Risposta corretta: **🧀 Un pezzetto di formaggio**
+- Risposte sbagliate: 🍬 Le caramelle · 🥤 Una bibita gassata
 - Curiosità mostrata dopo la risposta: Il formaggio! Caramelle e bibite zuccherate restano sui denti e nutrono i batteri.
 - Fonte: Alimentazione e carie: spuntini senza zuccheri aggiunti.
 
@@ -177,6 +192,46 @@ le versioni nelle altre lingue sono nello stesso file, accanto a ogni domanda.
 - Curiosità mostrata dopo la risposta: Vero! Si consumano masticando fieno ed erba, per questo i conigli rosicchiano sempre.
 - Fonte: Zoologia: denti a crescita continua dei lagomorfi.
 
+**☐ `whose-shark`** — livello 1
+
+- Domanda: Di chi è questo dente? È a punta come un triangolo, e dietro ce ne sono file intere di ricambio.
+- Risposta corretta: **🦈 Dello squalo**
+- Risposte sbagliate: 🐄 Della mucca · 🐇 Del coniglio
+- Curiosità mostrata dopo la risposta: Dello squalo! Quando perde un dente, quello della fila dietro si sposta in avanti e prende il suo posto.
+- Fonte: Zoologia: i denti degli squali sono disposti in file di ricambio che avanzano (polifiodontia).
+
+**☐ `whose-child`** — livello 1
+
+- Domanda: Di chi sono questi denti? Sono 20, piccoli e bianchi, e verso i 6 anni cominciano a cadere uno alla volta.
+- Risposta corretta: **🧒 Di un bambino**
+- Risposte sbagliate: 🦈 Dello squalo · 🐄 Della mucca
+- Curiosità mostrata dopo la risposta: Di un bambino! Sono i denti da latte: sotto, i denti definitivi aspettano il loro turno.
+- Fonte: Dentatura decidua: 20 elementi; la permuta inizia verso i 6 anni.
+
+**☐ `whose-cow`** — livello 2
+
+- Domanda: Di chi sono questi denti? In fondo alla bocca sono larghi e piatti per macinare l’erba, e davanti, in alto, non ci sono incisivi.
+- Risposta corretta: **🐄 Della mucca**
+- Risposte sbagliate: 🦈 Dello squalo · 🐍 Del serpente
+- Curiosità mostrata dopo la risposta: Della mucca! Al posto degli incisivi di sopra ha un cuscinetto duro di gengiva: strappa l’erba e poi la mastica a lungo.
+- Fonte: Zoologia: i bovini non hanno incisivi superiori (cuscinetto dentale) e hanno molari piatti per ruminare.
+
+**☐ `whose-snake`** — livello 2
+
+- Domanda: Di chi sono questi denti? Sono due, lunghi e sottili, e alcuni hanno dentro un canale, come una cannuccia.
+- Risposta corretta: **🐍 Del serpente velenoso**
+- Risposte sbagliate: 🐇 Del coniglio · 🐄 Della mucca
+- Curiosità mostrata dopo la risposta: Del serpente velenoso! Da quei denti, chiamati zanne, esce il veleno. Gli animali selvatici si guardano da lontano.
+- Fonte: Zoologia: le zanne dei serpenti velenosi sono scanalate o cave (per esempio nelle vipere).
+
+**☐ `whose-crocodile`** — livello 2
+
+- Domanda: Di chi sono questi denti? Sono tanti, a forma di cono, quasi tutti uguali, e quando uno cade ne cresce uno nuovo, moltissime volte.
+- Risposta corretta: **🐊 Del coccodrillo**
+- Risposte sbagliate: 🐘 Dell’elefante · 🐴 Del cavallo
+- Curiosità mostrata dopo la risposta: Del coccodrillo! Ogni dente può essere sostituito decine di volte nella vita. Noi invece abbiamo solo due serie: da latte e definitivi.
+- Fonte: Zoologia: negli alligatori ogni dente può essere sostituito fino a circa 50 volte (Wu et al., PNAS 2013).
+
 ### Storia
 
 **☐ `history-egyptians`** — livello 1
@@ -216,6 +271,20 @@ le versioni nelle altre lingue sono nello stesso file, accanto a ogni domanda.
 - Risposte sbagliate: In spiaggia · Al circo
 - Curiosità mostrata dopo la risposta: In prigione, così si racconta: con un osso e delle setole costruì uno spazzolino e, uscito, aprì una fabbrica.
 - Fonte: Storia dello spazzolino: William Addis, Inghilterra, circa 1780 (aneddoto della prigione).
+
+**☐ `order-toothbrush`** — livello 2
+
+- Domanda: Metti in ordine, dal più antico al più recente.
+- Ordine giusto: 1. Gli antichi Egizi puliscono i denti con una polvere → 2. In Cina nasce lo spazzolino con le setole → 3. Arriva lo spazzolino elettrico
+- Curiosità mostrata dopo la risposta: Le polveri egizie hanno migliaia di anni, lo spazzolino con le setole nasce in Cina nel 1498 e quello elettrico negli anni Cinquanta del Novecento.
+- Fonte: Storia dell’igiene orale: polveri dentifricie egizie; spazzolino a setole in Cina (1498); primi spazzolini elettrici in commercio negli anni Cinquanta (Svizzera, 1954).
+
+**☐ `order-dentistry`** — livello 2
+
+- Domanda: Metti in ordine, dal più antico al più recente.
+- Ordine giusto: 1. Pierre Fauchard scrive il primo grande libro sui denti → 2. William Addis produce tanti spazzolini in Inghilterra → 3. Nasce la Giornata mondiale della salute orale
+- Curiosità mostrata dopo la risposta: Fauchard scrisse il suo libro nel 1728, Addis iniziò verso il 1780 e la Giornata mondiale della salute orale esiste dal 2007.
+- Fonte: Pierre Fauchard, «Le Chirurgien Dentiste» (1728); William Addis, circa 1780; FDI World Oral Health Day dal 2007 (il 20 marzo dal 2013).
 
 ### Tradizioni nel mondo
 
@@ -276,6 +345,15 @@ Domande per i madrelingua: il termine è quello che un bambino sente dal dentist
 «molar» in spagnolo, «Backenzahn» o «Molar» in tedesco). La mappa mostra la bocca vista di fronte: il lato destro
 del bambino è a sinistra dello schermo.
 
+### Molari dei 6 anni e numerazione FDI
+
+- ☐ `toothNames.sixYearLegend`: ★ Denti dei 6 anni: nuovi da proteggere
+- ☐ `toothNames.sixYear`: Dente dei 6 anni! Spunta verso i 6 anni dietro l’ultimo dente da latte, senza che ne cada uno. È un dente definitivo: spazzolalo bene, fino in fondo.
+
+La numerazione FDI segue lo schema a due cifre: quadrante 1–4 per i denti permanenti e 5–8 per quelli da latte,
+a partire dall’arcata superiore destra del bambino; seconda cifra dal centro verso il fondo. I primi molari
+permanenti (16, 26, 36, 46) hanno la stella.
+
 ## 3. Modalità apparecchio
 
 ### Passaggi della routine di cura
@@ -321,6 +399,20 @@ Ogni tipo di apparecchio ha la sua routine dopo lo spazzolino; il passaggio prin
 
 - ☐ `braces.creatureSays`: Anche io ho l’apparecchio! Puliamolo insieme.
 
+### Sorriso nuovo (dopo aver tolto l’apparecchio)
+
+- ☐ `braces.newSmileSuffix`: , con il sorriso nuovo
+- ☐ `braces.newSmileTitle`: Sorriso nuovo!
+- ☐ `braces.newSmileText`: Per due settimane la tua creatura brilla insieme al tuo sorriso nuovo.
+
+### Missioni dell’apparecchio
+
+- ☐ `braces.missions.title`: Missioni dell’apparecchio
+- ☐ `braces.missions.today`: Cura dell’apparecchio di oggi
+- ☐ `braces.missions.week`: Settimana con l’apparecchio pulito
+- ☐ `braces.missions.note`: Si completano con la cura dell’apparecchio, dopo lo spazzolino. Non danno monete: il premio è un sorriso pulito.
+- ☐ `braces.missions.open`: Vai alla cura dell’apparecchio
+
 ## 4. Visita dal dentista (Studio della dottoressa Dentina)
 
 ### Passaggi della visita guidata
@@ -342,9 +434,102 @@ Ogni tipo di apparecchio ha la sua routine dopo lo spazzolino; il passaggio prin
 - ☐ `visit.done`: Sono pronto!
 - ☐ `visit.previous`: Indietro
 
-## 5. Regole del villaggio da confermare con la famiglia
+## 5. Orto dei cibi
+
+Il bambino mette ogni cibo in uno dei due cesti. Dopo ogni risposta compare la spiegazione del gruppo.
+
+| Gruppo | Cibi |
+| --- | --- |
+| ☐ Amici dei denti | 🧀 Formaggio, 🥕 Carota, 🍎 Mela, 💧 Acqua, 🥛 Latte, 🥦 Broccoli, 🥚 Uovo, 🥒 Cetriolo |
+| ☐ Ogni tanto | 🍬 Caramelle, 🍭 Lecca-lecca, 🥤 Bibita gassata, 🍫 Cioccolato, 🍪 Biscotti, 🍩 Ciambella, 🍰 Torta, 🍯 Miele |
+
+### Spiegazioni e consigli
+
+- ☐ `garden.intro`: Per ogni cibo scegli il cesto: «amico dei denti» oppure «ogni tanto». Una partita costa 1 energia.
+- ☐ `garden.best`: Il tuo record: {score} su 6
+- ☐ `garden.question`: In quale cesto lo metti?
+- ☐ `garden.friend`: Amico dei denti
+- ☐ `garden.sometimes`: Ogni tanto
+- ☐ `garden.wrong`: Quasi!
+- ☐ `garden.whyFriend`: È un amico dei denti: non lascia zuccheri appiccicosi.
+- ☐ `garden.whySometimes`: Ha tanti zuccheri: meglio ogni tanto, durante un pasto, e poi un sorso d’acqua.
+- ☐ `garden.result`: Hai messo {score} cibi su {total} nel cesto giusto!
+- ☐ `garden.tip`: Ricorda: per la sete, l’acqua è la migliore amica dei denti.
+
+## 6. Storie della biblioteca
+
+### ☐ Bloopi e la placca dispettosa
+
+1. Una mattina Bloopi si svegliò con una sensazione strana: i denti sembravano coperti da un maglioncino appiccicoso.
+2. «È la placca!» disse Moonbit. «Si forma ogni giorno, ma lo spazzolino la porta via.»
+3. Bloopi spazzolò in alto, in basso, a destra e a sinistra, piano piano, per due minuti interi.
+4. Alla fine sorrise allo specchio: i denti erano lisci e brillanti. «Ci vediamo stasera, placca: ti mando via di nuovo!»
+
+### ☐ Il dente di Spriggo
+
+1. A Spriggo dondolava un dente da giorni. Una sera, mordendo una mela, il dente cadde.
+2. Spriggo lo mise in una scatolina sotto il cuscino. «Chissà se stanotte passerà il topolino…»
+3. Nella notte il topolino arrivò in punta di piedi e prese il dente con cura: «Che dente pulito! Lo porterò nella mia casetta.»
+4. Al mattino Spriggo trovò un biglietto: «Grazie! Lava bene il dente nuovo che spunterà.»
+
+### ☐ Flarello e l’apparecchio
+
+1. Un giorno l’ortodontista disse a Flarello: «Con un apparecchio i tuoi denti si metteranno in fila, come in una parata.»
+2. All’inizio Flarello si sentiva un po’ strano. Poi scelse elastici arancioni, come le sue fiamme.
+3. Ogni sera, dopo lo spazzolino, Flarello passava lo scovolino tra gli attacchi, con calma.
+4. Il giorno in cui l’apparecchio fu tolto, Flarello fece il sorriso più grande di tutto il villaggio.
+
+### ☐ Voltuff ha sete
+
+1. Dopo una lunga corsa, Voltuff aveva tanta sete e vide una bibita frizzante e zuccherata.
+2. «Aspetta!» disse Bloopi. «I batteri della bocca adorano lo zucchero e lo trasformano in acidi che rovinano i denti.»
+3. Voltuff bevve un bel bicchiere d’acqua fresca. «È buonissima, e i miei denti sono contenti!»
+4. Da quel giorno, quando ha sete, Voltuff sceglie l’acqua. Le bibite dolci? Solo ogni tanto.
+
+## 7. Piazza, casa del topolino e sera
+
+### Feste in piazza
+
+- ☐ `square.event.oralHealthDay.title`: Giornata mondiale della salute orale
+- ☐ `square.event.oralHealthDay.tip`: Oggi tutto il mondo festeggia i sorrisi sani: fai vedere a qualcuno come spazzoli per due minuti!
+- ☐ `square.event.halloween.title`: Halloween
+- ☐ `square.event.halloween.tip`: Tanti dolcetti? Meglio mangiarne qualcuno insieme, dopo un pasto, che piluccarli tutto il giorno. E la sera, spazzolino!
+- ☐ `square.event.holidays.title`: Feste di fine anno
+- ☐ `square.event.holidays.tip`: Tra un dolce e l’altro, acqua da bere e spazzolino mattina e sera: anche in vacanza!
+
+### Mostro della placca
+
+- ☐ `square.bossTitle`: Il mostro della placca
+- ☐ `square.bossText`: Ogni settimana torna con {hp} punti di forza: ogni spazzolata completa, da lunedì a domenica, gliene toglie uno.
+- ☐ `square.bossHp`: Forza del mostro della placca
+- ☐ `square.bossLeft`: Ancora {count} {count|colpo|colpi} di spazzolino per sconfiggerlo!
+- ☐ `square.bossDefeated`: Sconfitto! Questa settimana la placca non ha scampo.
+
+### Casa del topolino
+
+- ☐ `mouse.intro`: Ti è caduto un dente da latte? Toccalo sulla mappa e segnalo: il topolino lo porterà nella sua casetta.
+- ☐ `mouse.count`: {count} {count|dente caduto|denti caduti}
+- ☐ `mouse.hint`: Tocca un dente sulla mappa.
+- ☐ `mouse.record`: È caduto oggi!
+- ☐ `mouse.lostOn`: Caduto il {date}.
+- ☐ `mouse.undo`: Non è ancora caduto
+- ☐ `mouse.thanks`: Il topolino ringrazia: «Che dente pulito! Lava bene anche quello nuovo quando spunta».
+- ☐ `mouse.listTitle`: I denti nella casetta
+- ☐ `mouse.listItem`: {date}: {name}, {arch}, {side}
+
+### Il villaggio dorme
+
+- ☐ `village.asleep.short`: Il villaggio dorme fino alle {time}
+- ☐ `village.asleep.text`: Shh, il villaggio dorme! I giochi riaprono domattina alle {time}. Intanto puoi leggere una storia in biblioteca.
+- ☐ `village.asleep.banner`: Buonanotte: il villaggio dorme fino alle {time}. Biblioteca, museo e cura dell’apparecchio restano aperti.
+
+## 8. Regole del villaggio da confermare con la famiglia
 
 - ☐ Energia: 2 punti per ogni sessione di spazzolino completata oggi, al massimo 4 al giorno; si azzera a mezzanotte.
 - ☐ Un giro di quiz, una partita a «Trova il dente» o a Memory costano 1 punto; esplorare, il museo, la visita e la cura dell’apparecchio sono gratuiti.
 - ☐ Il genitore può togliere il limite di energia in Impostazioni.
 - ☐ Le sessioni importate dallo spazzolino con orario approssimativo non danno energia (non si sa se sono di oggi).
+- ☐ La sera il villaggio dorme dalle 20:30 (orario scelto dal genitore tra 19:30 e 21:00) alle 6:30: quiz, giochi dei denti, orto e laboratorio chiudono; biblioteca, museo, casa del topolino e cura dell’apparecchio restano aperti.
+- ☐ Orto e laboratorio costano 1 energia; «ascolta e ripeti», biblioteca, piazza e casa del topolino sono gratuiti.
+- ☐ Il mostro della placca ha 10 punti: una spazzolata completa toglie un punto, da lunedì a domenica.
+- ☐ Le missioni dell’apparecchio e il laboratorio non danno né consumano monete o tesori.
