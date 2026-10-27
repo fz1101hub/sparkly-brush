@@ -313,6 +313,10 @@ test.describe("WCAG automatic audit of reward states", () => {
     await expect(page.getByTestId("session-reward-modal")).toBeVisible();
     await page.getByTestId("session-reward-dismiss").click();
     await expect(page.getByTestId("goodnight-overlay")).toBeVisible();
+    // react-native-web gives the modal its dialog role only when the fade-in ends.
+    await expect(
+      page.locator('[aria-modal="true"][role="dialog"]').filter({ has: page.getByTestId("goodnight-overlay") }),
+    ).toBeVisible();
     await scan(page, testInfo, "goodnight");
   });
 });
