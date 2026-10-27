@@ -56,6 +56,32 @@ export function teethFor(dentition: Dentition): Tooth[] {
   return teeth;
 }
 
+/**
+ * FDI two-digit notation, as dentists write it: the quarter (1–4 for adult teeth, 5–8 for baby
+ * teeth, clockwise from the child's upper right) and the tooth counted from the middle.
+ */
+export function fdiNumber(tooth: Tooth, dentition: Dentition): number {
+  const quarter = tooth.arch === "upper" ? (tooth.side === "right" ? 1 : 2) : tooth.side === "left" ? 3 : 4;
+  return (quarter + (dentition === "primary" ? 4 : 0)) * 10 + tooth.position + 1;
+}
+
+/**
+ * The first adult molar («dente dei 6 anni»): it comes through behind the last baby tooth without
+ * one falling out, so families often take it for a baby tooth.
+ */
+export function isSixYearMolar(tooth: Tooth, dentition: Dentition): boolean {
+  return dentition === "permanent" && tooth.position === 5;
+}
+
+/** «Ascolta e ripeti»: one tooth of each kind in the mouth, in random order. */
+export function repeatRound(dentition: Dentition, random: () => number = Math.random): Tooth[] {
+  const teeth = teethFor(dentition);
+  return shuffle(typesIn(dentition), random).map((type) => {
+    const ofType = teeth.filter((tooth) => tooth.type === type);
+    return ofType[Math.floor(random() * ofType.length)];
+  });
+}
+
 export function typesIn(dentition: Dentition): ToothType[] {
   return TOOTH_TYPES.filter((type) => QUADRANT[dentition].includes(type));
 }

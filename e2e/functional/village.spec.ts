@@ -72,6 +72,18 @@ test.describe("villaggio dei Brushling", () => {
     await page.getByTestId("tooth-upper-right-0").click();
     await expect(page.getByTestId("tooth-name-local")).toHaveText(/incisivo centrale/i);
     await expect(page.getByTestId("tooth-name-learning")).toContainText("mittlerer Schneidezahn");
+
+    await page.getByTestId("tooth-dentition-permanent").click();
+    await page.getByTestId("tooth-fdi").click();
+    await page.getByTestId("tooth-upper-left-5").click();
+    await expect(page.getByTestId("tooth-fdi-number")).toHaveText("Numero FDI: 26");
+    await expect(page.getByTestId("tooth-six-year")).toBeVisible();
+
+    await page.getByTestId("tooth-mode-repeat").click();
+    await page.getByTestId("tooth-repeat-start").click();
+    await expect(page.getByTestId("tooth-repeat-word")).toBeVisible();
+    for (let tooth = 0; tooth < 6; tooth += 1) await page.getByTestId("tooth-repeat-said").click();
+    await expect(page.getByTestId("tooth-repeat-result")).toContainText("6 nomi in tedesco");
   });
 
   test("la modalità apparecchio guida la cura e mette l'apparecchio alla creatura", async ({ page }) => {

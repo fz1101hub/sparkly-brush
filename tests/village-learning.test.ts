@@ -26,8 +26,11 @@ import { isRightOrder, pickQuizRound, quizOptions } from "@/lib/learning/quiz";
 import { QUIZ_QUESTIONS } from "@/lib/learning/quiz-content";
 import {
   defaultLearningLanguage,
+  fdiNumber,
   findToothRound,
+  isSixYearMolar,
   memoryDeck,
+  repeatRound,
   TOOTH_NAMES,
   TOOTH_TYPES,
   teethFor,
@@ -160,6 +163,28 @@ describe("partita del quiz", () => {
 });
 
 describe("nomi dei denti", () => {
+  it("numera i denti come il dentista (FDI) e segnala i molari dei 6 anni", () => {
+    const byId = (dentition: "primary" | "permanent", id: string) => teethFor(dentition).find((tooth) => tooth.id === id)!;
+    expect(fdiNumber(byId("permanent", "upper-right-0"), "permanent")).toBe(11);
+    expect(fdiNumber(byId("permanent", "upper-left-5"), "permanent")).toBe(26);
+    expect(fdiNumber(byId("permanent", "lower-left-7"), "permanent")).toBe(38);
+    expect(fdiNumber(byId("permanent", "lower-right-2"), "permanent")).toBe(43);
+    expect(fdiNumber(byId("primary", "upper-right-0"), "primary")).toBe(51);
+    expect(fdiNumber(byId("primary", "lower-right-4"), "primary")).toBe(85);
+    const numbers = teethFor("permanent").map((tooth) => fdiNumber(tooth, "permanent"));
+    expect(new Set(numbers).size).toBe(32);
+
+    const sixYear = teethFor("permanent").filter((tooth) => isSixYearMolar(tooth, "permanent"));
+    expect(sixYear.map((tooth) => fdiNumber(tooth, "permanent")).sort()).toEqual([16, 26, 36, 46]);
+    expect(teethFor("primary").some((tooth) => isSixYearMolar(tooth, "primary"))).toBe(false);
+  });
+
+  it("«ascolta e ripeti» propone un dente per ogni tipo presente in bocca", () => {
+    const round = repeatRound("primary", seeded(2));
+    expect(round.map((tooth) => tooth.type).sort()).toEqual([...typesIn("primary")].sort());
+    expect(repeatRound("permanent", seeded(9))).toHaveLength(6);
+  });
+
   it("ha 20 denti da latte e 32 definitivi con i tipi giusti", () => {
     expect(teethFor("primary")).toHaveLength(20);
     expect(teethFor("permanent")).toHaveLength(32);

@@ -191,6 +191,15 @@ test.describe("WCAG automatic audit", () => {
     await page.getByTestId("tooth-upper-left-2").click();
     await expect(page.getByTestId("tooth-name-local")).toBeVisible();
     await scan(page, testInfo, "tooth-names-explore");
+    await page.getByTestId("tooth-dentition-permanent").click();
+    await page.getByTestId("tooth-fdi").click();
+    await page.getByTestId("tooth-upper-right-5").click();
+    await expect(page.getByTestId("tooth-six-year")).toBeVisible();
+    await scan(page, testInfo, "tooth-names-fdi");
+    await page.getByTestId("tooth-mode-repeat").click();
+    await page.getByTestId("tooth-repeat-start").click();
+    await expect(page.getByTestId("tooth-repeat-word")).toBeVisible();
+    await scan(page, testInfo, "tooth-names-repeat");
     await page.getByTestId("tooth-mode-memory").click();
     await page.getByTestId("tooth-memory-start").click();
     await page.getByTestId("memory-card-0").click();

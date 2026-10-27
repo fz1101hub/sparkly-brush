@@ -31,6 +31,8 @@ export type VillageState = {
   visits: number;
   /** Parent setting: off removes the daily limit. */
   energyLimit: boolean;
+  /** Parent option: the dentists' FDI numbers on the tooth map. */
+  showFdi: boolean;
 };
 
 export const DEFAULT_VILLAGE: VillageState = {
@@ -45,6 +47,7 @@ export const DEFAULT_VILLAGE: VillageState = {
   memoryWins: 0,
   visits: 0,
   energyLimit: true,
+  showFdi: false,
 };
 
 const count = (value: unknown, max: number) =>
@@ -66,6 +69,7 @@ export function normalizeVillage(raw: unknown): VillageState {
     memoryWins: count(value.memoryWins, 100_000),
     visits: count(value.visits, 100_000),
     energyLimit: value.energyLimit !== false,
+    showFdi: value.showFdi === true,
   };
 }
 

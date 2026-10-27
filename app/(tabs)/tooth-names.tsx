@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Switch, View } from "react-native";
 
 import { DesignText as Text } from "@/components/design-text";
 import { TOOTH_COLORS, ToothMap, type ToothMark } from "@/components/tooth-map";
@@ -16,8 +16,11 @@ import { useI18n } from "@/contexts/locale-context";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import {
+  fdiNumber,
   findToothRound,
+  isSixYearMolar,
   memoryDeck,
+  repeatRound,
   SPEECH_LANGUAGE,
   TOOTH_NAMES,
   typesIn,
@@ -29,7 +32,8 @@ import {
 import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/locale-types";
 import { speak } from "@/lib/speech";
 
-type Mode = "explore" | "find" | "memory";
+type Mode = "explore" | "repeat" | "find" | "memory";
+type RepeatGame = { teeth: Tooth[]; index: number };
 type FindGame = { prompts: ToothType[]; index: number; score: number; marks: Record<string, ToothMark>; answered: boolean };
 type MemoryGame = { cards: MemoryCard[]; open: string[]; matched: string[]; moves: number };
 
@@ -52,6 +56,7 @@ export default function ToothNamesScreen() {
   const [selected, setSelected] = useState<Tooth | null>(null);
   const [find, setFind] = useState<FindGame | null>(null);
   const [memory, setMemory] = useState<MemoryGame | null>(null);
+  const [repeat, setRepeat] = useState<RepeatGame | null>(null);
   const [noEnergy, setNoEnergy] = useState(false);
   const flipBack = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,7 +83,22 @@ export default function ToothNamesScreen() {
     setMode(next);
     setFind(null);
     setMemory(null);
+    setRepeat(null);
     setNoEnergy(false);
+  };
+
+  /** «Ascolta e ripeti» is free practice: the phone speaks, the child repeats out loud. */
+  const sayRepeat = (tooth: Tooth) => speak(TOOTH_NAMES[learning][tooth.type], SPEECH_LANGUAGE[learning]);
+  const startRepeat = () => {
+    const teeth = repeatRound(dentition);
+    setRepeat({ teeth, index: 0 });
+    sayRepeat(teeth[0]);
+  };
+  const nextRepeat = () => {
+    if (!repeat) return;
+    const index = repeat.index + 1;
+    setRepeat({ ...repeat, index });
+    if (index < repeat.teeth.length) sayRepeat(repeat.teeth[index]);
   };
 
   const tapInFind = (tooth: Tooth) => {
@@ -137,6 +157,7 @@ export default function ToothNamesScreen() {
           onChange={(next) => {
             setSelected(null);
             setFind(null);
+            setRepeat(null);
             void village.update({ dentition: next });
           }}
           options={[
@@ -151,6 +172,7 @@ export default function ToothNamesScreen() {
           onChange={changeMode}
           options={[
             { value: "explore", label: t("toothNames.mode.explore") },
+            { value: "repeat", label: t("toothNames.mode.repeat") },
             { value: "find", label: t("toothNames.mode.find") },
             { value: "memory", label: t("toothNames.mode.memory") },
           ]}
@@ -163,6 +185,8 @@ export default function ToothNamesScreen() {
           <ToothMap
             dentition={dentition}
             colored
+            showFdi={village.state.showFdi}
+            starSixYear
             marks={selected ? { [selected.id]: "selected" } : {}}
             onPress={(tooth) => {
               setSelected(tooth);
@@ -176,6 +200,19 @@ export default function ToothNamesScreen() {
               </View>
             ))}
           </View>
+          {dentition === "permanent" ? (
+            <Text style={[villageStyles.small, { color: colors.foreground, textAlign: "center" }]}>{t("toothNames.sixYearLegend")}</Text>
+          ) : null}
+          <View style={[villageStyles.row, styles.fdiRow]}>
+            <Text style={[villageStyles.small, { color: colors.foreground, flex: 1 }]}>{t("toothNames.fdiToggle")}</Text>
+            <Switch
+              testID="tooth-fdi"
+              accessibilityLabel={t("toothNames.fdiToggle")}
+              style={{ minHeight: 44, minWidth: 48 }}
+              value={village.state.showFdi}
+              onValueChange={(showFdi) => void village.update({ showFdi })}
+            />
+          </View>
           {selected ? (
             <VillageCard>
               <Text testID="tooth-name-local" accessibilityRole="header" style={[villageStyles.title, { color: colors.foreground }]}>
@@ -184,6 +221,16 @@ export default function ToothNamesScreen() {
               <Text testID="tooth-name-learning" style={[villageStyles.body, { color: colors.foreground }]}>
                 {t("toothNames.inLanguage", { language: t(LANGUAGE_NAME_KEYS[learning]), name: TOOTH_NAMES[learning][selected.type] })}
               </Text>
+              {village.state.showFdi ? (
+                <Text testID="tooth-fdi-number" style={[villageStyles.small, { color: colors.muted }]}>
+                  {t("toothNames.fdiNumber", { number: fdiNumber(selected, dentition) })}
+                </Text>
+              ) : null}
+              {isSixYearMolar(selected, dentition) ? (
+                <Text testID="tooth-six-year" style={[villageStyles.body, { color: colors.foreground, fontWeight: "800" }]}>
+                  {t("toothNames.sixYear")}
+                </Text>
+              ) : null}
               <View style={villageStyles.row}>
                 <VillageButton
                   secondary
@@ -203,6 +250,49 @@ export default function ToothNamesScreen() {
             </VillageCard>
           ) : null}
         </>
+      ) : null}
+
+      {mode === "repeat" ? (
+        !repeat ? (
+          <VillageCard>
+            <Text style={[villageStyles.body, { color: colors.foreground }]}>
+              {t("toothNames.repeatIntro", { language: t(LANGUAGE_NAME_KEYS[learning]) })}
+            </Text>
+            <VillageButton testID="tooth-repeat-start" icon="play-arrow" label={t("toothNames.startGame")} onPress={startRepeat} />
+          </VillageCard>
+        ) : repeat.index < repeat.teeth.length ? (
+          <>
+            <VillageCard>
+              <Text style={[villageStyles.small, { color: colors.muted }]}>
+                {t("toothNames.findProgress", { current: repeat.index + 1, total: repeat.teeth.length })}
+              </Text>
+              <Text testID="tooth-repeat-word" accessibilityRole="header" style={[styles.repeatWord, { color: colors.foreground }]}>
+                {TOOTH_NAMES[learning][repeat.teeth[repeat.index].type]}
+              </Text>
+              <Text style={[villageStyles.small, { color: colors.muted }]}>
+                {TOOTH_NAMES[locale][repeat.teeth[repeat.index].type]}
+              </Text>
+              <View style={villageStyles.row}>
+                <VillageButton secondary icon="volume-up" label={t("quiz.listen")} onPress={() => sayRepeat(repeat.teeth[repeat.index])} />
+                <VillageButton testID="tooth-repeat-said" icon="record-voice-over" label={t("toothNames.repeatSaid")} onPress={nextRepeat} />
+              </View>
+            </VillageCard>
+            <ToothMap
+              dentition={dentition}
+              colored
+              disabled
+              marks={{ [repeat.teeth[repeat.index].id]: "selected" }}
+              onPress={() => undefined}
+            />
+          </>
+        ) : (
+          <VillageCard>
+            <Text testID="tooth-repeat-result" accessibilityRole="alert" style={[villageStyles.title, { color: colors.foreground }]}>
+              {t("toothNames.repeatResult", { count: repeat.teeth.length, language: t(LANGUAGE_NAME_KEYS[learning]) })}
+            </Text>
+            <VillageButton secondary label={t("quiz.again")} onPress={() => setRepeat(null)} />
+          </VillageCard>
+        )
       ) : null}
 
       {mode === "find" ? (
@@ -317,4 +407,6 @@ const styles = StyleSheet.create({
   memoryText: { fontSize: 17, lineHeight: 23, fontWeight: "800", textAlign: "center" },
   memoryLanguage: { color: "#4B5563", fontSize: 12, lineHeight: 16, fontWeight: "700", marginTop: 4 },
   pressed: { opacity: 0.85 },
+  fdiRow: { justifyContent: "space-between" },
+  repeatWord: { fontSize: 28, lineHeight: 36, fontWeight: "900", textAlign: "center" },
 });

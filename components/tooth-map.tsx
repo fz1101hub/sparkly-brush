@@ -1,7 +1,15 @@
-import { Pressable, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { useI18n } from "@/contexts/locale-context";
-import { TOOTH_NAMES, teethFor, type Dentition, type Tooth, type ToothType } from "@/lib/learning/tooth-names";
+import {
+  TOOTH_NAMES,
+  fdiNumber,
+  isSixYearMolar,
+  teethFor,
+  type Dentition,
+  type Tooth,
+  type ToothType,
+} from "@/lib/learning/tooth-names";
 
 /** Pastel per kind of tooth, on a fixed light "gum" panel so it reads in every theme. */
 export const TOOTH_COLORS: Record<ToothType, string> = {
@@ -36,6 +44,8 @@ export function ToothMap({
   marks = {},
   onPress,
   disabled = false,
+  showFdi = false,
+  starSixYear = false,
 }: {
   dentition: Dentition;
   /** Colours by kind of tooth (exploring); plain white while playing, so colours give no hint. */
@@ -43,6 +53,10 @@ export function ToothMap({
   marks?: Record<string, ToothMark>;
   onPress: (tooth: Tooth) => void;
   disabled?: boolean;
+  /** The dentists' FDI number on each tooth (parent option). */
+  showFdi?: boolean;
+  /** A star on the first adult molars, the new teeth to protect. */
+  starSixYear?: boolean;
 }) {
   const { t, locale } = useI18n();
   const { width: screen } = useWindowDimensions();
@@ -74,11 +88,19 @@ export function ToothMap({
         const { x, y } = place(tooth);
         const size = Math.max(30, width * SIZE[tooth.type] * scale);
         const mark = marks[tooth.id];
-        const label = t("toothMap.toothLabel", {
-          name: TOOTH_NAMES[locale][tooth.type],
-          arch: t(tooth.arch === "upper" ? "toothMap.upper" : "toothMap.lower"),
-          side: t(tooth.side === "right" ? "toothMap.right" : "toothMap.left"),
-        });
+        const fdi = fdiNumber(tooth, dentition);
+        const star = starSixYear && isSixYearMolar(tooth, dentition);
+        const label = [
+          t("toothMap.toothLabel", {
+            name: TOOTH_NAMES[locale][tooth.type],
+            arch: t(tooth.arch === "upper" ? "toothMap.upper" : "toothMap.lower"),
+            side: t(tooth.side === "right" ? "toothMap.right" : "toothMap.left"),
+          }),
+          star ? t("toothMap.sixYear") : null,
+          showFdi ? t("toothMap.fdi", { number: fdi }) : null,
+        ]
+          .filter(Boolean)
+          .join(", ");
         return (
           <Pressable
             key={tooth.id}
@@ -100,10 +122,28 @@ export function ToothMap({
                 mark === "correct" ? "#7BD88F" : mark === "wrong" ? "#FF9B9B" : colored ? TOOTH_COLORS[tooth.type] : "#FFFFFF",
               borderWidth: mark ? 3 : 1.5,
               borderColor: mark === "selected" ? "#1D4ED8" : mark === "wrong" ? "#B42318" : mark === "correct" ? "#17633F" : OUTLINE,
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
+          >
+            {star ? (
+              <Text accessible={false} importantForAccessibility="no" style={styles.star}>
+                ★
+              </Text>
+            ) : null}
+            {showFdi ? (
+              <Text accessible={false} importantForAccessibility="no" style={styles.fdi}>
+                {fdi}
+              </Text>
+            ) : null}
+          </Pressable>
         );
       })}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  star: { color: "#9A3412", fontSize: 14, lineHeight: 16, fontWeight: "900" },
+  fdi: { color: "#17213C", fontSize: 10, lineHeight: 12, fontWeight: "800" },
+});
