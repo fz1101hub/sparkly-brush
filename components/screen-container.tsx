@@ -1,6 +1,7 @@
 import { View, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
+import { MAX_CONTENT_WIDTH } from "@/hooks/use-content-width";
 import { cn } from "@/lib/utils";
 
 export interface ScreenContainerProps extends ViewProps {
@@ -61,7 +62,10 @@ export function ScreenContainer({
         className={cn("flex-1", safeAreaClassName)}
         style={style}
       >
-        <View className={cn("flex-1", className)}>{children}</View>
+        {/* On tablets (voce 72) the content is a centred column, as wide as a large phone. */}
+        <View className={cn("flex-1", className)} style={{ width: "100%", maxWidth: MAX_CONTENT_WIDTH, alignSelf: "center" }}>
+          {children}
+        </View>
       </SafeAreaView>
     </View>
   );

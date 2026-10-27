@@ -1,30 +1,68 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
+import { CreatureNameEditor } from "@/components/creature-name-editor";
+import { CreatureRhythm } from "@/components/creature-rhythm";
+import { ChildAvatarEditor } from "@/components/child-avatar";
+import { CREATURE_EMOJI } from "@/lib/avatar";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingHabitat } from "@/components/brushling-habitat";
 import { ScreenContainer } from "@/components/screen-container";
+import {
+  GOLD_TEXT,
+  LIGHT_CARD_FOREGROUND,
+  LIGHT_CARD_MUTED,
+  readableAccent,
+} from "@/constants/accessibility-colors";
 import { useBrushling } from "@/contexts/brushling-context";
+import { useCreatureName } from "@/contexts/extras-context";
+import { useI18n } from "@/contexts/locale-context";
+import { useBack } from "@/hooks/use-back";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import {
   CUSTOMIZATION_ITEMS,
   getCustomizationItem,
+  localizeCustomizationItem,
   type CustomizationCategory,
   type CustomizationItem,
 } from "@/lib/customization";
-import { getEvolution } from "@/lib/brushlings";
+import { getEvolution, localizeBrushling } from "@/lib/brushlings";
 
-const CATEGORY_LABELS: Record<CustomizationCategory, string> = {
-  habitat: "Habitat",
-  accessory: "Accessori",
-  decor: "Decorazioni",
+const CATEGORY_KEYS: Record<
+  CustomizationCategory,
+  {
+    label:
+      | "game.habitat.category.habitat"
+      | "game.habitat.category.accessory"
+      | "game.habitat.category.decor";
+    description:
+      | "game.habitat.categoryDescription.habitat"
+      | "game.habitat.categoryDescription.accessory"
+      | "game.habitat.categoryDescription.decor";
+  }
+> = {
+  habitat: {
+    label: "game.habitat.category.habitat",
+    description: "game.habitat.categoryDescription.habitat",
+  },
+  accessory: {
+    label: "game.habitat.category.accessory",
+    description: "game.habitat.categoryDescription.accessory",
+  },
+  decor: {
+    label: "game.habitat.category.decor",
+    description: "game.habitat.categoryDescription.decor",
+  },
 };
 
 export default function HabitatScreen() {
   const colors = useColors();
-  const router = useRouter();
+  const goBack = useBack();
+  const { t, formatNumber } = useI18n();
+  const runAction = useAsyncAction();
   const {
     selected,
     stats,
@@ -32,114 +70,177 @@ export default function HabitatScreen() {
     walletCoins,
     buyCustomization,
     equipCustomization,
+    hasChosenStarter,
   } = useBrushling();
   const [message, setMessage] = useState<string | null>(null);
-  const evolution = getEvolution(selected, stats.level);
-
+  const selectedCreature = localizeBrushling(selected, t);
+  const evolution = getEvolution(selectedCreature, stats.level);
+  const creatureName = useCreatureName(selectedCreature.id, evolution.name);
   const groups = useMemo(
-    () => (["habitat", "accessory", "decor"] as const).map((category) => ({
-      category,
-      items: CUSTOMIZATION_ITEMS.filter((item) => item.category === category),
-    })),
+    () =>
+      (["habitat", "accessory", "decor"] as const).map((category) => ({
+        category,
+        items: CUSTOMIZATION_ITEMS.filter((item) => item.category === category),
+      })),
     [],
   );
-
-  const isEquipped = (item: CustomizationItem) => {
-    if (item.category === "habitat") return customization.equippedHabitatId === item.id;
-    if (item.category === "accessory") return customization.equippedAccessoryId === item.id;
-    return customization.equippedDecorId === item.id;
-  };
-
+  const isEquipped = (item: CustomizationItem) =>
+    item.category === "habitat"
+      ? customization.equippedHabitatId === item.id
+      : item.category === "accessory"
+        ? customization.equippedAccessoryId === item.id
+        : customization.equippedDecorId === item.id;
   const handleItem = async (item: CustomizationItem) => {
     setMessage(null);
-
+    const localizedItem = localizeCustomizationItem(item, t);
     if (customization.ownedIds.includes(item.id)) {
       const equipped = await equipCustomization(item.id);
-      setMessage(equipped ? `${item.name} equipaggiato!` : "Non riesco a equipaggiare questo oggetto.");
+      setMessage(
+        equipped
+          ? t("game.habitat.equipped", { name: localizedItem.name })
+          : t("game.habitat.equipFailed"),
+      );
       return;
     }
-
     const result = await buyCustomization(item.id);
-    if (result === "insufficient") {
-      setMessage(`Servono ${item.cost - walletCoins} monete sorriso in più.`);
-    } else if (result === "purchased") {
-      setMessage(`${item.name} acquistato ed equipaggiato!`);
-    }
+    if (result === "insufficient")
+      setMessage(
+        t("game.habitat.needMoreCoins", {
+          coins: formatNumber(item.cost - walletCoins),
+        }),
+      );
+    else if (result === "purchased")
+      setMessage(t("game.habitat.purchased", { name: localizedItem.name }));
   };
-
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            accessibilityLabel={t("game.habitat.backLabel")}
+            hitSlop={4}
+            onPress={goBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <MaterialIcons name="arrow-back" size={22} color={colors.foreground} />
+            <MaterialIcons
+              name="arrow-back"
+              size={22}
+              color={LIGHT_CARD_FOREGROUND}
+            />
           </Pressable>
           <View style={styles.headerWrap}>
-            <AppHeader eyebrow="Casa Brushling" title="La tana" connected={false} />
+            <AppHeader
+              eyebrow={t("game.habitat.eyebrow")}
+              title={t("game.habitat.title")}
+            />
           </View>
         </View>
-
         <BrushlingHabitat
-          creature={selected}
+          creature={selectedCreature}
           level={stats.level}
           customization={customization}
           height={320}
         />
-
-        <View style={[styles.walletCard, { backgroundColor: "#FFF8E8", borderColor: "#F2D588" }]}>
+        <View
+          style={[
+            styles.walletCard,
+            { backgroundColor: "#FFF8E8", borderColor: "#F2D588" },
+          ]}
+        >
           <View style={styles.walletIcon}>
             <MaterialIcons name="stars" size={27} color="#B98A00" />
           </View>
           <View style={styles.walletCopy}>
-            <Text style={[styles.walletEyebrow, { color: "#B98A00" }]}>PORTAFOGLIO</Text>
-            <Text style={[styles.walletValue, { color: colors.foreground }]}>{walletCoins} monete sorriso</Text>
-            <Text style={[styles.walletText, { color: colors.muted }]}>
-              Le guadagni spazzolando; ciò che acquisti resta salvato su questo telefono.
+            <Text style={[styles.walletEyebrow, { color: GOLD_TEXT }]}>
+              {t("game.habitat.wallet")}
+            </Text>
+            <Text
+              testID="habitat-wallet-value"
+              style={[styles.walletValue, { color: LIGHT_CARD_FOREGROUND }]}
+            >
+              {t("game.habitat.walletValue", {
+                coins: formatNumber(walletCoins),
+              })}
+            </Text>
+            <Text style={[styles.walletText, { color: LIGHT_CARD_MUTED }]}>
+              {t("game.habitat.walletDescription")}
             </Text>
           </View>
         </View>
-
-        <View style={[styles.infoCard, { backgroundColor: selected.soft, borderColor: selected.accent }]}>
-          <MaterialIcons name="pets" size={24} color={selected.accent} />
+        <View
+          style={[
+            styles.infoCard,
+            {
+              backgroundColor: selectedCreature.soft,
+              borderColor: selectedCreature.accent,
+            },
+          ]}
+        >
+          <MaterialIcons
+            name="pets"
+            size={24}
+            color={readableAccent(selectedCreature.accent)}
+          />
           <View style={styles.infoCopy}>
-            <Text style={[styles.infoTitle, { color: colors.foreground }]}>{evolution.name}</Text>
-            <Text style={[styles.infoText, { color: colors.muted }]}>
-              Personalizza il suo spazio con un habitat, un accessorio e una decorazione.
+            <Text testID="habitat-creature-name" style={[styles.infoTitle, { color: LIGHT_CARD_FOREGROUND }]}>
+              {creatureName}
+            </Text>
+            <Text style={[styles.infoText, { color: LIGHT_CARD_MUTED }]}>
+              {t("game.habitat.customizeSpace")}
             </Text>
           </View>
         </View>
-
+        {hasChosenStarter ? <CreatureNameEditor id={selectedCreature.id} originalName={evolution.name} /> : null}
+        {hasChosenStarter ? <CreatureRhythm /> : null}
+        {hasChosenStarter ? <ChildAvatarEditor creatureEmoji={CREATURE_EMOJI[selectedCreature.id]} /> : null}
         {message ? (
-          <View style={[styles.messageCard, { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" }]}>
+          <View
+            style={[
+              styles.messageCard,
+              { backgroundColor: "#EEF4FF", borderColor: "#C8D9FF" },
+            ]}
+          >
             <MaterialIcons name="check-circle" size={20} color="#2457D6" />
-            <Text style={[styles.messageText, { color: colors.foreground }]}>{message}</Text>
+            <Text
+              style={[styles.messageText, { color: LIGHT_CARD_FOREGROUND }]}
+            >
+              {message}
+            </Text>
           </View>
         ) : null}
-
         {groups.map(({ category, items }) => (
           <View key={category} style={styles.section}>
             <View>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{CATEGORY_LABELS[category]}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                {t(CATEGORY_KEYS[category].label)}
+              </Text>
               <Text style={[styles.sectionCopy, { color: colors.muted }]}>
-                {category === "habitat"
-                  ? "Cambia l’ambiente in cui vive il tuo Brushling."
-                  : category === "accessory"
-                    ? "Aggiungi un dettaglio speciale al tuo compagno."
-                    : "Rendi la tana più personale e accogliente."}
+                {t(CATEGORY_KEYS[category].description)}
               </Text>
             </View>
-
             <View style={styles.grid}>
               {items.map((item) => {
+                const localizedItem = localizeCustomizationItem(item, t);
                 const owned = customization.ownedIds.includes(item.id);
                 const equipped = isEquipped(item);
                 const affordable = walletCoins >= item.cost;
-
+                const buttonText = equipped
+                  ? t("game.habitat.equippedButton")
+                  : owned
+                    ? t("game.habitat.equip")
+                    : item.cost === 0
+                      ? t("game.habitat.use")
+                      : affordable
+                        ? t("game.habitat.buy")
+                        : t("game.habitat.needCoins");
+                const insufficient = !owned && item.cost > 0 && !affordable;
                 return (
                   <View
                     key={item.id}
@@ -151,43 +252,90 @@ export default function HabitatScreen() {
                       },
                     ]}
                   >
-                    <View style={[styles.itemIcon, { backgroundColor: item.soft }]}>
-                      <MaterialIcons name={item.icon} size={27} color={item.accent} />
+                    <View
+                      style={[styles.itemIcon, { backgroundColor: item.soft }]}
+                    >
+                      <MaterialIcons
+                        name={item.icon}
+                        size={27}
+                        color={readableAccent(item.accent)}
+                      />
                     </View>
-
-                    <Text style={[styles.itemName, { color: colors.foreground }]}>{item.name}</Text>
-                    <Text style={[styles.itemDescription, { color: colors.muted }]} numberOfLines={3}>
-                      {item.description}
+                    <Text
+                      style={[
+                        styles.itemName,
+                        {
+                          color: owned
+                            ? LIGHT_CARD_FOREGROUND
+                            : colors.foreground,
+                        },
+                      ]}
+                    >
+                      {localizedItem.name}
                     </Text>
-
+                    <Text
+                      style={[
+                        styles.itemDescription,
+                        { color: owned ? LIGHT_CARD_MUTED : colors.muted },
+                      ]}
+                      numberOfLines={3}
+                    >
+                      {localizedItem.description}
+                    </Text>
                     <View style={styles.itemMeta}>
                       {item.cost === 0 ? (
-                        <Text style={[styles.cost, { color: item.accent }]}>Incluso</Text>
+                        <Text
+                          style={[
+                            styles.cost,
+                            { color: readableAccent(item.accent) },
+                          ]}
+                        >
+                          {t("game.habitat.included")}
+                        </Text>
                       ) : (
                         <View style={styles.costRow}>
-                          <MaterialIcons name="stars" size={15} color="#B98A00" />
-                          <Text style={[styles.cost, { color: owned || affordable ? "#8A6900" : "#A14C4C" }]}>
-                            {item.cost}
+                          <MaterialIcons
+                            name="stars"
+                            size={15}
+                            color="#B98A00"
+                          />
+                          <Text
+                            style={[
+                              styles.cost,
+                              {
+                                color:
+                                  owned || affordable ? "#8A6900" : "#A14C4C",
+                              },
+                            ]}
+                          >
+                            {formatNumber(item.cost)}
                           </Text>
                         </View>
                       )}
                     </View>
-
                     <Pressable
+                      testID={`habitat-item-${item.id}`}
                       accessibilityRole="button"
+                      accessibilityLabel={t(
+                        "game.habitat.customizationAction",
+                        { action: buttonText, name: localizedItem.name },
+                      )}
                       disabled={equipped}
-                      onPress={() => void handleItem(item)}
+                      onPress={() => runAction(handleItem(item))}
                       style={({ pressed }) => [
                         styles.itemButton,
                         {
                           backgroundColor: equipped
-                            ? item.accent
+                            ? readableAccent(item.accent)
                             : owned
                               ? "#FFFFFF"
                               : affordable || item.cost === 0
-                                ? item.accent
-                                : "#D9DCE4",
-                          borderColor: equipped || !owned ? item.accent : colors.border,
+                                ? readableAccent(item.accent)
+                                : "#7A2E2E",
+                          borderColor:
+                            equipped || !owned
+                              ? readableAccent(item.accent)
+                              : colors.border,
                         },
                         pressed && styles.pressed,
                       ]}
@@ -195,18 +343,15 @@ export default function HabitatScreen() {
                       <Text
                         style={[
                           styles.itemButtonText,
-                          { color: equipped || !owned ? "#FFFFFF" : colors.foreground },
+                          {
+                            color:
+                              equipped || !owned || insufficient
+                                ? "#FFFFFF"
+                                : LIGHT_CARD_FOREGROUND,
+                          },
                         ]}
                       >
-                        {equipped
-                          ? "Equipaggiato"
-                          : owned
-                            ? "Equipaggia"
-                            : item.cost === 0
-                              ? "Usa"
-                              : affordable
-                                ? "Acquista"
-                                : "Servono monete"}
+                        {buttonText}
                       </Text>
                     </Pressable>
                   </View>
@@ -215,19 +360,32 @@ export default function HabitatScreen() {
             </View>
           </View>
         ))}
-
-        <View style={[styles.currentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MaterialIcons name="home" size={22} color={colors.primary} />
+        <View
+          style={[
+            styles.currentCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <MaterialIcons
+            name="home"
+            size={22}
+            color={readableAccent("#2457D6")}
+          />
           <View style={styles.currentCopy}>
-            <Text style={[styles.currentTitle, { color: colors.foreground }]}>Configurazione attuale</Text>
+            <Text style={[styles.currentTitle, { color: colors.foreground }]}>
+              {t("game.habitat.currentConfiguration")}
+            </Text>
             <Text style={[styles.currentText, { color: colors.muted }]}>
-              {getCustomizationItem(customization.equippedHabitatId)?.name}
-              {customization.equippedAccessoryId
-                ? ` · ${getCustomizationItem(customization.equippedAccessoryId)?.name}`
-                : ""}
-              {customization.equippedDecorId
-                ? ` · ${getCustomizationItem(customization.equippedDecorId)?.name}`
-                : ""}
+              {[
+                customization.equippedHabitatId,
+                customization.equippedAccessoryId,
+                customization.equippedDecorId,
+              ]
+                .flatMap((id) => {
+                  const item = getCustomizationItem(id);
+                  return item ? [localizeCustomizationItem(item, t).name] : [];
+                })
+                .join(" · ")}
             </Text>
           </View>
         </View>
@@ -235,9 +393,13 @@ export default function HabitatScreen() {
     </ScreenContainer>
   );
 }
-
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 80, gap: 18 },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 80,
+    gap: 18,
+  },
   topRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   backButton: {
     width: 42,
@@ -265,14 +427,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   walletCopy: { flex: 1 },
-  walletEyebrow: { fontSize: 9, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8 },
+  walletEyebrow: {
+    fontSize: 9,
+    lineHeight: 13,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+  },
   walletValue: { fontSize: 18, lineHeight: 23, fontWeight: "900" },
   walletText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
-  infoCard: { borderWidth: 1.5, borderRadius: 20, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 },
+  infoCard: {
+    borderWidth: 1.5,
+    borderRadius: 20,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   infoCopy: { flex: 1 },
   infoTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900" },
   infoText: { fontSize: 10, lineHeight: 15, marginTop: 2 },
-  messageCard: { borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
+  messageCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   messageText: { flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "800" },
   section: { gap: 11 },
   sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: "900" },
@@ -285,14 +466,25 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 13,
   },
-  itemIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  itemIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   itemName: { fontSize: 14, lineHeight: 19, fontWeight: "900", marginTop: 8 },
-  itemDescription: { fontSize: 10, lineHeight: 15, marginTop: 4, minHeight: 45 },
+  itemDescription: {
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 4,
+    minHeight: 45,
+  },
   itemMeta: { minHeight: 24, justifyContent: "center", marginTop: 6 },
   costRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   cost: { fontSize: 11, lineHeight: 15, fontWeight: "900" },
   itemButton: {
-    minHeight: 40,
+    minHeight: 44,
     marginTop: 8,
     borderRadius: 14,
     borderWidth: 1,
@@ -300,8 +492,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 7,
   },
-  itemButtonText: { fontSize: 10, lineHeight: 14, fontWeight: "900", textAlign: "center" },
-  currentCard: { borderWidth: 1, borderRadius: 19, padding: 13, flexDirection: "row", alignItems: "center", gap: 9 },
+  itemButtonText: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  currentCard: {
+    borderWidth: 1,
+    borderRadius: 19,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
   currentCopy: { flex: 1 },
   currentTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   currentText: { fontSize: 10, lineHeight: 15, marginTop: 2 },

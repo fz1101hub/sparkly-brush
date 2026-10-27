@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BackupSemanticValidator,
+  progressForPortableBackup,
   validateBackupSemanticState,
   type PersistedRewardLedgerEntry,
 } from "@/lib/backup-integrity";
@@ -72,6 +73,33 @@ describe("backup semantic integrity", () => {
     }
   });
 
+  it("rende coerenti progress e ledger se il backup viene esportato dopo un cambio di fuso", () => {
+    const previousTimezone = process.env.TZ;
+    try {
+      const crossTimezoneHistory: BrushSession[] = [
+        session("timezone-morning", Date.UTC(2026, 0, 1, 17, 30) - start, true),
+        session("timezone-evening", Date.UTC(2026, 0, 2, 7, 30) - start, true),
+      ];
+      process.env.TZ = "Europe/Rome";
+      const sourceProgress = createLifetimeProgress(crossTimezoneHistory);
+
+      process.env.TZ = "America/New_York";
+      const replayedProgress = createLifetimeProgress(crossTimezoneHistory);
+      const exportedProgress = progressForPortableBackup(sourceProgress, replayedProgress, true);
+      const exportedLedger = ledgerFor(crossTimezoneHistory);
+
+      expect(exportedProgress.dailyBonusCoins).toBe(replayedProgress.dailyBonusCoins);
+      expect(() => validateBackupSemanticState({
+        sessions: crossTimezoneHistory,
+        progress: exportedProgress,
+        historyComplete: true,
+        ledger: exportedLedger,
+      })).not.toThrow();
+    } finally {
+      process.env.TZ = previousTimezone;
+    }
+  });
+
   it("rifiuta aggregati lifetime gonfiati anche se il manifest li replica", () => {
     const progress = createLifetimeProgress(history);
     expect(() => validateBackupSemanticState({
@@ -104,6 +132,16 @@ describe("backup semantic integrity", () => {
     })).toThrow("non è coerente");
   });
 
+  it("rifiuta due righe sessione con lo stesso identificativo", () => {
+    const duplicated = [session("duplicate", 0), session("duplicate", 60_000)];
+    expect(() => validateBackupSemanticState({
+      sessions: duplicated,
+      progress: createLifetimeProgress(duplicated),
+      historyComplete: true,
+      ledger: null,
+    })).toThrow("identificativi sessione duplicati");
+  });
+
   it("accetta una baseline parziale solo se domina le righe disponibili", () => {
     const archived = history.slice(-1);
     const lifetime = createLifetimeProgress(history);
@@ -120,6 +158,37 @@ describe("backup semantic integrity", () => {
       historyComplete: false,
       ledger: null,
     })).toThrow("baseline lifetime parziale");
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rifiuta durata non finita %s anche in un archivio parziale",
+    (durationSeconds) => {
+      const poisoned = { ...session("poisoned", 0), durationSeconds };
+      expect(() => validateBackupSemanticState({
+        sessions: [poisoned],
+        progress: createLifetimeProgress(history),
+        historyComplete: false,
+        ledger: null,
+      })).toThrow("valori numerici");
+    },
+  );
+
+  it.each([
+    ["coins", Number.NaN],
+    ["xp", Number.POSITIVE_INFINITY],
+    ["createdAt", "NaN"],
+  ] as const)("rifiuta il valore ledger non valido %s=%s", (field, value) => {
+    const ledger = ledgerFor(history);
+    ledger[0] = {
+      ...ledger[0],
+      [field]: value,
+    } as unknown as PersistedRewardLedgerEntry;
+    expect(() => validateBackupSemanticState({
+      sessions: history,
+      progress: createLifetimeProgress(history),
+      historyComplete: true,
+      ledger,
+    })).toThrow("ledger del backup contiene valori non validi");
   });
 
   it("valida incrementalmente un archivio esteso senza materializzarne le righe", () => {

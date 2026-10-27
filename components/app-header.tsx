@@ -1,10 +1,17 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
+import { useOptionalBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
 import { useColors } from "@/hooks/use-colors";
 
 export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; title: string; connected?: boolean }) {
   const colors = useColors();
+  const { t } = useI18n();
+  // Screens that do not pass `connected` still show the live toothbrush state.
+  const brushConnected = useOptionalBrush()?.status === "connected";
+  const isConnected = connected ?? brushConnected;
 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -17,17 +24,23 @@ export function AppHeader({ eyebrow, title, connected }: { eyebrow: string; titl
         </Text>
       </View>
       <View
-        accessibilityLabel={connected ? "Spazzolino collegato" : "Spazzolino non collegato"}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={t(
+          isConnected
+            ? "header.toothbrushConnected"
+            : "header.toothbrushDisconnected",
+        )}
         style={{
           width: 52,
           height: 52,
           borderRadius: 18,
-          backgroundColor: connected ? "#E1F7EF" : "#E7EEFF",
+          backgroundColor: isConnected ? "#E1F7EF" : "#E7EEFF",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <MaterialIcons name={connected ? "bluetooth-connected" : "electric-bolt"} size={28} color={connected ? colors.success : colors.primary} />
+        <MaterialIcons name={isConnected ? "bluetooth-connected" : "electric-bolt"} size={28} color={isConnected ? colors.success : colors.primary} />
       </View>
     </View>
   );

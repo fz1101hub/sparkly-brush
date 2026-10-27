@@ -12,18 +12,29 @@ import {
   type BleClientEvents,
   type BrushLiveData,
   type DeviceSyncCursor,
+  type ScanTarget,
   type SonicareClient,
   type StoredDeviceSession,
+  type SyncOptions,
 } from "@/lib/brush-types";
 import {
   decodeKidsSession,
   reconstructSessionStart,
   uint32LE,
 } from "@/lib/sonicare-codec";
+import { assertSafePostResetSessions } from "@/lib/device-reset-guard";
+import { quadrantFromByte } from "@/lib/handle-zones";
 import { HANDLE_STATE_LABELS, intensityFromByte, SONICARE } from "@/lib/sonicare-uuids";
 
-const SCAN_TIMEOUT_MS = 14_000;
+// The Kids handle can advertise only every 10–30 seconds; fourteen seconds
+// can time out before a single advertisement even when the handle is nearby.
+const SCAN_TIMEOUT_MS = 45_000;
 const MAX_SYNC_BATCH = 128;
+// The handle loads a selected record asynchronously: right after the selection a slow handle can
+// still expose the previous record. Re-read with growing waits before failing the batch closed.
+const RECORD_LOAD_DELAYS_MS = [180, 360, 720] as const;
+// Includes the time a parent needs to answer the iOS Bluetooth permission prompt.
+const ADAPTER_READY_TIMEOUT_MS = 30_000;
 
 function bytesFromBase64(value?: string | null): Uint8Array {
   if (!value) return new Uint8Array();
@@ -53,6 +64,34 @@ function ascii(bytes: Uint8Array): string {
     .trim();
 }
 
+function isCharacteristicNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object"
+    && error !== null
+    && "errorCode" in error
+    && (error as { errorCode?: unknown }).errorCode === 404
+  );
+}
+
+// react-native-ble-plx reports these with English messages; the codes are stable across platforms.
+const BLE_ERROR_MESSAGES: Record<number, string> = {
+  2: "Connessione Bluetooth annullata",
+  3: "Operazione Bluetooth scaduta: riprova",
+  100: "Bluetooth non supportato da questo dispositivo",
+  101: "Autorizzazione Bluetooth non concessa",
+  102: "Bluetooth spento: attivalo e riprova",
+  200: "Connessione allo spazzolino non riuscita: riprova",
+  201: "Spazzolino disconnesso",
+  600: "Impossibile avviare la scansione Bluetooth: riprova tra poco",
+  601: "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth",
+};
+
+export function describeBleError(error: unknown): string | null {
+  if (typeof error !== "object" || error === null || !("errorCode" in error)) return null;
+  const code = (error as { errorCode?: unknown }).errorCode;
+  return typeof code === "number" ? (BLE_ERROR_MESSAGES[code] ?? null) : null;
+}
+
 function isSonicare(device: Device): boolean {
   const name = `${device.name ?? ""} ${device.localName ?? ""}`.toLowerCase();
   if (name.includes("sonicare")) return true;
@@ -61,8 +100,39 @@ function isSonicare(device: Device): boolean {
   );
 }
 
+// The paired handle is matched by identifier only: iOS can advertise it without a name.
+function matchesScanTarget(device: Device, target: ScanTarget): boolean {
+  if (target.excludedDeviceIds?.includes(device.id)) return false;
+  if (target.mode === "paired") return device.id === target.deviceId;
+  if (!isSonicare(device)) return false;
+  return target.mode === "any" || device.id !== target.currentDeviceId;
+}
+
+const SCAN_MESSAGES: Record<ScanTarget["mode"], { prompt: string; started: string; notFound: string; ignored: string }> = {
+  any: {
+    prompt: "Accendi lo spazzolino e tienilo vicino",
+    started: "Scansione BLE avviata (Sonicare4Kids)",
+    notFound: "Spazzolino non trovato. Accendilo e riprova.",
+    ignored: "",
+  },
+  paired: {
+    prompt: "Accendi lo spazzolino e tienilo vicino",
+    started: "Scansione BLE avviata: cerco il manico abbinato",
+    notFound: "Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.",
+    ignored: "Trovato un altro manico: ignorato finché non cambi manico",
+  },
+  replace: {
+    prompt: "Accendi il nuovo manico e tienilo vicino",
+    started: "Scansione BLE avviata: cerco un altro manico",
+    notFound: "Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.",
+    ignored: "Manico già abbinato ignorato: accendi il nuovo manico",
+  },
+};
+
 export class NativeSonicareClient implements SonicareClient {
-  private readonly manager: BleManager;
+  private managerInstance: BleManager | null;
+  private readonly createManager: () => BleManager;
+  private adapterStateRequested = false;
   private readonly events: BleClientEvents;
   private device: Device | null = null;
   private deviceInfo: import("@/lib/brush-types").ToothbrushDevice | null = null;
@@ -79,17 +149,68 @@ export class NativeSonicareClient implements SonicareClient {
   private destroyed = false;
   private live: BrushLiveData = { ...DEFAULT_LIVE_DATA };
 
-  constructor(events: BleClientEvents, manager: BleManager = new BleManager()) {
+  constructor(events: BleClientEvents, manager?: BleManager | (() => BleManager)) {
     this.events = events;
-    this.manager = manager;
+    this.managerInstance = typeof manager === "function" ? null : manager ?? null;
+    this.createManager = typeof manager === "function" ? manager : () => new BleManager();
+  }
+
+  /**
+   * Created on first use: on iOS creating the central manager immediately shows the Bluetooth
+   * permission prompt, so it must wait for the first explicit Bluetooth action.
+   */
+  private get manager(): BleManager {
+    if (!this.managerInstance) {
+      if (this.destroyed) throw new Error("Client Bluetooth non disponibile");
+      this.managerInstance = this.createManager();
+      if (this.adapterStateRequested) this.subscribeAdapterState(this.managerInstance);
+    }
+    return this.managerInstance;
   }
 
   async initialize(): Promise<void> {
+    this.adapterStateRequested = true;
+    // Android asks for Bluetooth permissions explicitly in scanAndConnect, so the adapter state
+    // can be shown from launch; on iOS it appears with the first connection attempt.
+    if (Platform.OS === "ios" && !this.managerInstance) return;
+    this.subscribeAdapterState(this.manager);
+  }
+
+  private subscribeAdapterState(manager: BleManager): void {
     this.adapterSubscription?.remove();
-    this.adapterSubscription = this.manager.onStateChange((state) => {
+    this.adapterSubscription = manager.onStateChange((state) => {
       this.events.onAdapterState(state);
       this.events.onLog("info", `Bluetooth: ${state}`);
     }, true);
+  }
+
+  /** Resolves once the adapter is usable; scanning while it is still "Unknown" fails on iOS. */
+  private waitForPoweredOn(): Promise<void> {
+    const manager = this.manager;
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let subscription: Subscription | null = null;
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        subscription?.remove();
+        if (error) reject(error);
+        else resolve();
+      };
+      const timeout = setTimeout(
+        () => finish(new Error("Bluetooth non pronto: controlla che sia acceso e autorizzato")),
+        ADAPTER_READY_TIMEOUT_MS,
+      );
+      subscription = manager.onStateChange((state) => {
+        if (state === "PoweredOn") finish();
+        else if (state === "PoweredOff") finish(new Error("Bluetooth spento: attivalo e riprova"));
+        else if (state === "Unauthorized") finish(new Error("Autorizzazione Bluetooth non concessa"));
+        else if (state === "Unsupported") finish(new Error("Bluetooth non supportato da questo dispositivo"));
+      }, true);
+      // onStateChange may report the current state before returning its subscription.
+      if (settled) subscription.remove();
+    });
   }
 
   private async requestPermissions(): Promise<void> {
@@ -116,7 +237,7 @@ export class NativeSonicareClient implements SonicareClient {
     }
   }
 
-  async scanAndConnect(): Promise<void> {
+  async scanAndConnect(scanTarget: ScanTarget = { mode: "any" }): Promise<void> {
     if (this.connecting) throw new Error("Connessione Bluetooth già in corso");
     if (this.destroyed) throw new Error("Client Bluetooth non disponibile");
     this.connecting = true;
@@ -130,16 +251,20 @@ export class NativeSonicareClient implements SonicareClient {
       await this.resetConnection();
       await guard(this.requestPermissions());
       this.assertOperation(operationGeneration);
-      this.events.onStatus("scanning", "Accendi lo spazzolino e tienilo vicino");
-      this.events.onLog("info", "Scansione BLE avviata (Sonicare4Kids)");
+      await guard(this.waitForPoweredOn());
+      this.assertOperation(operationGeneration);
+      const messages = SCAN_MESSAGES[scanTarget.mode];
+      this.events.onStatus("scanning", messages.prompt);
+      this.events.onLog("info", messages.started);
 
       const found = await guard(new Promise<Device>((resolve, reject) => {
         let settled = false;
+        const ignored = new Set<string>();
         const timeout = setTimeout(() => {
           if (settled) return;
           settled = true;
           this.manager.stopDeviceScan();
-          reject(new Error("Spazzolino non trovato. Accendilo e riprova."));
+          reject(new Error(messages.notFound));
         }, SCAN_TIMEOUT_MS);
         this.cancelScan = () => {
           if (settled) return;
@@ -158,18 +283,34 @@ export class NativeSonicareClient implements SonicareClient {
             reject(error);
             return;
           }
-          if (device && isSonicare(device)) {
-            settled = true;
-            clearTimeout(timeout);
-            this.manager.stopDeviceScan();
-            resolve(device);
+          if (!device) return;
+          if (!matchesScanTarget(device, scanTarget)) {
+            if (isSonicare(device) && !ignored.has(device.id)) {
+              ignored.add(device.id);
+              const sibling = scanTarget.excludedDeviceIds?.includes(device.id) === true;
+              if (sibling || messages.ignored) {
+                this.events.onLog("warning", sibling ? "Manico di un altro profilo ignorato" : messages.ignored);
+              }
+              if (sibling) scanTarget.onSibling?.(device.id);
+            }
+            return;
           }
+          settled = true;
+          clearTimeout(timeout);
+          this.manager.stopDeviceScan();
+          resolve(device);
         });
       }).finally(() => {
         this.cancelScan = null;
       }));
       this.assertOperation(operationGeneration);
 
+      if (scanTarget.claim) {
+        await guard(scanTarget.claim(found.id).catch(() => {
+          throw new Error("Spazzolino associato a un altro profilo");
+        }));
+        this.assertOperation(operationGeneration);
+      }
       this.events.onStatus("connecting", "Connessione e lettura dei servizi");
       this.events.onLog("success", `Trovato ${found.name ?? found.localName ?? "Sonicare"}`);
 
@@ -185,7 +326,7 @@ export class NativeSonicareClient implements SonicareClient {
       this.assertOperation(operationGeneration);
       this.events.onLog("info", `${services.length} servizi GATT rilevati`);
 
-      const [model, firmware, battery, handleState, elapsed, target, intensity] =
+      const [model, firmware, battery, handleState, elapsed, target, intensity, motorRuntime] =
         await guard(Promise.all([
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.modelNumber),
           this.readText(SONICARE.services.deviceInfo, SONICARE.characteristics.firmwareRevision),
@@ -194,6 +335,7 @@ export class NativeSonicareClient implements SonicareClient {
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.brushingTime),
           this.readUint16(SONICARE.services.routine, SONICARE.characteristics.routineLength),
           this.readByte(SONICARE.services.routine, SONICARE.characteristics.intensity),
+          this.readUint32(SONICARE.services.primary, SONICARE.characteristics.motorRuntime),
         ]));
       this.assertOperation(operationGeneration);
 
@@ -209,9 +351,10 @@ export class NativeSonicareClient implements SonicareClient {
       this.deviceInfo = {
         id: this.device.id,
         name: this.device.name ?? this.device.localName ?? "Sonicare4Kids",
-        model: model ? `HX6322/04 · ${model}` : "HX6322/04",
+        model: model || "Sonicare4Kids",
         firmware: firmware || undefined,
         battery: battery ?? undefined,
+        motorRuntimeSeconds: motorRuntime ?? undefined,
       };
       this.events.onDevice({ ...this.deviceInfo });
       this.events.onLiveData({ ...this.live });
@@ -224,12 +367,13 @@ export class NativeSonicareClient implements SonicareClient {
       }));
 
       this.events.onStatus("connected", "Sonicare pronto");
-      this.events.onLog("success", "Connessione completata: GATT aperto HX63xx");
+      this.events.onLog("success", "Connessione completata: GATT Sonicare aperto");
     } catch (error) {
-      this.manager.stopDeviceScan();
+      this.managerInstance?.stopDeviceScan();
       await this.resetConnection(candidate);
       if (operationGeneration !== this.operationGeneration || this.destroyed) return;
-      const message = error instanceof Error ? error.message : "Errore Bluetooth sconosciuto";
+      const message = describeBleError(error)
+        ?? (error instanceof Error ? error.message : "Errore Bluetooth sconosciuto");
       this.events.onStatus("error", message);
       this.events.onLog("error", message);
       throw error;
@@ -282,6 +426,16 @@ export class NativeSonicareClient implements SonicareClient {
           this.live = { ...this.live, routineSeconds };
           this.events.onLiveData({ ...this.live });
         }
+      },
+    );
+
+    // Experimental (voce 10): the handle's own zone; the app uses it only if the parent turns it on.
+    this.monitor(
+      SONICARE.services.routine,
+      SONICARE.characteristics.quadPacer,
+      (bytes) => {
+        this.live = { ...this.live, quadrant: quadrantFromByte(bytes[0]) };
+        this.events.onLiveData({ ...this.live });
       },
     );
 
@@ -340,7 +494,7 @@ export class NativeSonicareClient implements SonicareClient {
 
   private cancelSyncTransactions(): void {
     for (const transactionId of this.syncTransactions) {
-      void this.manager.cancelTransaction(transactionId).catch(() => undefined);
+      void this.managerInstance?.cancelTransaction(transactionId).catch(() => undefined);
     }
     this.syncTransactions.clear();
   }
@@ -411,6 +565,12 @@ export class NativeSonicareClient implements SonicareClient {
     return bytesFromBase64(value?.value)[0] ?? null;
   }
 
+  private async readUint32(service: string, characteristic: string): Promise<number | null> {
+    const value = await this.readCharacteristic(service, characteristic);
+    const bytes = bytesFromBase64(value?.value);
+    return bytes.length >= 4 ? uint32LE(bytes) : null;
+  }
+
   private async readUint16(service: string, characteristic: string): Promise<number | null> {
     const value = await this.readCharacteristic(service, characteristic);
     const bytes = bytesFromBase64(value?.value);
@@ -421,23 +581,50 @@ export class NativeSonicareClient implements SonicareClient {
     latest: number,
     sessionCount: number | null,
     cursor?: DeviceSyncCursor | null,
-  ): number[] {
-    if (!cursor || cursor.acceptNextSession) {
-      if (sessionCount === 0) return [];
+    allowGap = false,
+  ): { sessionIds: number[]; skipped: number } {
+    const lastIds = (count: number) => Array.from(
+      { length: count },
+      (_, index) => (latest - count + index + 1 + 0x1_0000) & 0xffff,
+    );
+    if (!cursor) {
+      if (sessionCount === 0) return { sessionIds: [], skipped: 0 };
       if (sessionCount === null) {
-        throw new Error("Conteggio storico BLE non disponibile: il cursore resta invariato per evitare sessioni perse");
+        // A rejected read means the optional characteristic is not usable.  Do not infer
+        // retention from latest: the only record that can be addressed without a count is latest.
+        return { sessionIds: [latest], skipped: 0 };
+      }
+      const available = sessionCount;
+      if (available > MAX_SYNC_BATCH) {
+        if (!allowGap) {
+          throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
+        }
+        return { sessionIds: lastIds(MAX_SYNC_BATCH), skipped: available - MAX_SYNC_BATCH };
+      }
+      return { sessionIds: lastIds(available), skipped: 0 };
+    }
+
+    if (cursor.acceptNextSession) {
+      if (sessionCount === 0) return { sessionIds: [], skipped: 0 };
+      if (sessionCount === null) {
+        throw new Error("Conteggio storico BLE non disponibile: il reset non può essere verificato");
       }
       const available = sessionCount;
       if (available > MAX_SYNC_BATCH) {
         throw new Error(`Il manico espone ${available} sessioni: sincronizzazione oltre il limite sicuro`);
       }
-      return Array.from(
+      const sessionIds = Array.from(
         { length: available },
         (_, index) => (latest - available + index + 1 + 0x1_0000) & 0xffff,
       );
+      assertSafePostResetSessions({
+        resetBaselineSessionId: cursor.resetBaselineSessionId,
+        sessionIds,
+      });
+      return { sessionIds, skipped: 0 };
     }
 
-    if (latest === cursor.lastSessionId) return [];
+    if (latest === cursor.lastSessionId) return { sessionIds: [], skipped: 0 };
     const rollover = cursor.lastSessionId >= 65_000 && latest <= 1_024;
     if (latest < cursor.lastSessionId && !rollover) {
       throw new Error("Il contatore del manico sembra essere stato azzerato: usa ‘Dimentica manico resettato’");
@@ -445,16 +632,30 @@ export class NativeSonicareClient implements SonicareClient {
     const distance = rollover
       ? 0x1_0000 - cursor.lastSessionId + latest
       : latest - cursor.lastSessionId;
-    if (distance <= 0 || distance > MAX_SYNC_BATCH) {
+    if (distance <= 0) {
       throw new Error(`Intervallo BLE non sicuro (${distance} sessioni): il cursore non è stato avanzato`);
     }
-    if (sessionCount !== null && distance > sessionCount) {
-      throw new Error("Lo storico del manico non contiene più tutte le sessioni mancanti");
+    const beyondBatch = distance > MAX_SYNC_BATCH;
+    const beyondRetention = sessionCount !== null && distance > sessionCount;
+    if (beyondBatch || beyondRetention) {
+      if (!allowGap) {
+        if (beyondBatch) {
+          throw new Error(`Intervallo BLE non sicuro (${distance} sessioni): il cursore non è stato avanzato`);
+        }
+        throw new Error("Lo storico del manico non contiene più tutte le sessioni mancanti");
+      }
+      // Explicit recovery (audit B4): without `40d2` only latest is addressable, otherwise the
+      // records the handle still keeps, capped to one safe batch. The rest is gone for good.
+      const available = sessionCount === null ? 1 : Math.min(sessionCount, MAX_SYNC_BATCH);
+      return { sessionIds: lastIds(available), skipped: distance - available };
     }
-    return Array.from(
-      { length: distance },
-      (_, index) => (cursor.lastSessionId + index + 1) & 0xffff,
-    );
+    return {
+      sessionIds: Array.from(
+        { length: distance },
+        (_, index) => (cursor.lastSessionId + index + 1) & 0xffff,
+      ),
+      skipped: 0,
+    };
   }
 
   private async readText(service: string, characteristic: string): Promise<string> {
@@ -466,6 +667,7 @@ export class NativeSonicareClient implements SonicareClient {
     device: Device,
     generation: number,
     cursor?: DeviceSyncCursor | null,
+    allowGap = false,
   ): Promise<StoredDeviceSession[]> {
     this.assertConnection(device, generation);
     const transactionPrefix = `sonicare-sync-${generation}-${++this.syncSequence}`;
@@ -483,8 +685,10 @@ export class NativeSonicareClient implements SonicareClient {
     if (latest === null) return [];
 
     let sessionCount: number | null = null;
+    let sessionCountReadFailed = false;
+    let countValue: Characteristic | null = null;
     try {
-      const countValue = await this.syncTransaction(
+      countValue = await this.syncTransaction(
         `${transactionPrefix}-count`,
         () => device.readCharacteristicForService(
           SONICARE.services.kidsSession,
@@ -493,11 +697,19 @@ export class NativeSonicareClient implements SonicareClient {
         ),
       );
       this.assertConnection(device, generation);
-      const countBytes = bytesFromBase64(countValue?.value);
-      sessionCount = countBytes.length === 2 ? uint16LE(countBytes) : null;
-    } catch {
+    } catch (error) {
       this.assertConnection(device, generation);
-      this.events.onLog("warning", "Conteggio storico BLE non disponibile; sincronizzazione prudente");
+      if (!isCharacteristicNotFoundError(error)) throw error;
+      sessionCountReadFailed = true;
+    }
+    if (sessionCountReadFailed) {
+      this.events.onLog("warning", "Impossibile leggere sessionCount BLE; sincronizzazione prudente");
+    } else {
+      const countBytes = bytesFromBase64(countValue?.value);
+      if (countBytes.length !== 2) {
+        throw new Error("Payload sessionCount BLE non valido; cursore invariato");
+      }
+      sessionCount = uint16LE(countBytes);
     }
 
     const anchorBefore = Date.now();
@@ -519,7 +731,16 @@ export class NativeSonicareClient implements SonicareClient {
       this.events.onLog("warning", "Clock del manico non disponibile: data sessione approssimata");
     }
     const anchorWallTime = Math.floor((anchorBefore + Date.now()) / 2);
-    const sessionIds = this.sessionIdsToSync(latest, sessionCount, cursor);
+    const { sessionIds, skipped } = this.sessionIdsToSync(latest, sessionCount, cursor, allowGap);
+    if (skipped > 0) {
+      this.events.onLog("warning", `Riallineamento: ${skipped} sessioni del manico non recuperabili saltate`);
+    }
+    if (!cursor && sessionCountReadFailed) {
+      this.events.onLog(
+        "warning",
+        "Prima sincronizzazione limitata all'ultima sessione: le sessioni precedenti non vengono recuperate",
+      );
+    }
     const sessions: StoredDeviceSession[] = [];
 
     for (const sessionId of sessionIds) {
@@ -533,19 +754,23 @@ export class NativeSonicareClient implements SonicareClient {
         ),
       );
       this.assertConnection(device, generation);
-      await new Promise((resolve) => setTimeout(resolve, 180));
-      this.assertConnection(device, generation);
 
-      const value = await this.syncTransaction(
-        `${transactionPrefix}-data-${sessionId}`,
-        () => device.readCharacteristicForService(
-          SONICARE.services.kidsSession,
-          SONICARE.characteristics.sessionData,
-          `${transactionPrefix}-data-${sessionId}`,
-        ),
-      );
-      this.assertConnection(device, generation);
-      const decoded = decodeKidsSession(bytesFromBase64(value?.value), sessionId);
+      let decoded: StoredDeviceSession | null = null;
+      for (const [attempt, delayMs] of RECORD_LOAD_DELAYS_MS.entries()) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        this.assertConnection(device, generation);
+        const value = await this.syncTransaction(
+          `${transactionPrefix}-data-${sessionId}-${attempt}`,
+          () => device.readCharacteristicForService(
+            SONICARE.services.kidsSession,
+            SONICARE.characteristics.sessionData,
+            `${transactionPrefix}-data-${sessionId}-${attempt}`,
+          ),
+        );
+        this.assertConnection(device, generation);
+        decoded = decodeKidsSession(bytesFromBase64(value?.value), sessionId);
+        if (decoded) break;
+      }
       if (!decoded) {
         throw new Error(`Record BLE ${sessionId} mancante o non riconosciuto; cursore invariato`);
       }
@@ -571,11 +796,15 @@ export class NativeSonicareClient implements SonicareClient {
     return sessions;
   }
 
-  async syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]> {
+  async syncStoredSessionsSince(
+    cursor?: DeviceSyncCursor | null,
+    options?: SyncOptions,
+  ): Promise<StoredDeviceSession[]> {
     const device = this.device;
     if (!device) throw new Error("Collega prima lo spazzolino");
     const generation = this.connectionGeneration;
-    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation, cursor));
+    const allowGap = options?.allowGap === true;
+    const operation = this.syncQueue.then(() => this.syncCapturedDevice(device, generation, cursor, allowGap));
     this.syncQueue = operation.then(() => undefined, () => undefined);
     return operation;
   }
@@ -584,7 +813,7 @@ export class NativeSonicareClient implements SonicareClient {
     this.operationGeneration += 1;
     this.cancelScan?.();
     this.cancelOperation?.();
-    this.manager.stopDeviceScan();
+    this.managerInstance?.stopDeviceScan();
     await this.resetConnection();
     this.events.onStatus("idle", "Disconnesso");
   }
@@ -594,7 +823,7 @@ export class NativeSonicareClient implements SonicareClient {
     this.operationGeneration += 1;
     this.cancelScan?.();
     this.cancelOperation?.();
-    this.manager.stopDeviceScan();
+    this.managerInstance?.stopDeviceScan();
     this.connectionGeneration += 1;
     this.cancelSyncTransactions();
     this.clearConnectionSubscriptions();
@@ -603,8 +832,10 @@ export class NativeSonicareClient implements SonicareClient {
     void this.device?.cancelConnection().catch(() => undefined);
     this.device = null;
     this.deviceInfo = null;
+    const manager = this.managerInstance;
+    if (!manager) return;
     try {
-      const result = this.manager.destroy() as unknown;
+      const result = manager.destroy() as unknown;
       if (result && typeof (result as PromiseLike<void>).then === "function") {
         void Promise.resolve(result).catch(() => undefined);
       }

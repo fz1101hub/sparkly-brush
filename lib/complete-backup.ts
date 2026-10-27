@@ -1,5 +1,6 @@
 import type { BrushlingsBackupManifest } from "./backup";
 import type { HistoryBundle } from "./brush-storage";
+import type { TranslationKey } from "./i18n";
 
 export type CompleteBackupPreview = {
   uri: string;
@@ -12,6 +13,7 @@ const unavailable = "Il backup completo su file è disponibile nell’app iOS e 
 
 export async function exportAndShareCompleteBackup(
   _manifest: BrushlingsBackupManifest,
+  _t?: (key: TranslationKey) => string,
 ): Promise<{ sessionCount: number; size: number }> {
   throw new Error(unavailable);
 }

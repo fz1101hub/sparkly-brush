@@ -1,15 +1,18 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
 import { useBrushling } from "@/contexts/brushling-context";
-import { useColors } from "@/hooks/use-colors";
+import { useI18n } from "@/contexts/locale-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { STARTER_IDS, getBrushling, type BrushlingId } from "@/lib/brushlings";
 
 export function StarterChooser() {
-  const colors = useColors();
   const { selectedId, chooseStarter } = useBrushling();
+  const { t } = useI18n();
+  const runAction = useAsyncAction();
   const [candidate, setCandidate] = useState<BrushlingId>(
     STARTER_IDS.includes(selectedId) ? selectedId : STARTER_IDS[0],
   );
@@ -19,32 +22,46 @@ export function StarterChooser() {
 
   const confirm = async () => {
     setSaving(true);
-    await chooseStarter(candidate);
-    setSaving(false);
+    try {
+      await chooseStarter(candidate);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <View style={[styles.panel, { backgroundColor: "#0B4F9C" }]}>
       <View style={styles.sparkleRow}>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
-        <Text style={styles.eyebrow}>INIZIA L’AVVENTURA</Text>
+        <Text style={styles.eyebrow}>{t("starter.eyebrow")}</Text>
         <MaterialIcons name="auto-awesome" size={19} color="#FFE68A" />
       </View>
 
-      <Text style={styles.title}>Scegli il tuo primo Brushling!</Text>
-      <Text style={styles.copy}>
-        Ogni grande avventura inizia con un piccolo compagno. Potrai cambiare squadra più avanti.
+      <Text accessibilityRole="header" style={styles.title}>
+        {t("starter.title")}
       </Text>
+      <Text style={styles.copy}>{t("starter.description")}</Text>
 
-      <View style={styles.starterRow}>
+      <View
+        testID="starter-chooser"
+        accessibilityRole="radiogroup"
+        accessibilityLabel={t("starter.groupLabel")}
+        style={styles.starterRow}
+      >
         {STARTER_IDS.map((id) => {
           const creature = getBrushling(id);
           const selected = candidate === id;
           return (
             <Pressable
               key={id}
-              accessibilityRole="button"
-              accessibilityLabel={`Scegli ${creature.name}, tipo ${creature.element}`}
+              testID={`starter-${id}`}
+              accessibilityRole="radio"
+              accessibilityLabel={t("starter.optionLabel", {
+                name: creature.name,
+                element: creature.element,
+              })}
+              accessibilityState={{ checked: selected }}
+              aria-checked={selected}
               onPress={() => setCandidate(id)}
               style={({ pressed }) => [
                 styles.starterCard,
@@ -56,10 +73,10 @@ export function StarterChooser() {
               ]}
             >
               <BrushlingAvatar creature={creature} size={82} level={1} />
-              <Text style={[styles.starterName, { color: selected ? colors.foreground : "#FFFFFF" }]}>
+              <Text style={[styles.starterName, { color: selected ? "#17213A" : "#FFFFFF" }]}>
                 {creature.name}
               </Text>
-              <Text style={[styles.starterType, { color: selected ? creature.accent : "#DDEBFF" }]}>
+              <Text style={[styles.starterType, { color: selected ? creature.textAccent : "#DDEBFF" }]}>
                 {creature.element}
               </Text>
               {selected ? (
@@ -75,24 +92,31 @@ export function StarterChooser() {
       <View style={[styles.choiceNote, { backgroundColor: chosen.soft }]}>
         <BrushlingAvatar creature={chosen} size={62} level={1} />
         <View style={styles.choiceCopy}>
-          <Text style={[styles.choiceName, { color: colors.foreground }]}>{chosen.name}</Text>
-          <Text style={[styles.choiceTagline, { color: colors.muted }]}>{chosen.tagline}</Text>
+          <Text style={[styles.choiceName, { color: "#17213A" }]}>{chosen.name}</Text>
+          <Text style={[styles.choiceTagline, { color: "#56617D" }]}>{chosen.tagline}</Text>
         </View>
       </View>
 
       <Pressable
+        testID="starter-confirm"
         accessibilityRole="button"
+        accessibilityLabel={t("starter.confirmLabel", { name: chosen.name })}
+        accessibilityState={{ disabled: saving, busy: saving }}
         disabled={saving}
-        onPress={() => void confirm()}
+        onPress={() => runAction(confirm())}
         style={({ pressed }) => [
           styles.confirmButton,
-          { backgroundColor: chosen.accent },
+          { backgroundColor: chosen.textAccent },
           pressed && styles.pressed,
           saving && styles.disabled,
         ]}
       >
         <MaterialIcons name="favorite" size={20} color="#FFFFFF" />
-        <Text style={styles.confirmText}>{saving ? "Salvo..." : `Parti con ${chosen.name}`}</Text>
+        <Text style={styles.confirmText}>
+          {saving
+            ? t("starter.saving")
+            : t("starter.confirm", { name: chosen.name })}
+        </Text>
       </Pressable>
     </View>
   );
@@ -103,11 +127,16 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 20,
     overflow: "hidden",
-    shadowColor: "#092A56",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.22,
-    shadowRadius: 26,
-    elevation: 5,
+    ...Platform.select({
+      web: { boxShadow: "0 12px 26px rgba(9, 42, 86, 0.22)" },
+      default: {
+        shadowColor: "#092A56",
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.22,
+        shadowRadius: 26,
+        elevation: 5,
+      },
+    }),
   },
   sparkleRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
   eyebrow: { color: "#FFE68A", fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2 },

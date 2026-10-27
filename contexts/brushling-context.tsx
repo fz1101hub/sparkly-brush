@@ -10,6 +10,8 @@ import {
 } from "react";
 
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
+import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import {
   DEFAULT_BRUSHLING_ID,
   STARTER_IDS,
@@ -38,17 +40,13 @@ import {
   availableCoins,
   equipCustomization as equipCustomizationState,
   purchaseCustomization as purchaseCustomizationState,
+  settlePurchasesAfterHistoryReset as settlePurchasesState,
   type CustomizationItemId,
   type CustomizationState,
 } from "@/lib/customization";
 import {
-  loadBrushlingProfile,
-  loadCustomizationState,
-  restoreBrushlingState,
-  saveCustomizationState,
-  saveSelectedBrushling,
-  saveStarterSelection,
   type BrushlingProfile,
+  getBrushlingStorage,
 } from "@/lib/brushling-storage";
 import {
   computeLifetimeBrushlingStats,
@@ -81,6 +79,8 @@ type BrushlingContextValue = {
   buyCustomization: (id: CustomizationItemId) => Promise<PurchaseResult>;
   equipCustomization: (id: CustomizationItemId) => Promise<boolean>;
   restoreFromBackup: (profile: BrushlingProfile, customization: CustomizationState) => Promise<void>;
+  /** Call after clearing the real history: keeps owned items, wallet restarts from zero. */
+  settlePurchasesAfterHistoryReset: () => Promise<void>;
   setRestoreInProgress: (active: boolean) => void;
   dismissReward: () => void;
 };
@@ -88,9 +88,15 @@ type BrushlingContextValue = {
 const BrushlingContext = createContext<BrushlingContextValue | null>(null);
 
 export function BrushlingProvider({ children }: PropsWithChildren) {
-  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } = useBrush();
-  const [selectedId, setSelectedId] = useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
-  const [customization, setCustomization] = useState<CustomizationState>(DEFAULT_CUSTOMIZATION_STATE);
+  // Captured at mount: a late write after a child switch must stay in this child's records.
+  const store = useRef(getBrushlingStorage());
+  const { history, lifetimeProgress, progressEvent, historyReady, demoMode } =
+    useBrush();
+  const [selectedId, setSelectedId] =
+    useState<BrushlingId>(DEFAULT_BRUSHLING_ID);
+  const [customization, setCustomization] = useState<CustomizationState>(
+    DEFAULT_CUSTOMIZATION_STATE,
+  );
   const [profileReady, setProfileReady] = useState(false);
   const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [hasChosenStarter, setHasChosenStarter] = useState(false);
@@ -104,7 +110,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   const previousDemoModeRef = useRef(demoMode);
 
   useEffect(() => {
-    void Promise.all([loadBrushlingProfile(), loadCustomizationState()])
+    void Promise.all([store.current.loadBrushlingProfile(), store.current.loadCustomizationState()])
       .then(([profile, savedCustomization]) => {
         setSelectedId(profile.selectedId);
         setHasChosenStarter(profile.hasChosenStarter);
@@ -120,7 +126,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     if (!wasDemo || demoMode) return;
 
-    void Promise.all([loadBrushlingProfile(), loadCustomizationState()]).then(
+    void Promise.all([store.current.loadBrushlingProfile(), store.current.loadCustomizationState()]).then(
       ([profile, savedCustomization]) => {
         setSelectedId(profile.selectedId);
         setHasChosenStarter(profile.hasChosenStarter);
@@ -132,17 +138,22 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     );
   }, [demoMode]);
 
+  const today = useCurrentDayTimestamp();
   const stats = useMemo(
-    () => demoMode ? computeBrushlingStats(history) : computeLifetimeBrushlingStats(lifetimeProgress),
-    [demoMode, history, lifetimeProgress],
+    () => demoMode
+      ? computeBrushlingStats(history, today)
+      : computeLifetimeBrushlingStats(lifetimeProgress, today),
+    [demoMode, history, lifetimeProgress, today],
   );
   const inventory = useMemo(
     () => demoMode ? computeGameInventory(history) : computeLifetimeInventory(lifetimeProgress),
     [demoMode, history, lifetimeProgress],
   );
   const missionCenter = useMemo(
-    () => demoMode ? computeMissionCenter(history) : computeLifetimeMissionCenter(lifetimeProgress),
-    [demoMode, history, lifetimeProgress],
+    () => demoMode
+      ? computeMissionCenter(history, today)
+      : computeLifetimeMissionCenter(lifetimeProgress, today),
+    [demoMode, history, lifetimeProgress, today],
   );
   const totalEarnedCoins = stats.coins + missionCenter.totalBonusCoins;
   const walletCoins = useMemo(
@@ -153,8 +164,10 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!profileReady || !historyReady || restoreInProgress) return;
     if (stats.unlockedIds.includes(selectedId)) return;
+    // Reconcile a persisted selection only after the separate history is hydrated.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedId(DEFAULT_BRUSHLING_ID);
-    if (!demoMode) void saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
+    if (!demoMode) void store.current.saveSelectedBrushling(DEFAULT_BRUSHLING_ID);
   }, [demoMode, historyReady, profileReady, restoreInProgress, selectedId, stats.unlockedIds]);
 
   useEffect(() => {
@@ -184,30 +197,33 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
   }, [demoMode, hasChosenStarter, history, historyReady, selectedId]);
 
   useEffect(() => {
-    if (demoMode || !historyReady || !progressEvent) return;
+    if (demoMode || !historyReady || restoreInProgress || !progressEvent) return;
     if (lastHandledProgressEventIdRef.current === progressEvent.session.id) return;
     lastHandledProgressEventIdRef.current = progressEvent.session.id;
     if (progressEvent.session.durationSeconds < 5 || !hasChosenStarter) return;
 
     const nextReward = computeLifetimeSessionReward(progressEvent, selectedId);
     if (nextReward.xpEarned <= 0 && nextReward.coinsEarned <= 0) return;
+    // Consume this new durable session exactly once; the event is external state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReward(nextReward);
     setDiscovery(computeLifetimeDiscovery(progressEvent));
     setProgressReward(computeLifetimeProgressRewardDelta(progressEvent));
-  }, [demoMode, hasChosenStarter, historyReady, progressEvent, selectedId]);
+  }, [demoMode, hasChosenStarter, historyReady, progressEvent, restoreInProgress, selectedId]);
 
   const chooseStarter = useCallback(async (id: BrushlingId) => {
     if (!STARTER_IDS.includes(id)) return false;
     setSelectedId(id);
     setHasChosenStarter(true);
-    if (!demoMode) await saveStarterSelection(id);
+    // The starter is profile data, not history: it is kept even when chosen during the demo.
+    await store.current.saveStarterSelection(id);
     return true;
-  }, [demoMode]);
+  }, []);
 
   const selectBrushling = useCallback(async (id: BrushlingId) => {
     if (!stats.unlockedIds.includes(id)) return false;
     setSelectedId(id);
-    if (!demoMode) await saveSelectedBrushling(id);
+    if (!demoMode) await store.current.saveSelectedBrushling(id);
     return true;
   }, [demoMode, stats.unlockedIds]);
 
@@ -219,7 +235,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 
     const next = equipCustomizationState(purchased, id) ?? purchased;
     setCustomization(next);
-    if (!demoMode) await saveCustomizationState(next);
+    if (!demoMode) await store.current.saveCustomizationState(next);
     return "purchased";
   }, [customization, demoMode, totalEarnedCoins]);
 
@@ -228,7 +244,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     if (!next) return false;
 
     setCustomization(next);
-    if (!demoMode) await saveCustomizationState(next);
+    if (!demoMode) await store.current.saveCustomizationState(next);
     return true;
   }, [customization, demoMode]);
 
@@ -237,15 +253,23 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     restoredCustomization: CustomizationState,
   ) => {
     rewardTrackerReadyRef.current = false;
-    lastHandledProgressEventIdRef.current = null;
+    // A restore replaces history but is not a newly completed session. Keep
+    // the last handled event until BrushProvider clears its in-memory event.
     setSelectedId(profile.selectedId);
     setHasChosenStarter(profile.hasChosenStarter);
     setCustomization(restoredCustomization);
     setReward(null);
     setDiscovery(null);
     setProgressReward(null);
-    await restoreBrushlingState(profile, restoredCustomization);
+    await store.current.restoreBrushlingState(profile, restoredCustomization);
   }, []);
+
+  const settlePurchasesAfterHistoryReset = useCallback(async () => {
+    if (demoMode) return;
+    const next = settlePurchasesState(customization);
+    setCustomization(next);
+    await store.current.saveCustomizationState(next);
+  }, [customization, demoMode]);
 
   const dismissReward = useCallback(() => {
     setReward(null);
@@ -273,6 +297,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     buyCustomization,
     equipCustomization,
     restoreFromBackup,
+    settlePurchasesAfterHistoryReset,
     setRestoreInProgress,
     dismissReward,
   }), [
@@ -292,6 +317,7 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
     reward,
     selectBrushling,
     selectedId,
+    settlePurchasesAfterHistoryReset,
     stats,
     totalEarnedCoins,
     walletCoins,
@@ -301,7 +327,8 @@ export function BrushlingProvider({ children }: PropsWithChildren) {
 }
 
 export function useBrushling(): BrushlingContextValue {
+  const { t } = useI18n();
   const value = useContext(BrushlingContext);
-  if (!value) throw new Error("useBrushling deve essere usato dentro BrushlingProvider");
+  if (!value) throw new Error(t("context.brushling.missingProvider"));
   return value;
 }

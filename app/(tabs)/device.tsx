@@ -1,20 +1,39 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from "react-native";
+import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
+import { HandleCareCard, HandleTransferCard, HolidayHandleCard, SiblingHandleCard } from "@/components/handle-care";
+import { ExperimentalHandleCard } from "@/components/handle-experiments";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
+import { useI18n } from "@/contexts/locale-context";
+import { useParentGate } from "@/contexts/parent-gate-context";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
 import type { DiagnosticLog } from "@/lib/brush-types";
-import { HANDLE_STATE_LABELS } from "@/lib/sonicare-uuids";
+import { confirmAction, confirmDestructive, showMessage } from "@/lib/dialogs";
+import {
+  isKnownSonicareMessage,
+  isUnrecoverableGapMessage,
+  localizeSonicareMessage,
+  sonicareMessageKey,
+} from "@/lib/sonicare-message-i18n";
+
+const LIGHT_CARD_FOREGROUND = "#17213A";
+const LIGHT_CARD_MUTED = "#56617D";
 
 export default function DeviceScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, formatDate } = useI18n();
+  const runAction = useAsyncAction();
+  const { requireParent } = useParentGate();
   const {
     status,
     statusMessage,
+    statusDetail,
     adapterState,
     device,
     live,
@@ -23,6 +42,7 @@ export default function DeviceScreen() {
     disconnect,
     forgetToothbrush,
     syncLatest,
+    resyncSkippingGap,
     demoMode,
     demoSessionCount,
     setDemoMode,
@@ -30,45 +50,105 @@ export default function DeviceScreen() {
     generateDemoWeek,
     clearDemoData,
     isForgettingToothbrush,
+    pairedDevice,
   } = useBrush();
   const connected = status === "connected";
   const busy = status === "scanning" || status === "connecting" || isForgettingToothbrush;
+  const shownDevice = device ?? pairedDevice;
+  // System-level blockers the parent can fix in the OS settings rather than in the app.
+  const detailKey = statusDetail ? sonicareMessageKey(statusDetail) : null;
+  const permissionBlocked = adapterState === "Unauthorized"
+    || detailKey === "brush.client.permissionDenied"
+    || detailKey === "brush.client.locationPermissionRequired";
+  const bluetoothOff = !permissionBlocked
+    && (adapterState === "PoweredOff" || detailKey === "brush.client.poweredOff");
+  const locationOff = detailKey === "brush.client.locationServicesDisabled";
+  const gapBlocked = connected && statusDetail !== null && isUnrecoverableGapMessage(statusDetail);
 
-  const confirmForgetToothbrush = () => {
-    Alert.alert(
-      "Dimenticare questo manico?",
-      "Usalo dopo un reset di fabbrica o prima di collegare un manico sostitutivo. Storico, Brushling, XP, monete e backup non verranno cancellati.",
-      [
-        { text: "Annulla", style: "cancel" },
-        {
-          text: "Dimentica manico",
-          style: "destructive",
-          onPress: () => void forgetToothbrush().catch((error) => {
-            Alert.alert(
-              "Impossibile dimenticare il manico",
-              error instanceof Error ? error.message : "Riprova tra poco.",
-            );
-          }),
-        },
-      ],
+  const confirmResync = () => {
+    confirmAction({
+      title: t("device.gap.confirmTitle"),
+      message: t("device.gap.confirmMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.gap.action"),
+      onConfirm: () => runAction(resyncSkippingGap()),
+    });
+  };
+  const systemHint = permissionBlocked
+    ? { text: t("device.hint.permission"), action: t("device.openAppSettings"), open: () => Linking.openSettings() }
+    : locationOff
+      ? {
+          text: t("device.hint.locationOff"),
+          action: Platform.OS === "android" ? t("device.openLocationSettings") : null,
+          open: () => Linking.sendIntent("android.settings.LOCATION_SOURCE_SETTINGS"),
+        }
+      : bluetoothOff
+        ? {
+            text: t("device.hint.bluetoothOff"),
+            action: Platform.OS === "android" ? t("device.openBluetoothSettings") : null,
+            open: () => Linking.sendIntent("android.settings.BLUETOOTH_SETTINGS"),
+          }
+        : null;
+  const canForget = (connected || pairedDevice !== null) && !demoMode && !isForgettingToothbrush;
+
+  const confirmChangeHandle = () => requireParent(() => {
+    confirmAction({
+      title: t("device.changeHandleTitle"),
+      message: t("device.changeHandleMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.changeHandleAction"),
+      onConfirm: () => runAction(connect({ replaceHandle: true })),
+    });
+  });
+
+  const confirmForgetToothbrush = () => requireParent(() => {
+    confirmDestructive({
+      title: t("device.forgetAlertTitle"),
+      message: t("device.forgetAlertMessage"),
+      cancelLabel: t("common.cancel"),
+      confirmLabel: t("device.forgetAction"),
+      onConfirm: () =>
+        void forgetToothbrush().catch((error: unknown) => {
+          const detail = error instanceof Error ? error.message : "";
+          showMessage(
+            t("device.forgetFailureTitle"),
+            isKnownSonicareMessage(detail)
+              ? localizeSonicareMessage(detail, t)
+              : t("device.retryLater"),
+          );
+        }),
+    });
+  });
+
+  const renderLog = ({ item }: { item: DiagnosticLog }) => {
+    const message = item.translationKey
+      ? t(item.translationKey, item.translationParams)
+      : localizeSonicareMessage(item.message, t);
+    return (
+      <View style={styles.logRow}>
+        <View
+          style={[styles.logDot, { backgroundColor: logColor(item.level) }]}
+        />
+        <View style={styles.logCopy}>
+          <Text style={[styles.logMessage, { color: colors.foreground }]}>
+            {message}
+          </Text>
+          <Text style={[styles.logTime, { color: colors.muted }]}>
+            {formatDate(item.at, {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+          </Text>
+        </View>
+      </View>
     );
   };
-
-  const renderLog = ({ item }: { item: DiagnosticLog }) => (
-    <View style={styles.logRow}>
-      <View style={[styles.logDot, { backgroundColor: logColor(item.level) }]} />
-      <View style={styles.logCopy}>
-        <Text style={[styles.logMessage, { color: colors.foreground }]}>{item.message}</Text>
-        <Text style={[styles.logTime, { color: colors.muted }]}>
-          {new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(item.at))}
-        </Text>
-      </View>
-    </View>
-  );
 
   return (
     <ScreenContainer>
       <FlatList
+        testID="device-screen"
         data={logs}
         keyExtractor={(item) => item.id}
         renderItem={renderLog}
@@ -77,7 +157,11 @@ export default function DeviceScreen() {
         ItemSeparatorComponent={() => <View style={[styles.logSeparator, { backgroundColor: colors.border }]} />}
         ListHeaderComponent={
           <View style={styles.headerContent}>
-            <AppHeader eyebrow="Bluetooth Low Energy" title="Spazzolino" connected={connected} />
+            <AppHeader
+              eyebrow={t("device.eyebrow")}
+              title={t("device.title")}
+              connected={connected}
+            />
 
             <View style={[styles.heroCard, { backgroundColor: connected ? "#E1F7EF" : "#E7EEFF" }]}>
               <View style={styles.toothbrushVisual}>
@@ -89,62 +173,224 @@ export default function DeviceScreen() {
                 </View>
               </View>
               <View style={styles.heroCopy}>
-                <Text style={[styles.heroModel, { color: colors.foreground }]}>{device?.model ?? "Philips Sonicare for Kids"}</Text>
-                <Text style={[styles.heroStatus, { color: colors.muted }]}>{statusMessage}</Text>
+                <Text
+                  style={[styles.heroModel, { color: LIGHT_CARD_FOREGROUND }]}
+                >
+                  {shownDevice?.model ?? t("device.defaultModel")}
+                </Text>
+                <Text style={[styles.heroStatus, { color: LIGHT_CARD_MUTED }]}>
+                  {statusMessage}
+                </Text>
+                <Text
+                  testID="device-paired-handle"
+                  style={[styles.heroPairing, { color: LIGHT_CARD_MUTED }]}
+                >
+                  {pairedDevice
+                    ? t("device.pairedHandle", { name: pairedDevice.name })
+                    : t("device.noPairedHandle")}
+                </Text>
                 <View style={styles.badges}>
-                  <View style={styles.protocolBadge}><Text style={styles.protocolText}>HX63xx · GATT aperto</Text></View>
-                  {device?.battery !== undefined ? <View style={styles.batteryBadge}><Text style={styles.batteryText}>{device.battery}%</Text></View> : null}
+                  <View style={styles.protocolBadge}>
+                    <Text style={styles.protocolText}>
+                      {t("device.protocol")}
+                    </Text>
+                  </View>
+                  {connected && device?.battery !== undefined ? (
+                    <View style={styles.batteryBadge}>
+                      <Text style={styles.batteryText}>{device.battery}%</Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             </View>
 
+            {systemHint && !demoMode ? (
+              <View testID="device-system-hint" style={styles.hintCard}>
+                <MaterialIcons name="settings-suggest" size={22} color="#7A4B00" />
+                <View style={styles.hintCopy}>
+                  <Text style={styles.hintText}>{systemHint.text}</Text>
+                  {systemHint.action ? (
+                    <Pressable
+                      testID="device-open-settings"
+                      accessibilityRole="button"
+                      accessibilityLabel={systemHint.action}
+                      onPress={() => runAction(systemHint.open())}
+                      style={({ pressed }) => [styles.hintButton, pressed && styles.pressed]}
+                    >
+                      <Text style={styles.hintButtonText}>{systemHint.action}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
+
+            {gapBlocked && !demoMode ? (
+              <View testID="device-gap-hint" style={styles.hintCard}>
+                <MaterialIcons name="history-toggle-off" size={22} color="#7A4B00" />
+                <View style={styles.hintCopy}>
+                  <Text style={styles.hintText}>{t("device.gap.message")}</Text>
+                  <Pressable
+                    testID="device-resync-gap"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.gap.action")}
+                    onPress={confirmResync}
+                    style={({ pressed }) => [styles.hintButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.hintButtonText}>{t("device.gap.action")}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            <HolidayHandleCard />
+            <SiblingHandleCard />
+
             <View style={styles.actions}>
               <Pressable
-                onPress={connected ? () => void disconnect() : () => void connect()}
+                testID="device-connect-disconnect"
+                accessibilityRole="button"
+                accessibilityLabel={
+                  connected
+                    ? t("device.disconnectLabel")
+                    : t("device.connectLabel")
+                }
+                accessibilityState={{ disabled: busy || demoMode, busy }}
+                onPress={connected ? () => runAction(disconnect()) : () => runAction(connect())}
                 disabled={busy || demoMode}
                 style={({ pressed }) => [styles.primaryButton, connected && styles.disconnectButton, (busy || demoMode) && styles.disabled, pressed && styles.pressed]}
               >
-                <MaterialIcons name={connected ? "link-off" : "bluetooth-searching"} size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>{demoMode ? "Demo attiva" : connected ? "Disconnetti" : busy ? "Ricerca…" : "Cerca e collega"}</Text>
+                <MaterialIcons
+                  name={connected ? "link-off" : "bluetooth-searching"}
+                  size={22}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.primaryText}>
+                  {demoMode
+                    ? t("device.demoActive")
+                    : connected
+                      ? t("device.disconnect")
+                      : busy
+                        ? t("device.searching")
+                        : t("device.searchConnect")}
+                </Text>
               </Pressable>
               <Pressable
-                onPress={() => void syncLatest()}
+                testID="device-sync"
+                accessibilityRole="button"
+                accessibilityLabel={t("device.syncLabel")}
+                accessibilityState={{
+                  disabled: !connected || demoMode || isForgettingToothbrush,
+                }}
+                onPress={() => runAction(syncLatest())}
                 disabled={!connected || demoMode || isForgettingToothbrush}
                 style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, backgroundColor: colors.surface }, (!connected || demoMode || isForgettingToothbrush) && styles.disabled, pressed && styles.pressed]}
               >
                 <MaterialIcons name="sync" size={22} color={colors.primary} />
-                <Text style={[styles.secondaryText, { color: colors.primary }]}>Sincronizza ultima</Text>
+                <Text style={[styles.secondaryText, { color: colors.primary }]}>
+                  {t("device.syncLatest")}
+                </Text>
               </Pressable>
             </View>
 
-            <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <InfoRow icon="bluetooth" label="Adattatore" value={adapterState} />
-              <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
-              <InfoRow icon="motion-photos-on" label="Stato manico" value={HANDLE_STATE_LABELS[live.handleState] ?? "sconosciuto"} />
-              <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
-              <InfoRow icon="speed" label="Intensità" value={live.intensity} />
-              <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
-              <InfoRow icon="memory" label="Firmware" value={device?.firmware ?? "da leggere"} />
+            {pairedDevice && !demoMode ? (
+              <Pressable
+                testID="device-change-handle"
+                accessibilityRole="button"
+                accessibilityLabel={t("device.changeHandleLabel")}
+                accessibilityHint={t("device.changeHandleHint")}
+                accessibilityState={{ disabled: busy, busy }}
+                disabled={busy}
+                onPress={confirmChangeHandle}
+                style={({ pressed }) => [
+                  styles.changeHandleButton,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                  busy && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <MaterialIcons name="swap-horiz" size={22} color={colors.primary} />
+                <View style={styles.forgetCopy}>
+                  <Text style={[styles.forgetTitle, { color: colors.foreground }]}>
+                    {t("device.changeHandle")}
+                  </Text>
+                  <Text style={[styles.forgetText, { color: colors.muted }]}>
+                    {t("device.changeHandleDescription")}
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
+
+            <View
+              style={[
+                styles.infoCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <InfoRow
+                icon="bluetooth"
+                label={t("device.adapter")}
+                value={adapterStateLabel(adapterState, t)}
+              />
+              <View
+                style={[styles.infoDivider, { backgroundColor: colors.border }]}
+              />
+              <InfoRow
+                icon="motion-photos-on"
+                label={t("device.handleState")}
+                value={handleStateLabel(live.handleState, t)}
+              />
+              <View
+                style={[styles.infoDivider, { backgroundColor: colors.border }]}
+              />
+              <InfoRow
+                icon="speed"
+                label={t("device.intensity")}
+                value={intensityLabel(live.intensity, t)}
+              />
+              <View
+                style={[styles.infoDivider, { backgroundColor: colors.border }]}
+              />
+              <InfoRow
+                icon="memory"
+                label={t("device.firmware")}
+                value={device?.firmware ?? t("device.firmwareToRead")}
+              />
             </View>
 
+            <HandleCareCard />
+            {!demoMode ? <HandleTransferCard /> : null}
+            {!demoMode ? <ExperimentalHandleCard /> : null}
+
             <Pressable
+              testID="device-forget-reset"
               accessibilityRole="button"
-              accessibilityHint="Conserva tutti i progressi e prepara una nuova generazione del contatore Bluetooth"
-              disabled={!connected || demoMode || isForgettingToothbrush}
+              accessibilityLabel={t("device.forgetResetLabel")}
+              accessibilityHint={t("device.forgetResetHint")}
+              accessibilityState={{
+                disabled: !canForget,
+                busy: isForgettingToothbrush,
+              }}
+              disabled={!canForget}
               onPress={confirmForgetToothbrush}
               style={({ pressed }) => [
                 styles.forgetButton,
                 { borderColor: colors.border, backgroundColor: colors.surface },
-                (!connected || demoMode || isForgettingToothbrush) && styles.disabled,
+                !canForget && styles.disabled,
                 pressed && styles.pressed,
               ]}
             >
               <MaterialIcons name="restart-alt" size={22} color="#B33A55" />
               <View style={styles.forgetCopy}>
-                <Text style={[styles.forgetTitle, { color: colors.foreground }]}>
-                  {isForgettingToothbrush ? "Rimozione in corso…" : "Dimentica manico resettato"}
+                <Text
+                  style={[styles.forgetTitle, { color: colors.foreground }]}
+                >
+                  {isForgettingToothbrush
+                    ? t("device.forgetting")
+                    : t("device.forgetResetLabel")}
                 </Text>
-                <Text style={[styles.forgetText, { color: colors.muted }]}>Non elimina storico, progressi o backup.</Text>
+                <Text style={[styles.forgetText, { color: colors.muted }]}>
+                  {t("device.forgetResetDescription")}
+                </Text>
               </View>
             </Pressable>
 
@@ -155,19 +401,39 @@ export default function DeviceScreen() {
                     <MaterialIcons name="science" size={25} color="#FFFFFF" />
                   </View>
                   <View style={styles.demoCopy}>
-                    <Text style={[styles.demoEyebrow, { color: demoMode ? "#9A7200" : colors.primary }]}>LABORATORIO SENZA SPAZZOLINO</Text>
-                    <Text style={[styles.demoTitle, { color: colors.foreground }]}>Modalità demo</Text>
-                    <Text style={[styles.demoText, { color: colors.muted }]}>
+                    <Text
+                      style={[
+                        styles.demoEyebrow,
+                        { color: demoMode ? "#765600" : "#2457D6" },
+                      ]}
+                    >
+                      {t("device.demoEyebrow")}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.demoTitle,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
+                    >
+                      {t("device.demoTitle")}
+                    </Text>
+                    <Text
+                      style={[styles.demoText, { color: LIGHT_CARD_MUTED }]}
+                    >
                       {demoMode
-                        ? `${demoSessionCount} sessioni simulate · i dati reali restano intatti`
-                        : "Prova evoluzioni, uova, missioni e dashboard senza toccare lo storico reale."}
+                        ? t("device.demoSummary", { count: demoSessionCount })
+                        : t("device.demoDescription")}
                     </Text>
                   </View>
                 </View>
                 <Pressable
+                  testID="device-demo-switch"
                   accessibilityRole="switch"
+                  accessibilityLabel={t("device.demoSwitchLabel")}
                   accessibilityState={{ checked: demoMode }}
-                  onPress={() => void setDemoMode(!demoMode)}
+                  aria-checked={demoMode}
+                  hitSlop={8}
+                  onPress={() => runAction(setDemoMode(!demoMode))}
                   style={({ pressed }) => [
                     styles.demoToggle,
                     { backgroundColor: demoMode ? "#2E9B67" : "#C8CDD8" },
@@ -180,27 +446,97 @@ export default function DeviceScreen() {
 
               {demoMode ? (
                 <View style={styles.demoActions}>
-                  <Pressable onPress={() => void addDemoSession("morning")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.demoMorningLabel")}
+                    onPress={() => runAction(addDemoSession("morning"))}
+                    style={({ pressed }) => [
+                      styles.demoAction,
+                      pressed && styles.pressed,
+                    ]}
+                  >
                     <MaterialIcons name="wb-sunny" size={19} color="#E76A2C" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Mattina</Text>
+                    <Text
+                      style={[
+                        styles.demoActionText,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
+                    >
+                      {t("device.demoMorning")}
+                    </Text>
                   </Pressable>
-                  <Pressable onPress={() => void addDemoSession("evening")} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.demoEveningLabel")}
+                    onPress={() => runAction(addDemoSession("evening"))}
+                    style={({ pressed }) => [
+                      styles.demoAction,
+                      pressed && styles.pressed,
+                    ]}
+                  >
                     <MaterialIcons name="dark-mode" size={19} color="#7357C7" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Sera</Text>
+                    <Text
+                      style={[
+                        styles.demoActionText,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
+                    >
+                      {t("device.demoEvening")}
+                    </Text>
                   </Pressable>
-                  <Pressable onPress={() => void generateDemoWeek()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
-                    <MaterialIcons name="calendar-month" size={19} color="#2457D6" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>7 giorni</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.demoWeekLabel")}
+                    onPress={() => runAction(generateDemoWeek())}
+                    style={({ pressed }) => [
+                      styles.demoAction,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="calendar-month"
+                      size={19}
+                      color="#2457D6"
+                    />
+                    <Text
+                      style={[
+                        styles.demoActionText,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
+                    >
+                      {t("device.demoWeek")}
+                    </Text>
                   </Pressable>
-                  <Pressable onPress={() => void clearDemoData()} style={({ pressed }) => [styles.demoAction, pressed && styles.pressed]}>
-                    <MaterialIcons name="delete-outline" size={19} color="#D33D5D" />
-                    <Text style={[styles.demoActionText, { color: colors.foreground }]}>Azzera</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("device.demoClearLabel")}
+                    onPress={() => runAction(clearDemoData())}
+                    style={({ pressed }) => [
+                      styles.demoAction,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="delete-outline"
+                      size={19}
+                      color="#D33D5D"
+                    />
+                    <Text
+                      style={[
+                        styles.demoActionText,
+                        { color: LIGHT_CARD_FOREGROUND },
+                      ]}
+                    >
+                      {t("device.demoClear")}
+                    </Text>
                   </Pressable>
                 </View>
               ) : null}
             </View>
             <Pressable
+              testID="device-hardware-test"
               accessibilityRole="button"
+              accessibilityLabel={t("device.hardwareOpenLabel")}
               onPress={() => router.push("/(tabs)/hardware-test")}
               style={({ pressed }) => [
                 styles.hardwareCard,
@@ -212,14 +548,24 @@ export default function DeviceScreen() {
                 <MaterialIcons name="fact-check" size={26} color="#14845B" />
               </View>
               <View style={styles.hardwareCopy}>
-                <Text style={styles.hardwareEyebrow}>COLLAUDO HX6322/04</Text>
-                <Text style={[styles.hardwareTitle, { color: colors.foreground }]}>Prova guidata e report</Text>
-                <Text style={[styles.hardwareText, { color: colors.muted }]}>Matrice iOS/Android persistente con diagnostica sanitizzata.</Text>
+                <Text style={styles.hardwareEyebrow}>
+                  {t("device.hardwareEyebrow")}
+                </Text>
+                <Text
+                  style={[styles.hardwareTitle, { color: colors.foreground }]}
+                >
+                  {t("device.hardwareTitle")}
+                </Text>
+                <Text style={[styles.hardwareText, { color: colors.muted }]}>
+                  {t("device.hardwareDescription")}
+                </Text>
               </View>
               <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
             </Pressable>
             <Pressable
+              testID="device-backup"
               accessibilityRole="button"
+              accessibilityLabel={t("device.backupOpenLabel")}
               onPress={() => router.push("/(tabs)/backup")}
               style={({ pressed }) => [
                 styles.backupCard,
@@ -231,25 +577,44 @@ export default function DeviceScreen() {
                 <MaterialIcons name="settings-backup-restore" size={26} color="#2457D6" />
               </View>
               <View style={styles.backupCopy}>
-                <Text style={[styles.backupEyebrow, { color: "#2457D6" }]}>DATI & TRASFERIMENTO</Text>
-                <Text style={[styles.backupTitle, { color: colors.foreground }]}>Proteggi il Brushling</Text>
-                <Text style={[styles.backupText, { color: colors.muted }]}>Backup portatile per ritrovare progressi e compagno su un nuovo telefono.</Text>
+                <Text style={[styles.backupEyebrow, { color: "#2457D6" }]}>
+                  {t("device.backupEyebrow")}
+                </Text>
+                <Text
+                  style={[styles.backupTitle, { color: colors.foreground }]}
+                >
+                  {t("device.backupTitle")}
+                </Text>
+                <Text style={[styles.backupText, { color: colors.muted }]}>
+                  {t("device.backupDescription")}
+                </Text>
               </View>
               <MaterialIcons name="chevron-right" size={24} color={colors.muted} />
             </Pressable>
 
             <View style={styles.diagnosticHeading}>
               <View>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Diagnostica BLE</Text>
-                <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Utile per validare il tuo HX6322/04 reale</Text>
+                <Text
+                  style={[styles.sectionTitle, { color: colors.foreground }]}
+                >
+                  {t("device.diagnosticsTitle")}
+                </Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
+                  {t("device.diagnosticsDescription")}
+                </Text>
               </View>
-              <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>{t("device.live")}</Text>
+              </View>
             </View>
           </View>
         }
         ListEmptyComponent={
           <View style={[styles.emptyLog, { borderColor: colors.border }]}>
-            <Text style={[styles.emptyLogText, { color: colors.muted }]}>I messaggi Bluetooth appariranno qui.</Text>
+            <Text style={[styles.emptyLogText, { color: colors.muted }]}>
+              {t("device.emptyLogs")}
+            </Text>
           </View>
         }
       />
@@ -266,6 +631,58 @@ function InfoRow({ icon, label, value }: { icon: React.ComponentProps<typeof Mat
       <Text style={[styles.infoValue, { color: colors.foreground }]}>{value}</Text>
     </View>
   );
+}
+
+function handleStateLabel(
+  handleState: number,
+  t: ReturnType<typeof useI18n>["t"],
+): string {
+  const keyByState: Record<
+    number,
+    | "off"
+    | "idle"
+    | "brushing"
+    | "charging"
+    | "shuttingDown"
+    | "verifying"
+    | "background"
+  > = {
+    0: "off",
+    1: "idle",
+    2: "brushing",
+    3: "charging",
+    4: "shuttingDown",
+    6: "verifying",
+    7: "background",
+  };
+  const key = keyByState[handleState];
+  return key ? t(`device.handleState.${key}`) : t("device.unknown");
+}
+
+function adapterStateLabel(
+  state: string,
+  t: ReturnType<typeof useI18n>["t"],
+): string {
+  const keyByState = {
+    Unknown: "unknown",
+    Resetting: "resetting",
+    Unsupported: "unsupported",
+    Unauthorized: "unauthorized",
+    PoweredOff: "poweredOff",
+    PoweredOn: "poweredOn",
+  } as const;
+  const key = keyByState[state as keyof typeof keyByState];
+  return key ? t(`device.adapterState.${key}`) : state;
+}
+
+function intensityLabel(
+  intensity: string,
+  t: ReturnType<typeof useI18n>["t"],
+): string {
+  if (intensity === "bassa") return t("device.intensity.low");
+  if (intensity === "media") return t("device.intensity.medium");
+  if (intensity === "alta") return t("device.intensity.high");
+  return t("device.unknown");
 }
 
 function logColor(level: DiagnosticLog["level"]) {
@@ -287,12 +704,18 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   heroModel: { fontSize: 18, lineHeight: 24, fontWeight: "900" },
   heroStatus: { fontSize: 13, lineHeight: 19, marginTop: 4 },
+  heroPairing: { fontSize: 11, lineHeight: 16, marginTop: 6, fontWeight: "700" },
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 },
   protocolBadge: { backgroundColor: "#FFFFFF", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
   protocolText: { color: "#2457D6", fontSize: 10, lineHeight: 14, fontWeight: "900" },
   batteryBadge: { backgroundColor: "#11845B", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
   batteryText: { color: "#FFFFFF", fontSize: 10, lineHeight: 14, fontWeight: "900" },
   actions: { flexDirection: "row", gap: 10 },
+  hintCard: { borderRadius: 18, borderWidth: 1, borderColor: "#F2D588", backgroundColor: "#FFF8E8", padding: 12, flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  hintCopy: { flex: 1, gap: 8 },
+  hintText: { color: "#17213A", fontSize: 12, lineHeight: 17, fontWeight: "600" },
+  hintButton: { alignSelf: "flex-start", minHeight: 44, borderRadius: 13, backgroundColor: "#7A4B00", paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
+  hintButtonText: { color: "#FFFFFF", fontSize: 12, lineHeight: 16, fontWeight: "900" },
   primaryButton: { flex: 1, minHeight: 52, borderRadius: 17, backgroundColor: "#2457D6", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingHorizontal: 12 },
   disconnectButton: { backgroundColor: "#D33D5D" },
   primaryText: { color: "#FFFFFF", fontSize: 13, lineHeight: 18, fontWeight: "900" },
@@ -306,6 +729,7 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 13, lineHeight: 18, fontWeight: "800", textTransform: "capitalize" },
   infoDivider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
   forgetButton: { minHeight: 62, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 11 },
+  changeHandleButton: { minHeight: 62, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 11 },
   forgetCopy: { flex: 1 },
   forgetTitle: { fontSize: 13, lineHeight: 18, fontWeight: "900" },
   forgetText: { fontSize: 10, lineHeight: 15, marginTop: 1 },

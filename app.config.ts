@@ -20,6 +20,7 @@ const env = {
   iosBundleId: bundleId,
   androidPackage: bundleId,
 };
+const e2eBuild = process.env.EXPO_PUBLIC_E2E === "1";
 
 const config: ExpoConfig = {
   name: env.appName,
@@ -28,14 +29,24 @@ const config: ExpoConfig = {
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
-  userInterfaceStyle: "light",
-  newArchEnabled: true,
+  // The theme provider follows the system scheme on every platform; "light" would force
+  // Android to light while the splash plugin already makes iOS automatic.
+  userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
+    // Portrait only also on iPad: without full screen, iPadOS multitasking ignores the lock.
+    requireFullScreen: true,
+    // The backup picker must reach iCloud Drive, where families usually keep the .brushlings file.
+    usesIcloudStorage: true,
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      NSBluetoothAlwaysUsageDescription: "Sparkly Brush usa il Bluetooth per collegarsi al tuo Philips Sonicare for Kids e registrare lo spazzolamento.",
+      CFBundleAllowMixedLocalizations: true,
+      // The automatic family backups (voce 44) are in the app's documents: visible in Files.
+      UIFileSharingEnabled: true,
+      LSSupportsOpeningDocumentsInPlace: true,
+      // NSBluetoothAlwaysUsageDescription comes from the react-native-ble-plx plugin below and
+      // is localized through `locales` (InfoPlist.strings) in the five supported languages.
     },
   },
   android: {
@@ -43,18 +54,23 @@ const config: ExpoConfig = {
       backgroundColor: "#EAF4FF",
       foregroundImage: "./assets/images/android-icon-foreground.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     blockedPermissions: [
+      // react-native-ble-plx retains scoped sdk-23 location declarations for Android 11
+      // and below; block unscoped declarations contributed by its Android AAR.
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
       "android.permission.READ_EXTERNAL_STORAGE",
       "android.permission.WRITE_EXTERNAL_STORAGE",
       "android.permission.SYSTEM_ALERT_WINDOW",
+      // androidx.work (used by the home-screen widget for its headless task) declares it for
+      // foreground workers; the widget's worker never asks to run in the foreground.
+      "android.permission.FOREGROUND_SERVICE",
     ],
     intentFilters: [
       {
         action: "VIEW",
-        autoVerify: true,
         data: [
           {
             scheme: env.scheme,
@@ -70,17 +86,88 @@ const config: ExpoConfig = {
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
+  locales: {
+    it: "./locales/native/it.json",
+    en: "./locales/native/en.json",
+    de: "./locales/native/de.json",
+    fr: "./locales/native/fr.json",
+    es: "./locales/native/es.json",
+    pt: "./locales/native/pt.json",
+    nl: "./locales/native/nl.json",
+    pl: "./locales/native/pl.json",
+  },
   plugins: [
-    "expo-router",
+    // The generated /_sitemap route must not ship: unknown links land on +not-found instead.
+    ["expo-router", { sitemap: false }],
     "expo-asset",
-    "expo-document-picker",
+    ["expo-document-picker", { iCloudContainerEnvironment: "Production" }],
     "expo-font",
-    "expo-sqlite",
+    // Local reminders only: no push token or server is ever requested, so the push
+    // entitlement that expo-notifications adds is removed (this plugin must come first).
+    "./plugins/with-local-notifications-only",
+    "expo-notifications",
+    "./plugins/with-android-orientation-compat",
+    // Long-press shortcut «Start brushing» (voce 43), opening sparklybrush://start.
+    "./plugins/with-android-shortcuts",
     [
+      // Home-screen widget with the streak and the next brushing (voce 42), Android only.
+      "react-native-android-widget",
+      {
+        widgets: [
+          {
+            name: "Streak",
+            label: "Sparkly Brush",
+            description: "Smile streak and next brushing",
+            minWidth: "180dp",
+            minHeight: "110dp",
+            targetCellWidth: 3,
+            targetCellHeight: 2,
+            resizeMode: "horizontal|vertical",
+            widgetCategory: "home_screen",
+            updatePeriodMillis: 1800000,
+          },
+        ],
+      },
+    ],
+    [
+      "expo-localization",
+      {
+        supportedLocales: {
+          ios: ["it", "en", "de", "fr", "es", "pt", "nl", "pl"],
+          android: ["it", "en", "de", "fr", "es", "pt", "nl", "pl"],
+        },
+      },
+    ],
+    [
+      "expo-local-authentication",
+      {
+        // English fallback; `locales` provides the translated InfoPlist.strings.
+        faceIDPermission: "Sparkly Brush uses Face ID only to open the parents’ area.",
+      },
+    ],
+    "expo-sharing",
+    "expo-sqlite",
+    "expo-status-bar",
+    [
+      // The microphone only for the parent's voice message (voce 61), asked when recording.
+      // English fallback; `locales` provides the translated InfoPlist.strings.
       "expo-audio",
       {
-        microphonePermission: false,
+        microphonePermission: "Sparkly Brush uses the microphone only when you record a message for your child.",
+        recordAudioAndroid: true,
+        enableBackgroundRecording: false,
+        enableBackgroundPlayback: false,
+      },
+    ],
+    [
+      // The front camera only as a mirror while brushing (voce 76): no photos, no video, no
+      // barcode scanner. The same microphone text as expo-audio, so neither plugin removes it.
+      "expo-camera",
+      {
+        cameraPermission: "Sparkly Brush uses the front camera only as a mirror while brushing: it takes no photos and records nothing.",
+        microphonePermission: "Sparkly Brush uses the microphone only when you record a message for your child.",
         recordAudioAndroid: false,
+        barcodeScannerEnabled: false,
       },
     ],
     [
@@ -88,7 +175,9 @@ const config: ExpoConfig = {
       {
         isBackgroundEnabled: false,
         neverForLocation: true,
-        bluetoothAlwaysPermission: "Consenti a Sparkly Brush di collegarsi al Philips Sonicare for Kids.",
+        // English fallback; `locales` provides the translated InfoPlist.strings.
+        bluetoothAlwaysPermission:
+          "Sparkly Brush uses Bluetooth to connect to your Philips Sonicare for Kids toothbrush and record brushing sessions.",
       },
     ],
     [
@@ -99,7 +188,7 @@ const config: ExpoConfig = {
         resizeMode: "contain",
         backgroundColor: "#F7F9FF",
         dark: {
-          backgroundColor: "#F7F9FF",
+          backgroundColor: "#10162A",
         },
       },
     ],
@@ -107,7 +196,7 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
+          buildArchs: e2eBuild ? ["x86_64"] : ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
         },
       },

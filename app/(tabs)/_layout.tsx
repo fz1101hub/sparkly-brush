@@ -1,111 +1,48 @@
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useColors } from "@/hooks/use-colors";
+import { ApprovedTabBar } from "@/components/approved-tab-bar";
+import { useI18n } from "@/contexts/locale-context";
 
+/**
+ * Four destinations (from PR #10): Today, World, Rewards and Family. Every other screen opens
+ * from one of them and is kept out of the bar.
+ */
 export default function TabLayout() {
-  const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-
+  const { t } = useI18n();
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "800", marginTop: 2 },
-        tabBarStyle: {
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          height: 60 + bottomPadding,
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
-        },
-      }}
+      // Hidden screens (habitat, backup, settings…) go back to where they were opened from.
+      backBehavior="history"
+      tabBar={(props) => <ApprovedTabBar {...props} />}
+      screenOptions={{ headerShown: false, animation: "none" }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Oggi",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="collection"
-        options={{
-          title: "Creature",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="pawprint.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Esplora",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="map.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="rewards"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="habitat"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="missions"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="parent"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="backup"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="hardware-test"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: "Storico",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="clock.arrow.circlepath" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="device"
-        options={{
-          title: "Spazzolino",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="antenna.radiowaves.left.and.right" color={color} />,
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: t("tabs.today") }} />
+      <Tabs.Screen name="collection" options={{ title: t("tabs.world") }} />
+      <Tabs.Screen name="rewards" options={{ title: t("tabs.rewards") }} />
+      <Tabs.Screen name="parent" options={{ title: t("tabs.family") }} />
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      <Tabs.Screen name="habitat" options={{ href: null }} />
+      <Tabs.Screen name="missions" options={{ href: null }} />
+      <Tabs.Screen name="backup" options={{ href: null }} />
+      <Tabs.Screen name="hardware-test" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="history" options={{ href: null }} />
+      <Tabs.Screen name="device" options={{ href: null }} />
+      <Tabs.Screen name="quiz" options={{ href: null }} />
+      <Tabs.Screen name="tooth-names" options={{ href: null }} />
+      <Tabs.Screen name="museum" options={{ href: null }} />
+      <Tabs.Screen name="dentist-visit" options={{ href: null }} />
+      <Tabs.Screen name="braces" options={{ href: null }} />
+      <Tabs.Screen name="garden" options={{ href: null }} />
+      <Tabs.Screen name="bubble-lab" options={{ href: null }} />
+      <Tabs.Screen name="square" options={{ href: null }} />
+      <Tabs.Screen name="library" options={{ href: null }} />
+      <Tabs.Screen name="tooth-mouse" options={{ href: null }} />
+      <Tabs.Screen name="babysitter" options={{ href: null }} />
+      <Tabs.Screen name="album" options={{ href: null }} />
+      <Tabs.Screen name="reports" options={{ href: null }} />
+      <Tabs.Screen name="dental-booklet" options={{ href: null }} />
+      <Tabs.Screen name="siblings" options={{ href: null }} />
     </Tabs>
   );
 }

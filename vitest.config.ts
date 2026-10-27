@@ -1,5 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
+
+import { nativeSqliteProject } from "./tests/native-sqlite/vitest.project";
 
 export default defineConfig({
   esbuild: {
@@ -9,5 +11,20 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),
     },
+  },
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["tests/**/*.test.{ts,tsx}"],
+          setupFiles: ["./tests/setup/static-assets.ts"],
+          exclude: [...configDefaults.exclude, "tests/native-sqlite/**"],
+        },
+      },
+      // lib/brush-storage.native.ts and lib/complete-backup.native.ts on a real SQLite engine.
+      nativeSqliteProject,
+    ],
   },
 });

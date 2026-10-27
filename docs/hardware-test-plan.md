@@ -35,6 +35,33 @@ Aprire **Spazzolino → Prova guidata e report**. La schermata conserva localmen
 | Riavvio app | Da eseguire | Da eseguire | Storico, progressione e dispositivo precedente restano coerenti |
 | Backup/restore | Da eseguire | Da eseguire | Il file si esporta, si reimporta e conserva storico, progressi e ledger |
 
+## Casi aggiunti dal 27 ottobre 2026 (voce A dell’elenco)
+
+Da eseguire con lo stesso report, una riga per piattaforma. Le funzioni marcate «sperimentale» si accendono in **Spazzolino → Funzioni sperimentali del manico** e restano spente finché questi casi non sono superati.
+
+| Caso | iOS | Android | Criterio di successo |
+|---|---:|---:|---|
+| Abbinamento e cambio manico | Da eseguire | Da eseguire | Dopo «Cambia manico» si collega solo il manico nuovo; il vecchio non si ricollega da solo |
+| «Riprendi dalle ultime sessioni» (B4) | Da eseguire | Da eseguire | Con un salto non recuperabile la conferma importa le sessioni che il manico conserva e dichiara quelle perse |
+| Timer guidato e record del manico | Da eseguire | Da eseguire | Una sessione col timer e poi lo stesso minuto col manico producono una sola sessione accreditata |
+| Permesso Bluetooth iOS contestuale | Da eseguire | — | Il permesso viene chiesto solo premendo «Cerca e collega» |
+| Blocco genitori e PIN | Da eseguire | Da eseguire | Moltiplicazione, PIN, PIN dimenticato e impronta/Face ID aprono solo l’area genitori |
+| Profili e manico di un fratello | Da eseguire | Da eseguire | Il manico di un altro bambino viene ignorato e proposto con «Passa al suo profilo» |
+| Passaggio del manico a un fratello | Da eseguire | Da eseguire | Il nuovo proprietario riceve solo le spazzolate fatte dopo il passaggio |
+| Promemoria | Da eseguire | Da eseguire | I promemoria del giorno già fatto saltano; l’ultimo richiamo arriva solo se la sera manca |
+| Pausa del timer | Da eseguire | Da eseguire | Mettere in pausa, chiudere e riaprire l’app: la sessione riprende dal punto giusto |
+| Batteria e testina | Da eseguire | Da eseguire | Sotto il 20% compare l’avviso; il cambio testina segnato fa partire i 90 giorni |
+| Tempo motore (sperimentale, 4040) | Da eseguire | Da eseguire | Il valore letto cresce di circa due minuti dopo una spazzolata; annotare il valore grezzo |
+| Zone dal manico (sperimentale, 40a0) | Da eseguire | Da eseguire | Il cambio zona sullo schermo coincide con la pausa del manico ogni 30 secondi; annotare i valori ricevuti |
+| «Zona dimenticata» (sperimentale) | Da eseguire | Da eseguire | Saltando apposta una zona, il giorno dopo la Home la ricorda |
+| Collegamento automatico all’apertura | Da eseguire | Da eseguire | Con il manico acceso e l’app aperta, la connessione parte da sola e la sessione dal vivo compare |
+| Widget Android | — | Da eseguire | Il widget mostra serie e prossima spazzolata; un tocco avvia il timer |
+| Scorciatoia «Inizia a lavarti i denti» | Da eseguire (Siri «Apri URL») | Da eseguire | `sparklybrush://start` apre Oggi con il timer avviato |
+| Backup di famiglia | Da eseguire | Da eseguire | Il file di famiglia ripristina tutti i bambini su un telefono nuovo |
+| Messaggio vocale del genitore | Da eseguire | Da eseguire | Il microfono viene chiesto solo premendo «Registra un messaggio»; dopo 20 secondi la registrazione si ferma da sola; a fine spazzolata completa il bambino lo ascolta e il genitore vede «l’ha ascoltato» |
+| Specchio con la fotocamera frontale | Da eseguire | Da eseguire | La fotocamera viene chiesta solo toccando «Specchio» durante la sessione; l’immagine è speculare; a fine sessione la fotocamera si spegne (spia di sistema spenta) |
+| Fratelli insieme | Da eseguire | Da eseguire | Da Famiglia → «Fratelli insieme» un solo timer salva la spazzolata nel profilo di ogni bambino scelto |
+
 ## Procedura dettagliata
 
 1. Installare una development build pulita e avviare l’app.

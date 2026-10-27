@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Animated, Platform, StyleSheet, View } from "react-native";
+
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const PARTICLES = Array.from({ length: 16 }, (_, index) => index);
 const COLORS = ["#FFD65A", "#58B9FF", "#7DD790", "#FF8B66", "#B9A8F3"];
 
 export function CelebrationBurst({ active }: { active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const [progress] = useState(() => new Animated.Value(0));
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!active) {
+    if (!active || reducedMotion) {
       progress.setValue(0);
       return;
     }
@@ -16,9 +19,9 @@ export function CelebrationBurst({ active }: { active: boolean }) {
     Animated.timing(progress, {
       toValue: 1,
       duration: 1200,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
-  }, [active, progress]);
+  }, [active, progress, reducedMotion]);
 
   const particles = useMemo(() => PARTICLES.map((index) => ({
     index,
@@ -27,10 +30,11 @@ export function CelebrationBurst({ active }: { active: boolean }) {
     color: COLORS[index % COLORS.length],
   })), []);
 
-  if (!active) return null;
+  // Confetti is purely decorative: skip it entirely when motion is reduced.
+  if (!active || reducedMotion) return null;
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, styles.container]}>
       {particles.map((particle) => {
         const x = Math.cos(particle.angle) * particle.distance;
         const y = Math.sin(particle.angle) * particle.distance;
@@ -57,6 +61,9 @@ export function CelebrationBurst({ active }: { active: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    pointerEvents: "none",
+  },
   particle: {
     position: "absolute",
     left: "50%",

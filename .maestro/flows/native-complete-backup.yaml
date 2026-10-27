@@ -1,0 +1,155 @@
+appId: com.app.sparklybrush
+name: Ripristino file SQLite completo sintetico
+tags:
+  - regression
+  - android
+  - backup
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: onboarding-next
+- tapOn:
+    id: starter-bloopi
+- scrollUntilVisible:
+    element:
+      id: starter-confirm
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: starter-confirm
+- tapOn:
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
+- scrollUntilVisible:
+    element:
+      id: device-backup
+    direction: DOWN
+- tapOn:
+    id: device-backup
+- assertVisible:
+    id: backup-screen
+- scrollUntilVisible:
+    element:
+      id: backup-pick-file
+    direction: DOWN
+- tapOn:
+    id: backup-pick-file
+# The CI job pushes this synthetic SQLite archive into Downloads before starting Maestro.
+# Android's system document picker, rather than an app-only mock, must open it.
+- runFlow:
+    when:
+      visible: Downloads
+    commands:
+      - tapOn: Downloads
+- scrollUntilVisible:
+    element:
+      text: sparkly-ci-archive.sqlite
+    direction: DOWN
+    timeout: 20000
+- tapOn: sparkly-ci-archive.sqlite
+- scrollUntilVisible:
+    element:
+      id: backup-file-preview
+    direction: DOWN
+    visibilityPercentage: 20
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: backup-comparison-file
+    direction: DOWN
+    visibilityPercentage: 20
+    timeout: 15000
+- assertVisible:
+    id: backup-comparison-file
+- assertVisible: ".*125.*"
+- scrollUntilVisible:
+    element:
+      id: backup-restore-file
+    direction: DOWN
+- tapOn:
+    id: backup-restore-file
+- scrollUntilVisible:
+    element:
+      id: backup-cancel-file
+    direction: DOWN
+- tapOn:
+    id: backup-cancel-file
+- assertNotVisible:
+    id: backup-confirm-file-card
+- assertVisible:
+    id: backup-file-preview
+- scrollUntilVisible:
+    element:
+      id: backup-restore-file
+    direction: UP
+    timeout: 15000
+- tapOn:
+    id: backup-restore-file
+- scrollUntilVisible:
+    element:
+      id: backup-confirm-file
+    direction: DOWN
+- tapOn:
+    id: backup-confirm-file
+- scrollUntilVisible:
+    element:
+      id: backup-status
+    direction: UP
+    timeout: 60000
+- extendedWaitUntil:
+    visible:
+      id: backup-status
+    timeout: 60000
+- assertNotVisible:
+    id: backup-error
+- assertNotVisible:
+    id: backup-file-preview
+- takeScreenshot: native-full-backup-restored
+- stopApp
+- launchApp
+- tapOn:
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-device
+    direction: DOWN
+- tapOn:
+    id: family-nav-device
+- scrollUntilVisible:
+    element:
+      id: device-backup
+    direction: DOWN
+- tapOn:
+    id: device-backup
+- assertVisible:
+    id: backup-screen
+- assertVisible:
+    id: backup-current-sessions
+    text: "125"
+- takeScreenshot: native-full-backup-after-restart
+- tapOn:
+    id: tab-family
+- scrollUntilVisible:
+    element:
+      id: family-nav-history
+    direction: DOWN
+- tapOn:
+    id: family-nav-history
+- assertVisible:
+    id: history-screen
+- assertVisible:
+    id: history-recent-sessions
+    text: "120"
+- takeScreenshot: native-full-backup-recent-history

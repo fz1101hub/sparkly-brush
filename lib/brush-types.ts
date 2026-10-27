@@ -1,3 +1,5 @@
+import type { TranslationKey, TranslationParams } from "@/lib/i18n";
+
 export type ConnectionStatus =
   | "idle"
   | "scanning"
@@ -13,6 +15,8 @@ export interface DiagnosticLog {
   at: number;
   level: LogLevel;
   message: string;
+  translationKey?: TranslationKey;
+  translationParams?: TranslationParams;
 }
 
 export interface ToothbrushDevice {
@@ -21,6 +25,8 @@ export interface ToothbrushDevice {
   model: string;
   firmware?: string;
   battery?: number;
+  /** Motor run time in seconds (characteristic 4040, voce 35); experimental, read at connect. */
+  motorRuntimeSeconds?: number;
 }
 
 export interface BrushLiveData {
@@ -30,6 +36,8 @@ export interface BrushLiveData {
   routineSeconds: number;
   mode: "clean" | "unknown";
   intensity: "bassa" | "media" | "alta" | "sconosciuta";
+  /** The quarter of the routine reported by the handle's quad pacer (40a0, voce 10), 0–3. */
+  quadrant?: number | null;
 }
 
 export interface BrushSession {
@@ -58,6 +66,7 @@ export interface StoredDeviceSession {
 export interface DeviceSyncCursor {
   lastSessionId: number;
   acceptNextSession: boolean;
+  resetBaselineSessionId?: number | null;
 }
 
 export interface BleClientEvents {
@@ -68,11 +77,36 @@ export interface BleClientEvents {
   onLog: (level: LogLevel, message: string) => void;
 }
 
+/**
+ * Which handle a scan may connect to: only the paired one, any Sonicare (first pairing)
+ * or a handle different from the paired one (the parent is changing handle).
+ */
+export type ScanTarget = (
+  | { mode: "any" }
+  | { mode: "paired"; deviceId: string }
+  | { mode: "replace"; currentDeviceId: string }
+) & {
+  /** Handles that belong to a sibling's profile: never connect to them from this profile. */
+  excludedDeviceIds?: readonly string[];
+  /** Records the handle found as this child's before connecting; a rejection aborts the connection. */
+  claim?: (deviceId: string) => Promise<void>;
+  /** Told once per scan about each sibling's handle nearby, to offer switching profile. */
+  onSibling?: (deviceId: string) => void;
+};
+
+export type SyncOptions = {
+  /**
+   * Resume from the most recent records when the gap since the cursor exceeds what the handle
+   * still keeps or what one batch may import; the skipped sessions are lost and logged.
+   */
+  allowGap?: boolean;
+};
+
 export interface SonicareClient {
   initialize(): Promise<void>;
-  scanAndConnect(): Promise<void>;
+  scanAndConnect(target?: ScanTarget): Promise<void>;
   disconnect(): Promise<void>;
-  syncStoredSessionsSince(cursor?: DeviceSyncCursor | null): Promise<StoredDeviceSession[]>;
+  syncStoredSessionsSince(cursor?: DeviceSyncCursor | null, options?: SyncOptions): Promise<StoredDeviceSession[]>;
   destroy(): void;
 }
 

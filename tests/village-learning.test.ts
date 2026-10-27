@@ -1,0 +1,415 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const data = vi.hoisted(() => new Map<string, string>());
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(async (key: string) => data.get(key) ?? null),
+    setItem: vi.fn(async (key: string, value: string) => {
+      data.set(key, value);
+    }),
+  },
+}));
+
+import {
+  BRACES_STEPS,
+  BRACES_TYPES,
+  careStreak,
+  DEFAULT_BRACES,
+  getBracesStorage,
+  hadCleanWeek,
+  normalizeBraces,
+  showsNewSmile,
+  withCareDay,
+} from "@/lib/braces";
+import type { BrushSession } from "@/lib/brush-types";
+import { localDateKey } from "@/lib/day-progress";
+import { isRightOrder, pickQuizRound, quizOptions } from "@/lib/learning/quiz";
+import { QUIZ_QUESTIONS } from "@/lib/learning/quiz-content";
+import {
+  defaultLearningLanguage,
+  fdiNumber,
+  findToothRound,
+  isSixYearMolar,
+  memoryDeck,
+  repeatRound,
+  TOOTH_NAMES,
+  TOOTH_TYPES,
+  teethFor,
+  typesIn,
+} from "@/lib/learning/tooth-names";
+import { CONTENT_LOCALES as SUPPORTED_LOCALES } from "@/lib/locale-types";
+import { FOODS, gardenRound } from "@/lib/learning/garden";
+import { STORIES } from "@/lib/learning/stories";
+import {
+  BOSS_HP,
+  bossHits,
+  DAILY_ENERGY_MAX,
+  DEFAULT_VILLAGE,
+  earnedEnergy,
+  energyStatus,
+  getVillageStorage,
+  isVillageAsleep,
+  normalizeVillage,
+  spendEnergy,
+  weekKey,
+  withCard,
+  withLostTooth,
+  withoutLostTooth,
+} from "@/lib/village";
+import { currentEvent, nextEvent } from "@/lib/village-events";
+import { BUBBLE_RECIPES, canBrew, missingMaterials } from "@/lib/village-lab";
+
+beforeEach(() => data.clear());
+
+/** A repeatable sequence instead of Math.random. */
+function seeded(seed = 1) {
+  // Spread small seeds: their first values would otherwise all be close to zero.
+  let value = (seed * 104_729) % 2_147_483_647;
+  return () => {
+    value = (value * 16_807) % 2_147_483_647;
+    return (value - 1) / 2_147_483_646;
+  };
+}
+
+function session(startedAt: number, completed = true, extra: Partial<BrushSession> = {}): BrushSession {
+  return {
+    id: `s-${startedAt}`,
+    startedAt,
+    durationSeconds: completed ? 120 : 40,
+    targetSeconds: 120,
+    completed,
+    source: "manual",
+    rewardPolicy: "completed-only",
+    ...extra,
+  };
+}
+
+describe("contenuti del quiz", () => {
+  it("ha 39 domande di quattro tipi, complete in tutte le lingue", () => {
+    expect(QUIZ_QUESTIONS).toHaveLength(39);
+    expect(new Set(QUIZ_QUESTIONS.map((question) => question.id)).size).toBe(39);
+    const perCategory = new Map<string, number>();
+    for (const question of QUIZ_QUESTIONS) {
+      perCategory.set(question.category, (perCategory.get(question.category) ?? 0) + 1);
+      expect(question.source.length).toBeGreaterThan(10);
+      for (const locale of SUPPORTED_LOCALES) {
+        const text = question.text[locale];
+        expect(text.question.trim().length, `${question.id}/${locale}`).toBeGreaterThan(5);
+        expect(text.fact.trim().length, `${question.id}/${locale}`).toBeGreaterThan(10);
+        if (question.kind === "choice" || question.kind === "order") {
+          const answers = "answers" in text ? text.answers : (text as { items: readonly string[] }).items;
+          expect(answers).toHaveLength(3);
+          expect(new Set(answers).size, `${question.id}/${locale}`).toBe(3);
+        }
+      }
+      if (question.kind === "choice" && question.pictures) {
+        expect(new Set(question.pictures).size, question.id).toBe(3);
+      }
+    }
+    expect(Object.fromEntries(perCategory)).toEqual({ body: 6, hygiene: 6, food: 5, animals: 10, history: 7, world: 5 });
+    expect(QUIZ_QUESTIONS.filter((question) => question.kind === "order")).toHaveLength(4);
+    expect(QUIZ_QUESTIONS.filter((question) => question.id.startsWith("whose-"))).toHaveLength(5);
+    expect(QUIZ_QUESTIONS.some((question) => question.level === 1)).toBe(true);
+    expect(QUIZ_QUESTIONS.some((question) => question.level === 2)).toBe(true);
+  });
+});
+
+describe("partita del quiz", () => {
+  it("ai più piccoli propone solo domande di livello 1, prima quelle non ancora vinte", () => {
+    const easy = QUIZ_QUESTIONS.filter((question) => question.level === 1);
+    const collected = new Set(easy.slice(0, easy.length - 2).map((question) => question.id));
+    const round = pickQuizRound(collected, 1, seeded(3));
+    expect(round).toHaveLength(3);
+    expect(round.every((question) => question.level === 1)).toBe(true);
+    // The two cards still missing come first.
+    expect(round.slice(0, 2).every((question) => !collected.has(question.id))).toBe(true);
+  });
+
+  it("resta giocabile anche quando tutte le carte sono già state vinte", () => {
+    const all = new Set(QUIZ_QUESTIONS.map((question) => question.id));
+    expect(pickQuizRound(all, 2, seeded(5))).toHaveLength(3);
+  });
+
+  it("ha una sola risposta giusta, che non è sempre la prima", () => {
+    const choice = QUIZ_QUESTIONS.find((question) => question.kind === "choice")!;
+    const positions = new Set<number>();
+    for (let seed = 1; seed < 40; seed += 1) {
+      const options = quizOptions(choice, "de", { true: "Richtig", false: "Falsch" }, seeded(seed));
+      expect(options.filter((option) => option.correct)).toHaveLength(1);
+      expect(options.find((option) => option.correct)?.label).toBe(
+        (choice.text.de as { answers: readonly string[] }).answers[0],
+      );
+      positions.add(options.findIndex((option) => option.correct));
+    }
+    expect(positions.size).toBeGreaterThan(1);
+  });
+
+  it("mostra le figure accanto alle risposte giuste e sbagliate", () => {
+    const whose = QUIZ_QUESTIONS.find((question) => question.id === "whose-shark")!;
+    const options = quizOptions(whose, "it", { true: "Vero", false: "Falso" }, seeded(4));
+    expect(options.find((option) => option.correct)).toMatchObject({ label: "Dello squalo", picture: "🦈" });
+    expect(options.every((option) => option.picture)).toBe(true);
+  });
+
+  it("«metti in ordine» mescola gli elementi ed è giusto solo dal primo all'ultimo", () => {
+    const order = QUIZ_QUESTIONS.find((question) => question.id === "order-toothbrush")!;
+    const orders = new Set<string>();
+    for (let seed = 1; seed < 20; seed += 1) {
+      orders.add(quizOptions(order, "fr", { true: "Vrai", false: "Faux" }, seeded(seed)).map((option) => option.key).join(""));
+    }
+    expect(orders.size).toBeGreaterThan(1);
+    expect(isRightOrder(["0", "1", "2"], 3)).toBe(true);
+    expect(isRightOrder(["0", "2", "1"], 3)).toBe(false);
+    expect(isRightOrder(["0", "1"], 3)).toBe(false);
+  });
+
+  it("nelle domande vero/falso segue la risposta salvata", () => {
+    const falseOne = QUIZ_QUESTIONS.find((question) => question.kind === "truefalse" && !question.answer)!;
+    const options = quizOptions(falseOne, "it", { true: "Vero", false: "Falso" });
+    expect(options.map((option) => [option.label, option.correct])).toEqual([
+      ["Vero", false],
+      ["Falso", true],
+    ]);
+  });
+});
+
+describe("nomi dei denti", () => {
+  it("numera i denti come il dentista (FDI) e segnala i molari dei 6 anni", () => {
+    const byId = (dentition: "primary" | "permanent", id: string) => teethFor(dentition).find((tooth) => tooth.id === id)!;
+    expect(fdiNumber(byId("permanent", "upper-right-0"), "permanent")).toBe(11);
+    expect(fdiNumber(byId("permanent", "upper-left-5"), "permanent")).toBe(26);
+    expect(fdiNumber(byId("permanent", "lower-left-7"), "permanent")).toBe(38);
+    expect(fdiNumber(byId("permanent", "lower-right-2"), "permanent")).toBe(43);
+    expect(fdiNumber(byId("primary", "upper-right-0"), "primary")).toBe(51);
+    expect(fdiNumber(byId("primary", "lower-right-4"), "primary")).toBe(85);
+    const numbers = teethFor("permanent").map((tooth) => fdiNumber(tooth, "permanent"));
+    expect(new Set(numbers).size).toBe(32);
+
+    const sixYear = teethFor("permanent").filter((tooth) => isSixYearMolar(tooth, "permanent"));
+    expect(sixYear.map((tooth) => fdiNumber(tooth, "permanent")).sort()).toEqual([16, 26, 36, 46]);
+    expect(teethFor("primary").some((tooth) => isSixYearMolar(tooth, "primary"))).toBe(false);
+  });
+
+  it("«ascolta e ripeti» propone un dente per ogni tipo presente in bocca", () => {
+    const round = repeatRound("primary", seeded(2));
+    expect(round.map((tooth) => tooth.type).sort()).toEqual([...typesIn("primary")].sort());
+    expect(repeatRound("permanent", seeded(9))).toHaveLength(6);
+  });
+
+  it("ha 20 denti da latte e 32 definitivi con i tipi giusti", () => {
+    expect(teethFor("primary")).toHaveLength(20);
+    expect(teethFor("permanent")).toHaveLength(32);
+    expect(typesIn("primary")).toEqual(["centralIncisor", "lateralIncisor", "canine", "molar"]);
+    expect(teethFor("permanent").filter((tooth) => tooth.type === "wisdom")).toHaveLength(4);
+    expect(teethFor("permanent").filter((tooth) => tooth.type === "premolar")).toHaveLength(8);
+  });
+
+  it("dà un nome diverso a ogni tipo in ognuna delle cinque lingue", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const names = TOOTH_TYPES.map((type) => TOOTH_NAMES[locale][type]);
+      expect(names.every((name) => name.trim().length > 2)).toBe(true);
+      expect(new Set(names).size).toBe(TOOTH_TYPES.length);
+    }
+  });
+
+  it("in «Trova il dente» chiede solo denti presenti e mai due volte di fila", () => {
+    const round = findToothRound("primary", seeded(7), 20);
+    expect(round.every((type) => typesIn("primary").includes(type))).toBe(true);
+    expect(round.every((type, index) => index === 0 || type !== round[index - 1])).toBe(true);
+  });
+
+  it("nel memory abbina ogni tipo nelle due lingue", () => {
+    const deck = memoryDeck("it", "en", seeded(11));
+    expect(deck).toHaveLength(8);
+    for (const type of new Set(deck.map((card) => card.type))) {
+      expect(deck.filter((card) => card.type === type).map((card) => card.locale).sort()).toEqual(["en", "it"]);
+    }
+  });
+
+  it("propone una lingua diversa da quella dell'app", () => {
+    expect(defaultLearningLanguage("it")).toBe("en");
+    expect(defaultLearningLanguage("en")).toBe("it");
+  });
+});
+
+describe("energia del villaggio", () => {
+  const now = new Date(2026, 9, 27, 19).getTime();
+  const morning = new Date(2026, 9, 27, 8).getTime();
+  const yesterday = new Date(2026, 9, 26, 20).getTime();
+
+  it("si guadagna solo con le sessioni complete di oggi, fino a quattro", () => {
+    expect(earnedEnergy([session(morning)], now)).toBe(2);
+    expect(earnedEnergy([session(morning), session(now - 60_000), session(now - 30_000)], now)).toBe(DAILY_ENERGY_MAX);
+    expect(earnedEnergy([session(yesterday), session(morning, false)], now)).toBe(0);
+    expect(earnedEnergy([session(morning, true, { timeConfidence: "approximate" })], now)).toBe(0);
+  });
+
+  it("si spende un'attività alla volta e ricomincia il giorno dopo", () => {
+    const history = [session(morning)];
+    const once = spendEnergy(DEFAULT_VILLAGE, history, now)!;
+    const twice = spendEnergy(once, history, now)!;
+    expect(energyStatus(twice, history, now).available).toBe(0);
+    expect(spendEnergy(twice, history, now)).toBeNull();
+    const tomorrow = new Date(2026, 9, 28, 8).getTime();
+    expect(energyStatus(twice, [...history, session(tomorrow)], tomorrow)).toMatchObject({ spent: 0, available: 2 });
+  });
+
+  it("senza limite, deciso dal genitore, le attività restano sempre aperte", () => {
+    const free = { ...DEFAULT_VILLAGE, energyLimit: false };
+    expect(energyStatus(free, [], now)).toMatchObject({ limited: false, available: DAILY_ENERGY_MAX });
+    expect(spendEnergy(free, [], now)).not.toBeNull();
+  });
+
+  it("conserva le carte una sola volta e scarta i dati non validi", () => {
+    expect(withCard(withCard(DEFAULT_VILLAGE, "food-cheese"), "food-cheese").cards).toEqual(["food-cheese"]);
+    expect(normalizeVillage({ spent: -3, quizLevel: 7, learningLanguage: "xx", cards: [1, "ok"], day: "2026" })).toMatchObject({
+      spent: 0,
+      quizLevel: 1,
+      learningLanguage: null,
+      cards: ["ok"],
+      day: "",
+    });
+  });
+
+  it("tiene separati i villaggi dei bambini", async () => {
+    await getVillageStorage("primary").save(withCard(DEFAULT_VILLAGE, "food-cheese"));
+    expect((await getVillageStorage("child-b").load()).cards).toEqual([]);
+    expect((await getVillageStorage("primary").load()).cards).toEqual(["food-cheese"]);
+  });
+});
+
+describe("modalità apparecchio", () => {
+  it("ha passaggi di cura per ogni tipo, con almeno uno a tempo", () => {
+    for (const type of BRACES_TYPES) {
+      expect(BRACES_STEPS[type].length).toBeGreaterThan(1);
+      expect(BRACES_STEPS[type].some((step) => step.timed)).toBe(true);
+    }
+  });
+
+  it("scarta valori non validi e tiene i giorni in ordine, una volta sola", () => {
+    expect(normalizeBraces({ type: "magic", careSeconds: 45, alignerHours: 30, elasticColor: "gold" })).toMatchObject({
+      type: "fixed",
+      careSeconds: 60,
+      alignerHours: 0,
+      elasticColor: "blue",
+    });
+    const day = new Date(2026, 9, 27, 20).getTime();
+    expect(withCareDay(withCareDay(DEFAULT_BRACES, day), day).careDays).toEqual([localDateKey(day)]);
+  });
+
+  it("conta la serie fino a ieri finché oggi la cura non è fatta", () => {
+    const today = new Date(2026, 9, 27, 7).getTime();
+    const days = [24, 25, 26].map((date) => localDateKey(new Date(2026, 9, date, 20).getTime()));
+    expect(careStreak(days, today)).toBe(3);
+    expect(careStreak([...days, localDateKey(today)], today)).toBe(4);
+    expect(careStreak([localDateKey(new Date(2026, 9, 20).getTime())], today)).toBe(0);
+  });
+
+  it("riconosce la settimana con l'apparecchio pulito", () => {
+    const week = [1, 2, 3, 4, 5, 6, 7].map((date) => localDateKey(new Date(2026, 9, date, 20).getTime()));
+    expect(hadCleanWeek(week)).toBe(true);
+    expect(hadCleanWeek(week.filter((_, index) => index !== 3))).toBe(false);
+  });
+
+  it("dopo aver tolto l'apparecchio la creatura brilla per due settimane", () => {
+    const removedAt = new Date(2026, 9, 27, 18).getTime();
+    const off = { enabled: false, removedAt };
+    expect(showsNewSmile(off, new Date(2026, 9, 27, 9).getTime())).toBe(true);
+    expect(showsNewSmile(off, new Date(2026, 10, 9, 21).getTime())).toBe(true);
+    expect(showsNewSmile(off, new Date(2026, 10, 10, 8).getTime())).toBe(false);
+    expect(showsNewSmile({ enabled: true, removedAt }, removedAt)).toBe(false);
+    expect(showsNewSmile({ enabled: false, removedAt: null }, removedAt)).toBe(false);
+  });
+
+  it("salva l'apparecchio solo nel profilo del bambino", async () => {
+    await getBracesStorage("child-b").save({ ...DEFAULT_BRACES, enabled: true, type: "aligners" });
+    expect((await getBracesStorage("primary").load()).enabled).toBe(false);
+    expect((await getBracesStorage("child-b").load())).toMatchObject({ enabled: true, type: "aligners" });
+  });
+});
+
+describe("villaggio: sera, piazza, topolino, orto, laboratorio e biblioteca", () => {
+  it("la sera dorme e chiude i giochi, se il genitore non lo spegne", () => {
+    const at = (hour: number, minute = 0) => new Date(2026, 9, 27, hour, minute).getTime();
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(20, 29))).toBe(false);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(20, 30))).toBe(true);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(6, 29))).toBe(true);
+    expect(isVillageAsleep(DEFAULT_VILLAGE, at(6, 30))).toBe(false);
+    expect(isVillageAsleep({ ...DEFAULT_VILLAGE, bedtime: "19:30" }, at(19, 45))).toBe(true);
+    expect(isVillageAsleep({ ...DEFAULT_VILLAGE, nightRest: false }, at(23))).toBe(false);
+    const free = { ...DEFAULT_VILLAGE, energyLimit: false };
+    expect(spendEnergy(free, [], at(21))).toBeNull();
+    expect(spendEnergy({ ...free, nightRest: false }, [], at(21))).not.toBeNull();
+  });
+
+  it("il mostro della placca conta le sessioni complete da lunedì a domenica", () => {
+    const wednesday = new Date(2026, 9, 28, 12).getTime();
+    expect(weekKey(wednesday)).toBe("2026-10-26");
+    expect(weekKey(new Date(2026, 10, 1, 21).getTime())).toBe("2026-10-26");
+    expect(weekKey(new Date(2026, 10, 2, 7).getTime())).toBe("2026-11-02");
+    const history = [
+      session(new Date(2026, 9, 25, 20).getTime()),
+      session(new Date(2026, 9, 26, 8).getTime()),
+      session(new Date(2026, 9, 27, 20).getTime()),
+      session(new Date(2026, 9, 27, 8).getTime(), false),
+    ];
+    expect(bossHits(history, wednesday)).toBe(2);
+    expect(BOSS_HP).toBe(10);
+  });
+
+  it("il topolino segna ogni dente da latte una volta sola e scarta dati non validi", () => {
+    const now = new Date(2026, 9, 27, 18).getTime();
+    const once = withLostTooth(withLostTooth(DEFAULT_VILLAGE, "lower-left-0", now), "lower-left-0", now);
+    expect(once.lostTeeth).toEqual([{ id: "lower-left-0", day: "2026-10-27" }]);
+    expect(withoutLostTooth(once, "lower-left-0").lostTeeth).toEqual([]);
+    expect(
+      normalizeVillage({ lostTeeth: [{ id: "upper-right-7", day: "2026-10-27" }, { id: "upper-right-1", day: "ieri" }, { id: "upper-right-1", day: "2026-10-01" }] })
+        .lostTeeth,
+    ).toEqual([{ id: "upper-right-1", day: "2026-10-01" }]);
+  });
+
+  it("i nuovi dati del villaggio si normalizzano (e quindi passano dal backup)", () => {
+    expect(normalizeVillage({})).toMatchObject({ nightRest: true, bedtime: "20:30", gardenBest: 0, bubbles: [], bossWeeks: [], storiesRead: [] });
+    expect(
+      normalizeVillage({ nightRest: false, bedtime: "23:00", gardenBest: 99, bubbles: ["rainbow", "nope"], bossWeeks: ["2026-10-26", "x"], storiesRead: ["water", "x"] }),
+    ).toMatchObject({ nightRest: false, bedtime: "20:30", gardenBest: 6, bubbles: ["rainbow"], bossWeeks: ["2026-10-26"], storiesRead: ["water"] });
+  });
+
+  it("l'orto mescola sei cibi, metà amici dei denti, con nomi in tutte le lingue", () => {
+    const round = gardenRound(seeded(3));
+    expect(round).toHaveLength(6);
+    expect(round.filter((food) => food.group === "friend")).toHaveLength(3);
+    for (const food of FOODS) {
+      for (const locale of SUPPORTED_LOCALES) expect(food.name[locale].length, `${food.id}/${locale}`).toBeGreaterThan(1);
+    }
+  });
+
+  it("il laboratorio usa i tesori trovati senza consumarli", () => {
+    const none = { "bubble-pearl": 0, "fresh-leaf": 0, "spark-crystal": 0, "moon-shard": 0, "smile-star": 0 };
+    const rainbow = BUBBLE_RECIPES.find((recipe) => recipe.id === "rainbow")!;
+    expect(canBrew(rainbow, none)).toBe(false);
+    expect(missingMaterials(rainbow, { ...none, "bubble-pearl": 1 })).toEqual({ "smile-star": 1 });
+    expect(canBrew(rainbow, { ...none, "bubble-pearl": 1, "smile-star": 3 })).toBe(true);
+    for (const recipe of BUBBLE_RECIPES) {
+      for (const locale of SUPPORTED_LOCALES) expect(recipe.name[locale].length).toBeGreaterThan(3);
+    }
+  });
+
+  it("la piazza conosce le feste e la prossima in arrivo", () => {
+    expect(currentEvent(new Date(2026, 9, 31, 10).getTime())?.id).toBe("halloween");
+    expect(currentEvent(new Date(2026, 9, 27, 10).getTime())).toBeNull();
+    const next = nextEvent(new Date(2026, 9, 27, 10).getTime());
+    expect(next.event.id).toBe("halloween");
+    expect(next.starts.getDate()).toBe(31);
+    expect(nextEvent(new Date(2026, 11, 28).getTime()).event.id).toBe("oralHealthDay");
+  });
+
+  it("le storie hanno quattro pagine in ogni lingua", () => {
+    for (const story of STORIES) {
+      for (const locale of SUPPORTED_LOCALES) {
+        expect(story.text[locale].pages, `${story.id}/${locale}`).toHaveLength(4);
+        expect(story.text[locale].title.length).toBeGreaterThan(3);
+      }
+    }
+  });
+});

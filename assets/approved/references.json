@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "boards": {
+    "ac": {
+      "file": "a-c.png",
+      "sha256": "b5357ee22578085d571f4d35f782cff6260dcca21e19fd67a38fc6a5545b7a52"
+    },
+    "def": {
+      "file": "d-e-f.png",
+      "sha256": "80979cadf3b4de5401fb23c78699f5dab5c296c395dc010a3b7e53fc5ac61fcb"
+    },
+    "i": {
+      "file": "i.png",
+      "sha256": "0ecad33271c6a8f83b1306db16542d899c8fcc4433dbf48add3539412c797742"
+    }
+  },
+  "screens": {
+    "adventure": {
+      "letter": "A",
+      "board": "ac",
+      "home": [
+        33,
+        250,
+        231,
+        636
+      ],
+      "session": [
+        285,
+        250,
+        220,
+        636
+      ]
+    },
+    "arcade": {
+      "letter": "C",
+      "board": "ac",
+      "home": [
+        1033,
+        250,
+        233,
+        636
+      ],
+      "session": [
+        1291,
+        250,
+        222,
+        636
+      ]
+    },
+    "cosmos": {
+      "letter": "D",
+      "board": "def",
+      "home": [
+        32,
+        185,
+        261,
+        643
+      ],
+      "session": [
+        328,
+        185,
+        256,
+        643
+      ]
+    },
+    "garden": {
+      "letter": "E",
+      "board": "def",
+      "home": [
+        619,
+        185,
+        256,
+        643
+      ],
+      "session": [
+        907,
+        185,
+        251,
+        643
+      ]
+    },
+    "bubbles": {
+      "letter": "F",
+      "board": "def",
+      "home": [
+        1193,
+        185,
+        261,
+        643
+      ],
+      "session": [
+        1488,
+        185,
+        256,
+        643
+      ]
+    },
+    "underwater": {
+      "letter": "I",
+      "board": "i",
+      "home": [
+        1035,
+        182,
+        230,
+        690
+      ],
+      "session": [
+        1288,
+        186,
+        228,
+        684
+      ]
+    }
+  }
+}

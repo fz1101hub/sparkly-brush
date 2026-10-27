@@ -1,12 +1,25 @@
 import type { BrushSession } from "@/lib/brush-types";
-import { DEFAULT_APP_PREFERENCES, type AppPreferences } from "@/lib/preferences";
-import type { ParentReward } from "@/lib/parent-rewards";
+import {
+  DEFAULT_APP_PREFERENCES,
+  type AppPreferences,
+} from "@/lib/preferences";
+import { isLanguagePreference } from "@/lib/locale-types";
+import {
+  MAX_PARENT_REWARDS,
+  normalizeParentRewards as normalizeStoredParentRewards,
+  type ParentReward,
+} from "@/lib/parent-rewards";
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import {
   createLifetimeProgress,
   normalizeLifetimeProgress,
   type LifetimeProgress,
 } from "@/lib/lifetime-progress";
+import { isAppThemeId, type AppThemeId } from "@/lib/app-themes";
+import { normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { normalizeExtras, type Extras } from "@/lib/extras";
+import { validateReminders, type ReminderSettings } from "@/lib/reminders";
+import { normalizeVillage, type VillageState } from "@/lib/village";
 import {
   DEFAULT_CUSTOMIZATION_STATE,
   isCustomizationItemId,
@@ -17,6 +30,8 @@ import {
 
 export const BACKUP_PREFIX = "BRUSHLINGS-BACKUP-2:";
 const LEGACY_BACKUP_PREFIX = "BRUSHLINGS-BACKUP-1:";
+/** Text codes carry at most the 120 most recent sessions. */
+const LEGACY_BACKUP_HISTORY_LIMIT = 120;
 
 export type PortableBrushlingProfile = {
   selectedId: BrushlingId;
@@ -46,6 +61,17 @@ export type BrushlingsBackupManifest = {
   preferences: AppPreferences;
   parentRewards: ParentReward[];
   lifetimeProgress: LifetimeProgress;
+  /**
+   * Village and braces mode (27 October 2026). Files written before have neither: restoring one
+   * leaves the child's current village and braces as they are.
+   */
+  village?: VillageState;
+  braces?: BracesSettings;
+  /** The child's theme and reminder times; older files leave the current ones as they are. */
+  themeId?: AppThemeId;
+  reminders?: ReminderSettings;
+  /** Streak days, session length and creature names (voci 16, 57, 62, 66). */
+  extras?: Extras;
 };
 
 function normalizeOwnedIds(value: unknown): CustomizationItemId[] {
@@ -101,7 +127,7 @@ function normalizeHistory(value: unknown): BrushSession[] {
     };
   });
   const byId = new Map(sessions.map((session) => [session.id, session]));
-  return [...byId.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, 120);
+  return [...byId.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, LEGACY_BACKUP_HISTORY_LIMIT);
 }
 
 function normalizePreferences(value: unknown): AppPreferences {
@@ -112,12 +138,15 @@ function normalizePreferences(value: unknown): AppPreferences {
     soundsEnabled: raw.soundsEnabled !== false,
     musicEnabled: raw.musicEnabled === true,
     hapticsEnabled: raw.hapticsEnabled !== false,
+    language: isLanguagePreference(raw.language) ? raw.language : "system",
+    parentGateEnabled: raw.parentGateEnabled === true,
   };
 }
 
+/** Strict on the fields every backup has; baselines and reached dates are validated as stored. */
 function normalizeParentRewards(value: unknown): ParentReward[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is ParentReward => {
+  return normalizeStoredParentRewards(value.filter((item): item is ParentReward => {
     if (!item || typeof item !== "object") return false;
     const raw = item as Partial<ParentReward>;
     return typeof raw.id === "string"
@@ -127,7 +156,7 @@ function normalizeParentRewards(value: unknown): ParentReward[] {
       && raw.target >= 1
       && typeof raw.createdAt === "number"
       && (raw.deliveredAt === null || typeof raw.deliveredAt === "number");
-  }).slice(0, 40);
+  }).slice(0, MAX_PARENT_REWARDS));
 }
 
 export function createBackup(
@@ -142,7 +171,7 @@ export function createBackup(
   },
 ): BrushlingsBackup {
   const realHistory = history.filter((session) => session.source !== "demo");
-  const recentHistory = realHistory.slice(0, 120);
+  const recentHistory = realHistory.slice(0, LEGACY_BACKUP_HISTORY_LIMIT);
   return {
     format: "brushlings-backup",
     version: 2,
@@ -168,6 +197,11 @@ export function createBackupManifest(
   extras?: {
     preferences?: AppPreferences;
     parentRewards?: ParentReward[];
+    village?: VillageState;
+    braces?: BracesSettings;
+    themeId?: AppThemeId;
+    reminders?: ReminderSettings;
+    extras?: Extras;
   },
 ): BrushlingsBackupManifest {
   return {
@@ -181,7 +215,22 @@ export function createBackupManifest(
     preferences: extras?.preferences ?? DEFAULT_APP_PREFERENCES,
     parentRewards: extras?.parentRewards ?? [],
     lifetimeProgress,
+    ...(extras?.village ? { village: extras.village } : {}),
+    ...(extras?.braces ? { braces: extras.braces } : {}),
+    ...(extras?.themeId ? { themeId: extras.themeId } : {}),
+    ...(extras?.reminders ? { reminders: extras.reminders } : {}),
+    ...(extras?.extras ? { extras: extras.extras } : {}),
   };
+}
+
+/** Invalid reminder times in a file are dropped: the phone keeps its own. */
+function readReminders(value: unknown): ReminderSettings | undefined {
+  if (value === undefined) return undefined;
+  try {
+    return validateReminders(value as ReminderSettings);
+  } catch {
+    return undefined;
+  }
 }
 
 export function parseBackupManifest(json: string): BrushlingsBackupManifest {
@@ -206,6 +255,7 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
   const ownedIds = normalizeOwnedIds(rawCustomization?.ownedIds);
   const lifetimeProgress = normalizeLifetimeProgress(raw.lifetimeProgress);
   if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
+  const reminders = readReminders(raw.reminders);
 
   return {
     format: "brushlings-backup",
@@ -229,7 +279,46 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
     preferences: normalizePreferences(raw.preferences),
     parentRewards: normalizeParentRewards(raw.parentRewards),
     lifetimeProgress,
+    ...(raw.village !== undefined ? { village: normalizeVillage(raw.village) } : {}),
+    ...(raw.braces !== undefined ? { braces: normalizeBraces(raw.braces) } : {}),
+    ...(isAppThemeId(raw.themeId) ? { themeId: raw.themeId } : {}),
+    ...(reminders ? { reminders } : {}),
+    ...(raw.extras !== undefined ? { extras: normalizeExtras(raw.extras) } : {}),
   };
+}
+
+/**
+ * A text code is plain JSON, so its lifetime aggregates are only as trustworthy as their
+ * consistency with the sessions it carries. When the archived history is complete (codes keep
+ * the 120 most recent sessions) the counters must match it exactly; otherwise they must at least
+ * cover it. Every code must also respect the per-session rules, unchanged since v2 codes exist:
+ * at most 60 XP per completed and 20 per incomplete session, one collectible per completion,
+ * 30 daily-mission coins per day (two completions) and one perfect day per two completions.
+ */
+function assertLegacyProgressMatchesHistory(history: BrushSession[], progress: LifetimeProgress): void {
+  const completedInHistory = history.filter((session) => session.completed).length;
+  const secondsInHistory = history.reduce((total, session) => total + session.durationSeconds, 0);
+  const historyComplete = history.length < LEGACY_BACKUP_HISTORY_LIMIT;
+  const coversHistory = historyComplete
+    ? progress.attemptedSessions === history.length
+      && progress.completedSessions === completedInHistory
+      && progress.totalBrushingSeconds === secondsInHistory
+    : progress.attemptedSessions >= history.length
+      && progress.completedSessions >= completedInHistory
+      && progress.totalBrushingSeconds >= secondsInHistory;
+  const incompleteSessions = progress.attemptedSessions - progress.completedSessions;
+  const collectibles = Object.values(progress.itemCounts).reduce((total, count) => total + count, 0);
+  const withinRules = incompleteSessions >= 0
+    && progress.rewardedBrushingSeconds <= progress.totalBrushingSeconds
+    && progress.xp <= progress.completedSessions * 60 + incompleteSessions * 20
+    && collectibles <= progress.completedSessions
+    && progress.dailyBonusCoins <= progress.completedSessions * 15
+    && progress.perfectDays <= Math.floor(progress.completedSessions / 2)
+    && progress.longestStreakDays <= progress.completedSessions
+    && progress.currentStreakDays <= progress.longestStreakDays;
+  if (!coversHistory || !withinRules) {
+    throw new Error("Progressi del backup non coerenti con lo storico");
+  }
 }
 
 export function parseBackup(code: string): BrushlingsBackup {
@@ -269,6 +358,7 @@ export function parseBackup(code: string): BrushlingsBackup {
     ? normalizeLifetimeProgress(raw.lifetimeProgress)
     : createLifetimeProgress(history);
   if (!lifetimeProgress) throw new Error("Progressione lifetime non valida");
+  if (raw.version === 2) assertLegacyProgressMatchesHistory(history, lifetimeProgress);
 
   return {
     format: "brushlings-backup",

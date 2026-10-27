@@ -12,6 +12,8 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("react-native-ble-plx", () => ({ BleManager: class {} }));
 
+import { Platform } from "react-native";
+
 import type { BleClientEvents, ToothbrushDevice } from "@/lib/brush-types";
 import { NativeSonicareClient } from "@/lib/sonicare-client.native";
 import { SONICARE } from "@/lib/sonicare-uuids";
@@ -39,6 +41,10 @@ function sessionPayload(handleTimestamp: number, sessionId: number, duration = 1
     0,
     0,
   ];
+}
+
+function missingSessionCountError(): Error & { errorCode: number } {
+  return Object.assign(new Error("CharacteristicNotFound: sessionCount"), { errorCode: 404 });
 }
 
 class FakeSubscription {
@@ -137,17 +143,45 @@ class FakeManager {
   devices: FakeDevice[] = [];
   failServicesCount = 0;
   autoScanResult = true;
+  // When set, the scan reports these peripherals in order instead of a fresh Kids handle.
+  scanDevices: FakeDevice[] | null = null;
+  // When set, the scan fails immediately with this react-native-ble-plx error.
+  scanError: (Error & { errorCode?: number }) | null = null;
   deferConnect = false;
   releaseConnect: (() => void) | null = null;
+  adapterState = "PoweredOn";
   adapterSubscription = new FakeSubscription();
+  stateListeners: ((state: string) => void)[] = [];
+  stateSubscriptions: FakeSubscription[] = [];
   stopDeviceScan = vi.fn();
   cancelTransaction = vi.fn(async () => undefined);
   destroy = vi.fn();
-  onStateChange = vi.fn((callback: (state: string) => void) => {
-    callback("PoweredOn");
-    return this.adapterSubscription;
+  // Like react-native-ble-plx: one subscription per listener, current state on request.
+  onStateChange = vi.fn((callback: (state: string) => void, emitCurrentState?: boolean) => {
+    const subscription = this.stateSubscriptions.length === 0
+      ? this.adapterSubscription
+      : new FakeSubscription();
+    this.stateSubscriptions.push(subscription);
+    this.stateListeners.push(callback);
+    if (emitCurrentState) callback(this.adapterState);
+    return subscription;
   });
+  emitState(state: string) {
+    this.adapterState = state;
+    this.stateListeners.forEach((listener) => listener(state));
+  }
   startDeviceScan = vi.fn((_uuids, _options, callback) => {
+    if (this.scanError) {
+      callback(this.scanError, null);
+      return;
+    }
+    if (this.scanDevices) {
+      for (const advertised of this.scanDevices) {
+        this.devices.push(advertised);
+        callback(null, advertised);
+      }
+      return;
+    }
     const device = new FakeDevice();
     if (this.failServicesCount > 0) {
       this.failServicesCount -= 1;
@@ -178,7 +212,26 @@ function createEvents() {
 describe("NativeSonicareClient", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("preserva modello e firmware quando arriva una notifica batteria", async () => {
+  it("attende advertising Kids lento ma chiude la scansione dopo 45 secondi", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.autoScanResult = false;
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    const operation = client.scanAndConnect();
+    // Attach the rejection handler immediately to avoid an unhandled rejection.
+    const result = operation.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(manager.stopDeviceScan).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
+    const error = await result;
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("Spazzolino non trovato");
+    expect(manager.stopDeviceScan).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("preserva modello riportato e firmware quando arriva una notifica batteria", async () => {
     const manager = new FakeManager();
     const { events, deviceUpdates } = createEvents();
     const client = new NativeSonicareClient(events, manager as never);
@@ -187,7 +240,21 @@ describe("NativeSonicareClient", () => {
     const device = manager.devices[0];
     device.monitors.get(SONICARE.characteristics.batteryLevel)?.(null, { value: b64([42]) });
     const last = deviceUpdates.at(-1);
-    expect(last).toMatchObject({ model: "HX6322/04 · HX6340", firmware: "1.2.3", battery: 42 });
+    expect(last).toMatchObject({ model: "HX6340", firmware: "1.2.3", battery: 42 });
+  });
+
+  it("legge in via sperimentale il tempo motore e il quadrante del manico (lotto 11)", async () => {
+    const manager = new FakeManager();
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    const device = manager.devices[0];
+    // The default fake answers a single byte: too short for the 32-bit motor time, so it is unknown.
+    expect(deviceUpdates.at(-1)?.motorRuntimeSeconds).toBeUndefined();
+    device.monitors.get(SONICARE.characteristics.quadPacer)?.(null, { value: b64([2]) });
+    expect(vi.mocked(events.onLiveData).mock.calls.at(-1)?.[0]).toMatchObject({ quadrant: 2 });
+    device.monitors.get(SONICARE.characteristics.quadPacer)?.(null, { value: b64([9]) });
+    expect(vi.mocked(events.onLiveData).mock.calls.at(-1)?.[0]).toMatchObject({ quadrant: null });
   });
 
   it("rimuove tutti i monitor al disconnect e ignora callback della connessione precedente", async () => {
@@ -199,7 +266,7 @@ describe("NativeSonicareClient", () => {
 
     const first = manager.devices[0];
     const staleBatteryCallback = first.monitors.get(SONICARE.characteristics.batteryLevel)!;
-    expect(first.monitorSubscriptions).toHaveLength(5);
+    expect(first.monitorSubscriptions).toHaveLength(6);
     await client.disconnect();
     expect(first.monitorSubscriptions.every((item) => item.remove.mock.calls.length === 1)).toBe(true);
     expect(first.disconnectSubscription.remove).toHaveBeenCalledTimes(1);
@@ -233,7 +300,7 @@ describe("NativeSonicareClient", () => {
 
     await expect(client.scanAndConnect()).resolves.toBeUndefined();
     expect(manager.devices).toHaveLength(2);
-    expect(manager.devices[1].monitorSubscriptions).toHaveLength(5);
+    expect(manager.devices[1].monitorSubscriptions).toHaveLength(6);
     client.destroy();
   });
 
@@ -322,7 +389,7 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 
-  it("non avanza una prima sync se il conteggio storico non è disponibile", async () => {
+  it("legge e valida solo latest quando sessionCount è assente alla prima sync", async () => {
     const manager = new FakeManager();
     const { events } = createEvents();
     const client = new NativeSonicareClient(events, manager as never);
@@ -330,15 +397,74 @@ describe("NativeSonicareClient", () => {
     configureStoredSessions(manager.devices[0], {
       latest: 42,
       count: 2,
-      countError: new Error("sessionCount unavailable"),
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 42: 900 },
+    });
+    vi.useFakeTimers();
+
+    const syncing = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    await expect(syncing).resolves.toMatchObject([
+      { sessionId: 42, durationSeconds: 120 },
+    ]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(1);
+    expect(events.onLog).toHaveBeenCalledWith(
+      "warning",
+      "Prima sincronizzazione limitata all'ultima sessione: le sessioni precedenti non vengono recuperate",
+    );
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("è idempotente lato client dopo il fallback latest con cursore persistito", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 42: 900 },
+    });
+    vi.useFakeTimers();
+
+    const firstSync = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    await expect(firstSync).resolves.toHaveLength(1);
+    const writesAfterFirstSync = manager.devices[0].writeCharacteristicWithResponseForService.mock.calls.length;
+
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 42, acceptNextSession: false }))
+      .resolves.toEqual([]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(
+      writesAfterFirstSync,
+    );
+    vi.useRealTimers();
+    client.destroy();
+  });
+
+  it("recupera il backfill noto alla prima sync quando sessionCount è presente e valido", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 42,
+      count: 2,
       handleTime: 1_000,
       recordTimes: { 41: 800, 42: 900 },
     });
+    vi.useFakeTimers();
 
-    await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
-    );
-    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    const syncing = client.syncStoredSessionsSince(null);
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([41, 42]);
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
     client.destroy();
   });
 
@@ -356,8 +482,51 @@ describe("NativeSonicareClient", () => {
     });
 
     await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
+      "Payload sessionCount BLE non valido",
     );
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("rifiuta lo storico di un manico non azzerato dopo Dimentica manico", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 101,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 100: 800, 101: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince({
+      lastSessionId: 101,
+      acceptNextSession: true,
+      resetBaselineSessionId: 101,
+    })).rejects.toThrow("reset di fabbrica");
+    expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it("resta fail-closed dopo reset se sessionCount è assente", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 1,
+      count: 1,
+      countError: missingSessionCountError(),
+      handleTime: 1_000,
+      recordTimes: { 1: 900 },
+    });
+
+    await expect(client.syncStoredSessionsSince({
+      lastSessionId: 101,
+      acceptNextSession: true,
+      resetBaselineSessionId: 101,
+    })).rejects.toThrow("Conteggio storico BLE non disponibile: il reset non può essere verificato");
     expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
   });
@@ -380,7 +549,7 @@ describe("NativeSonicareClient", () => {
     });
 
     await expect(client.syncStoredSessionsSince(null)).rejects.toThrow(
-      "Conteggio storico BLE non disponibile",
+      "Payload sessionCount BLE non valido",
     );
     expect(manager.devices[0].writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
@@ -431,6 +600,52 @@ describe("NativeSonicareClient", () => {
     client.destroy();
   });
 
+  it("rilegge il record se il manico espone ancora quello precedente subito dopo la selezione", async () => {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    const device = manager.devices[0];
+    configureStoredSessions(device, {
+      latest: 42,
+      count: 2,
+      handleTime: 1_000,
+      recordTimes: { 41: 800, 42: 900 },
+    });
+    // A slow handle keeps the previous record loaded for the first read after each selection.
+    let loaded = 40;
+    let selected = 40;
+    let readsSinceSelection = 0;
+    const configuredWrite = device.writeCharacteristicWithResponseForService.getMockImplementation();
+    device.writeCharacteristicWithResponseForService.mockImplementation(async (service, characteristic, value, id) => {
+      if (characteristic === SONICARE.characteristics.activeSessionId) {
+        const bytes = toByteArray(value);
+        selected = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+        readsSinceSelection = 0;
+      }
+      return configuredWrite!(service, characteristic, value, id);
+    });
+    const configuredRead = device.readCharacteristicForService.getMockImplementation();
+    device.readCharacteristicForService.mockImplementation(async (service: string, characteristic: string) => {
+      if (characteristic !== SONICARE.characteristics.sessionData) return configuredRead!(service, characteristic);
+      readsSinceSelection += 1;
+      if (readsSinceSelection > 1) loaded = selected;
+      return { value: b64(sessionPayload(800 + (loaded - 41) * 100, loaded)) };
+    });
+    vi.useFakeTimers();
+
+    const syncing = client.syncStoredSessionsSince({ lastSessionId: 40, acceptNextSession: false });
+    await vi.runAllTimersAsync();
+    const sessions = await syncing;
+
+    expect(sessions.map((session) => session.sessionId)).toEqual([41, 42]);
+    const dataReads = device.readCharacteristicForService.mock.calls
+      .filter(([, characteristic]) => characteristic === SONICARE.characteristics.sessionData);
+    expect(dataReads).toHaveLength(4);
+    vi.useRealTimers();
+    client.destroy();
+  });
+
   it("scarta una sync del vecchio manico dopo disconnect e reconnect", async () => {
     const manager = new FakeManager();
     const { events } = createEvents();
@@ -462,5 +677,268 @@ describe("NativeSonicareClient", () => {
     expect(first.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     expect(second.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
     client.destroy();
+  });
+
+  describe("permesso Bluetooth e stato dell'adattatore", () => {
+    it("su iOS crea il BleManager solo al primo collegamento, non all'avvio", async () => {
+      const manager = new FakeManager();
+      const factory = vi.fn(() => manager as never);
+      const { events } = createEvents();
+      const client = new NativeSonicareClient(events, factory);
+
+      await client.initialize();
+      expect(factory).not.toHaveBeenCalled();
+
+      await client.scanAndConnect();
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(events.onAdapterState).toHaveBeenCalledWith("PoweredOn");
+      client.destroy();
+      expect(manager.destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it("chiudendo l'app senza collegarsi non crea mai il BleManager", () => {
+      const factory = vi.fn(() => new FakeManager() as never);
+      const client = new NativeSonicareClient(createEvents().events, factory);
+      void client.initialize();
+      client.destroy();
+      expect(factory).not.toHaveBeenCalled();
+    });
+
+    it("su Android mostra lo stato dell'adattatore fin dall'avvio", async () => {
+      const previous = Platform.OS;
+      Platform.OS = "android";
+      try {
+        const factory = vi.fn(() => new FakeManager() as never);
+        const { events } = createEvents();
+        const client = new NativeSonicareClient(events, factory);
+        await client.initialize();
+        expect(factory).toHaveBeenCalledTimes(1);
+        expect(events.onAdapterState).toHaveBeenCalledWith("PoweredOn");
+        client.destroy();
+      } finally {
+        Platform.OS = previous;
+      }
+    });
+
+    it("attende che il Bluetooth sia pronto prima di cercare lo spazzolino", async () => {
+      const manager = new FakeManager();
+      manager.adapterState = "Unknown";
+      const client = new NativeSonicareClient(createEvents().events, manager as never);
+
+      const connecting = client.scanAndConnect();
+      await Promise.resolve();
+      expect(manager.startDeviceScan).not.toHaveBeenCalled();
+
+      manager.emitState("PoweredOn");
+      await connecting;
+      expect(manager.startDeviceScan).toHaveBeenCalledTimes(1);
+      client.destroy();
+    });
+
+    it.each([
+      ["PoweredOff", "Bluetooth spento: attivalo e riprova"],
+      ["Unauthorized", "Autorizzazione Bluetooth non concessa"],
+      ["Unsupported", "Bluetooth non supportato da questo dispositivo"],
+    ])("con adattatore %s spiega il motivo senza avviare la scansione", async (state, message) => {
+      const manager = new FakeManager();
+      manager.adapterState = state;
+      const { events } = createEvents();
+      const client = new NativeSonicareClient(events, manager as never);
+
+      await expect(client.scanAndConnect()).rejects.toThrow(message);
+      expect(manager.startDeviceScan).not.toHaveBeenCalled();
+      expect(events.onStatus).toHaveBeenLastCalledWith("error", message);
+      client.destroy();
+    });
+  });
+});
+
+describe("abbinamento al manico", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function sonicare(id: string, name: string | null = "Sonicare4Kids"): FakeDevice {
+    const device = new FakeDevice();
+    device.id = id;
+    device.name = name as string;
+    device.localName = name as string;
+    if (!name) device.serviceUUIDs = [];
+    return device;
+  }
+
+  it("con un manico abbinato ignora gli altri Sonicare e si collega solo a quello, anche se avvisa senza nome", async () => {
+    const manager = new FakeManager();
+    const sibling = sonicare("sibling-brush");
+    const paired = sonicare("kids-brush", null);
+    manager.scanDevices = [sibling, paired];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect({ mode: "paired", deviceId: "kids-brush" });
+
+    expect(sibling.connect).not.toHaveBeenCalled();
+    expect(paired.connect).toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "kids-brush" });
+    expect(events.onLog).toHaveBeenCalledWith("info", "Scansione BLE avviata: cerco il manico abbinato");
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Trovato un altro manico: ignorato finché non cambi manico");
+  });
+
+  it("segnala che il manico abbinato non è in zona invece di collegarsi a un altro", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.scanDevices = [sonicare("sibling-brush")];
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const result = client.scanAndConnect({ mode: "paired", deviceId: "kids-brush" }).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(45_000);
+    const error = await result;
+
+    expect((error as Error).message).toBe("Manico abbinato non trovato. Accendilo e tienilo vicino, oppure cambia manico.");
+    expect(manager.devices[0].connect).not.toHaveBeenCalled();
+    expect(manager.stopDeviceScan).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("'cambia manico' salta il manico abbinato e si collega al primo altro Sonicare", async () => {
+    const manager = new FakeManager();
+    const paired = sonicare("kids-brush");
+    const other = sonicare("sibling-brush");
+    manager.scanDevices = [paired, other];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect({ mode: "replace", currentDeviceId: "kids-brush" });
+
+    expect(paired.connect).not.toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "sibling-brush" });
+    expect(events.onStatus).toHaveBeenCalledWith("scanning", "Accendi il nuovo manico e tienilo vicino");
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Manico già abbinato ignorato: accendi il nuovo manico");
+  });
+
+  it("'cambia manico' non si collega mai al manico già abbinato", async () => {
+    vi.useFakeTimers();
+    const manager = new FakeManager();
+    manager.scanDevices = [sonicare("kids-brush")];
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    const result = client.scanAndConnect({ mode: "replace", currentDeviceId: "kids-brush" }).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(45_000);
+    const error = await result;
+
+    expect((error as Error).message).toBe("Nessun altro manico trovato. Accendi il nuovo manico e tienilo vicino.");
+    expect(manager.devices[0].connect).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("senza abbinamento accetta il primo Sonicare e ignora le altre periferiche", async () => {
+    const manager = new FakeManager();
+    const lamp = sonicare("lamp", "Smart Lamp");
+    lamp.serviceUUIDs = [];
+    const kids = sonicare("kids-brush");
+    manager.scanDevices = [lamp, kids];
+    const { events, deviceUpdates } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await client.scanAndConnect();
+
+    expect(lamp.connect).not.toHaveBeenCalled();
+    expect(deviceUpdates.at(-1)).toMatchObject({ id: "kids-brush" });
+    expect(events.onLog).not.toHaveBeenCalledWith("warning", expect.stringContaining("ignorato"));
+  });
+});
+
+describe("errori react-native-ble-plx", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("traduce il codice 601 (Localizzazione spenta su Android ≤ 11) in un messaggio dell'app", async () => {
+    const manager = new FakeManager();
+    manager.scanError = Object.assign(new Error("Location services are disabled"), { errorCode: 601 });
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await expect(client.scanAndConnect()).rejects.toThrow("Location services are disabled");
+
+    const expected = "Attiva la Localizzazione nelle impostazioni di Android: serve per la scansione Bluetooth";
+    expect(events.onStatus).toHaveBeenLastCalledWith("error", expected);
+    expect(events.onLog).toHaveBeenCalledWith("error", expected);
+  });
+
+  it("lascia intatti i messaggi senza codice noto", async () => {
+    const manager = new FakeManager();
+    manager.scanError = Object.assign(new Error("Scan failed"), { errorCode: 9999 });
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+
+    await expect(client.scanAndConnect()).rejects.toThrow("Scan failed");
+    expect(events.onStatus).toHaveBeenLastCalledWith("error", "Scan failed");
+  });
+});
+
+describe("riallineamento dopo un intervallo non recuperabile (B4)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function connectedClient(count: number | null) {
+    const manager = new FakeManager();
+    const { events } = createEvents();
+    const client = new NativeSonicareClient(events, manager as never);
+    await client.scanAndConnect();
+    configureStoredSessions(manager.devices[0], {
+      latest: 300,
+      count: count ?? 0,
+      countError: count === null ? missingSessionCountError() : undefined,
+      handleTime: 1_000_000,
+      recordTimes: {},
+    });
+    return { client, events, device: manager.devices[0] };
+  }
+
+  it("senza richiesta esplicita l'intervallo troppo ampio continua a bloccare la sync", async () => {
+    const { client } = await connectedClient(128);
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 10, acceptNextSession: false }))
+      .rejects.toThrow("Intervallo BLE non sicuro (290 sessioni)");
+  });
+
+  it("su richiesta importa l'ultimo batch che il manico conserva e registra quante sessioni sono perse", async () => {
+    vi.useFakeTimers();
+    const { client, events } = await connectedClient(128);
+    const operation = client.syncStoredSessionsSince(
+      { lastSessionId: 10, acceptNextSession: false },
+      { allowGap: true },
+    );
+    // Each record waits for the handle to load it (180 ms): skip that wait for 128 records.
+    await vi.advanceTimersByTimeAsync(128 * 1_000);
+    const sessions = await operation;
+    vi.useRealTimers();
+    expect(sessions).toHaveLength(128);
+    expect(sessions[0].sessionId).toBe(173);
+    expect(sessions.at(-1)?.sessionId).toBe(300);
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 162 sessioni del manico non recuperabili saltate");
+  });
+
+  it("senza sessionCount riprende dal solo record più recente", async () => {
+    const { client, events } = await connectedClient(null);
+    const sessions = await client.syncStoredSessionsSince(
+      { lastSessionId: 10, acceptNextSession: false },
+      { allowGap: true },
+    );
+    expect(sessions.map((session) => session.sessionId)).toEqual([300]);
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 289 sessioni del manico non recuperabili saltate");
+  });
+
+  it("quando il manico ha scartato parte delle sessioni mancanti riprende da quelle ancora presenti", async () => {
+    const { client, events } = await connectedClient(20);
+    await expect(client.syncStoredSessionsSince({ lastSessionId: 250, acceptNextSession: false }))
+      .rejects.toThrow("Lo storico del manico non contiene più tutte le sessioni mancanti");
+    vi.useFakeTimers();
+    const operation = client.syncStoredSessionsSince(
+      { lastSessionId: 250, acceptNextSession: false },
+      { allowGap: true },
+    );
+    await vi.advanceTimersByTimeAsync(20 * 1_000);
+    const sessions = await operation;
+    vi.useRealTimers();
+    expect(sessions.map((session) => session.sessionId)).toEqual(Array.from({ length: 20 }, (_, i) => 281 + i));
+    expect(events.onLog).toHaveBeenCalledWith("warning", "Riallineamento: 30 sessioni del manico non recuperabili saltate");
   });
 });

@@ -1,7 +1,9 @@
-import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { useCreatureBraces, useNewSmile } from "@/contexts/braces-context";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { BrushlingDefinition } from "@/lib/brushlings";
 
 export function AnimatedBrushling({
@@ -9,16 +11,23 @@ export function AnimatedBrushling({
   level,
   size = 118,
   active,
+  framed = true,
 }: {
   creature: BrushlingDefinition;
   level: number;
   size?: number;
   active: boolean;
+  framed?: boolean;
 }) {
-  const bounce = useRef(new Animated.Value(0)).current;
+  const [bounce] = useState(() => new Animated.Value(0));
+  const reducedMotion = useReducedMotion();
+  // The animated creature is always the child's own: it wears their braces.
+  const braces = useCreatureBraces();
+  const newSmile = useNewSmile();
 
   useEffect(() => {
-    if (!active) {
+    // The bounce is a decorative loop: keep the creature still when motion is reduced.
+    if (!active || reducedMotion) {
       bounce.stopAnimation();
       bounce.setValue(0);
       return;
@@ -30,20 +39,20 @@ export function AnimatedBrushling({
           toValue: 1,
           duration: 460,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(bounce, {
           toValue: 0,
           duration: 460,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]),
     );
 
     loop.start();
     return () => loop.stop();
-  }, [active, bounce]);
+  }, [active, bounce, reducedMotion]);
 
   const translateY = bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
   const rotate = bounce.interpolate({ inputRange: [0, 0.5, 1], outputRange: ["-1deg", "1deg", "-1deg"] });
@@ -52,7 +61,7 @@ export function AnimatedBrushling({
   return (
     <View style={[styles.frame, { width: size, height: size + 8 }]}>
       <Animated.View style={{ transform: [{ translateY }, { rotate }, { scale }] }}>
-        <BrushlingAvatar creature={creature} size={size} level={level} />
+        <BrushlingAvatar framed={framed} creature={creature} size={size} level={level} braces={braces} newSmile={newSmile} />
       </Animated.View>
     </View>
   );

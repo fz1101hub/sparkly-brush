@@ -4,7 +4,9 @@ import {
   DEFAULT_CUSTOMIZATION_STATE,
   availableCoins,
   equipCustomization,
+  normalizePurchaseLedger,
   purchaseCustomization,
+  settlePurchasesAfterHistoryReset,
   spentCoins,
   type CustomizationState,
 } from "@/lib/customization";
@@ -43,5 +45,24 @@ describe("Brushlings customization economy", () => {
 
     expect(spentCoins(historical)).toBe(7);
     expect(availableCoins(40, historical)).toBe(33);
+  });
+
+  it("dopo Cancella storico conserva gli oggetti e fa ripartire il portafoglio da zero", () => {
+    const purchased = purchaseCustomization(DEFAULT_CUSTOMIZATION_STATE, "fresh-garden", 40);
+    expect(purchased).not.toBeNull();
+    const owned = purchased as CustomizationState;
+    // History cleared: earnings drop to 0 while the purchase still costs 28 coins.
+    expect(availableCoins(14, owned)).toBe(0);
+
+    const settled = settlePurchasesAfterHistoryReset(owned);
+    expect(settled.ownedIds).toEqual(owned.ownedIds);
+    expect(settled.equippedHabitatId).toBe(owned.equippedHabitatId);
+    expect(spentCoins(settled)).toBe(0);
+    expect(availableCoins(0, settled)).toBe(0);
+    expect(availableCoins(14, settled)).toBe(14);
+    // The settled entry survives normalization instead of being re-created at full price.
+    expect(normalizePurchaseLedger(settled.purchaseLedger, settled.ownedIds)).toEqual([
+      expect.objectContaining({ itemId: "fresh-garden", pricePaid: 0 }),
+    ]);
   });
 });
