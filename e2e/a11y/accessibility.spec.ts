@@ -174,7 +174,16 @@ test.describe("WCAG automatic audit", () => {
 
     await page.goto("/quiz");
     await page.getByTestId("quiz-start").click();
-    await page.getByTestId("quiz-answer-1").click();
+    const firstItem = page.getByTestId("quiz-item-0");
+    await expect(page.getByTestId("quiz-answer-1").or(firstItem)).toBeVisible();
+    if (await firstItem.isVisible()) {
+      await firstItem.click();
+      await scan(page, testInfo, "quiz-order");
+      await page.getByTestId("quiz-item-2").click();
+      await page.getByTestId("quiz-item-1").click();
+    } else {
+      await page.getByTestId("quiz-answer-1").click();
+    }
     await expect(page.getByTestId("quiz-feedback")).toBeVisible();
     await scan(page, testInfo, "quiz-feedback");
 

@@ -22,7 +22,7 @@ import {
 } from "@/lib/braces";
 import type { BrushSession } from "@/lib/brush-types";
 import { localDateKey } from "@/lib/day-progress";
-import { pickQuizRound, quizOptions } from "@/lib/learning/quiz";
+import { isRightOrder, pickQuizRound, quizOptions } from "@/lib/learning/quiz";
 import { QUIZ_QUESTIONS } from "@/lib/learning/quiz-content";
 import {
   defaultLearningLanguage,
@@ -71,9 +71,9 @@ function session(startedAt: number, completed = true, extra: Partial<BrushSessio
 }
 
 describe("contenuti del quiz", () => {
-  it("ha 30 domande, cinque per categoria, complete in tutte le lingue", () => {
-    expect(QUIZ_QUESTIONS).toHaveLength(30);
-    expect(new Set(QUIZ_QUESTIONS.map((question) => question.id)).size).toBe(30);
+  it("ha 39 domande di quattro tipi, complete in tutte le lingue", () => {
+    expect(QUIZ_QUESTIONS).toHaveLength(39);
+    expect(new Set(QUIZ_QUESTIONS.map((question) => question.id)).size).toBe(39);
     const perCategory = new Map<string, number>();
     for (const question of QUIZ_QUESTIONS) {
       perCategory.set(question.category, (perCategory.get(question.category) ?? 0) + 1);
@@ -82,14 +82,19 @@ describe("contenuti del quiz", () => {
         const text = question.text[locale];
         expect(text.question.trim().length, `${question.id}/${locale}`).toBeGreaterThan(5);
         expect(text.fact.trim().length, `${question.id}/${locale}`).toBeGreaterThan(10);
-        if (question.kind === "choice") {
-          const answers = (text as { answers: readonly string[] }).answers;
+        if (question.kind === "choice" || question.kind === "order") {
+          const answers = "answers" in text ? text.answers : (text as { items: readonly string[] }).items;
           expect(answers).toHaveLength(3);
           expect(new Set(answers).size, `${question.id}/${locale}`).toBe(3);
         }
       }
+      if (question.kind === "choice" && question.pictures) {
+        expect(new Set(question.pictures).size, question.id).toBe(3);
+      }
     }
-    expect([...perCategory.values()]).toEqual([5, 5, 5, 5, 5, 5]);
+    expect(Object.fromEntries(perCategory)).toEqual({ body: 6, hygiene: 6, food: 5, animals: 10, history: 7, world: 5 });
+    expect(QUIZ_QUESTIONS.filter((question) => question.kind === "order")).toHaveLength(4);
+    expect(QUIZ_QUESTIONS.filter((question) => question.id.startsWith("whose-"))).toHaveLength(5);
     expect(QUIZ_QUESTIONS.some((question) => question.level === 1)).toBe(true);
     expect(QUIZ_QUESTIONS.some((question) => question.level === 2)).toBe(true);
   });
@@ -123,6 +128,25 @@ describe("partita del quiz", () => {
       positions.add(options.findIndex((option) => option.correct));
     }
     expect(positions.size).toBeGreaterThan(1);
+  });
+
+  it("mostra le figure accanto alle risposte giuste e sbagliate", () => {
+    const whose = QUIZ_QUESTIONS.find((question) => question.id === "whose-shark")!;
+    const options = quizOptions(whose, "it", { true: "Vero", false: "Falso" }, seeded(4));
+    expect(options.find((option) => option.correct)).toMatchObject({ label: "Dello squalo", picture: "🦈" });
+    expect(options.every((option) => option.picture)).toBe(true);
+  });
+
+  it("«metti in ordine» mescola gli elementi ed è giusto solo dal primo all'ultimo", () => {
+    const order = QUIZ_QUESTIONS.find((question) => question.id === "order-toothbrush")!;
+    const orders = new Set<string>();
+    for (let seed = 1; seed < 20; seed += 1) {
+      orders.add(quizOptions(order, "fr", { true: "Vrai", false: "Faux" }, seeded(seed)).map((option) => option.key).join(""));
+    }
+    expect(orders.size).toBeGreaterThan(1);
+    expect(isRightOrder(["0", "1", "2"], 3)).toBe(true);
+    expect(isRightOrder(["0", "2", "1"], 3)).toBe(false);
+    expect(isRightOrder(["0", "1"], 3)).toBe(false);
   });
 
   it("nelle domande vero/falso segue la risposta salvata", () => {

@@ -12,6 +12,17 @@ async function completeFirstRun(page: Page) {
   await expect(page.getByTestId("today-screen")).toBeVisible();
 }
 
+/** Answers the question on screen, whatever its kind: the first answer, or the items in a row. */
+async function answerQuestion(page: Page) {
+  const firstItem = page.getByTestId("quiz-item-0");
+  await expect(page.getByTestId("quiz-answer-0").or(firstItem)).toBeVisible();
+  if (await firstItem.isVisible()) {
+    for (let item = 0; item < 3; item += 1) await page.getByTestId(`quiz-item-${item}`).click();
+  } else {
+    await page.getByTestId("quiz-answer-0").click();
+  }
+}
+
 async function brushOnce(page: Page) {
   await page.goto("/");
   await page.getByTestId("manual-start-stop").click();
@@ -40,7 +51,7 @@ test.describe("villaggio dei Brushling", () => {
 
     await page.getByTestId("quiz-start").click();
     for (let question = 0; question < 3; question += 1) {
-      await page.getByTestId("quiz-answer-0").click();
+      await answerQuestion(page);
       await expect(page.getByTestId("quiz-feedback")).toBeVisible();
       await page.getByTestId("quiz-next").click();
     }

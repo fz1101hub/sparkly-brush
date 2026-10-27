@@ -17,7 +17,7 @@ import { useI18n } from "@/contexts/locale-context";
 import { useVillage } from "@/contexts/village-context";
 import { useColors } from "@/hooks/use-colors";
 import type { TranslationKey } from "@/lib/i18n";
-import { pickQuizRound, quizOptions, type QuizLevel, type QuizOption } from "@/lib/learning/quiz";
+import { isRightOrder, pickQuizRound, quizOptions, type QuizLevel, type QuizOption } from "@/lib/learning/quiz";
 import type { QuizCategory, QuizQuestion } from "@/lib/learning/quiz-content";
 import { SPEECH_LANGUAGE } from "@/lib/learning/tooth-names";
 import { speak } from "@/lib/speech";
@@ -32,7 +32,8 @@ const CATEGORY_KEYS: Record<QuizCategory, TranslationKey> = {
 };
 
 type Round = { questions: QuizQuestion[]; options: QuizOption[][] };
-type Answer = { option: QuizOption; newCard: boolean };
+/** `chosen`: the key of the answer tapped, or the order the items were tapped in. */
+type Answer = { correct: boolean; chosen: string[]; newCard: boolean };
 
 /** «Quiz del sorriso»: three questions per round, paid with one energy, cards for right answers. */
 export default function QuizScreen() {
@@ -45,6 +46,7 @@ export default function QuizScreen() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [noEnergy, setNoEnergy] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
   const labels = useMemo(() => ({ true: t("quiz.true"), false: t("quiz.false") }), [t]);
 
   const start = async () => {
@@ -58,18 +60,28 @@ export default function QuizScreen() {
       setRound({ questions, options: questions.map((question) => quizOptions(question, locale, labels)) });
       setIndex(0);
       setAnswers([]);
+      setPicked([]);
       setNoEnergy(false);
     } finally {
       setStarting(false);
     }
   };
 
-  const answer = (option: QuizOption) => {
+  const record = (correct: boolean, chosen: string[]) => {
     if (!round || answers[index]) return;
     const question = round.questions[index];
-    const newCard = option.correct && !village.state.cards.includes(question.id);
-    setAnswers((previous) => [...previous, { option, newCard }]);
-    if (option.correct) void village.collectCard(question.id);
+    const newCard = correct && !village.state.cards.includes(question.id);
+    setAnswers((previous) => [...previous, { correct, chosen, newCard }]);
+    if (correct) void village.collectCard(question.id);
+  };
+
+  /** «Metti in ordine»: tap from the first to the last; tapping a placed item takes it back. */
+  const pick = (key: string, total: number) => {
+    if (!round || answers[index]) return;
+    const at = picked.indexOf(key);
+    const next = at >= 0 ? picked.slice(0, at) : [...picked, key];
+    setPicked(next);
+    if (next.length === total) record(isRightOrder(next, total), next);
   };
 
   const readAloud = (question: QuizQuestion, options: QuizOption[]) =>
@@ -109,7 +121,7 @@ export default function QuizScreen() {
 
   // End of the round.
   if (index >= round.questions.length) {
-    const right = answers.filter((item) => item.option.correct).length;
+    const right = answers.filter((item) => item.correct).length;
     const cards = answers.filter((item) => item.newCard).length;
     return (
       <VillageScreen testID="quiz-screen" eyebrow={t("village.school.title")} title={t("quiz.title")}>
@@ -137,46 +149,103 @@ export default function QuizScreen() {
           {question.text[locale].question}
         </Text>
         <VillageButton secondary icon="volume-up" label={t("quiz.listen")} onPress={() => readAloud(question, options)} />
-        <View style={styles.options}>
-          {options.map((option, optionIndex) => {
-            const chosen = given?.option.key === option.key;
-            const reveal = Boolean(given) && option.correct;
-            return (
-              <Pressable
-                key={option.key}
-                testID={`quiz-answer-${optionIndex}`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: Boolean(given), selected: chosen }}
-                disabled={Boolean(given)}
-                onPress={() => answer(option)}
-                style={({ pressed }) => [
-                  styles.option,
-                  {
-                    borderColor: reveal ? "#17633F" : chosen ? "#B42318" : colors.border,
-                    backgroundColor: reveal ? "#E3F6EA" : chosen ? "#FDECEC" : colors.surface,
-                  },
-                  pressed && styles.pressed,
-                ]}
-              >
-                {reveal || chosen ? (
-                  <MaterialIcons
-                    accessible={false}
-                    name={reveal ? "check-circle" : "highlight-off"}
-                    size={24}
-                    color={reveal ? "#17633F" : "#B42318"}
-                  />
-                ) : null}
-                <Text style={[styles.optionText, { color: reveal || chosen ? "#17213C" : colors.foreground }]}>{option.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {question.kind === "order" ? (
+          <>
+            <Text style={[villageStyles.small, { color: colors.muted }]}>{t("quiz.orderHint")}</Text>
+            <View style={styles.options}>
+              {options.map((option, optionIndex) => {
+                const place = (given?.chosen ?? picked).indexOf(option.key);
+                const placed = place >= 0;
+                const rightPlace = Boolean(given) && option.key === String(place);
+                const wrongPlace = Boolean(given) && !rightPlace;
+                return (
+                  <Pressable
+                    key={option.key}
+                    testID={`quiz-item-${optionIndex}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={placed ? t("quiz.orderPlaced", { label: option.label, place: place + 1 }) : option.label}
+                    accessibilityState={{ disabled: Boolean(given), selected: placed }}
+                    disabled={Boolean(given)}
+                    onPress={() => pick(option.key, options.length)}
+                    style={({ pressed }) => [
+                      styles.option,
+                      {
+                        borderColor: rightPlace ? "#17633F" : wrongPlace ? "#B42318" : placed ? colors.primary : colors.border,
+                        backgroundColor: rightPlace ? "#E3F6EA" : wrongPlace ? "#FDECEC" : colors.surface,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <View style={[styles.badge, { backgroundColor: placed ? colors.primary : colors.primarySoft, borderColor: colors.border }]}>
+                      <Text style={[styles.badgeText, { color: placed ? colors.primaryText : colors.foreground }]}>{placed ? place + 1 : ""}</Text>
+                    </View>
+                    <Text style={[styles.optionText, { color: rightPlace || wrongPlace ? "#17213C" : colors.foreground }]}>{option.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {!given && picked.length > 0 ? (
+              <VillageButton secondary icon="undo" label={t("quiz.orderReset")} onPress={() => setPicked([])} />
+            ) : null}
+          </>
+        ) : (
+          <View style={styles.options}>
+            {options.map((option, optionIndex) => {
+              const chosen = given?.chosen[0] === option.key;
+              const reveal = Boolean(given) && option.correct;
+              return (
+                <Pressable
+                  key={option.key}
+                  testID={`quiz-answer-${optionIndex}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
+                  accessibilityState={{ disabled: Boolean(given), selected: chosen }}
+                  disabled={Boolean(given)}
+                  onPress={() => record(option.correct, [option.key])}
+                  style={({ pressed }) => [
+                    styles.option,
+                    {
+                      borderColor: reveal ? "#17633F" : chosen ? "#B42318" : colors.border,
+                      backgroundColor: reveal ? "#E3F6EA" : chosen ? "#FDECEC" : colors.surface,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  {option.picture ? (
+                    <Text accessible={false} importantForAccessibility="no" style={styles.picture}>
+                      {option.picture}
+                    </Text>
+                  ) : null}
+                  {reveal || chosen ? (
+                    <MaterialIcons
+                      accessible={false}
+                      name={reveal ? "check-circle" : "highlight-off"}
+                      size={24}
+                      color={reveal ? "#17633F" : "#B42318"}
+                    />
+                  ) : null}
+                  <Text style={[styles.optionText, { color: reveal || chosen ? "#17213C" : colors.foreground }]}>{option.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
       </VillageCard>
       {given ? (
         <VillageCard>
           <Text testID="quiz-feedback" accessibilityRole="alert" style={[villageStyles.title, { color: colors.foreground }]}>
-            {t(given.option.correct ? "quiz.right" : "quiz.almost")}
+            {t(given.correct ? "quiz.right" : "quiz.almost")}
           </Text>
+          {question.kind === "order" && !given.correct ? (
+            <View style={styles.rightOrder}>
+              <Text style={[villageStyles.body, { color: colors.foreground, fontWeight: "800" }]}>{t("quiz.orderRight")}</Text>
+              {question.text[locale].items.map((item, itemIndex) => (
+                <Text key={item} style={[villageStyles.body, { color: colors.foreground }]}>
+                  {itemIndex + 1}. {item}
+                </Text>
+              ))}
+            </View>
+          ) : null}
           <Text style={[villageStyles.body, { color: colors.foreground }]}>{question.text[locale].fact}</Text>
           {given.newCard ? (
             <Text style={[villageStyles.body, { color: colors.foreground, fontWeight: "800" }]}>{t("quiz.cardWon")}</Text>
@@ -185,7 +254,10 @@ export default function QuizScreen() {
             testID="quiz-next"
             icon="arrow-forward"
             label={t(index + 1 < round.questions.length ? "quiz.next" : "quiz.finish")}
-            onPress={() => setIndex((value) => value + 1)}
+            onPress={() => {
+              setPicked([]);
+              setIndex((value) => value + 1);
+            }}
           />
         </VillageCard>
       ) : null}
@@ -198,4 +270,8 @@ const styles = StyleSheet.create({
   option: { minHeight: 56, borderRadius: 16, borderWidth: 2, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 },
   optionText: { flex: 1, fontSize: 17, lineHeight: 24, fontWeight: "700" },
   pressed: { opacity: 0.85 },
+  picture: { fontSize: 30, lineHeight: 38 },
+  badge: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  badgeText: { fontSize: 16, lineHeight: 20, fontWeight: "900" },
+  rightOrder: { gap: 4 },
 });

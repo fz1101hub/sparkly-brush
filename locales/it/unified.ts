@@ -323,4 +323,8 @@ export const itUnified = {
   "backup.summaryReminders": "Promemoria",
   "backup.remindersOff": "Spenti",
   "backup.remindersAt": "{morning} e {evening}",
+  "quiz.orderHint": "Tocca le risposte dalla prima all’ultima. Se sbagli, toccala di nuovo per toglierla.",
+  "quiz.orderPlaced": "{label}, al posto {place}",
+  "quiz.orderReset": "Ricomincia l’ordine",
+  "quiz.orderRight": "L’ordine giusto:",
 } as const;

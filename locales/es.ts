@@ -1481,4 +1481,8 @@ export const es = {
   "backup.summaryReminders": "Recordatorios",
   "backup.remindersOff": "Desactivados",
   "backup.remindersAt": "{morning} y {evening}",
+  "quiz.orderHint": "Toca las respuestas de la primera a la última. Tócala otra vez para quitarla.",
+  "quiz.orderPlaced": "{label}, en el puesto {place}",
+  "quiz.orderReset": "Empezar el orden de nuevo",
+  "quiz.orderRight": "El orden correcto:",
 } as const satisfies TranslationCatalog;

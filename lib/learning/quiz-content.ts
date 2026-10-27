@@ -1,7 +1,8 @@
 import type { SupportedLocale } from "@/lib/locale-types";
 
 /**
- * «Quiz del sorriso»: 30 questions in five languages. Every question carries the source a
+ * «Quiz del sorriso»: 39 questions in five languages (choice, true/false, «di chi è questo
+ * dente?» with pictures and «metti in ordine nel tempo»). Every question carries the source a
  * reviewer can check; medical and historical content must be approved by a paediatric dentist
  * before release (see docs/contenuti-da-validare-2026-10-27.md). In the data the correct answer
  * of a choice question is always the first: the screen shuffles them.
@@ -10,6 +11,8 @@ export type QuizCategory = "body" | "hygiene" | "food" | "animals" | "history" |
 
 type ChoiceText = { question: string; answers: readonly [string, string, string]; fact: string };
 type TrueFalseText = { question: string; fact: string };
+/** The items in the right order (oldest or first first); the screen shuffles them. */
+type OrderText = { question: string; items: readonly [string, string, string]; fact: string };
 
 export type QuizQuestion =
   | {
@@ -18,6 +21,8 @@ export type QuizQuestion =
       /** 1: suitable for 4–6 year olds; 2: for 7–9 year olds. */
       level: 1 | 2;
       kind: "choice";
+      /** Optional pictures for the answers (emoji, same order as the answers). */
+      pictures?: readonly [string, string, string];
       source: string;
       text: Record<SupportedLocale, ChoiceText>;
     }
@@ -29,6 +34,14 @@ export type QuizQuestion =
       answer: boolean;
       source: string;
       text: Record<SupportedLocale, TrueFalseText>;
+    }
+  | {
+      id: string;
+      category: QuizCategory;
+      level: 1 | 2;
+      kind: "order";
+      source: string;
+      text: Record<SupportedLocale, OrderText>;
     };
 
 export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
@@ -183,6 +196,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     category: "food",
     level: 1,
     kind: "choice",
+    pictures: ["🧀", "🍬", "🥤"],
     source: "Alimentazione e carie: spuntini senza zuccheri aggiunti.",
     text: {
       it: { question: "Quale spuntino è più amico dei denti?", answers: ["Un pezzetto di formaggio", "Le caramelle", "Una bibita gassata"], fact: "Il formaggio! Caramelle e bibite zuccherate restano sui denti e nutrono i batteri." },
@@ -469,6 +483,139 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
       de: { question: "An welchem Tag ist der Weltmundgesundheitstag?", answers: ["20. März", "25. Dezember", "1. Januar"], fact: "Am 20. März: Auf der ganzen Welt erinnert man an gesunde Zähne und einen gesunden Mund." },
       fr: { question: "Quel jour célèbre-t-on la Journée mondiale de la santé bucco-dentaire ?", answers: ["Le 20 mars", "Le 25 décembre", "Le 1er janvier"], fact: "Le 20 mars : dans le monde entier, on rappelle l’importance de dents et d’une bouche en bonne santé." },
       es: { question: "¿Qué día se celebra el Día Mundial de la Salud Bucodental?", answers: ["20 de marzo", "25 de diciembre", "1 de enero"], fact: "El 20 de marzo: en todo el mundo se recuerda lo importante que es tener dientes y boca sanos." },
+    },
+  },
+  // «Di chi è questo dente?»: the tooth is described in words, the animals answer in pictures.
+  {
+    id: "whose-shark",
+    category: "animals",
+    level: 1,
+    kind: "choice",
+    pictures: ["🦈", "🐄", "🐇"],
+    source: "Zoologia: i denti degli squali sono disposti in file di ricambio che avanzano (polifiodontia).",
+    text: {
+      it: { question: "Di chi è questo dente? È a punta come un triangolo, e dietro ce ne sono file intere di ricambio.", answers: ["Dello squalo", "Della mucca", "Del coniglio"], fact: "Dello squalo! Quando perde un dente, quello della fila dietro si sposta in avanti e prende il suo posto." },
+      en: { question: "Whose tooth is this? It is pointed like a triangle, with whole rows of spare ones behind it.", answers: ["A shark’s", "A cow’s", "A rabbit’s"], fact: "A shark’s! When it loses a tooth, one from the row behind moves forward to take its place." },
+      de: { question: "Wem gehört dieser Zahn? Er ist spitz wie ein Dreieck, und dahinter warten ganze Reihen Ersatzzähne.", answers: ["Dem Hai", "Der Kuh", "Dem Kaninchen"], fact: "Dem Hai! Verliert er einen Zahn, rückt einer aus der Reihe dahinter nach vorne und nimmt seinen Platz ein." },
+      fr: { question: "À qui est cette dent ? Elle est pointue comme un triangle, avec derrière elle des rangées entières de dents de rechange.", answers: ["Au requin", "À la vache", "Au lapin"], fact: "Au requin ! Quand il perd une dent, une dent de la rangée de derrière avance pour prendre sa place." },
+      es: { question: "¿De quién es este diente? Es puntiagudo como un triángulo y detrás tiene filas enteras de recambio.", answers: ["Del tiburón", "De la vaca", "Del conejo"], fact: "¡Del tiburón! Cuando pierde un diente, uno de la fila de atrás avanza y ocupa su lugar." },
+    },
+  },
+  {
+    id: "whose-child",
+    category: "animals",
+    level: 1,
+    kind: "choice",
+    pictures: ["🧒", "🦈", "🐄"],
+    source: "Dentatura decidua: 20 elementi; la permuta inizia verso i 6 anni.",
+    text: {
+      it: { question: "Di chi sono questi denti? Sono 20, piccoli e bianchi, e verso i 6 anni cominciano a cadere uno alla volta.", answers: ["Di un bambino", "Dello squalo", "Della mucca"], fact: "Di un bambino! Sono i denti da latte: sotto, i denti definitivi aspettano il loro turno." },
+      en: { question: "Whose teeth are these? There are 20, small and white, and at around 6 years old they start falling out one by one.", answers: ["A child’s", "A shark’s", "A cow’s"], fact: "A child’s! These are baby teeth: underneath, the adult teeth are waiting their turn." },
+      de: { question: "Wem gehören diese Zähne? Es sind 20, klein und weiß, und mit etwa 6 Jahren fallen sie nach und nach aus.", answers: ["Einem Kind", "Dem Hai", "Der Kuh"], fact: "Einem Kind! Das sind Milchzähne: Darunter warten schon die bleibenden Zähne, bis sie dran sind." },
+      fr: { question: "À qui sont ces dents ? Il y en a 20, petites et blanches, et vers 6 ans elles commencent à tomber une à une.", answers: ["À un enfant", "Au requin", "À la vache"], fact: "À un enfant ! Ce sont les dents de lait : en dessous, les dents définitives attendent leur tour." },
+      es: { question: "¿De quién son estos dientes? Son 20, pequeños y blancos, y hacia los 6 años empiezan a caerse uno a uno.", answers: ["De un niño", "Del tiburón", "De la vaca"], fact: "¡De un niño! Son los dientes de leche: debajo, los definitivos esperan su turno." },
+    },
+  },
+  {
+    id: "whose-cow",
+    category: "animals",
+    level: 2,
+    kind: "choice",
+    pictures: ["🐄", "🦈", "🐍"],
+    source: "Zoologia: i bovini non hanno incisivi superiori (cuscinetto dentale) e hanno molari piatti per ruminare.",
+    text: {
+      it: { question: "Di chi sono questi denti? In fondo alla bocca sono larghi e piatti per macinare l’erba, e davanti, in alto, non ci sono incisivi.", answers: ["Della mucca", "Dello squalo", "Del serpente"], fact: "Della mucca! Al posto degli incisivi di sopra ha un cuscinetto duro di gengiva: strappa l’erba e poi la mastica a lungo." },
+      en: { question: "Whose teeth are these? At the back they are wide and flat for grinding grass, and at the top front there are no incisors.", answers: ["A cow’s", "A shark’s", "A snake’s"], fact: "A cow’s! Instead of upper front teeth it has a hard pad of gum: it tears the grass, then chews it for a long time." },
+      de: { question: "Wem gehören diese Zähne? Hinten sind sie breit und flach, um Gras zu zermahlen, und oben vorne gibt es keine Schneidezähne.", answers: ["Der Kuh", "Dem Hai", "Der Schlange"], fact: "Der Kuh! Statt oberer Schneidezähne hat sie eine harte Platte aus Zahnfleisch: Sie rupft das Gras ab und kaut es dann lange." },
+      fr: { question: "À qui sont ces dents ? Au fond, elles sont larges et plates pour broyer l’herbe, et devant, en haut, il n’y a pas d’incisives.", answers: ["À la vache", "Au requin", "Au serpent"], fact: "À la vache ! À la place des incisives du haut, elle a un bourrelet de gencive dur : elle arrache l’herbe puis la mâche longtemps." },
+      es: { question: "¿De quién son estos dientes? Al fondo son anchos y planos para triturar la hierba, y arriba, delante, no hay incisivos.", answers: ["De la vaca", "Del tiburón", "De la serpiente"], fact: "¡De la vaca! En lugar de incisivos de arriba tiene una almohadilla dura de encía: arranca la hierba y luego la mastica mucho rato." },
+    },
+  },
+  {
+    id: "whose-snake",
+    category: "animals",
+    level: 2,
+    kind: "choice",
+    pictures: ["🐍", "🐇", "🐄"],
+    source: "Zoologia: le zanne dei serpenti velenosi sono scanalate o cave (per esempio nelle vipere).",
+    text: {
+      it: { question: "Di chi sono questi denti? Sono due, lunghi e sottili, e alcuni hanno dentro un canale, come una cannuccia.", answers: ["Del serpente velenoso", "Del coniglio", "Della mucca"], fact: "Del serpente velenoso! Da quei denti, chiamati zanne, esce il veleno. Gli animali selvatici si guardano da lontano." },
+      en: { question: "Whose teeth are these? There are two, long and thin, and some have a channel inside, like a straw.", answers: ["A venomous snake’s", "A rabbit’s", "A cow’s"], fact: "A venomous snake’s! The venom comes out of those teeth, called fangs. Wild animals are best watched from far away." },
+      de: { question: "Wem gehören diese Zähne? Es sind zwei, lang und dünn, und manche haben innen einen Kanal wie ein Strohhalm.", answers: ["Der Giftschlange", "Dem Kaninchen", "Der Kuh"], fact: "Der Giftschlange! Aus diesen Zähnen, den Giftzähnen, kommt das Gift. Wilde Tiere beobachtet man am besten aus der Ferne." },
+      fr: { question: "À qui sont ces dents ? Il y en a deux, longues et fines, et certaines ont un canal à l’intérieur, comme une paille.", answers: ["Au serpent venimeux", "Au lapin", "À la vache"], fact: "Au serpent venimeux ! Le venin sort de ces dents, appelées crochets. Les animaux sauvages s’observent de loin." },
+      es: { question: "¿De quién son estos dientes? Son dos, largos y finos, y algunos tienen un canal por dentro, como una pajita.", answers: ["De la serpiente venenosa", "Del conejo", "De la vaca"], fact: "¡De la serpiente venenosa! Por esos dientes, llamados colmillos, sale el veneno. A los animales salvajes es mejor mirarlos de lejos." },
+    },
+  },
+  {
+    id: "whose-crocodile",
+    category: "animals",
+    level: 2,
+    kind: "choice",
+    pictures: ["🐊", "🐘", "🐴"],
+    source: "Zoologia: negli alligatori ogni dente può essere sostituito fino a circa 50 volte (Wu et al., PNAS 2013).",
+    text: {
+      it: { question: "Di chi sono questi denti? Sono tanti, a forma di cono, quasi tutti uguali, e quando uno cade ne cresce uno nuovo, moltissime volte.", answers: ["Del coccodrillo", "Dell’elefante", "Del cavallo"], fact: "Del coccodrillo! Ogni dente può essere sostituito decine di volte nella vita. Noi invece abbiamo solo due serie: da latte e definitivi." },
+      en: { question: "Whose teeth are these? There are lots of them, cone-shaped and nearly all alike, and when one falls out a new one grows, many, many times.", answers: ["A crocodile’s", "An elephant’s", "A horse’s"], fact: "A crocodile’s! Each tooth can be replaced dozens of times in its life. We only get two sets: baby teeth and adult teeth." },
+      de: { question: "Wem gehören diese Zähne? Es sind viele, kegelförmig und fast alle gleich, und fällt einer aus, wächst ein neuer nach, sehr oft.", answers: ["Dem Krokodil", "Dem Elefanten", "Dem Pferd"], fact: "Dem Krokodil! Jeder Zahn kann im Leben Dutzende Male ersetzt werden. Wir bekommen nur zwei Sätze: Milchzähne und bleibende Zähne." },
+      fr: { question: "À qui sont ces dents ? Elles sont nombreuses, en forme de cône, presque toutes pareilles, et quand l’une tombe, une nouvelle pousse, de très nombreuses fois.", answers: ["Au crocodile", "À l’éléphant", "Au cheval"], fact: "Au crocodile ! Chaque dent peut être remplacée des dizaines de fois dans sa vie. Nous, nous n’avons que deux séries : les dents de lait et les dents définitives." },
+      es: { question: "¿De quién son estos dientes? Son muchos, con forma de cono, casi todos iguales, y cuando se cae uno crece otro nuevo, muchísimas veces.", answers: ["Del cocodrilo", "Del elefante", "Del caballo"], fact: "¡Del cocodrilo! Cada diente puede cambiarse decenas de veces en su vida. Nosotros solo tenemos dos juegos: los de leche y los definitivos." },
+    },
+  },
+  // «Metti in ordine nel tempo»: the items are listed in the right order, the screen shuffles them.
+  {
+    id: "order-evening",
+    category: "hygiene",
+    level: 1,
+    kind: "order",
+    source: "Igiene orale pediatrica: spazzolare prima di dormire e poi bere solo acqua.",
+    text: {
+      it: { question: "Metti in ordine: che cosa fai la sera?", items: ["Mangio la cena", "Mi lavo i denti", "Vado a dormire"], fact: "Prima la cena, poi lo spazzolino e poi a nanna: dopo aver lavato i denti, solo un po’ d’acqua." },
+      en: { question: "Put them in order: what do you do in the evening?", items: ["I eat dinner", "I brush my teeth", "I go to sleep"], fact: "Dinner first, then brushing, then bed: after brushing, only a little water." },
+      de: { question: "Bring es in die richtige Reihenfolge: Was machst du am Abend?", items: ["Ich esse zu Abend", "Ich putze die Zähne", "Ich gehe schlafen"], fact: "Erst Abendessen, dann Zähneputzen, dann ins Bett: Nach dem Putzen gibt es nur noch etwas Wasser." },
+      fr: { question: "Remets dans l’ordre : que fais-tu le soir ?", items: ["Je dîne", "Je me brosse les dents", "Je vais dormir"], fact: "D’abord le dîner, puis le brossage, puis au lit : après le brossage, juste un peu d’eau." },
+      es: { question: "Ordénalo: ¿qué haces por la noche?", items: ["Ceno", "Me lavo los dientes", "Me voy a dormir"], fact: "Primero la cena, luego el cepillado y después a la cama: después de lavarte los dientes, solo un poco de agua." },
+    },
+  },
+  {
+    id: "order-growing-up",
+    category: "body",
+    level: 1,
+    kind: "order",
+    source: "Cronologia dell’eruzione: primo dente deciduo verso i 6 mesi, prima permuta verso i 6 anni, terzi molari tra 17 e 25 anni.",
+    text: {
+      it: { question: "Metti in ordine, dal primo all’ultimo: che cosa succede ai denti crescendo?", items: ["Spunta il primo dente da latte", "Cade il primo dente da latte", "Spunta un dente del giudizio"], fact: "Il primo dente spunta verso i 6 mesi, il primo cade verso i 6 anni e i denti del giudizio arrivano da grandi, a volte mai." },
+      en: { question: "Put them in order, first to last: what happens to teeth as you grow?", items: ["The first baby tooth comes through", "The first baby tooth falls out", "A wisdom tooth comes through"], fact: "The first tooth appears at around 6 months, the first one falls out at around 6 years, and wisdom teeth come when you are grown up, sometimes never." },
+      de: { question: "Bring es in die Reihenfolge, vom ersten zum letzten: Was passiert mit den Zähnen beim Großwerden?", items: ["Der erste Milchzahn kommt", "Der erste Milchzahn fällt aus", "Ein Weisheitszahn kommt"], fact: "Der erste Zahn kommt mit etwa 6 Monaten, der erste fällt mit etwa 6 Jahren aus, und die Weisheitszähne kommen erst bei Erwachsenen, manchmal nie." },
+      fr: { question: "Remets dans l’ordre, du premier au dernier : que se passe-t-il pour les dents quand on grandit ?", items: ["La première dent de lait pousse", "La première dent de lait tombe", "Une dent de sagesse pousse"], fact: "La première dent pousse vers 6 mois, la première tombe vers 6 ans, et les dents de sagesse arrivent à l’âge adulte, parfois jamais." },
+      es: { question: "Ordénalo del primero al último: ¿qué les pasa a los dientes al crecer?", items: ["Sale el primer diente de leche", "Se cae el primer diente de leche", "Sale una muela del juicio"], fact: "El primer diente sale hacia los 6 meses, el primero se cae hacia los 6 años y las muelas del juicio llegan de mayores, a veces nunca." },
+    },
+  },
+  {
+    id: "order-toothbrush",
+    category: "history",
+    level: 2,
+    kind: "order",
+    source: "Storia dell’igiene orale: polveri dentifricie egizie; spazzolino a setole in Cina (1498); primi spazzolini elettrici in commercio negli anni Cinquanta (Svizzera, 1954).",
+    text: {
+      it: { question: "Metti in ordine, dal più antico al più recente.", items: ["Gli antichi Egizi puliscono i denti con una polvere", "In Cina nasce lo spazzolino con le setole", "Arriva lo spazzolino elettrico"], fact: "Le polveri egizie hanno migliaia di anni, lo spazzolino con le setole nasce in Cina nel 1498 e quello elettrico negli anni Cinquanta del Novecento." },
+      en: { question: "Put them in order, oldest to newest.", items: ["The ancient Egyptians clean their teeth with a powder", "The bristle toothbrush is invented in China", "The electric toothbrush arrives"], fact: "Egyptian tooth powders are thousands of years old, the bristle toothbrush appeared in China in 1498 and the electric one in the 1950s." },
+      de: { question: "Bring es in die Reihenfolge, vom ältesten zum neuesten.", items: ["Die alten Ägypter putzen die Zähne mit einem Pulver", "In China entsteht die Zahnbürste mit Borsten", "Die elektrische Zahnbürste kommt"], fact: "Ägyptische Zahnpulver sind Tausende Jahre alt, die Borstenzahnbürste entstand 1498 in China und die elektrische in den 1950er-Jahren." },
+      fr: { question: "Remets dans l’ordre, du plus ancien au plus récent.", items: ["Les anciens Égyptiens se nettoient les dents avec une poudre", "En Chine naît la brosse à dents à poils", "La brosse à dents électrique arrive"], fact: "Les poudres égyptiennes ont des milliers d’années, la brosse à poils est née en Chine en 1498 et la brosse électrique dans les années 1950." },
+      es: { question: "Ordénalo del más antiguo al más reciente.", items: ["Los antiguos egipcios se limpian los dientes con un polvo", "En China nace el cepillo con cerdas", "Llega el cepillo eléctrico"], fact: "Los polvos egipcios tienen miles de años, el cepillo con cerdas nació en China en 1498 y el eléctrico en los años cincuenta del siglo XX." },
+    },
+  },
+  {
+    id: "order-dentistry",
+    category: "history",
+    level: 2,
+    kind: "order",
+    source: "Pierre Fauchard, «Le Chirurgien Dentiste» (1728); William Addis, circa 1780; FDI World Oral Health Day dal 2007 (il 20 marzo dal 2013).",
+    text: {
+      it: { question: "Metti in ordine, dal più antico al più recente.", items: ["Pierre Fauchard scrive il primo grande libro sui denti", "William Addis produce tanti spazzolini in Inghilterra", "Nasce la Giornata mondiale della salute orale"], fact: "Fauchard scrisse il suo libro nel 1728, Addis iniziò verso il 1780 e la Giornata mondiale della salute orale esiste dal 2007." },
+      en: { question: "Put them in order, oldest to newest.", items: ["Pierre Fauchard writes the first big book about teeth", "William Addis makes lots of toothbrushes in England", "World Oral Health Day begins"], fact: "Fauchard wrote his book in 1728, Addis started around 1780, and World Oral Health Day has existed since 2007." },
+      de: { question: "Bring es in die Reihenfolge, vom ältesten zum neuesten.", items: ["Pierre Fauchard schreibt das erste große Buch über Zähne", "William Addis stellt in England viele Zahnbürsten her", "Der Weltmundgesundheitstag entsteht"], fact: "Fauchard schrieb sein Buch 1728, Addis begann um 1780, und den Weltmundgesundheitstag gibt es seit 2007." },
+      fr: { question: "Remets dans l’ordre, du plus ancien au plus récent.", items: ["Pierre Fauchard écrit le premier grand livre sur les dents", "William Addis fabrique beaucoup de brosses à dents en Angleterre", "La Journée mondiale de la santé bucco-dentaire est créée"], fact: "Fauchard a écrit son livre en 1728, Addis a commencé vers 1780 et la Journée mondiale de la santé bucco-dentaire existe depuis 2007." },
+      es: { question: "Ordénalo del más antiguo al más reciente.", items: ["Pierre Fauchard escribe el primer gran libro sobre los dientes", "William Addis fabrica muchos cepillos en Inglaterra", "Nace el Día Mundial de la Salud Bucodental"], fact: "Fauchard escribió su libro en 1728, Addis empezó hacia 1780 y el Día Mundial de la Salud Bucodental existe desde 2007." },
     },
   },
 ];

@@ -1471,4 +1471,8 @@ export const en = {
   "backup.summaryReminders": "Reminders",
   "backup.remindersOff": "Off",
   "backup.remindersAt": "{morning} and {evening}",
+  "quiz.orderHint": "Tap the answers from first to last. Tap one again to take it back.",
+  "quiz.orderPlaced": "{label}, in place {place}",
+  "quiz.orderReset": "Start the order again",
+  "quiz.orderRight": "The right order:",
 } as const satisfies TranslationCatalog;

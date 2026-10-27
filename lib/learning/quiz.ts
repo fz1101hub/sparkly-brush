@@ -1,21 +1,16 @@
 import { QUIZ_QUESTIONS, type QuizQuestion } from "@/lib/learning/quiz-content";
+import { shuffle } from "@/lib/learning/shuffle";
 import type { SupportedLocale } from "@/lib/locale-types";
 
 export const QUIZ_ROUND_SIZE = 3;
 
 export type QuizLevel = 1 | 2;
 
-/** One answer as shown on screen; `correct` never leaves the device or the screen. */
-export type QuizOption = { key: string; label: string; correct: boolean };
-
-function shuffle<T>(items: readonly T[], random: () => number): T[] {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(random() * (index + 1));
-    [copy[index], copy[other]] = [copy[other], copy[index]];
-  }
-  return copy;
-}
+/**
+ * One answer as shown on screen. For «metti in ordine» questions every item is an option and its
+ * key is its place in the right order ("0" first); `correct` is unused there.
+ */
+export type QuizOption = { key: string; label: string; correct: boolean; picture?: string };
 
 /**
  * Questions for one round: the younger level sees only level-1 questions; questions whose card
@@ -40,6 +35,12 @@ export function quizOptions(
   labels: { true: string; false: string },
   random: () => number = Math.random,
 ): QuizOption[] {
+  if (question.kind === "order") {
+    return shuffle(
+      question.text[locale].items.map((label, index) => ({ key: String(index), label, correct: false })),
+      random,
+    );
+  }
   if (question.kind === "truefalse") {
     // True first, always: the order of a yes/no question carries no hint.
     return [
@@ -48,9 +49,19 @@ export function quizOptions(
     ];
   }
   return shuffle(
-    question.text[locale].answers.map((label, index) => ({ key: String(index), label, correct: index === 0 })),
+    question.text[locale].answers.map((label, index) => ({
+      key: String(index),
+      label,
+      correct: index === 0,
+      ...(question.pictures ? { picture: question.pictures[index] } : {}),
+    })),
     random,
   );
+}
+
+/** An order is right when the items were tapped from the first to the last. */
+export function isRightOrder(picked: readonly string[], size: number): boolean {
+  return picked.length === size && picked.every((key, index) => key === String(index));
 }
 
 export function quizQuestionById(id: string): QuizQuestion | undefined {

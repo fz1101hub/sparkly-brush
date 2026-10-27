@@ -1,3 +1,4 @@
+import { shuffle } from "@/lib/learning/shuffle";
 import type { SupportedLocale } from "@/lib/locale-types";
 
 /** The six kinds of teeth the games name. Baby teeth have no premolars and no wisdom teeth. */
@@ -71,15 +72,6 @@ export function findToothRound(dentition: Dentition, random: () => number = Math
 }
 
 export type MemoryCard = { id: string; type: ToothType; locale: SupportedLocale; label: string };
-
-function shuffle<T>(items: readonly T[], random: () => number): T[] {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(random() * (index + 1));
-    [copy[index], copy[other]] = [copy[other], copy[index]];
-  }
-  return copy;
-}
 
 /** «Memory delle lingue»: each kind appears once in each of the two languages. */
 export function memoryDeck(
