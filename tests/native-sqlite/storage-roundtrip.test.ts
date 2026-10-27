@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createBackupManifest } from "@/lib/backup";
+import { DEFAULT_BRACES } from "@/lib/braces";
+import { DEFAULT_VILLAGE } from "@/lib/village";
 import type { BrushSession, StoredDeviceSession } from "@/lib/brush-types";
 import type { LifetimeProgress } from "@/lib/lifetime-progress";
 
@@ -228,6 +230,27 @@ describe("native storage on real SQLite", () => {
     const restored = await target.completeBackup.restoreCompleteBackup(preview!, "restore-app-flow");
     expect(aggregates(restored.lifetimeProgress)).toEqual(aggregates(seeded.lifetimeProgress));
     expect(paths.listApp().filter((file) => file.includes("sparkly-import-"))).toEqual([]);
+  });
+
+  it("(c'') the file carries the child's village and braces mode", async () => {
+    const app = await loadStorage();
+    const seeded = await seedHistory(app);
+    const village = { ...DEFAULT_VILLAGE, cards: ["body-enamel", "world-tooth-fairy"], visits: 2, learningLanguage: "fr" as const };
+    const braces = { ...DEFAULT_BRACES, enabled: true, type: "fixed" as const, elasticColor: "green" as const, careDays: ["2026-03-20"] };
+    await app.completeBackup.exportAndShareCompleteBackup(
+      createBackupManifest({ selectedId: "bloopi", hasChosenStarter: true }, CUSTOMIZATION, seeded.lifetimeProgress, Date.now(), {
+        village,
+        braces,
+      }),
+    );
+
+    const target = await freshInstall();
+    await target.storage.initializeHistoryStorage();
+    documentPicker.pick(sharing.lastSavedCopy(), { name: "Sparkly backup.brushlings" });
+    const preview = await target.completeBackup.pickAndInspectCompleteBackup();
+    expect(preview!.manifest.village).toEqual(village);
+    expect(preview!.manifest.braces).toEqual(braces);
+    target.completeBackup.discardCompleteBackupPreview(preview!);
   });
 
   it("(d) creates the expected schema, WAL mode and pragmas on a real SQLite file", async () => {

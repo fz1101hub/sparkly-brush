@@ -1,7 +1,9 @@
 import type { PortableBrushlingProfile } from "@/lib/backup";
+import type { BracesSettings, BracesType } from "@/lib/braces";
 import type { CustomizationState } from "@/lib/customization";
 import type { LifetimeProgress } from "@/lib/lifetime-progress";
 import type { ParentReward } from "@/lib/parent-rewards";
+import type { VillageState } from "@/lib/village";
 
 type BackupSnapshot = {
   profile: PortableBrushlingProfile;
@@ -11,6 +13,9 @@ type BackupSnapshot = {
     LifetimeProgress,
     "attemptedSessions" | "completedSessions"
   >;
+  /** Absent in text codes and in files written before the village existed. */
+  village?: Pick<VillageState, "cards">;
+  braces?: Pick<BracesSettings, "enabled" | "type">;
 };
 
 type Summary = {
@@ -19,6 +24,10 @@ type Summary = {
   completedSessions: number;
   denItems: number;
   familyRewards: number;
+  /** null: the backup has no village, the current one stays. */
+  museumCards: number | null;
+  /** The braces worn, "none", or null when the backup has no braces mode (the current one stays). */
+  braces: BracesType | "none" | null;
 };
 
 export type BackupComparison = {
@@ -37,6 +46,8 @@ function summarize(snapshot: BackupSnapshot): Summary {
     completedSessions: snapshot.lifetimeProgress.completedSessions,
     denItems: snapshot.customization.ownedIds.length,
     familyRewards: snapshot.parentRewards.length,
+    museumCards: snapshot.village ? snapshot.village.cards.length : null,
+    braces: snapshot.braces ? (snapshot.braces.enabled ? snapshot.braces.type : "none") : null,
   };
 }
 

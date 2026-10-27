@@ -389,7 +389,7 @@ export const fr = {
     "Remplace les progrès actuels présents sur ce téléphone",
   "backup.restoreBrushling": "Restaure ce Brushling",
   "backup.privacy":
-    "Le fichier contient les dates et la durée de toutes les sessions. Ne le publiez pas en ligne : conservez-le comme document privé de la famille.",
+    "Le fichier contient les dates et la durée de toutes les sessions et, s’il est activé, le mode appareil. Ne le publiez pas en ligne : conservez-le comme document privé de la famille.",
   "hardware.status.passed": "Réussi",
   "hardware.status.failed": "Échec",
   "hardware.status.blocked": "Bloqué",
@@ -1482,4 +1482,8 @@ export const fr = {
   "braces.removeMessage": "La créature retirera son appareil avec l’enfant et le mode appareil se désactivera. On peut le réactiver à tout moment.",
   "braces.removeConfirm": "Oui, on fête ça !",
   "braces.disable": "Désactiver le mode appareil",
+  "backup.summaryMuseumCards": "Cartes du musée",
+  "backup.summaryBraces": "Appareil dentaire",
+  "backup.bracesNone": "Aucun",
+  "backup.compareKept": "Inchangé",
 } as const satisfies TranslationCatalog;

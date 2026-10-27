@@ -315,4 +315,8 @@ export const itUnified = {
   "braces.removeMessage": "La creatura lo toglierà insieme al bambino e la modalità apparecchio si spegnerà. Si può riattivare in qualsiasi momento.",
   "braces.removeConfirm": "Sì, festeggiamo!",
   "braces.disable": "Disattiva la modalità apparecchio",
+  "backup.summaryMuseumCards": "Carte del museo",
+  "backup.summaryBraces": "Apparecchio",
+  "backup.bracesNone": "Nessuno",
+  "backup.compareKept": "Resta com’è",
 } as const;

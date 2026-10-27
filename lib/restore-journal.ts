@@ -1,5 +1,6 @@
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
 
+import { getBracesStorage, normalizeBraces, type BracesSettings } from "@/lib/braces";
 import {
   getBrushlingStorage,
   type BrushlingProfile,
@@ -9,19 +10,25 @@ import type { ParentReward } from "@/lib/parent-rewards";
 import { getParentRewardsStorage } from "@/lib/parent-rewards";
 import type { AppPreferences } from "@/lib/preferences";
 import { getPreferencesStorage } from "@/lib/preferences";
+import { getVillageStorage, normalizeVillage, type VillageState } from "@/lib/village";
 
 export type RestoreSnapshot = {
   profile: BrushlingProfile;
   customization: CustomizationState;
   preferences: AppPreferences;
   parentRewards: ParentReward[];
+  village: VillageState;
+  braces: BracesSettings;
 };
+
+/** Journals written before the village existed (27 October 2026) have no village or braces. */
+type StoredSnapshot = Omit<RestoreSnapshot, "village" | "braces"> & Partial<Pick<RestoreSnapshot, "village" | "braces">>;
 
 type ApplicationRestoreJournal = {
   version: 1;
   id: string;
-  previous: RestoreSnapshot;
-  next: RestoreSnapshot;
+  previous: StoredSnapshot;
+  next: StoredSnapshot;
 };
 
 function buildProfileStorage(profileId: string) {
@@ -29,12 +36,16 @@ function buildProfileStorage(profileId: string) {
   const { restoreBrushlingState } = getBrushlingStorage(profileId);
   const { saveParentRewards } = getParentRewardsStorage(profileId);
   const { saveAppPreferences } = getPreferencesStorage(profileId);
+  const villageStorage = getVillageStorage(profileId);
+  const bracesStorage = getBracesStorage(profileId);
   const APPLICATION_RESTORE_JOURNAL_KEY = "sparkly-brush.application-restore.v1";
 
-  async function applySnapshot(snapshot: RestoreSnapshot): Promise<void> {
+  async function applySnapshot(snapshot: StoredSnapshot): Promise<void> {
     await restoreBrushlingState(snapshot.profile, snapshot.customization);
     await saveAppPreferences(snapshot.preferences);
     await saveParentRewards(snapshot.parentRewards);
+    if (snapshot.village) await villageStorage.save(normalizeVillage(snapshot.village));
+    if (snapshot.braces) await bracesStorage.save(normalizeBraces(snapshot.braces));
   }
 
   async function beginApplicationRestore(

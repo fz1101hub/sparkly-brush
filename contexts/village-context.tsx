@@ -35,6 +35,8 @@ type VillageContextValue = {
   spendEnergy: () => Promise<boolean>;
   collectCard: (id: string) => Promise<void>;
   update: (change: Partial<VillageState>) => Promise<void>;
+  /** Replaces the whole village with a backup's (restore and its rollback). */
+  restoreVillage: (state: VillageState) => Promise<void>;
 };
 
 const VillageContext = createContext<VillageContextValue | null>(null);
@@ -105,6 +107,10 @@ export function VillageProvider({ children }: PropsWithChildren) {
     (change: Partial<VillageState>) => commit((previous) => ({ next: { ...previous, ...change }, result: undefined })),
     [commit],
   );
+  const restoreVillage = useCallback(
+    (restored: VillageState) => commit(() => ({ next: { ...restored }, result: undefined })),
+    [commit],
+  );
 
   const value = useMemo<VillageContextValue>(
     () => ({
@@ -116,8 +122,9 @@ export function VillageProvider({ children }: PropsWithChildren) {
       spendEnergy,
       collectCard,
       update,
+      restoreVillage,
     }),
-    [collectCard, history, locale, ready, spendEnergy, state, today, update],
+    [collectCard, history, locale, ready, restoreVillage, spendEnergy, state, today, update],
   );
 
   return <VillageContext.Provider value={value}>{children}</VillageContext.Provider>;

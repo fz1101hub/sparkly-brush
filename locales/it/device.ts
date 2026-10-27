@@ -180,7 +180,7 @@ export const itDevice = {
     "Sostituisce i progressi reali presenti su questo telefono",
   "backup.restoreBrushling": "Ripristina questo Brushling",
   "backup.privacy":
-    "Il file contiene date e durata di tutte le sessioni. Non pubblicarlo online: conservalo come documento privato di famiglia.",
+    "Il file contiene date e durata di tutte le sessioni e, se attiva, la modalità apparecchio. Non pubblicarlo online: conservalo come documento privato di famiglia.",
 
   "hardware.status.passed": "Superato",
   "hardware.status.failed": "Fallito",

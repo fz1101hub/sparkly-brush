@@ -11,6 +11,8 @@ import {
   normalizeLifetimeProgress,
   type LifetimeProgress,
 } from "@/lib/lifetime-progress";
+import { normalizeBraces, type BracesSettings } from "@/lib/braces";
+import { normalizeVillage, type VillageState } from "@/lib/village";
 import {
   DEFAULT_CUSTOMIZATION_STATE,
   isCustomizationItemId,
@@ -52,6 +54,12 @@ export type BrushlingsBackupManifest = {
   preferences: AppPreferences;
   parentRewards: ParentReward[];
   lifetimeProgress: LifetimeProgress;
+  /**
+   * Village and braces mode (27 October 2026). Files written before have neither: restoring one
+   * leaves the child's current village and braces as they are.
+   */
+  village?: VillageState;
+  braces?: BracesSettings;
 };
 
 function normalizeOwnedIds(value: unknown): CustomizationItemId[] {
@@ -176,6 +184,8 @@ export function createBackupManifest(
   extras?: {
     preferences?: AppPreferences;
     parentRewards?: ParentReward[];
+    village?: VillageState;
+    braces?: BracesSettings;
   },
 ): BrushlingsBackupManifest {
   return {
@@ -189,6 +199,8 @@ export function createBackupManifest(
     preferences: extras?.preferences ?? DEFAULT_APP_PREFERENCES,
     parentRewards: extras?.parentRewards ?? [],
     lifetimeProgress,
+    ...(extras?.village ? { village: extras.village } : {}),
+    ...(extras?.braces ? { braces: extras.braces } : {}),
   };
 }
 
@@ -237,6 +249,8 @@ export function parseBackupManifest(json: string): BrushlingsBackupManifest {
     preferences: normalizePreferences(raw.preferences),
     parentRewards: normalizeParentRewards(raw.parentRewards),
     lifetimeProgress,
+    ...(raw.village !== undefined ? { village: normalizeVillage(raw.village) } : {}),
+    ...(raw.braces !== undefined ? { braces: normalizeBraces(raw.braces) } : {}),
   };
 }
 

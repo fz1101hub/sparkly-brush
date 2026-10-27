@@ -383,7 +383,7 @@ export const en = {
     "Replaces the real progress currently on this phone",
   "backup.restoreBrushling": "Restore this Brushling",
   "backup.privacy":
-    "The file contains dates and durations for every session. Do not post it online: keep it as a private family document.",
+    "The file contains dates and durations for every session and, if it is on, the braces mode. Do not post it online: keep it as a private family document.",
 
   "hardware.status.passed": "Passed",
   "hardware.status.failed": "Failed",
@@ -1463,4 +1463,8 @@ export const en = {
   "braces.removeMessage": "The creature will take its braces off with your child, and braces mode will turn off. It can be turned on again at any time.",
   "braces.removeConfirm": "Yes, let’s celebrate!",
   "braces.disable": "Turn off braces mode",
+  "backup.summaryMuseumCards": "Museum cards",
+  "backup.summaryBraces": "Braces",
+  "backup.bracesNone": "None",
+  "backup.compareKept": "Stays as is",
 } as const satisfies TranslationCatalog;

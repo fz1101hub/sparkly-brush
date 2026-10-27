@@ -391,7 +391,7 @@ export const de = {
     "Ersetzt die echten Fortschritte auf diesem Telefon",
   "backup.restoreBrushling": "Diesen Brushling wiederherstellen",
   "backup.privacy":
-    "Die Datei enthält Datum und Dauer aller Sitzungen. Veröffentliche sie nicht online, sondern bewahre sie als privates Familiendokument auf.",
+    "Die Datei enthält Datum und Dauer aller Sitzungen und, falls aktiv, den Zahnspangen-Modus. Veröffentliche sie nicht online, sondern bewahre sie als privates Familiendokument auf.",
   "hardware.status.passed": "Bestanden",
   "hardware.status.failed": "Fehlgeschlagen",
   "hardware.status.blocked": "Blockiert",
@@ -1497,4 +1497,8 @@ export const de = {
   "braces.removeMessage": "Die Kreatur nimmt ihre Zahnspange zusammen mit deinem Kind ab, und der Modus wird ausgeschaltet. Er lässt sich jederzeit wieder einschalten.",
   "braces.removeConfirm": "Ja, feiern wir!",
   "braces.disable": "Zahnspangen-Modus ausschalten",
+  "backup.summaryMuseumCards": "Museumskarten",
+  "backup.summaryBraces": "Zahnspange",
+  "backup.bracesNone": "Keine",
+  "backup.compareKept": "Bleibt so",
 } as const satisfies TranslationCatalog;

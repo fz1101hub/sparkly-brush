@@ -6,7 +6,7 @@ Aggiornato il 14 ottobre 2026 (sviluppo autonomo del 13 ottobre, [dettagli](docs
 
 **26 ottobre 2026**: [funzioni proposte e non ancora sviluppate](docs/funzioni-proposte-2026-10-26.md), 76 voci con stime, ordine consigliato e domande aperte.
 
-**27 ottobre 2026**: prima versione delle quattro funzioni richieste (Quiz del sorriso, nomi dei denti in altre lingue, modalità apparecchio con l'apparecchio sulla creatura, villaggio del Brushling); [stato e cosa manca](docs/funzioni-proposte-2026-10-26.md#stato-al-27-ottobre-prima-versione-realizzata). Prima della pubblicazione: revisione di [tutti i testi educativi](docs/contenuti-da-validare-2026-10-27.md) da parte di un dentista pediatrico e di madrelingua; villaggio e apparecchio non sono ancora nel backup.
+**27 ottobre 2026**: prima versione delle quattro funzioni richieste (Quiz del sorriso, nomi dei denti in altre lingue, modalità apparecchio con l'apparecchio sulla creatura, villaggio del Brushling); [stato e cosa manca](docs/funzioni-proposte-2026-10-26.md#stato-al-27-ottobre-prima-versione-realizzata). Prima della pubblicazione: revisione di [tutti i testi educativi](docs/contenuti-da-validare-2026-10-27.md) da parte di un dentista pediatrico e di madrelingua. Villaggio e apparecchio sono inclusi nel backup su file (i file e i codici precedenti li lasciano come sono).
 
 | # | Area | Stato | Evidenza o passo successivo |
 |---:|---|---|---|

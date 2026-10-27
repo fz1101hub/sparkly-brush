@@ -17,7 +17,7 @@ Arrivati con la PR #10 e portati su questo ramo (Expo 57) il 25 ottobre 2026; le
 
 `createProfileStorage` e le factory dei repository fissano l'identità del profilo alla creazione e ogni provider tiene la propria istanza: una scrittura ritardata non può finire nel profilo appena selezionato. Database SQLite, journal di ripristino e journal del timer sono separati per bambino; la selezione cambia solo dopo il salvataggio del registro famiglia, e la Home torna visibile quando i provider del nuovo bambino sono pronti.
 
-Se una preferenza non si salva, l'interfaccia torna al valore precedente. I backup sono per bambino: per trasferire una famiglia si esporta un file per bambino e lo si ripristina nel profilo corrispondente. Temi e promemoria non sono nei backup. Non esistono account, servizi remoti o raccolta di dati dei bambini.
+Se una preferenza non si salva, l'interfaccia torna al valore precedente. I backup sono per bambino: per trasferire una famiglia si esporta un file per bambino e lo si ripristina nel profilo corrispondente. Temi e promemoria non sono nei backup; villaggio e modalità apparecchio sì (dal 27 ottobre 2026). Non esistono account, servizi remoti o raccolta di dati dei bambini.
 
 ## Verifica
 

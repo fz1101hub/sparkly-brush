@@ -12,6 +12,8 @@ import { useI18n } from "@/contexts/locale-context";
 import { useBrushling } from "@/contexts/brushling-context";
 import { useParentRewards } from "@/contexts/parent-rewards-context";
 import { usePreferences } from "@/contexts/preferences-context";
+import { useBraces } from "@/contexts/braces-context";
+import { useVillage } from "@/contexts/village-context";
 import { useBack } from "@/hooks/use-back";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useColors } from "@/hooks/use-colors";
@@ -20,6 +22,7 @@ import {
   type TranslationKey,
   type TranslationParams,
 } from "@/lib/i18n";
+import type { BracesType } from "@/lib/braces";
 import { DEFAULT_LOCALE } from "@/lib/locale-types";
 import {
   backupFingerprint,
@@ -108,6 +111,8 @@ export default function BackupScreen() {
   } = useBrushling();
   const { preferences, ready: preferencesReady, restorePreferences } = usePreferences();
   const { definitions: parentRewards, ready: rewardsReady, restoreRewards } = useParentRewards();
+  const { state: village, ready: villageReady, restoreVillage } = useVillage();
+  const { settings: braces, ready: bracesReady, restoreBraces } = useBraces();
   const [importCode, setImportCode] = useState("");
   const [preview, setPreview] = useState<BrushlingsBackup | null>(null);
   const [filePreview, setFilePreview] = useState<CompleteBackupPreview | null>(null);
@@ -117,7 +122,8 @@ export default function BackupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [manifestCreatedAt] = useState(Date.now);
   const filePreviewRef = useRef<CompleteBackupPreview | null>(null);
-  const backupReady = historyReady && profileReady && preferencesReady && rewardsReady && !restoreInProgress;
+  const backupReady =
+    historyReady && profileReady && preferencesReady && rewardsReady && villageReady && bracesReady && !restoreInProgress;
   const nativeBackupAvailable = Platform.OS !== "web";
 
   useEffect(() => {
@@ -134,9 +140,9 @@ export default function BackupScreen() {
       customization,
       lifetimeProgress,
       manifestCreatedAt,
-      { preferences, parentRewards },
+      { preferences, parentRewards, village, braces },
     ),
-    [customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId],
+    [braces, customization, hasChosenStarter, lifetimeProgress, manifestCreatedAt, parentRewards, preferences, selectedId, village],
   );
   const fileComparison = filePreview
     ? compareBackupContents(
@@ -217,12 +223,17 @@ export default function BackupScreen() {
       customization,
       preferences,
       parentRewards,
+      village,
+      braces,
     };
     const next: RestoreSnapshot = {
       profile: preview.profile,
       customization: preview.customization,
       preferences: preview.preferences,
       parentRewards: preview.parentRewards,
+      // Text codes predate the village and braces mode: the child's current ones stay.
+      village,
+      braces,
     };
     setBusy(true);
     setError(null);
@@ -236,6 +247,8 @@ export default function BackupScreen() {
             await restoreFromBackup(next.profile, next.customization);
             await restorePreferences(next.preferences);
             await restoreRewards(next.parentRewards);
+            await restoreVillage(next.village);
+            await restoreBraces(next.braces);
             await restoreRealHistory(preview.history, preview.lifetimeProgress, restoreId);
             databaseCommitted = true;
             await completeApplicationRestore(restoreId);
@@ -245,6 +258,8 @@ export default function BackupScreen() {
                 restoreFromBackup(previous.profile, previous.customization),
                 restorePreferences(previous.preferences),
                 restoreRewards(previous.parentRewards),
+                restoreVillage(previous.village),
+                restoreBraces(previous.braces),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);
@@ -275,12 +290,17 @@ export default function BackupScreen() {
       customization,
       preferences,
       parentRewards,
+      village,
+      braces,
     };
     const next: RestoreSnapshot = {
       profile: selectedPreview.manifest.profile,
       customization: selectedPreview.manifest.customization,
       preferences: selectedPreview.manifest.preferences,
       parentRewards: selectedPreview.manifest.parentRewards,
+      // Files written before the village existed leave the current village and braces as they are.
+      village: selectedPreview.manifest.village ?? village,
+      braces: selectedPreview.manifest.braces ?? braces,
     };
     setBusy(true);
     setError(null);
@@ -294,6 +314,8 @@ export default function BackupScreen() {
             await restoreFromBackup(next.profile, next.customization);
             await restorePreferences(next.preferences);
             await restoreRewards(next.parentRewards);
+            await restoreVillage(next.village);
+            await restoreBraces(next.braces);
             const restored = await restoreCompleteBackup(selectedPreview, restoreId);
             databaseCommitted = true;
             adoptRestoredHistory(restored.recentHistory, restored.lifetimeProgress);
@@ -304,6 +326,8 @@ export default function BackupScreen() {
                 restoreFromBackup(previous.profile, previous.customization),
                 restorePreferences(previous.preferences),
                 restoreRewards(previous.parentRewards),
+                restoreVillage(previous.village),
+                restoreBraces(previous.braces),
               ]);
               if (rollback.every((result) => result.status === "fulfilled")) {
                 await completeApplicationRestore(restoreId);
@@ -448,6 +472,18 @@ export default function BackupScreen() {
               icon="redeem"
               label={t("backup.summaryFamilyRewards")}
               value={String(parentRewards.length)}
+            />
+            <Summary
+              icon="museum"
+              label={t("backup.summaryMuseumCards")}
+              value={String(village.cards.length)}
+              testID="backup-current-cards"
+            />
+            <Summary
+              icon="sentiment-satisfied-alt"
+              label={t("backup.summaryBraces")}
+              value={bracesLabel(braces.enabled ? braces.type : "none", t)}
+              keepCase
             />
           </View>
 
@@ -754,6 +790,16 @@ function BackupComparisonCard({
         current={formatNumber(comparison.current.familyRewards)}
         incoming={formatNumber(comparison.incoming.familyRewards)}
       />
+      <ComparisonRow
+        label={t("backup.summaryMuseumCards")}
+        current={formatNumber(comparison.current.museumCards ?? 0)}
+        incoming={comparison.incoming.museumCards === null ? t("backup.compareKept") : formatNumber(comparison.incoming.museumCards)}
+      />
+      <ComparisonRow
+        label={t("backup.summaryBraces")}
+        current={bracesLabel(comparison.current.braces ?? "none", t)}
+        incoming={comparison.incoming.braces === null ? t("backup.compareKept") : bracesLabel(comparison.incoming.braces, t)}
+      />
       <Text style={styles.comparisonNote}>
         {comparison.historyComplete
           ? t("backup.compareCompleteRows", { count: formatNumber(comparison.incomingRows) })
@@ -767,6 +813,19 @@ function BackupComparisonCard({
       <Text style={styles.comparisonWarning}>{t("backup.compareNoMerge")}</Text>
     </View>
   );
+}
+
+const BRACES_LABELS: Record<BracesType, TranslationKey> = {
+  fixed: "braces.type.fixed",
+  removable: "braces.type.removable",
+  aligners: "braces.type.aligners",
+  expander: "braces.type.expander",
+};
+
+function bracesLabel(value: BracesType | "none", t: (key: TranslationKey) => string): string {
+  if (value === "none") return t("backup.bracesNone");
+  const label = t(BRACES_LABELS[value]);
+  return label.charAt(0).toLocaleUpperCase() + label.slice(1);
 }
 
 function ComparisonRow({
@@ -838,12 +897,25 @@ function RestoreConfirmation({
   );
 }
 
-function Summary({ icon, label, value, testID }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; label: string; value: string; testID?: string }) {
+function Summary({
+  icon,
+  label,
+  value,
+  testID,
+  keepCase = false,
+}: {
+  icon: React.ComponentProps<typeof MaterialIcons>["name"];
+  label: string;
+  value: string;
+  testID?: string;
+  /** Translated text keeps its own capitals (the creature id is capitalized). */
+  keepCase?: boolean;
+}) {
   const colors = useColors();
   return (
     <View style={styles.summaryItem}>
       <MaterialIcons name={icon} size={20} color={colors.primary} />
-      <Text testID={testID} style={[styles.summaryValue, { color: colors.foreground }]}>{value}</Text>
+      <Text testID={testID} style={[styles.summaryValue, keepCase && styles.keepCase, { color: colors.foreground }]}>{value}</Text>
       <Text style={[styles.summaryLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );
@@ -872,7 +944,8 @@ const styles = StyleSheet.create({
   sectionCopy: { fontSize: 12, lineHeight: 18, marginTop: 2 },
   summaryCard: { borderWidth: 1, borderRadius: 20, padding: 13, flexDirection: "row", flexWrap: "wrap", rowGap: 10 },
   summaryItem: { width: "50%", alignItems: "center", gap: 3 },
-  summaryValue: { fontSize: 13, lineHeight: 18, fontWeight: "900", textTransform: "capitalize" },
+  summaryValue: { fontSize: 13, lineHeight: 18, fontWeight: "900", textTransform: "capitalize", textAlign: "center" },
+  keepCase: { textTransform: "none" },
   summaryLabel: { fontSize: 9, lineHeight: 13, textAlign: "center" },
   actionRow: { flexDirection: "row", gap: 9 },
   primaryButton: { minHeight: 48, borderRadius: 16, backgroundColor: "#2457D6", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10 },

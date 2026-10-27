@@ -33,6 +33,8 @@ type BracesContextValue = {
   recordCare: () => Promise<void>;
   /** The day the braces come off: the creature takes them off too, and the app celebrates. */
   markRemoved: () => Promise<void>;
+  /** Replaces the settings with a backup's (restore and its rollback). */
+  restoreBraces: (settings: BracesSettings) => Promise<void>;
 };
 
 const BracesContext = createContext<BracesContextValue | null>(null);
@@ -85,6 +87,7 @@ export function BracesProvider({ children }: PropsWithChildren) {
     () => commit((previous) => ({ ...previous, enabled: false, removedAt: Date.now() })),
     [commit],
   );
+  const restoreBraces = useCallback((restored: BracesSettings) => commit(() => restored), [commit]);
 
   const value = useMemo<BracesContextValue>(
     () => ({
@@ -97,8 +100,9 @@ export function BracesProvider({ children }: PropsWithChildren) {
       update,
       recordCare,
       markRemoved,
+      restoreBraces,
     }),
-    [markRemoved, ready, recordCare, settings, today, update],
+    [markRemoved, ready, recordCare, restoreBraces, settings, today, update],
   );
 
   return <BracesContext.Provider value={value}>{children}</BracesContext.Provider>;

@@ -11,6 +11,8 @@ import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
 import type { BrushSession } from "@/lib/brush-types";
 import { createLifetimeProgress, type LifetimeProgress } from "@/lib/lifetime-progress";
 import { DEFAULT_APP_PREFERENCES } from "@/lib/preferences";
+import { DEFAULT_BRACES } from "@/lib/braces";
+import { DEFAULT_VILLAGE } from "@/lib/village";
 
 const session: BrushSession = {
   id: "real-1",
@@ -116,6 +118,73 @@ describe("portable Brushlings backup", () => {
     expect(restored.historyComplete).toBe(false);
     expect(restored.archivedSessionCount).toBe(120);
     expect(restored.lifetimeProgress.attemptedSessions).toBe(365);
+  });
+
+  it("porta nel manifest v3 villaggio e apparecchio del bambino", () => {
+    const village = {
+      ...DEFAULT_VILLAGE,
+      day: "2026-10-27",
+      spent: 1,
+      cards: ["body-enamel", "history-addis"],
+      quizLevel: 2 as const,
+      learningLanguage: "de" as const,
+      dentition: "permanent" as const,
+      bestFind: 4,
+      memoryWins: 3,
+      visits: 1,
+      energyLimit: false,
+    };
+    const braces = {
+      ...DEFAULT_BRACES,
+      enabled: true,
+      type: "aligners" as const,
+      elasticColor: "pink" as const,
+      careSeconds: 90 as const,
+      alignerHours: 22,
+      careDays: ["2026-10-26", "2026-10-27"],
+    };
+    const manifest = createBackupManifest(
+      { selectedId: "bloopi", hasChosenStarter: true },
+      DEFAULT_CUSTOMIZATION_STATE,
+      createLifetimeProgress([session]),
+      123456,
+      { village, braces },
+    );
+
+    const restored = parseBackupManifest(JSON.stringify(manifest));
+    expect(restored.village).toEqual(village);
+    expect(restored.braces).toEqual(braces);
+  });
+
+  it("un file scritto prima del villaggio non porta villaggio né apparecchio", () => {
+    const manifest = createBackupManifest(
+      { selectedId: "bloopi", hasChosenStarter: true },
+      DEFAULT_CUSTOMIZATION_STATE,
+      createLifetimeProgress([session]),
+      123456,
+    );
+    expect(JSON.stringify(manifest)).not.toMatch(/village|braces/);
+
+    const restored = parseBackupManifest(JSON.stringify(manifest));
+    expect(restored.village).toBeUndefined();
+    expect(restored.braces).toBeUndefined();
+  });
+
+  it("normalizza villaggio e apparecchio manipolati nel file", () => {
+    const manifest = {
+      ...createBackupManifest(
+        { selectedId: "bloopi" as const, hasChosenStarter: true },
+        DEFAULT_CUSTOMIZATION_STATE,
+        createLifetimeProgress([session]),
+        123456,
+      ),
+      village: { cards: ["body-enamel", 42, "body-enamel"], spent: -3, quizLevel: 9, bestFind: 99 },
+      braces: { enabled: "yes", type: "titanium", alignerHours: 30, careDays: ["ieri", "2026-10-27"] },
+    };
+
+    const restored = parseBackupManifest(JSON.stringify(manifest));
+    expect(restored.village).toMatchObject({ cards: ["body-enamel"], spent: 0, quizLevel: 1, bestFind: 5 });
+    expect(restored.braces).toMatchObject({ enabled: false, type: "fixed", alignerHours: 0, careDays: ["2026-10-27"] });
   });
 });
 

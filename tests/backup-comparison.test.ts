@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { compareBackupContents } from "@/lib/backup-comparison";
 import { DEFAULT_CUSTOMIZATION_STATE } from "@/lib/customization";
 import { createEmptyLifetimeProgress } from "@/lib/lifetime-progress";
+import { DEFAULT_BRACES } from "@/lib/braces";
+import { DEFAULT_VILLAGE } from "@/lib/village";
 
 function snapshot(
   attempted: number,
@@ -74,6 +76,28 @@ describe("backup comparison before replacement", () => {
       incomingRows: 20_000,
       lowerLifetimeProgress: false,
       incoming: { attemptedSessions: 20_000, completedSessions: 19_500 },
+    });
+  });
+
+  it("mostra carte del museo e apparecchio, o che restano come sono se il backup non li ha", () => {
+    const current = {
+      ...snapshot(10, 9),
+      village: { ...DEFAULT_VILLAGE, cards: ["body-enamel", "food-cheese"] },
+      braces: { ...DEFAULT_BRACES, enabled: true, type: "fixed" as const },
+    };
+    const withVillage = {
+      ...snapshot(4, 4),
+      village: { ...DEFAULT_VILLAGE, cards: ["body-enamel"] },
+      braces: DEFAULT_BRACES,
+    };
+
+    expect(compareBackupContents(current, withVillage, 4, true)).toMatchObject({
+      current: { museumCards: 2, braces: "fixed" },
+      incoming: { museumCards: 1, braces: "none" },
+    });
+    expect(compareBackupContents(current, snapshot(4, 4), 4, false).incoming).toMatchObject({
+      museumCards: null,
+      braces: null,
     });
   });
 });

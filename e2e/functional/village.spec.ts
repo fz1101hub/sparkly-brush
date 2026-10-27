@@ -83,4 +83,34 @@ test.describe("villaggio dei Brushling", () => {
     await page.goto("/");
     await expect(page.getByTestId("creature-braces").first()).toBeAttached();
   });
+
+  test("un vecchio codice di backup lascia apparecchio e carte come sono", async ({ page }) => {
+    await completeFirstRun(page);
+    await page.goto("/braces");
+    await page.getByTestId("braces-enable").click();
+    await expect(page.getByTestId("braces-start-care")).toBeVisible();
+
+    const legacyCode = `BRUSHLINGS-BACKUP-1:${JSON.stringify({
+      format: "brushlings-backup",
+      version: 1,
+      createdAt: Date.now(),
+      profile: { selectedId: "spriggo", hasChosenStarter: true },
+      customization: { ownedIds: ["bubble-room"] },
+      history: [],
+    })}`;
+    await page.goto("/backup");
+    await expect(page.getByTestId("backup-current-cards")).toHaveText("0");
+    await page.getByTestId("backup-import-code").fill(legacyCode);
+    await page.getByTestId("backup-inspect-code").click();
+    const comparison = page.getByTestId("backup-comparison-legacy");
+    await expect(comparison).toContainText("Carte del museo");
+    await expect(comparison).toContainText("Apparecchio fisso");
+    await expect(comparison).toContainText("Resta com’è");
+    await page.getByTestId("backup-restore-legacy").click();
+    await page.getByTestId("backup-confirm-legacy").click();
+    await expect(page.getByTestId("backup-status")).toBeVisible();
+
+    await page.goto("/braces");
+    await expect(page.getByTestId("braces-start-care")).toBeVisible();
+  });
 });
