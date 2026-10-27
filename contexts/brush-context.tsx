@@ -25,7 +25,9 @@ import {
   type ToothbrushDevice,
 } from "@/lib/brush-types";
 import { getBrushStorage } from "@/lib/brush-storage";
-import { useSessionSeconds } from "@/contexts/extras-context";
+import { useOptionalExtras, useSessionSeconds } from "@/contexts/extras-context";
+import { onHoliday } from "@/lib/bedtime";
+import { localDateKey } from "@/lib/day-progress";
 import { useOptionalFamily } from "@/contexts/family-context-value";
 import { useI18n } from "@/contexts/locale-context";
 import { useOptionalPreferences } from "@/contexts/preferences-context";
@@ -254,6 +256,12 @@ export function BrushProvider({
   const manualStartRef = useRef<number>(0);
   // Target of the running guided session, fixed when it starts: the parent's choice (voce 57).
   const chosenSessionSeconds = useSessionSeconds();
+  // Holiday mode (voce 25): the handle left at home is not connected, so its data stays out.
+  const holidayUntil = useOptionalExtras()?.extras.vacationUntil ?? null;
+  const holidayRef = useRef(holidayUntil);
+  useEffect(() => {
+    holidayRef.current = holidayUntil;
+  }, [holidayUntil]);
   const manualTargetRef = useRef<number>(MANUAL_TARGET_SECONDS);
   const [manualTarget, setManualTarget] = useState(MANUAL_TARGET_SECONDS);
   const manualActiveRef = useRef(false);
@@ -917,6 +925,10 @@ export function BrushProvider({
     }
     if (demoMode) {
       appendTranslatedLog("warning", "brush.log.disableDemoToConnect");
+      return;
+    }
+    if (onHoliday(holidayRef.current, localDateKey(Date.now()))) {
+      appendTranslatedLog("warning", "holiday.log");
       return;
     }
     if (Platform.OS !== "web" && hapticsEnabled) {

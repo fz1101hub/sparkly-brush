@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { SessionCompanion } from "@/components/session-companion";
 import { useBrush } from "@/contexts/brush-context";
 import { useExtras } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -27,6 +28,7 @@ export function SessionExtras({ ink }: { ink: string }) {
   const label = t(`surface.${current}` as TranslationKey);
   return (
     <View style={styles.stack}>
+      <SessionCompanion ink={ink} />
       <View
         testID="session-surface"
         accessible

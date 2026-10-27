@@ -1,5 +1,7 @@
 import { isBrushlingId, type BrushlingId } from "@/lib/brushlings";
 import { EMPTY_AWARDS, normalizeAwards, type AlbumAwards } from "@/lib/album";
+import { BEDTIME_ITEMS, type BedtimeDone, type BedtimeItem } from "@/lib/bedtime";
+import { EPISODES } from "@/lib/learning/serial-story";
 import { AGE_GROUPS, DENTIST_NOTICE_DAYS, type AgeGroup, type DentistNoticeDays } from "@/lib/dental-care";
 import { GOAL_IDS, GOAL_TARGETS, type GoalId, type GoalProposal, type GoalTarget } from "@/lib/milestones";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
@@ -67,6 +69,16 @@ export type Extras = {
   monthStats: MonthStat[];
   /** Local notification on Sunday evening with the weekly summary (voce 31). */
   weeklySummary: boolean;
+  /** Company during the session (voci 8, 7 e 9) and the episodes of the serial story heard. */
+  creatureVoice: boolean;
+  serialStory: boolean;
+  sessionSong: boolean;
+  serialHeard: number[];
+  /** Bedtime missions turned on by the parent and those done tonight (voce 28). */
+  bedtimeItems: BedtimeItem[];
+  bedtimeDone: BedtimeDone | null;
+  /** Holiday mode until this day included (voce 25). */
+  vacationUntil: string | null;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -91,6 +103,13 @@ export const DEFAULT_EXTRAS: Extras = {
   dentalRecords: [],
   monthStats: [],
   weeklySummary: false,
+  creatureVoice: false,
+  serialStory: false,
+  sessionSong: false,
+  serialHeard: [],
+  bedtimeItems: [],
+  bedtimeDone: null,
+  vacationUntil: null,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -171,6 +190,18 @@ export function normalizeExtras(raw: unknown): Extras {
       : [],
     monthStats: normalizeMonthStats(value.monthStats),
     weeklySummary: value.weeklySummary === true,
+    creatureVoice: value.creatureVoice === true,
+    serialStory: value.serialStory === true,
+    sessionSong: value.sessionSong === true,
+    serialHeard: Array.isArray(value.serialHeard)
+      ? [...new Set(value.serialHeard.filter((index): index is number => Number.isInteger(index) && index >= 0 && index < EPISODES.length))].sort((a, b) => a - b)
+      : [],
+    bedtimeItems: Array.isArray(value.bedtimeItems) ? [...new Set(value.bedtimeItems.filter((item): item is BedtimeItem => BEDTIME_ITEMS.includes(item)))] : [],
+    bedtimeDone:
+      value.bedtimeDone && typeof value.bedtimeDone.day === "string" && DAY_KEY.test(value.bedtimeDone.day) && Array.isArray(value.bedtimeDone.items)
+        ? { day: value.bedtimeDone.day, items: [...new Set(value.bedtimeDone.items.filter((item): item is BedtimeItem => BEDTIME_ITEMS.includes(item)))] }
+        : null,
+    vacationUntil: typeof value.vacationUntil === "string" && DAY_KEY.test(value.vacationUntil) ? value.vacationUntil : null,
   };
 }
 

@@ -11,6 +11,8 @@ import { discoveryOfDay } from "@/lib/milestones";
 import { seasonAt, seasonEnd } from "@/lib/seasons";
 import { speak } from "@/lib/speech";
 import { inWeek, isSummaryTime, weekStart } from "@/lib/weekly";
+import { onHoliday } from "@/lib/bedtime";
+import { localDateKey } from "@/lib/day-progress";
 
 /**
  * Under the start button on Today: the discovery of the day during the guided first week
@@ -51,6 +53,9 @@ export function HomeMotivation({ ink }: { ink: string }) {
           <MaterialIcons accessible={false} name="explore" size={20} color={ink} />
           <Text style={[styles.text, { color: ink, fontWeight: "800" }]}>{discoveryText}</Text>
         </Pressable>
+      ) : null}
+      {onHoliday(extras.vacationUntil, localDateKey(today)) ? (
+        <Text testID="home-holiday" style={[styles.text, { color: ink, fontWeight: "800" }]}>🧳 {t("holiday.home")}</Text>
       ) : null}
       {summary !== null ? (
         <Text testID="home-summary" style={[styles.text, { color: ink, fontWeight: "800" }]}>

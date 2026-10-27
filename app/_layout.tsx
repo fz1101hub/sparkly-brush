@@ -28,6 +28,7 @@ import { DataRecoveryGate } from "@/components/data-recovery-gate";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
 import { ProfileNavigation } from "@/components/profile-navigation";
 import { MotivationTracker } from "@/components/motivation-tracker";
+import { SessionNarrator } from "@/components/session-companion";
 import { ReminderLifecycle } from "@/components/reminder-lifecycle";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { isRestoreOperationActive, subscribeRestoreOperation } from "@/lib/history-operation";
@@ -143,6 +144,7 @@ function ProfileLayout() {
                     <OnboardingOverlay />
                     <ReminderLifecycle />
                     <MotivationTracker />
+                    <SessionNarrator />
                     <ProfileNavigation />
                     <RestoreOperationOverlay />
                     <ThemedStatusBar />

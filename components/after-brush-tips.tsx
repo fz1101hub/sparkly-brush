@@ -31,6 +31,9 @@ export function AfterBrushTips({ completed, onDark }: { completed: boolean; onDa
 
   return (
     <View style={styles.stack}>
+      {!completed ? (
+        <Text testID="stains-left" style={[styles.text, { color: soft }]}>🦠 {t("stains.left")}</Text>
+      ) : null}
       {completed ? (
         <View testID="after-brush" style={[styles.panel, { backgroundColor: panel }]}>
           <Text style={[styles.title, { color: ink }]}>{t("afterBrush.title")}</Text>

@@ -12,6 +12,7 @@ import { DesignText as Text } from "@/components/design-text";
 import { AppHeader } from "@/components/app-header";
 import { BracesMissions } from "@/components/braces-missions";
 import { ChildGoalCard, FamilyBossCard, MilestonesCard, MyStatsCard, WeeklyChallengeCard } from "@/components/motivation-cards";
+import { BedtimeRoutineCard } from "@/components/routine-settings";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   GOLD_TEXT,
@@ -197,6 +198,7 @@ export default function MissionsScreen() {
           })}
         </View>
         <BracesMissions />
+        <BedtimeRoutineCard />
         <WeeklyChallengeCard />
         <FamilyBossCard />
         <ChildGoalCard />

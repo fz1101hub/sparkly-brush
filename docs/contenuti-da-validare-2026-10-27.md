@@ -627,3 +627,126 @@ Regola usata: sotto i 7 anni intensità bassa, dai 7 anni alta. Da confermare co
 - ☐ `device.intensityTip.low`: Intensità consigliata per la sua età: bassa, più delicata.
 - ☐ `device.intensityTip.high`: Intensità consigliata per la sua età: alta.
 - ☐ `device.intensityTip.mismatch`: Il manico ora usa un’altra intensità.
+
+### Routine della buonanotte: consigli per età
+
+Missioni facoltative della sera attivate dal genitore; il collutorio si può attivare solo con l’età «dai 7 anni».
+
+- ☐ `bedtime.age.floss`: Quando i denti si toccano, di solito dai 2–3 anni, con l’aiuto di un adulto.
+- ☐ `bedtime.age.mouthwash`: Solo dai 6 anni e se lo consiglia il dentista: va sputato, non ingoiato.
+- ☐ `bedtime.age.mouthwashTooYoung`: Il collutorio è sconsigliato sotto i 6 anni: si attiva quando l’età scelta è «dai 7 anni».
+- ☐ `bedtime.age.pajamas`: Per tutti: il pigiama dice al corpo che è ora di dormire.
+
+### Voce della creatura durante la sessione
+
+- ☐ `voice.start`: Ciao! Laviamoci i denti insieme. Io sono {name}, pronti?
+- ☐ `voice.zone1`: Bravissimo! Ora passiamo alla zona successiva.
+- ☐ `voice.half`: Siamo a metà! I denti brillano già.
+- ☐ `voice.last`: Ancora {seconds} secondi, ce la fai!
+
+### Rapporto per il dentista: nota a piè di pagina
+
+- ☐ `report.footer`: Creato con Sparkly Brush sul telefono della famiglia. Le durate del timer sono quelle dichiarate; quelle del manico Sonicare sono registrate dal manico.
+
+## 10. Storia a puntate: «La mappa del Sorriso d’Oro»
+
+Un episodio per spazzolata, una parte per zona della bocca, letta con la voce del telefono. Testo in italiano;
+le versioni nelle altre lingue sono in `lib/learning/serial-story.ts`. Da rivedere anche per il tono (età 3–9 anni).
+
+**☐ Episodio 1 — La mappa nella bottiglia**
+
+1. Sulla spiaggia del villaggio, Bloopi trovò una bottiglia che luccicava.
+2. Dentro c’era una mappa: «Chi segue la strada troverà il Sorriso d’Oro».
+3. Spriggo, Flarello, Voltuff e Moonbit corsero a vedere.
+4. In fondo alla mappa c’era una piccola impronta di zampa. Di chi sarà?
+
+**☐ Episodio 2 — Il ponte delle bolle**
+
+1. La prima tappa era un fiume largo, senza ponte.
+2. Bloopi soffiò, e dalle sue pinne uscirono bolle grandi come palloni.
+3. Saltando di bolla in bolla, gli amici arrivarono dall’altra parte.
+4. Sulla riva li aspettava un biglietto: «Bravi. Ma la prossima prova è al buio».
+
+**☐ Episodio 3 — La grotta senza luce**
+
+1. La grotta era così buia che nessuno vedeva la propria coda.
+2. Moonbit chiuse gli occhi, si concentrò e cominciò a brillare come la luna.
+3. Alla sua luce apparvero, sulle pareti, disegni di denti felici.
+4. In fondo alla grotta qualcosa si mosse, e fece: «Squit!».
+
+**☐ Episodio 4 — Il topolino Pip**
+
+1. Era un topolino con un sacchetto pieno di dentini da latte.
+2. «Mi chiamo Pip», disse. «Custodisco i denti che i bambini perdono.»
+3. «Anch’io cerco il Sorriso d’Oro: viene con voi chi ha un sacchetto?»
+4. Pip guardò la mappa e diventò pallido: «Oh no. Il passo del Vento Zuccherino!».
+
+**☐ Episodio 5 — Il Vento Zuccherino**
+
+1. Sul passo soffiava un vento dolce dolce, che sapeva di caramelle.
+2. Dove passava, sui denti di tutti restava un velo appiccicoso.
+3. «Niente paura», disse Spriggo. «Due minuti di spazzolino e il velo sparisce.»
+4. Il vento si fermò di colpo. Dietro le nuvole, qualcuno rideva.
+
+**☐ Episodio 6 — Il gigante Caramello**
+
+1. Dalle nuvole scese un gigante gentile fatto di zucchero filato.
+2. «Sono Caramello. Soffio il vento perché mi sento solo.»
+3. Flarello gli offrì una mela croccante: «Prova questa, è dolce e fa bene».
+4. Il gigante sorrise, e un suo dente d’oro brillò. Era quello il Sorriso d’Oro?
+
+**☐ Episodio 7 — Non è ancora finita**
+
+1. «Il mio dente d’oro è solo una corona», rise Caramello.
+2. «Il vero Sorriso d’Oro è oltre la Foresta dei Fili.»
+3. Il gigante li salutò e promise di soffiare solo aria fresca.
+4. Ma quando entrarono nella foresta, la mappa cominciò a sparire!
+
+**☐ Episodio 8 — La Foresta dei Fili**
+
+1. Tra gli alberi pendevano fili sottili e lucenti, come filo interdentale.
+2. «Passano dove lo spazzolino non arriva», spiegò Pip.
+3. Voltuff fece una scintilla, e sulla mappa riapparve la strada.
+4. La strada portava dritta a un lago. E nel lago c’era un’ombra enorme.
+
+**☐ Episodio 9 — Nonna Balena**
+
+1. L’ombra era una balena anziana, con i fanoni bianchi come la neve.
+2. «Sono Nonna Balena. Mangio piccoli pesci e bevo solo acqua.»
+3. «Per questo ho ancora il sorriso di quando ero giovane», disse fiera.
+4. Poi sussurrò: «Il Sorriso d’Oro ha un guardiano. E non ama i dolci».
+
+**☐ Episodio 10 — Il guardiano Smalto**
+
+1. Sulla cima della collina stava un drago tutto bianco e lucido.
+2. «Sono Smalto. Proteggo i denti come una corazza.»
+3. «Passerà solo chi sa dirmi quanto dura una buona spazzolata.»
+4. Tutti guardarono Pip. Pip guardò te. Tu lo sai?
+
+**☐ Episodio 11 — Due minuti**
+
+1. «Due minuti!» gridarono tutti insieme, e Pip più forte di tutti.
+2. Smalto annuì: «E mattina e sera, senza dimenticare quelli in fondo».
+3. Il drago si fece da parte e mostrò un sentiero di stelle.
+4. Il sentiero finiva davanti a una porta chiusa con un lucchetto a forma di dente.
+
+**☐ Episodio 12 — La chiave**
+
+1. «Ci vuole una chiave», disse Spriggo, «ma noi non ce l’abbiamo.»
+2. Pip aprì il suo sacchetto: dentro, tra i dentini, brillava un dente d’oro.
+3. «Me l’ha dato un bambino che si lavava sempre i denti», disse commosso.
+4. Il dente entrò nel lucchetto. Clic. La porta cominciò ad aprirsi…
+
+**☐ Episodio 13 — Lo specchio**
+
+1. Dietro la porta non c’era un tesoro, ma un grande specchio.
+2. Nello specchio, ognuno vide il proprio sorriso, pulito e luminoso.
+3. «Il Sorriso d’Oro è quello che vi portate dietro», disse una voce.
+4. La voce veniva dall’alto. Era qualcuno che conoscevano bene…
+
+**☐ Episodio 14 — La festa del sorriso**
+
+1. Era la dottoressa Dentina, arrivata in volo su una mongolfiera.
+2. «La mappa l’ho scritta io, per vedere quanto siete coraggiosi.»
+3. Al villaggio fecero una festa: Caramello portò la frutta, Nonna Balena cantò.
+4. E la sera, prima di dormire, tutti si lavarono i denti. La prossima avventura? Presto!

@@ -16,6 +16,7 @@ import { ReminderSettings } from "@/components/reminder-settings";
 import { SessionLengthSettings } from "@/components/session-length-settings";
 import { FamilyWipe } from "@/components/family-wipe";
 import { ParentLockSettings } from "@/components/parent-lock-settings";
+import { BedtimeSettings, CompanionSettings, HolidaySettings } from "@/components/routine-settings";
 import { ScreenContainer } from "@/components/screen-container";
 import { ThemePicker } from "@/components/theme-picker";
 import { VillageSettings } from "@/components/village-settings";
@@ -117,6 +118,9 @@ export default function SettingsScreen() {
         <FamilyPicker />
         <ReminderSettings />
         <SessionLengthSettings />
+        <CompanionSettings />
+        <BedtimeSettings />
+        <HolidaySettings />
         <VillageSettings />
         <ParentLockSettings />
         <FamilyWipe />

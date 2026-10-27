@@ -1,7 +1,11 @@
 import { useAudioPlayer, type AudioPlayer } from "expo-audio";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo } from "react";
 
+import { useBrush } from "@/contexts/brush-context";
+import { useOptionalExtras } from "@/contexts/extras-context";
 import { usePreferences } from "@/contexts/preferences-context";
+import { sessionSongUri } from "@/lib/session-song";
+import { useThemeContext } from "@/lib/theme-provider";
 import { BRUSHLINGS_MUSIC_URI, REWARD_CHIME_URI } from "@/lib/audio-tones";
 
 type AudioFeedbackContextValue = {
@@ -17,6 +21,13 @@ function playBackgroundMusic(player: AudioPlayer): void {
   player.play();
 }
 
+function playSessionSong(player: AudioPlayer, themeId: string): void {
+  player.replace(sessionSongUri(themeId));
+  player.loop = true;
+  player.volume = 0.3;
+  player.play();
+}
+
 function playRewardChime(player: AudioPlayer): void {
   player.replace(REWARD_CHIME_URI);
   player.volume = 0.32;
@@ -27,15 +38,25 @@ export function AudioFeedbackProvider({ children }: PropsWithChildren) {
   const { preferences, ready } = usePreferences();
   const effectPlayer = useAudioPlayer(null);
   const musicPlayer = useAudioPlayer(null);
+  const { isActive } = useBrush();
+  const songChosen = useOptionalExtras()?.extras.sessionSong === true;
+  const { theme } = useThemeContext();
+  const songPlaying = isActive && songChosen;
 
   useEffect(() => {
+    // The brushing song (voce 9) replaces the background music while the child brushes and stops
+    // with the session: when the music ends, brushing is done.
+    if (songPlaying) {
+      playSessionSong(musicPlayer, theme.id);
+      return () => musicPlayer.pause();
+    }
     if (!ready || !preferences.musicEnabled) {
       musicPlayer.pause();
       return;
     }
     playBackgroundMusic(musicPlayer);
     return () => musicPlayer.pause();
-  }, [musicPlayer, preferences.musicEnabled, ready]);
+  }, [musicPlayer, preferences.musicEnabled, ready, songPlaying, theme.id]);
 
   const playSuccess = useCallback(() => {
     if (!preferences.soundsEnabled) return;

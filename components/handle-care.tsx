@@ -4,6 +4,7 @@ import { DesignText as Text } from "@/components/design-text";
 
 import { useBrush } from "@/contexts/brush-context";
 import { useExtras } from "@/contexts/extras-context";
+import { onHoliday } from "@/lib/bedtime";
 import { useOptionalFamily } from "@/contexts/family-context-value";
 import { useI18n } from "@/contexts/locale-context";
 import { useParentGate } from "@/contexts/parent-gate-context";
@@ -33,6 +34,20 @@ function dayTimestamp(dayKey: string): number {
  * A sibling's handle was found while this child searched for theirs (voce 37): one tap opens the
  * profile it belongs to, where it connects without mixing rewards.
  */
+/** Holiday mode (voce 25): the handle stays unconnected until the family is back. */
+export function HolidayHandleCard() {
+  const { t } = useI18n();
+  const { extras } = useExtras();
+  const today = useCurrentDayTimestamp();
+  if (!onHoliday(extras.vacationUntil, localDateKey(today))) return null;
+  return (
+    <View testID="device-holiday" style={[styles.row, styles.warn]}>
+      <MaterialIcons accessible={false} name="luggage" size={22} color={WARN} />
+      <Text style={[styles.text, { color: "#17213A" }]}>{t("holiday.device")}</Text>
+    </View>
+  );
+}
+
 export function SiblingHandleCard() {
   const { t } = useI18n();
   const colors = useColors();

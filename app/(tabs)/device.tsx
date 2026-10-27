@@ -4,7 +4,7 @@ import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from "react-
 import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
-import { HandleCareCard, HandleTransferCard, SiblingHandleCard } from "@/components/handle-care";
+import { HandleCareCard, HandleTransferCard, HolidayHandleCard, SiblingHandleCard } from "@/components/handle-care";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBrush } from "@/contexts/brush-context";
 import { useI18n } from "@/contexts/locale-context";
@@ -241,6 +241,7 @@ export default function DeviceScreen() {
               </View>
             ) : null}
 
+            <HolidayHandleCard />
             <SiblingHandleCard />
 
             <View style={styles.actions}>
