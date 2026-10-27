@@ -40,6 +40,8 @@ export default function TabLayout() {
       <Tabs.Screen name="tooth-mouse" options={{ href: null }} />
       <Tabs.Screen name="babysitter" options={{ href: null }} />
       <Tabs.Screen name="album" options={{ href: null }} />
+      <Tabs.Screen name="reports" options={{ href: null }} />
+      <Tabs.Screen name="dental-booklet" options={{ href: null }} />
     </Tabs>
   );
 }

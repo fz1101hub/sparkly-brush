@@ -22,4 +22,11 @@ export async function scheduleDentistReminder(
   _text: { title: string; body: string },
 ): Promise<void> {}
 
+/** Web: the weekly summary stays in the parent area and on Today on Sunday evening. */
+export async function scheduleWeeklySummary(
+  _profileId: string,
+  _at: number | null,
+  _text: { title: string; body: string },
+): Promise<void> {}
+
 export async function cancelAllNotifications(): Promise<void> {}

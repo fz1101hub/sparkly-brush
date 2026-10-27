@@ -10,7 +10,8 @@ import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
 import { errorText } from "@/lib/localized-error";
 import { doneTodayFrom } from "@/lib/reminder-plan";
 import { getReminderService, reminderText } from "@/lib/reminders";
-import { reminderAdapter, scheduleDentistReminder, subscribeReminderTap } from "@/lib/reminder-platform";
+import { reminderAdapter, scheduleDentistReminder, scheduleWeeklySummary, subscribeReminderTap } from "@/lib/reminder-platform";
+import { nextSummaryAt } from "@/lib/weekly";
 import { useExtras } from "@/contexts/extras-context";
 import { dentistReminderAt } from "@/lib/dental-care";
 
@@ -42,7 +43,8 @@ export function ReminderLifecycle() {
   }, [activeId, locale, profiles, t]);
 
   // The dentist visit of the active child (voce 32): set in the family area or restored.
-  const visit = useExtras().extras.dentistVisit;
+  const { extras } = useExtras();
+  const visit = extras.dentistVisit;
   const visitDay = visit?.day ?? null;
   const visitNotice = visit?.noticeDays ?? null;
   useEffect(() => {
@@ -52,6 +54,15 @@ export function ReminderLifecycle() {
       body: t("dentist.notification.body", { count: visitNotice ?? 0 }),
     }).catch(() => {});
   }, [activeId, activeName, locale, t, visitDay, visitNotice]);
+
+  // Weekly summary on Sunday evening (voce 31), only when the parent turned it on.
+  const weeklySummary = extras.weeklySummary;
+  useEffect(() => {
+    void scheduleWeeklySummary(activeId, weeklySummary ? nextSummaryAt(Date.now()) : null, {
+      title: t("summary.notification.title", { name: activeName }),
+      body: t("summary.notification.body"),
+    }).catch(() => {});
+  }, [activeId, activeName, locale, t, weeklySummary]);
 
   // The active child's reminders skip what is already brushed today (voce 59).
   useEffect(() => {

@@ -17,6 +17,8 @@ export function FamilyNavigation() {
     { title: t("tabs.history"), icon: "history", route: "/(tabs)/history", testID: "family-nav-history" },
     { title: t("family.nav.backup"), icon: "backup", route: "/(tabs)/backup", testID: "family-nav-backup" },
     { title: t("babysitter.open"), icon: "family-restroom", route: "/(tabs)/babysitter", testID: "family-nav-babysitter" },
+    { title: t("reports.open"), icon: "print", route: "/(tabs)/reports", testID: "family-nav-reports" },
+    { title: t("booklet.open"), icon: "menu-book", route: "/(tabs)/dental-booklet", testID: "family-nav-booklet" },
   ] as const;
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>

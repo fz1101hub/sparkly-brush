@@ -131,6 +131,23 @@ export async function scheduleDentistReminder(
   });
 }
 
+/** Sunday-evening notification with the weekly summary (voce 31); null cancels it. */
+export async function scheduleWeeklySummary(
+  profileId: string,
+  at: number | null,
+  text: { title: string; body: string },
+): Promise<void> {
+  const identifier = `brushlings-weekly-${profileId}`;
+  await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => undefined);
+  if (at === null || at <= Date.now()) return;
+  if (!isAllowed(await Notifications.getPermissionsAsync())) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier,
+    content: { title: text.title, body: text.body, data: { brushlingsProfile: profileId, quiet: false } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(at), channelId: NORMAL_CHANNEL },
+  });
+}
+
 /** Every scheduled reminder of every child (voce 70, delete all family data). */
 export async function cancelAllNotifications(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();

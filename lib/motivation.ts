@@ -3,6 +3,7 @@ import type { BrushSession } from "@/lib/brush-types";
 import { localDateKey } from "@/lib/day-progress";
 import type { Extras } from "@/lib/extras";
 import { isPerfectMonth, previousMonthKey } from "@/lib/milestones";
+import { mergeMonthStats } from "@/lib/reports";
 import { challengeOfWeek, challengeProgress, CHALLENGE_TARGETS, familyBossWeeks, previousWeekStart, weekStart } from "@/lib/weekly";
 
 const MAX_KEYS = 104;
@@ -47,5 +48,7 @@ export function motivationUpdates(extras: Extras, inputs: MotivationInputs): Par
     if (completedSessions === 0) updates.discoveryStart = localDateKey(now);
     else updates.discoverySkipped = true;
   }
+  const monthStats = mergeMonthStats(extras.monthStats, history, now);
+  if (JSON.stringify(monthStats) !== JSON.stringify(extras.monthStats)) updates.monthStats = monthStats;
   return updates;
 }

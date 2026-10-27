@@ -624,7 +624,7 @@ function buildProfileStorage(profileId: string) {
           for (const entry of cache.list()) {
             if (!(entry instanceof File)) continue;
             const name = decodeURIComponent(entry.uri).split("/").pop() ?? "";
-            if (name.startsWith("sparkly-import-") || (name.startsWith("sparkly-brush-") && name.endsWith(".brushlings"))) {
+            if (name.startsWith("sparkly-import-") || name.startsWith("sparkly-share-") || (name.startsWith("sparkly-brush-") && name.endsWith(".brushlings"))) {
               entry.delete();
             }
           }

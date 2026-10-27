@@ -3,6 +3,12 @@ import { EMPTY_AWARDS, normalizeAwards, type AlbumAwards } from "@/lib/album";
 import { AGE_GROUPS, DENTIST_NOTICE_DAYS, type AgeGroup, type DentistNoticeDays } from "@/lib/dental-care";
 import { GOAL_IDS, GOAL_TARGETS, type GoalId, type GoalProposal, type GoalTarget } from "@/lib/milestones";
 import { createProfileStorage, createProfileStore } from "@/lib/profile-scope";
+import { cleanClinic, EMPTY_CLINIC, normalizeMonthStats, type ClinicHeader, type DentalRecord, type DentalRecordKind, type MonthStat } from "@/lib/reports";
+
+export type { DentalRecordKind } from "@/lib/reports";
+export const DENTAL_RECORD_KINDS: readonly DentalRecordKind[] = ["visit", "sealant", "fluoride", "ortho"];
+export const MAX_DENTAL_NOTE = 200;
+const MAX_DENTAL_RECORDS = 100;
 
 /**
  * Small per-child settings and records added on 27 October 2026 (one record per profile, part of
@@ -53,6 +59,14 @@ export type Extras = {
   discoverySkipped: boolean;
   /** The goal the child proposed, waiting for the parent (voce 19). */
   goalProposal: GoalProposal | null;
+  /** Header of the dental practice on the printed report (voce 30). */
+  clinic: ClinicHeader;
+  /** The dental booklet (voce 64). */
+  dentalRecords: DentalRecord[];
+  /** Monthly regularity kept for the long-term chart (voce 63). */
+  monthStats: MonthStat[];
+  /** Local notification on Sunday evening with the weekly summary (voce 31). */
+  weeklySummary: boolean;
 };
 
 export const DEFAULT_EXTRAS: Extras = {
@@ -73,6 +87,10 @@ export const DEFAULT_EXTRAS: Extras = {
   discoveryStart: null,
   discoverySkipped: false,
   goalProposal: null,
+  clinic: EMPTY_CLINIC,
+  dentalRecords: [],
+  monthStats: [],
+  weeklySummary: false,
 };
 
 /** Letters, digits, spaces and a few signs; trimmed and cut to MAX_NAME_LENGTH. */
@@ -141,6 +159,18 @@ export function normalizeExtras(raw: unknown): Extras {
       && typeof value.goalProposal.proposedAt === "number"
         ? { goal: value.goalProposal.goal, target: value.goalProposal.target, proposedAt: value.goalProposal.proposedAt }
         : null,
+    clinic: cleanClinic(value.clinic),
+    dentalRecords: Array.isArray(value.dentalRecords)
+      ? value.dentalRecords
+        .filter((record): record is DentalRecord => Boolean(record)
+          && typeof record.id === "string" && record.id.length > 0 && record.id.length <= 40
+          && DENTAL_RECORD_KINDS.includes(record.kind)
+          && typeof record.day === "string" && DAY_KEY.test(record.day))
+        .map((record) => ({ id: record.id, kind: record.kind, day: record.day, note: typeof record.note === "string" ? record.note.slice(0, MAX_DENTAL_NOTE) : "" }))
+        .slice(-MAX_DENTAL_RECORDS)
+      : [],
+    monthStats: normalizeMonthStats(value.monthStats),
+    weeklySummary: value.weeklySummary === true,
   };
 }
 

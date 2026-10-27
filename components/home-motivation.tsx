@@ -2,12 +2,15 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, type Href } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+import { useBrush } from "@/contexts/brush-context";
 import { useExtras } from "@/contexts/extras-context";
 import { useI18n } from "@/contexts/locale-context";
 import { useCurrentDayTimestamp } from "@/hooks/use-current-day";
+import { useMinuteClock } from "@/hooks/use-minute-clock";
 import { discoveryOfDay } from "@/lib/milestones";
 import { seasonAt, seasonEnd } from "@/lib/seasons";
 import { speak } from "@/lib/speech";
+import { inWeek, isSummaryTime, weekStart } from "@/lib/weekly";
 
 /**
  * Under the start button on Today: the discovery of the day during the guided first week
@@ -18,8 +21,13 @@ export function HomeMotivation({ ink }: { ink: string }) {
   const { t, formatDate, locale } = useI18n();
   const router = useRouter();
   const { extras, ready } = useExtras();
+  const { history, demoMode } = useBrush();
   const today = useCurrentDayTimestamp();
+  const now = useMinuteClock();
   if (!ready) return null;
+  const summary = isSummaryTime(now) && !demoMode
+    ? history.filter((session) => session.completed && inWeek(session, weekStart(now))).length
+    : null;
   const discovery = extras.discoveryStart ? discoveryOfDay(extras.discoveryStart, today) : null;
   const season = seasonAt(today);
   const little = extras.ageGroup === "under3" || extras.ageGroup === "3to6";
@@ -43,6 +51,11 @@ export function HomeMotivation({ ink }: { ink: string }) {
           <MaterialIcons accessible={false} name="explore" size={20} color={ink} />
           <Text style={[styles.text, { color: ink, fontWeight: "800" }]}>{discoveryText}</Text>
         </Pressable>
+      ) : null}
+      {summary !== null ? (
+        <Text testID="home-summary" style={[styles.text, { color: ink, fontWeight: "800" }]}>
+          {t("summary.home", { done: summary, total: 14 })}
+        </Text>
       ) : null}
       {season ? (
         <Pressable

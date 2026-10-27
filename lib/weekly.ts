@@ -137,3 +137,21 @@ export function familyBossWeeks(histories: readonly (readonly BrushSession[])[],
   }
   return weeks;
 }
+
+/** Sunday at 18:30, local time, when the weekly summary is ready (voce 31). */
+export const SUMMARY_HOUR = 18;
+export const SUMMARY_MINUTE = 30;
+
+export function isSummaryTime(timestamp: number): boolean {
+  const date = new Date(timestamp);
+  return date.getDay() === 0 && date.getHours() * 60 + date.getMinutes() >= SUMMARY_HOUR * 60 + SUMMARY_MINUTE;
+}
+
+/** The next Sunday 18:30 after the timestamp. */
+export function nextSummaryAt(timestamp: number): number {
+  const date = new Date(timestamp);
+  const daysToSunday = (7 - date.getDay()) % 7;
+  let at = new Date(date.getFullYear(), date.getMonth(), date.getDate() + daysToSunday, SUMMARY_HOUR, SUMMARY_MINUTE).getTime();
+  if (at <= timestamp) at = new Date(date.getFullYear(), date.getMonth(), date.getDate() + daysToSunday + 7, SUMMARY_HOUR, SUMMARY_MINUTE).getTime();
+  return at;
+}

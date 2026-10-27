@@ -31,6 +31,8 @@ const ADDITIONAL_ROUTES = [
   { name: "tooth-mouse", path: "/tooth-mouse", title: "Casa del topolino" },
   { name: "babysitter", path: "/babysitter", title: "Modalità babysitter" },
   { name: "album", path: "/album", title: "Album di figurine" },
+  { name: "reports", path: "/reports", title: "Stampe e rapporti" },
+  { name: "dental-booklet", path: "/dental-booklet", title: "Libretto dentale" },
   { name: "not-found", path: "/collegamento-inesistente", title: "Pagina non trovata" },
 ] as const;
 
