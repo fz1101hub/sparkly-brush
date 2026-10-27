@@ -48,6 +48,26 @@ Le voci 1–5 sono state sviluppate e completate il 27 ottobre (commit da `f9054
 | 4 | Attacchi, filo ed elastici del colore scelto dal bambino, filo dell'apparecchio mobile o mascherina trasparente, calibrati sulla bocca di ognuna delle 11 illustrazioni; la creatura dice «anche io ho l'apparecchio». | L'espansore non si vede (sta sul palato). |
 | 5 | Scheda Mondo: scuola, studio della dottoressa Dentina, orto dei cibi, laboratorio delle bolle (con i tesori trovati spazzolando, senza consumarli), piazza (mostro della placca della settimana e feste), biblioteca (4 storie lette ad alta voce), casa del topolino (denti da latte caduti), museo, mercato. Energia: 2 per sessione completata, massimo 4 al giorno; la sera il villaggio dorme (orario scelto dal genitore). | Il villaggio è un elenco di edifici: una mappa illustrata richiede un illustratore (e la scelta se disegnarla una volta o per ognuno dei sei temi). |
 
+## Avanzamento: sviluppo di tutte le voci (dal 27 ottobre)
+
+Richiesta del 27 ottobre: sviluppare tutte le voci dell'elenco, con riprese automatiche ogni 5 ore e 5 minuti. Questa tabella dice da dove ripartire: ☐ da fare · ◐ in corso · ☑ fatto · ⛔ non realizzabile qui (motivo accanto). L'ordine segue l'«Ordine consigliato»: prima le voci senza grafica né hardware, poi quelle più grandi, infine quelle native o sconsigliate.
+
+| Lotto | Voci | Stato |
+|---|---|---|
+| 1. Promemoria, serie e premi | 59, 60, 62, 16, 17, 49, 57, 66 | ☐ |
+| 2. Dopo la spazzolata e famiglia | 22, 23, 58, 56, 55, 27, 32, 34, 70 | ☐ |
+| 3. Manico e sicurezza | 35 (batteria e testina per data), 36, 37, 50, 65 | ☐ |
+| 4. Motivazione nel tempo | 12, 13, 51, 14, 15, 18, 19, 41 | ☐ |
+| 5. Stampe e rapporti | 20, 67, 29, 30, 31, 33, 63, 64 | ☐ |
+| 6. Rito della giornata e sessione | 6, 7, 8, 9, 21, 28, 25 | ☐ |
+| 7. Inclusione | 39, 40, 74, 68 | ☐ |
+| 8. Dati della famiglia | 69, 44 | ☐ |
+| 9. Piattaforma | 72, 71, 43, 42, 45, 75 | ☐ |
+| 10. Microfono e fotocamera | 61, 76 | ☐ |
+| 11. Hardware da collaudare | 10, 11, 38, 52, 46, 73, 35 (tempo motore) | ☐ |
+| 12. Lavori di supporto | A, B, 53, C, 54 | ☐ |
+| Sconsigliate | 47 (serve un server), 48 (riconoscimento dei movimenti con la fotocamera) | ☐ da decidere |
+
 ## Durante i due minuti
 
 | # | Funzione | Descrizione | Impegno | Note |
