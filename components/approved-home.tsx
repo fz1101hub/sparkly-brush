@@ -580,6 +580,17 @@ export function ApprovedHome() {
               {stateCopy}
               {arcade || theme.id === "adventure" ? "  →" : ""}
             </DesignButton>
+            {braces ? (
+              <Pressable
+                testID="home-braces"
+                accessibilityRole="button"
+                onPress={() => router.push("/(tabs)/braces")}
+                style={{ minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 }}
+              >
+                <MaterialIcons accessible={false} name="medical-services" color={d.ink} size={22} />
+                <Text style={{ color: d.ink, fontFamily: "BrushlingsBody", fontSize: 14 }}>{t("home.bracesCare")}</Text>
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityRole="button"
               testID="home-device-link"

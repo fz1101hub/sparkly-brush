@@ -15,6 +15,7 @@ import { QuickGuide } from "@/components/quick-guide";
 import { ReminderSettings } from "@/components/reminder-settings";
 import { ScreenContainer } from "@/components/screen-container";
 import { ThemePicker } from "@/components/theme-picker";
+import { VillageSettings } from "@/components/village-settings";
 import {
   LIGHT_CARD_FOREGROUND,
   LIGHT_CARD_MUTED,
@@ -112,6 +113,7 @@ export default function SettingsScreen() {
         <ThemePicker />
         <FamilyPicker />
         <ReminderSettings />
+        <VillageSettings />
         <QuickGuide />
 
         <View

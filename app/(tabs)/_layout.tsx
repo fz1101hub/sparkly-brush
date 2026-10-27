@@ -28,6 +28,11 @@ export default function TabLayout() {
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="history" options={{ href: null }} />
       <Tabs.Screen name="device" options={{ href: null }} />
+      <Tabs.Screen name="quiz" options={{ href: null }} />
+      <Tabs.Screen name="tooth-names" options={{ href: null }} />
+      <Tabs.Screen name="museum" options={{ href: null }} />
+      <Tabs.Screen name="dentist-visit" options={{ href: null }} />
+      <Tabs.Screen name="braces" options={{ href: null }} />
     </Tabs>
   );
 }

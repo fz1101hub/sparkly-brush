@@ -5,6 +5,7 @@ import { DesignText as Text } from "@/components/design-text";
 
 import { AppHeader } from "@/components/app-header";
 import { BrushlingAvatar } from "@/components/brushling-avatar";
+import { VillageSection } from "@/components/village-section";
 import { ScreenContainer } from "@/components/screen-container";
 import {
   LIGHT_CARD_FOREGROUND,
@@ -52,6 +53,8 @@ export default function CollectionScreen() {
           eyebrow={t("game.collection.eyebrow")}
           title={t("world.title")}
         />
+
+        <VillageSection />
 
         <View style={styles.worldLinks}>
           {([
